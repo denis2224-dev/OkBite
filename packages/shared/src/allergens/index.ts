@@ -1,15 +1,25 @@
 import { ALLERGENS, type Allergen } from '../contract';
 import { SYNONYMS } from './synonyms';
 
-const TRACES = /poate contine|urme de/;
+// A trace clause runs from the marker to the end of its sentence.
+const TRACES = /(poate cont(s)?ine|urme de)[^.]*/g;
 
-/** Allergens in an ingredients text; what follows "poate conține" / "urme de" goes to mayContain. */
+/** Allergens in an ingredients text; "poate conține …" / "urme de …" clauses go to mayContain. */
 export function detectAllergens(text: string): { allergens: Allergen[]; mayContain: Allergen[] } {
-  const plain = text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  const cut = plain.search(TRACES);
-  const before = cut === -1 ? plain : plain.slice(0, cut);
-  const after = cut === -1 ? '' : plain.slice(cut);
-  const allergens = ALLERGENS.filter((a) => SYNONYMS[a].test(before));
-  const mayContain = ALLERGENS.filter((a) => SYNONYMS[a].test(after) && !allergens.includes(a));
+  const plain = toPlain(text);
+  const traces = (plain.match(TRACES) ?? []).join(' ');
+  const rest = plain.replace(TRACES, ' ');
+  const allergens = ALLERGENS.filter((a) => SYNONYMS[a].test(rest));
+  const mayContain = ALLERGENS.filter((a) => SYNONYMS[a].test(traces) && !allergens.includes(a));
   return { allergens, mayContain };
+}
+
+// ș/ț become "sh"/"ts" so "pește" (fish) stays apart from "peste" (over); other marks are dropped.
+function toPlain(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/s[̧̦]/g, 'sh')
+    .replace(/t[̧̦]/g, 'ts')
+    .replace(/\p{M}/gu, '');
 }

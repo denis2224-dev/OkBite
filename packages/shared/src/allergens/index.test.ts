@@ -12,6 +12,19 @@ describe('detectAllergens', () => {
     ['unt de cacao, unt 82%', ['Lapte'], []],
     ['zahăr. Poate contine urme de lapte, lapte', [], ['Lapte']],
     ['', [], []],
+    ['file de pește, sare', ['Pește'], []],
+    ['pește 60%, ulei', ['Pește'], []],
+    ['de peste 50% fructe', [], []],
+    ['cod produs 123, zahăr', [], []],
+    ['vin, metabisulfit de potasiu, E-224', ['Dioxid de sulf și sulfiți'], []],
+    ['anhidridă sulfuroasă', ['Dioxid de sulf și sulfiți'], []],
+    ['cozonac cu nucă, alună, migdală', ['Fructe cu coajă lemnoasă'], []],
+    ['nucă de cocos', [], []],
+    ['arahidă prăjită, midie, calamari', ['Arahide', 'Moluște'], []],
+    ['Poate conține urme de lapte. Ingrediente: făină de grâu', ['Gluten'], ['Lapte']],
+    ['țelină, muștar, creveți', ['Crustacee', 'Țelină', 'Muștar'], []],
+    ['telina, mustar', ['Țelină', 'Muștar'], []],
+    ['poate conţine (cedilla) susan', [], ['Susan']],
   ])('detectAllergens(%s)', (text, allergens, may) =>
     expect(detectAllergens(text)).toEqual({ allergens, mayContain: may }));
 });
