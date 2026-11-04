@@ -1,0 +1,63 @@
+# The repository owner remains the effective reviewer until the team confirms
+# @role-r2 through @role-r5. Replace the fallback handles below with real members.
+* @denis2224-dev
+
+# R4: App Foundation and Product Screens (@role-r4).
+# Broad app ownership comes first; the specific exceptions below take precedence.
+/apps/mobile/app/ @denis2224-dev
+/apps/mobile/src/ @denis2224-dev
+
+# R2: Backend and Contract (@role-r2)
+/supabase/ @denis2224-dev
+/packages/shared/src/contract* @denis2224-dev
+/scripts/sync-shared.mjs @denis2224-dev
+/apps/mobile/app/admin/ @denis2224-dev
+/apps/mobile/src/features/admin/ @denis2224-dev
+/docs/ops/moderation.md @denis2224-dev
+
+# R3: AI and Data (@role-r3)
+/packages/shared/src/score/ @denis2224-dev
+/packages/shared/src/ean/ @denis2224-dev
+/packages/shared/src/allergens/ @denis2224-dev
+/supabase/functions/identify/ @denis2224-dev
+/supabase/functions/read-label/ @denis2224-dev
+/supabase/functions/_lib/claude.ts @denis2224-dev
+/data/ @denis2224-dev
+/scripts/check-data* @denis2224-dev
+/scripts/load-data.ts @denis2224-dev
+/scripts/import-off* @denis2224-dev
+
+# R5: Capture, Contribution and Field Testing (@role-r5)
+/apps/mobile/app/capture* @denis2224-dev
+/apps/mobile/app/scan* @denis2224-dev
+/apps/mobile/app/identify* @denis2224-dev
+/apps/mobile/app/add/ @denis2224-dev
+/apps/mobile/src/features/capture/ @denis2224-dev
+/apps/mobile/src/features/scan/ @denis2224-dev
+/apps/mobile/src/features/identify/ @denis2224-dev
+/apps/mobile/src/features/add/ @denis2224-dev
+
+# R1: Web, Quality and Product Details (verified: @stasikkk777).
+# Keep the repository owner too, so R1's author cannot approve their own PR.
+/*.json @denis2224-dev @stasikkk777
+/*.yaml @denis2224-dev @stasikkk777
+/*.js @denis2224-dev @stasikkk777
+/.gitignore @denis2224-dev @stasikkk777
+/.npmrc @denis2224-dev @stasikkk777
+/.nvmrc @denis2224-dev @stasikkk777
+/.prettier* @denis2224-dev @stasikkk777
+/.github/ @denis2224-dev @stasikkk777
+/AGENTS.md @denis2224-dev @stasikkk777
+/CLAUDE.md @denis2224-dev @stasikkk777
+/apps/mobile/app.config.ts @denis2224-dev @stasikkk777
+/apps/mobile/eas.json @denis2224-dev @stasikkk777
+/apps/mobile/public/ @denis2224-dev @stasikkk777
+/apps/mobile/app/+html.tsx @denis2224-dev @stasikkk777
+/apps/mobile/app/product/*/ingredients.tsx @denis2224-dev @stasikkk777
+/apps/mobile/app/product/*/label.tsx @denis2224-dev @stasikkk777
+/apps/mobile/app/(tabs)/compare.tsx @denis2224-dev @stasikkk777
+/apps/mobile/src/features/compare/ @denis2224-dev @stasikkk777
+/apps/mobile/src/lib/errorReporter* @denis2224-dev @stasikkk777
+/supabase/functions/client-error/ @denis2224-dev @stasikkk777
+/.maestro/ @denis2224-dev @stasikkk777
+/e2e-web/ @denis2224-dev @stasikkk777

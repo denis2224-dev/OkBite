@@ -1,0 +1,53 @@
+name: EAS PR preview
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.EXPO_PUBLIC_EAS_PROJECT_ID }}
+    steps:
+      - name: Check preview setup
+        id: setup
+        run: |
+          if [ -n "$EXPO_TOKEN" ] && [ -n "$EXPO_PUBLIC_EAS_PROJECT_ID" ]; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+            echo 'EAS preview setup is pending: configure EXPO_TOKEN and EXPO_PUBLIC_EAS_PROJECT_ID. See .github/SETUP.md.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.setup.outputs.enabled == 'true'
+      - uses: pnpm/action-setup@v4
+        if: steps.setup.outputs.enabled == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.setup.outputs.enabled == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: steps.setup.outputs.enabled == 'true'
+      - uses: expo/expo-github-action@v8
+        if: steps.setup.outputs.enabled == 'true'
+        with:
+          eas-version: latest
+          packager: pnpm
+          token: ${{ secrets.EXPO_TOKEN }}
+      - uses: expo/expo-github-action/preview@v8
+        if: steps.setup.outputs.enabled == 'true'
+        with:
+          working-directory: apps/mobile
+          command: eas update --auto --branch pr-${{ github.event.number }} --environment preview --non-interactive
