@@ -114,22 +114,25 @@ export function parseIdentifyParams(
       const parsed = IdentifyResponse.safeParse(JSON.parse(payload));
       if (!parsed.success || parsed.data.status === 'found') return { kind: 'invalid' };
       const data = parsed.data;
+      const photoPath = cleanParam(data.photoPath);
+      if (!photoPath) return { kind: 'invalid' };
       if (data.status === 'not_found') {
-        return { kind: 'not_found', read: data.read, photoPath: data.photoPath, fromCode: false };
+        return { kind: 'not_found', read: data.read, photoPath, fromCode: false };
       }
-      if (data.candidates.length === 1 && data.candidates[0].similarity >= CONFIDENT_SIMILARITY) {
+      const firstCandidate = data.candidates[0];
+      if (data.candidates.length === 1 && firstCandidate && firstCandidate.similarity >= CONFIDENT_SIMILARITY) {
         return {
           kind: 'confirm',
-          candidate: data.candidates[0],
+          candidate: firstCandidate,
           read: data.read,
-          photoPath: data.photoPath,
+          photoPath,
         };
       }
       return {
         kind: 'candidates',
         candidates: data.candidates,
         read: data.read,
-        photoPath: data.photoPath,
+        photoPath,
       };
     } catch {
       return { kind: 'invalid' };

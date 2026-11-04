@@ -12,8 +12,17 @@ import {
   parseIdentifyParams,
 } from './routes';
 
-const mockReplace = jest.fn();
+type ReplaceArg = string | { pathname: string; params: Record<string, string | undefined> };
+const mockReplace = jest.fn<(href: ReplaceArg) => void>();
 const mockParams: { value: Record<string, string | string[] | undefined> } = { value: {} };
+
+function requireReplacedParams(callIndex = 0): Record<string, string | undefined> {
+  const call = mockReplace.mock.calls[callIndex];
+  if (!call) throw new Error(`Expected router.replace call at index ${callIndex}`);
+  const [arg] = call;
+  if (typeof arg === 'string') throw new Error(`Expected object route, got ${arg}`);
+  return arg.params;
+}
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace }),
@@ -94,7 +103,7 @@ describe('IdentifyScreen and B3 flow', () => {
         photoPath: PHOTO_PATH,
       },
     });
-    const sentParams = (mockReplace.mock.calls[0][0] as { params: Record<string, string> }).params;
+    const sentParams = requireReplacedParams();
     expect('code' in sentParams).toBe(false);
     expect(Object.values(sentParams)).not.toContain('null');
     expect(Object.values(sentParams)).not.toContain('undefined');
@@ -189,7 +198,7 @@ describe('IdentifyScreen and B3 flow', () => {
       pathname: '/add',
       params: { code: '0036000291452' },
     });
-    const sentParams = (mockReplace.mock.calls[0][0] as { params: Record<string, string> }).params;
+    const sentParams = requireReplacedParams();
     expect('photoPath' in sentParams).toBe(false);
     expect(parseAddParams(sentParams)).toEqual({
       code: '0036000291452',
@@ -207,6 +216,12 @@ describe('IdentifyScreen and B3 flow', () => {
     ['missing params', {}],
     ['malformed JSON', { source: 'photo', payload: '{bad-json' }],
     ['schema violation (empty candidates)', { source: 'photo', payload: JSON.stringify({ status: 'candidates', candidates: [], read: ORIGINAL_READ, photoPath: PHOTO_PATH }) }],
+    ['candidates with empty photoPath', { source: 'photo', payload: JSON.stringify({ status: 'candidates', candidates: [CAND_1], read: ORIGINAL_READ, photoPath: '' }) }],
+    ['candidates with whitespace photoPath', { source: 'photo', payload: JSON.stringify({ status: 'candidates', candidates: [CAND_1, CAND_2], read: ORIGINAL_READ, photoPath: '   ' }) }],
+    ['candidates with sentinel "null" photoPath', { source: 'photo', payload: JSON.stringify({ status: 'candidates', candidates: [CAND_1], read: ORIGINAL_READ, photoPath: 'null' }) }],
+    ['not_found with empty photoPath', { source: 'photo', payload: JSON.stringify({ status: 'not_found', read: ORIGINAL_READ, photoPath: '' }) }],
+    ['not_found with whitespace photoPath', { source: 'photo', payload: JSON.stringify({ status: 'not_found', read: ORIGINAL_READ, photoPath: ' \t ' }) }],
+    ['not_found with sentinel "undefined" photoPath', { source: 'photo', payload: JSON.stringify({ status: 'not_found', read: ORIGINAL_READ, photoPath: 'undefined' }) }],
     ['invalid barcode checksum', { source: 'code', code: '4840001000017' }],
   ])('handles %s safely without crashing or inventing product data', async (_case, badParams) => {
     mockParams.value = badParams;
