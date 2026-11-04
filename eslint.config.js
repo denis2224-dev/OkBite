@@ -8,6 +8,8 @@ module.exports = defineConfig([
       '**/.expo/**',
       '**/dist/**',
       '**/coverage/**',
+      'docs/**',
+      'graphify-out/**',
       '.superpowers/**',
       'supabase/functions/_shared/**',
     ],
