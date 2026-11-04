@@ -1,4 +1,3 @@
-import { routes } from "../../core/router/routes";
 import { useCallback, useState } from "react";
 import { View, Pressable } from "react-native";
 import { router, useFocusEffect } from "expo-router";
@@ -10,23 +9,25 @@ import {
   Card,
   Button,
   Icon,
-  Badge,
 } from "../../shared/widgets";
+import { HistoryRows } from "../../shared/widgets/history_rows";
 import { useTheme } from "../../core/theme/app_theme";
-import { fonts } from "../../core/theme/typography";
-import { isPreview } from "../../shared/state/app_state";
-import { previewEntries } from "../../data/mock/mock_products";
+import { isPreview, useDemoState } from "../../shared/state/app_state";
 import {
   listHistory,
   type HistoryEntry,
 } from "../../data/repositories/history_repository";
+import { DemoStatesSheet } from "./demo_states_sheet";
 export default function Home() {
-  const { colors, preference, setPreference } = useTheme();
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const { colors } = useTheme(),
+    demo = useDemoState();
+  const [history, setHistory] = useState<HistoryEntry[]>([]),
+    [sheet, setSheet] = useState(false);
   useFocusEffect(
     useCallback(() => {
+      if (isPreview) return;
       let active = true;
-      listHistory()
+      void listHistory()
         .then((rows) => {
           if (active) setHistory(rows);
         })
@@ -36,131 +37,199 @@ export default function Home() {
       };
     }, []),
   );
-  const entries = history.length
-    ? history.slice(0, 3)
-    : isPreview
-      ? previewEntries.slice(0, 3)
-      : [];
-  return (
-    <Screen>
+  const entries = (isPreview ? demo.history : history).slice(0, 3);
+  const tab = (path: "/" | "/compare" | "/history") => {
+    router.dismissAll();
+    router.replace(path);
+  };
+  const header = (
+    <View
+      style={{
+        paddingTop: 12,
+        paddingHorizontal: 16,
+        paddingBottom: 6,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+      }}
+    >
       <View
         style={{
-          flexDirection: "row",
+          width: 38,
+          height: 38,
+          borderRadius: 12,
+          backgroundColor: colors.forest,
           alignItems: "center",
-          justifyContent: "space-between",
-          gap: 10,
+          justifyContent: "center",
         }}
       >
-        <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
-          <View
-            style={{
-              width: 40,
-              height: 40,
-              backgroundColor: colors.primary,
-              borderRadius: 13,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Icon name="tag" color={colors.onPrimary} />
-          </View>
-          <Heading style={{ fontSize: 25 }}>{ro.app.name}</Heading>
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={ro.app.settings}
-          onPress={() =>
-            setPreference(preference === "dark" ? "light" : "dark")
-          }
-          style={{
-            minWidth: 48,
-            minHeight: 48,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Icon name="sun" color={colors.ink} />
-        </Pressable>
+        <Icon name="tag" size={22} color={colors.accent} />
       </View>
-      {isPreview && <Badge>{ro.app.demo}</Badge>}
+      <Heading
+        style={{ fontSize: 21, lineHeight: 26, color: colors.forest, flex: 1 }}
+      >
+        {ro.app.name}
+      </Heading>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={ro.app.design.demoTitle}
+        onPress={() => setSheet(true)}
+        style={{
+          minHeight: 44,
+          flexDirection: "row",
+          gap: 7,
+          paddingHorizontal: 12,
+          alignItems: "center",
+          borderRadius: 22,
+          backgroundColor: colors.soft,
+        }}
+      >
+        <Icon name="settings" size={18} color={colors.ink} />
+        <Body style={{ fontSize: 12, fontWeight: "700" }}>
+          {ro.app.design.demoTitle}
+        </Body>
+      </Pressable>
+    </View>
+  );
+  return (
+    <Screen
+      header={header}
+      footer={
+        <Button
+          icon="scan"
+          onPress={() =>
+            router.push(isPreview ? "/preview?step=scan" : ("/scan" as never))
+          }
+          style={{ minHeight: 62, borderRadius: 20 }}
+        >
+          {ro.app.design.primaryScan}
+        </Button>
+      }
+    >
       <View
         style={{
-          backgroundColor: colors.hero,
-          borderRadius: 28,
-          padding: 24,
-          gap: 16,
+          backgroundColor: colors.forest,
+          borderRadius: 24,
+          paddingTop: 22,
+          paddingHorizontal: 20,
+          paddingBottom: 24,
           overflow: "hidden",
+          marginTop: 0,
         }}
       >
         <View
-          style={{
-            position: "absolute",
-            right: -20,
-            top: -25,
-            opacity: 0.12,
-            transform: [{ rotate: "-15deg" }],
-          }}
+          style={{ position: "absolute", right: -30, top: -26, opacity: 0.22 }}
         >
-          <Icon name="tag" size={160} color={colors.accent} />
+          <Icon name="tag" size={150} color={colors.accent} />
         </View>
         <Body
-          style={{ color: colors.accent, fontSize: 12, fontFamily: fonts.bold }}
+          style={{
+            fontSize: 11,
+            lineHeight: 16,
+            fontWeight: "800",
+            letterSpacing: 0.8,
+            textTransform: "uppercase",
+            color: colors.accent,
+          }}
         >
           {ro.home.eyebrow}
         </Body>
         <Heading
           style={{
-            color: colors.heroText,
-            fontSize: 34,
-            lineHeight: 38,
-            maxWidth: 310,
+            fontSize: 30,
+            lineHeight: 32.4,
+            fontWeight: "800",
+            color: "#FFFFFF",
+            maxWidth: 290,
+            marginTop: 8,
+            marginBottom: 10,
           }}
         >
           {ro.home.title}
         </Heading>
-        <Body style={{ color: colors.heroMuted, lineHeight: 23 }}>
+        <Body style={{ fontSize: 15, lineHeight: 22, color: colors.heroMuted }}>
           {ro.home.description}
         </Body>
-        <Button
-          variant="accent"
-          icon="camera"
-          onPress={() =>
-            router.push(isPreview ? "/preview" : ("/capture" as never))
-          }
-          style={{ backgroundColor: colors.accent }}
-        >
-          {ro.home.photoButton}
-        </Button>
       </View>
-      <Button
-        variant="ghost"
-        icon="scan"
-        onPress={() =>
-          router.push(isPreview ? "/preview?step=scan" : ("/scan" as never))
-        }
-      >
-        {ro.home.scanLink}
-      </Button>
+      <View style={{ flexDirection: "row", gap: 10 }}>
+        {[
+          {
+            icon: "camera" as const,
+            title: ro.home.photoButton,
+            hint: ro.app.design.photoHint,
+            onPress: () =>
+              router.push(
+                isPreview
+                  ? "/preview?step=ingredientsPhoto"
+                  : ("/capture" as never),
+              ),
+          },
+          {
+            icon: "compare" as const,
+            title: ro.home.compare,
+            hint: ro.home.compareHint,
+            onPress: () => tab("/compare"),
+          },
+        ].map((action) => (
+          <Pressable
+            key={action.title}
+            accessibilityRole="button"
+            accessibilityLabel={action.title}
+            onPress={action.onPress}
+            style={{ flex: 1 }}
+          >
+            <Card style={{ flex: 1, padding: 14, gap: 10, minHeight: 125 }}>
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
+                  backgroundColor: colors.mint,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Icon name={action.icon} color={colors.forest} />
+              </View>
+              <View>
+                <Body
+                  style={{ fontSize: 15, lineHeight: 20, fontWeight: "800" }}
+                >
+                  {action.title}
+                </Body>
+                <Body
+                  style={{ fontSize: 13, lineHeight: 18, color: colors.muted }}
+                >
+                  {action.hint}
+                </Body>
+              </View>
+            </Card>
+          </Pressable>
+        ))}
+      </View>
       <View
         style={{
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: 8,
+          marginTop: 0,
         }}
       >
-        <Heading style={{ fontSize: 20, flex: 1 }}>{ro.home.recent}</Heading>
+        <Heading style={{ fontSize: 18, lineHeight: 23 }}>
+          {ro.home.recent}
+        </Heading>
         <Pressable
           accessibilityRole="link"
           accessibilityLabel={ro.home.allHistory}
-          onPress={() => router.push(routes.history)}
-          style={{ minHeight: 48, justifyContent: "center" }}
+          onPress={() => tab("/history")}
+          style={{ minHeight: 44, justifyContent: "center" }}
         >
           <Body
             style={{
               fontSize: 12,
-              color: colors.primary,
-              fontFamily: fonts.bold,
+              color: colors.forest,
+              fontWeight: "800",
+              textDecorationLine: "underline",
             }}
           >
             {ro.home.allHistory}
@@ -168,157 +237,69 @@ export default function Home() {
         </Pressable>
       </View>
       {entries.length ? (
-        <Card style={{ paddingVertical: 4, paddingHorizontal: 16 }}>
-          {entries.map(({ product, score }, i) => (
-            <Pressable
-              key={product.id}
-              accessibilityRole="button"
-              accessibilityLabel={ro.history.open(product.name)}
-              onPress={() => router.push(`/product/${product.id}`)}
-              style={({ pressed }) => ({
-                flexDirection: "row",
-                gap: 12,
-                alignItems: "center",
-                paddingVertical: 14,
-                borderTopWidth: i ? 1 : 0,
-                borderTopColor: colors.border,
-                opacity: pressed ? 0.6 : 1,
-              })}
-            >
-              <View
-                style={{
-                  width: 46,
-                  height: 54,
-                  borderRadius: 12,
-                  backgroundColor: i === 1 ? colors.mediumBg : colors.goodBg,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Icon
-                  name="leaf"
-                  color={i === 1 ? colors.medium : colors.good}
-                />
-              </View>
-              <View style={{ flex: 1, gap: 4 }}>
-                <Body
-                  style={{
-                    fontFamily: fonts.bold,
-                    fontSize: 14,
-                    lineHeight: 20,
-                  }}
-                >
-                  {product.name}
-                </Body>
-                <Body style={{ fontSize: 12, color: colors.muted }}>
-                  {product.brand}
-                </Body>
-              </View>
-              <View
-                style={{
-                  backgroundColor:
-                    colors[
-                      score.grade === "unavailable"
-                        ? "neutralBg"
-                        : (`${score.grade}Bg` as keyof typeof colors)
-                    ],
-                  paddingHorizontal: 10,
-                  paddingVertical: 6,
-                  borderRadius: 10,
-                }}
-              >
-                <Body
-                  style={{
-                    fontFamily: fonts.bold,
-                    color:
-                      colors[
-                        score.grade === "unavailable" ? "neutral" : score.grade
-                      ],
-                  }}
-                >
-                  {score.score ?? "—"}
-                </Body>
-              </View>
-              <Icon name="arrow" size={16} color={colors.muted} />
-            </Pressable>
-          ))}
-        </Card>
+        <HistoryRows
+          entries={entries}
+          onOpen={({ product }) => router.push(`/product/${product.id}`)}
+        />
       ) : (
         <Card>
           <Body style={{ color: colors.muted }}>{ro.home.empty}</Body>
         </Card>
       )}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={ro.home.compare}
-        onPress={() => router.push(routes.compare)}
-      >
-        <Card style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-          <Icon name="compare" size={28} color={colors.primary} />
-          <View style={{ flex: 1 }}>
-            <Heading style={{ fontSize: 18, lineHeight: 24 }}>
-              {ro.home.compare}
-            </Heading>
-            <Body style={{ fontSize: 12, color: colors.muted }}>
-              {ro.home.compareHint}
-            </Body>
-          </View>
-          <Icon name="arrow" size={18} color={colors.muted} />
-        </Card>
-      </Pressable>
-      <View style={{ gap: 14, paddingTop: 4 }}>
-        <Heading style={{ fontSize: 20 }}>{ro.home.legend}</Heading>
-        {(["good", "medium", "low"] as const).map((grade) => (
-          <View
-            key={grade}
-            style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
-          >
+      <Card>
+        <Body
+          style={{
+            fontSize: 11,
+            lineHeight: 16,
+            fontWeight: "800",
+            textTransform: "uppercase",
+            letterSpacing: 0.7,
+          }}
+        >
+          {ro.home.legend}
+        </Body>
+        <View style={{ gap: 8 }}>
+          {(["good", "medium", "low"] as const).map((grade) => (
             <View
-              style={{
-                minWidth: 78,
-                padding: 8,
-                borderRadius: 10,
-                backgroundColor: colors[`${grade}Bg`],
-              }}
+              key={grade}
+              style={{ flexDirection: "row", gap: 10, alignItems: "center" }}
             >
-              <Body
+              <View
                 style={{
-                  color: colors[grade],
-                  fontFamily: fonts.bold,
-                  textAlign: "center",
-                  fontSize: 13,
+                  minWidth: 76,
+                  paddingHorizontal: 10,
+                  paddingVertical: 6,
+                  borderRadius: 14,
+                  backgroundColor: colors[`${grade}Bg`],
                 }}
               >
-                {grade === "good"
-                  ? ro.home.legendGood
-                  : grade === "medium"
-                    ? ro.home.legendMedium
-                    : ro.home.legendLow}
+                <Body
+                  style={{
+                    fontSize: 13,
+                    lineHeight: 18,
+                    textAlign: "center",
+                    fontWeight: "800",
+                    color: colors[grade],
+                  }}
+                >
+                  {grade === "good"
+                    ? ro.home.legendGood
+                    : grade === "medium"
+                      ? ro.home.legendMedium
+                      : ro.home.legendLow}
+                </Body>
+              </View>
+              <Body style={{ fontWeight: "600", flex: 1 }}>
+                {ro.home[grade]}
               </Body>
             </View>
-            <Body style={{ flex: 1, fontSize: 13 }}>{ro.home[grade]}</Body>
-          </View>
-        ))}
+          ))}
+        </View>
         <Body style={{ fontSize: 12, lineHeight: 18, color: colors.muted }}>
-          {ro.score.disclaimer}
+          {ro.app.design.legendNote}
         </Body>
-      </View>
-      {isPreview && (
-        <Body style={{ fontSize: 12, color: colors.muted }}>
-          {ro.app.demoNote}
-        </Body>
-      )}
-      <View style={{ gap: 4 }}>
-        {(["about", "method", "privacy", "terms"] as const).map((route) => (
-          <Button
-            key={route}
-            variant="ghost"
-            onPress={() => router.push(`/${route}`)}
-          >
-            {ro.nav[route]}
-          </Button>
-        ))}
-      </View>
+      </Card>
+      <DemoStatesSheet visible={sheet} onClose={() => setSheet(false)} />
     </Screen>
   );
 }

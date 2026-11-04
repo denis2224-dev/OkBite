@@ -1,6 +1,5 @@
-import { routes } from "../../../core/router/routes";
 import { useState } from "react";
-import { View } from "react-native";
+import { View, Modal, ScrollView, Pressable } from "react-native";
 import { router } from "expo-router";
 import type { Product, ScoreResult } from "../../../data/models/contract";
 import {
@@ -12,65 +11,131 @@ import {
   Button,
   Icon,
 } from "../../../shared/widgets";
+import { Pack } from "../../../shared/widgets/product_pack";
 import { ro } from "../../../core/constants/strings_ro";
 import { useTheme } from "../../../core/theme/app_theme";
-import { isPreview } from "../../../shared/state/app_state";
+import { isPreview, useDemoState } from "../../../shared/state/app_state";
+import { visualFor } from "../../../data/mock/mock_products";
 import { ScoreCard } from "./score_card";
 import { PortionTable } from "./portion_table";
 import { SourceCard } from "./source_card";
 import { shareProduct } from "../../share/share_product";
 import { useToast } from "../../../shared/widgets/toast";
 import { ReportSheet } from "./report_sheet";
+import { LabelContent } from "../../ingredients/ingredients_screen";
+export function LabelSheet({
+  product,
+  visible,
+  onClose,
+}: {
+  product: Product;
+  visible: boolean;
+  onClose: () => void;
+}) {
+  const { colors } = useTheme();
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      onRequestClose={onClose}
+    >
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.scrim,
+          justifyContent: "flex-end",
+        }}
+      >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={ro.app.close}
+          onPress={onClose}
+          style={{ minHeight: 44, flex: 1 }}
+        />
+        <View
+          accessibilityViewIsModal
+          style={{
+            maxHeight: "86%",
+            backgroundColor: colors.ground,
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            padding: 18,
+            gap: 12,
+            width: "100%",
+            maxWidth: 390,
+            alignSelf: "center",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Heading style={{ fontSize: 21, flex: 1 }}>
+              {ro.app.design.labelTitle}
+            </Heading>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={ro.app.close}
+              onPress={onClose}
+              style={{
+                width: 44,
+                height: 44,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Icon name="close" color={colors.ink} />
+            </Pressable>
+          </View>
+          <ScrollView contentContainerStyle={{ gap: 12, paddingBottom: 12 }}>
+            <LabelContent product={product} />
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
 export function ResultView({
   product,
   score,
+  onLabel,
 }: {
   product: Product;
   score: ScoreResult;
+  onLabel?: () => void;
 }) {
-  const { colors } = useTheme();
-  const [report, setReport] = useState(false);
-  const toast = useToast();
+  const { colors } = useTheme(),
+    demo = useDemoState(),
+    toast = useToast(),
+    d = ro.app.design;
+  const [report, setReport] = useState(false),
+    [label, setLabel] = useState(false);
   async function share() {
     try {
-      const result = await shareProduct(product, score);
-      if (result === "copied") toast(ro.share.copied);
+      if ((await shareProduct(product, score)) === "copied")
+        toast(ro.share.copied);
     } catch {
       toast(ro.share.error);
     }
   }
   return (
     <>
-      {isPreview && (
-        <>
-          <Badge>{ro.app.demo}</Badge>
-          <Body style={{ fontSize: 12, color: colors.muted }}>
-            {ro.app.demoNote}
-          </Body>
-        </>
-      )}
-      <View style={{ flexDirection: "row", gap: 18, alignItems: "center" }}>
-        <View
-          style={{
-            width: 74,
-            height: 94,
-            backgroundColor: colors.soft,
-            borderRadius: 20,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Icon name="leaf" size={36} color={colors.primary} />
-        </View>
-        <View style={{ flex: 1, gap: 4 }}>
-          <Body style={{ fontSize: 12, color: colors.muted }}>
-            {product.brand}
-          </Body>
-          <Heading style={{ fontSize: 27, lineHeight: 31 }}>
+      <View
+        style={{
+          flexDirection: "row",
+          gap: 14,
+          alignItems: "center",
+          paddingBottom: 2,
+        }}
+      >
+        <Pack product={product} width={104} height={112} />
+        <View style={{ flex: 1, gap: 3 }}>
+          <Heading style={{ fontSize: 22, lineHeight: 25.3 }}>
             {product.name}
           </Heading>
           <Body style={{ fontSize: 13, color: colors.muted }}>
-            {product.quantity}
+            {product.brand} · {product.quantity}
+          </Body>
+          <Body style={{ fontSize: 11, lineHeight: 16, color: colors.muted }}>
+            Cod {product.code ?? "—"}
           </Body>
         </View>
       </View>
@@ -78,55 +143,74 @@ export function ResultView({
         <Badge tone="unverified">{ro.result.unverified}</Badge>
       )}
       <Card
-        style={{ backgroundColor: colors.lowBg, borderColor: colors.lowBg }}
+        style={{
+          backgroundColor: colors.warnBg,
+          borderColor: "#EAD394",
+          gap: 10,
+        }}
       >
-        <Heading style={{ fontSize: 18, color: colors.low }}>
-          {ro.result.allergens}
-        </Heading>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          {product.allergens.map((name) => (
-            <AllergenChip key={name} name={name} />
-          ))}
+        <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+          <Icon name="alert" size={18} color={colors.warn} />
+          <Body style={{ fontWeight: "800", color: colors.warn }}>
+            {ro.result.allergens}
+          </Body>
         </View>
-        {!product.allergens.length && (
-          <Body>
-            {isPreview && !product.ingredients.length
-              ? ro.result.allergensPending
-              : ro.result.noAllergens}
+        {product.allergens.length ? (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+            {product.allergens.map((name) => (
+              <AllergenChip key={name} name={name} />
+            ))}
+          </View>
+        ) : (
+          <Body style={{ fontSize: 13, color: colors.warn }}>
+            {ro.result.noAllergens}
           </Body>
         )}
         {!!product.mayContain.length && (
-          <Body style={{ fontSize: 13 }}>
-            {ro.result.mayContain}: {product.mayContain.join(", ")}
-          </Body>
+          <View style={{ gap: 5 }}>
+            <Body
+              style={{ fontSize: 12, fontWeight: "800", color: colors.warn }}
+            >
+              {ro.result.mayContain}:
+            </Body>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+              {product.mayContain.map((name) => (
+                <View
+                  key={name}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: "#C08A1E",
+                    borderRadius: 14,
+                    paddingHorizontal: 10,
+                    paddingVertical: 4,
+                  }}
+                >
+                  <Body
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "700",
+                      color: colors.warn,
+                    }}
+                  >
+                    {name}
+                  </Body>
+                </View>
+              ))}
+            </View>
+          </View>
         )}
-        <Body style={{ fontSize: 12, lineHeight: 18, color: colors.low }}>
-          {ro.result.allergyNote}
-        </Body>
       </Card>
-      <ScoreCard score={score} />
+      <ScoreCard
+        score={score}
+        missingMessage={visualFor(product).missing}
+        pending={demo.pendingTables.includes(product.id)}
+        onCapture={() => router.push(`/preview?forId=${product.id}`)}
+      />
       <PortionTable product={product} />
-      <Button
-        variant="secondary"
-        icon="book"
-        onPress={() =>
-          router.push(
-            isPreview
-              ? `/preview?step=ingredients&id=${product.id}`
-              : `/product/${product.id}/ingredients`,
-          )
-        }
-      >
-        {ro.result.ingredients}
-      </Button>
-      <Button
-        variant="secondary"
-        icon="compare"
-        onPress={() => router.push(routes.compare)}
-      >
-        {ro.result.compare}
-      </Button>
-      <SourceCard product={product} />
+      <SourceCard
+        product={product}
+        onLabel={onLabel ?? (() => setLabel(true))}
+      />
       {!isPreview && (
         <Button variant="secondary" icon="share" onPress={share}>
           {ro.share.button}
@@ -134,20 +218,17 @@ export function ResultView({
       )}
       <Button
         variant="ghost"
-        icon="book"
-        onPress={() =>
-          router.push(
-            isPreview
-              ? `/preview?step=label&id=${product.id}`
-              : `/product/${product.id}/label`,
-          )
-        }
+        onPress={() => (isPreview ? toast(d.reportThanks) : setReport(true))}
       >
-        {ro.result.original}
-      </Button>
-      <Button variant="ghost" onPress={() => setReport(true)}>
         {ro.result.report}
       </Button>
+      {!onLabel && (
+        <LabelSheet
+          product={product}
+          visible={label}
+          onClose={() => setLabel(false)}
+        />
+      )}
       <ReportSheet
         productId={product.id}
         visible={report}

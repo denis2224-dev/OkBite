@@ -1,4 +1,4 @@
-import { Tabs } from "expo-router";
+import { router, Tabs } from "expo-router";
 import { useTheme } from "../theme/app_theme";
 import { Icon, type IconName } from "../../shared/widgets/app_icon";
 import { fonts } from "../theme/typography";
@@ -19,12 +19,16 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
-          minHeight: 76,
+          height: 72,
+          maxWidth: 390,
+          width: "100%",
+          alignSelf: "center",
+          minHeight: 72,
           paddingTop: 8,
           paddingBottom: 10,
         },
         tabBarLabelStyle: {
-          fontFamily: fonts.medium,
+          fontFamily: fonts.bold,
           fontSize: 12,
           marginTop: 4,
         },
@@ -34,6 +38,19 @@ export default function TabLayout() {
         <Tabs.Screen
           key={name}
           name={name}
+          listeners={{
+            tabPress: (event) => {
+              event.preventDefault();
+              router.dismissAll();
+              router.replace(
+                name === "index"
+                  ? "/"
+                  : name === "compare"
+                    ? "/compare"
+                    : "/history",
+              );
+            },
+          }}
           options={{
             title,
             tabBarAccessibilityLabel: title,

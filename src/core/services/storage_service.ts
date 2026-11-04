@@ -57,3 +57,7 @@ export async function listQueued(): Promise<QueuedItem[]> {
 export async function deleteQueued(id: string) {
   await (await db()).runAsync("DELETE FROM queue WHERE id=?", id);
 }
+
+export async function deleteHistoryEntry(id: string) {
+  await (await db()).runAsync("DELETE FROM history WHERE id=?", id);
+}

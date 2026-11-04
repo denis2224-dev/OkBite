@@ -8,10 +8,10 @@ export function Card({ style, ...props }: ViewProps) {
       style={[
         {
           backgroundColor: colors.surface,
-          borderRadius: 22,
+          borderRadius: 16,
           borderWidth: 1,
           borderColor: colors.border,
-          padding: 20,
+          padding: 16,
           gap: 12,
         },
         style,

@@ -32,3 +32,11 @@ export async function listQueued(): Promise<QueuedItem[]> {
 export async function deleteQueued(id: string) {
   await del(id, queue);
 }
+
+export async function deleteHistoryEntry(id: string) {
+  await update<StoredEntry[]>(
+    "entries",
+    (rows) => (rows ?? []).filter((row) => row.id !== id),
+    history,
+  );
+}

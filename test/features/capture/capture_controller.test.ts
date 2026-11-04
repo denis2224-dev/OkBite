@@ -2,50 +2,42 @@ import {
   start,
   next,
   validateReview,
+  reviewError,
+  previewScore,
 } from "../../../src/features/capture/capture_controller";
-it("follows photo to confirmation to result", () => {
-  expect(next(start(), "photo").step).toBe("confirm");
-  expect(next(next(start(), "photo"), "confirm").step).toBe("result");
+import { mockOcr, ocrFor } from "../../../src/data/mock/mock_ocr";
+it("takes exactly two photos before extracted text", () => {
+  expect(start().step).toBe("ingredientsPhoto");
+  expect(next(start(), "photo").step).toBe("nutritionPhoto");
+  expect(next(next(start(), "photo"), "photo").step).toBe("review");
 });
-it("keeps an unknown product on the add and review path", () => {
+it("keeps unknown products on the add path", () => {
   let flow = next(start(), "unknown");
   expect(flow.step).toBe("notFound");
   flow = next(flow, "add");
   expect(flow.step).toBe("ingredientsPhoto");
-  flow = next(flow, "photo");
-  expect(flow.step).toBe("nutritionPhoto");
-  flow = next(flow, "photo");
-  expect(flow.step).toBe("review");
 });
-it("rejects blank and impossible nutrient values but accepts decimal commas", () => {
-  expect(
-    validateReview({
-      ingredients: "lapte",
-      kcal: "63",
-      sugar: "",
-      sat: "1,6",
-      fat: "2,5",
-      salt: "0,1",
-    }),
-  ).toBe(false);
-  expect(
-    validateReview({
-      ingredients: "lapte",
-      kcal: "63",
-      sugar: "4,1",
-      sat: "1,6",
-      fat: "2,5",
-      salt: "0,1",
-    }),
-  ).toBe(true);
-  expect(
-    validateReview({
-      ingredients: "lapte",
-      kcal: "63",
-      sugar: "4,1",
-      sat: "3",
-      fat: "2,5",
-      salt: "0,1",
-    }),
-  ).toBe(false);
+it("validates all seven values, unclear ingredients, and saturated fat", () => {
+  expect(validateReview(mockOcr)).toBe(true);
+  expect(reviewError({ ...mockOcr, sugar: "" })).toBe("Verifică: zaharuri.");
+  expect(reviewError({ ...mockOcr, fiber: "-1" })).toBe("Verifică: fibre.");
+  expect(reviewError({ ...mockOcr, sat: "31" })).toBe(
+    "Grăsimile saturate nu pot depăși grăsimile totale.",
+  );
+  expect(validateReview(ocrFor(true))).toBe(false);
+});
+it("calculates the reference score for a corrected photographed label", () => {
+  const result = previewScore({
+    kcal: 530,
+    fat: 30,
+    sat: 14,
+    sugar: 35,
+    salt: 0.3,
+    protein: 6,
+    fiber: 2,
+    fruitVegPct: null,
+  });
+  expect(result.score).toBe(30);
+  expect(result.grade).toBe("low");
+  expect(result.reasons).toHaveLength(3);
 });

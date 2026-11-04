@@ -6,7 +6,7 @@ import { pressFeedback } from "../../core/utils/feedback";
 import { fonts } from "../../core/theme/typography";
 type Props = PressableProps & {
   children: string;
-  variant?: "primary" | "secondary" | "ghost" | "accent";
+  variant?: "primary" | "secondary" | "ghost" | "accent" | "soft";
   icon?: IconName;
 };
 export function Button({
@@ -24,7 +24,7 @@ export function Button({
       ? colors.onPrimary
       : variant === "accent"
         ? colors.onAccent
-        : colors.ink;
+        : colors.forest;
   return (
     <Pressable
       {...props}
@@ -38,10 +38,10 @@ export function Button({
       accessibilityState={{ disabled: !!disabled }}
       style={(state) => [
         {
-          minHeight: 52,
-          borderRadius: 16,
-          paddingHorizontal: 18,
-          paddingVertical: 14,
+          minHeight: 48,
+          borderRadius: 14,
+          paddingHorizontal: 14,
+          paddingVertical: 11,
           justifyContent: "center",
           opacity: disabled ? 0.45 : state.pressed ? 0.75 : 1,
           backgroundColor:
@@ -49,9 +49,11 @@ export function Button({
               ? colors.primary
               : variant === "accent"
                 ? colors.accent
-                : variant === "secondary"
-                  ? colors.soft
-                  : "transparent",
+                : variant === "soft"
+                  ? colors.mint
+                  : variant === "secondary"
+                    ? colors.surface
+                    : "transparent",
           borderWidth: variant === "secondary" ? 1 : 0,
           borderColor: colors.border,
         },
@@ -71,6 +73,8 @@ export function Button({
           style={{
             color: fg,
             fontFamily: fonts.bold,
+            fontSize: 15,
+            lineHeight: 21,
             textAlign: "center",
             flexShrink: 1,
           }}

@@ -1,40 +1,40 @@
-import { Text, type TextProps } from "react-native";
+import { Text, StyleSheet, type TextProps } from "react-native";
 import { useTheme } from "../../core/theme/app_theme";
-import { fonts } from "../../core/theme/typography";
-export function Body({ style, ...props }: TextProps) {
+import { fonts, bodyFonts, headingFonts } from "../../core/theme/typography";
+function Typography({
+  style,
+  heading = false,
+  ...props
+}: TextProps & { heading?: boolean }) {
   const { colors } = useTheme();
+  const flat = StyleSheet.flatten(style) || {};
+  const size = flat.fontSize ?? (heading ? 18 : 14);
+  const family = flat.fontFamily ?? (heading ? fonts.heading : fonts.body);
+  const weight = String(flat.fontWeight ?? (heading ? "800" : "400"));
+  const selected = flat.fontWeight
+    ? family.startsWith("Bricolage")
+      ? (headingFonts[weight] ?? fonts.heading)
+      : (bodyFonts[weight] ?? fonts.bold)
+    : family;
   return (
     <Text
       {...props}
       allowFontScaling
       style={[
         {
-          fontFamily: fonts.body,
-          fontSize: 15,
-          lineHeight: 23,
+          fontSize: size,
+          lineHeight: size * (heading ? 1.15 : 1.45),
           color: colors.ink,
         },
         style,
+        { fontFamily: selected, fontWeight: "normal" },
       ]}
     />
   );
 }
-export function Heading({ style, ...props }: TextProps) {
-  const { colors } = useTheme();
-  return (
-    <Text
-      {...props}
-      accessibilityRole="header"
-      allowFontScaling
-      style={[
-        {
-          fontFamily: fonts.heading,
-          fontSize: 25,
-          lineHeight: 30,
-          color: colors.ink,
-        },
-        style,
-      ]}
-    />
-  );
+export function Body(props: TextProps) {
+  return <Typography {...props} />;
+}
+export function Heading(props: TextProps) {
+  return <Typography {...props} heading accessibilityRole="header" />;
 }

@@ -1,3 +1,4 @@
+import { isPreview } from "../../shared/state/app_state";
 import {
   createContext,
   useContext,
@@ -17,7 +18,8 @@ export function ThemeProvider({ children }: PropsWithChildren) {
   const system = useColorScheme();
   const [preference, setPreference] = useState<Preference>("system");
   const isDark =
-    preference === "system" ? system === "dark" : preference === "dark";
+    !isPreview &&
+    (preference === "system" ? system === "dark" : preference === "dark");
   return (
     <Context.Provider
       value={{

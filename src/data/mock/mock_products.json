@@ -2,7 +2,7 @@
   {
     "product": {
       "id": "0b6f3c1e-2d4a-4c8e-9f10-1a2b3c4d5e1f",
-      "code": "4840001000014",
+      "code": "4840001000017",
       "status": "verified",
       "name": "Iaurt natural 2,5%",
       "brand": "Livada Verde",
@@ -30,21 +30,21 @@
       "ingredientsText": "lapte normalizat (2,5% grăsime), culturi lactice vii.",
       "ingredients": [
         {
-          "slug": null,
+          "slug": "demo-0",
           "name": "Lapte normalizat",
           "group": "base",
           "role": "Ingredient de bază",
-          "explanation": null,
-          "source": null,
+          "explanation": "Lapte de vacă cu grăsimea ajustată la valoarea de pe etichetă. Aduce proteine, calciu și lactoză, zahărul natural din lapte.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": "Lapte"
         },
         {
-          "slug": null,
+          "slug": "demo-1",
           "name": "Culturi lactice vii",
           "group": "cult",
           "role": "Fermentare",
-          "explanation": null,
-          "source": null,
+          "explanation": "Bacterii care transformă laptele în iaurt și îi dau gustul acrișor.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": null
         }
       ],
@@ -52,9 +52,9 @@
       "mayContain": [],
       "imageUrl": null,
       "labelImageUrl": null,
-      "source": "Exemplu demonstrativ din prototip",
-      "addedAt": "2026-11-03",
-      "verifiedAt": "2026-11-03"
+      "source": "Eticheta producătorului",
+      "addedAt": "2026-10-12",
+      "verifiedAt": "2026-10-28"
     },
     "score": {
       "score": 78,
@@ -111,75 +111,75 @@
       "ingredientsText": "lapte normalizat, preparat de căpșuni 12% (căpșuni, zahăr, amidon modificat, gelifiant: pectină, colorant: carmin), zahăr, aromă naturală, culturi lactice vii.",
       "ingredients": [
         {
-          "slug": null,
+          "slug": "demo-0",
           "name": "Lapte normalizat",
           "group": "base",
           "role": "Ingredient de bază",
-          "explanation": null,
-          "source": null,
+          "explanation": "Lapte de vacă cu grăsimea ajustată la valoarea de pe etichetă. Aduce proteine, calciu și lactoză, zahărul natural din lapte.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": "Lapte"
         },
         {
-          "slug": null,
+          "slug": "demo-1",
           "name": "Preparat de căpșuni (12%)",
           "group": "taste",
           "role": "Fructe",
-          "explanation": null,
-          "source": null,
+          "explanation": "Amestec de căpșuni, zahăr și îngroșători. Procentul de 12% se referă la tot preparatul, nu doar la fructe.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": null
         },
         {
-          "slug": null,
+          "slug": "demo-2",
           "name": "Zahăr",
           "group": "taste",
           "role": "Îndulcitor",
-          "explanation": null,
-          "source": null,
+          "explanation": "Adăugat de producător pentru gust. În tabelul nutrițional apare împreună cu zaharurile naturale, la „din care zaharuri”.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": null
         },
         {
-          "slug": null,
+          "slug": "demo-3",
           "name": "Amidon modificat",
           "group": "add",
           "role": "Îngroșător",
-          "explanation": null,
-          "source": null,
+          "explanation": "Amidon, de obicei din porumb, tratat ca să rămână cremos la frig și la amestecare.",
+          "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari",
           "allergen": null
         },
         {
-          "slug": null,
+          "slug": "demo-4",
           "name": "Pectină (E440)",
           "group": "add",
           "role": "Gelifiant",
-          "explanation": null,
-          "source": null,
+          "explanation": "Fibră extrasă din fructe, care leagă preparatul de căpșuni. Se folosește și în gemuri.",
+          "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari",
           "allergen": null
         },
         {
-          "slug": null,
+          "slug": "demo-5",
           "name": "Carmin (E120)",
           "group": "add",
           "role": "Colorant",
-          "explanation": null,
-          "source": null,
+          "explanation": "Colorant roșu obținut din insecte (coșenilă). Important dacă eviți produsele de origine animală.",
+          "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari",
           "allergen": null
         },
         {
-          "slug": null,
+          "slug": "demo-6",
           "name": "Aromă naturală",
           "group": "taste",
           "role": "Aromă",
-          "explanation": null,
-          "source": null,
+          "explanation": "Substanțe de aromă din surse naturale, care nu provin neapărat din căpșuni.",
+          "source": "Reg. (CE) nr. 1334/2008 privind aromele",
           "allergen": null
         },
         {
-          "slug": null,
+          "slug": "demo-7",
           "name": "Culturi lactice vii",
           "group": "cult",
           "role": "Fermentare",
-          "explanation": null,
-          "source": null,
+          "explanation": "Bacterii care transformă laptele în iaurt și îi dau gustul acrișor.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": null
         }
       ],
@@ -187,9 +187,9 @@
       "mayContain": ["Fructe cu coajă lemnoasă"],
       "imageUrl": null,
       "labelImageUrl": null,
-      "source": "Exemplu demonstrativ din prototip",
-      "addedAt": "2026-11-03",
-      "verifiedAt": "2026-11-03"
+      "source": "Eticheta producătorului",
+      "addedAt": "2026-10-09",
+      "verifiedAt": "2026-10-27"
     },
     "score": {
       "score": 44,
@@ -246,30 +246,30 @@
       "ingredientsText": "lapte integral, smântână, culturi lactice vii.",
       "ingredients": [
         {
-          "slug": null,
+          "slug": "demo-0",
           "name": "Lapte integral",
           "group": "base",
           "role": "Ingredient de bază",
-          "explanation": null,
-          "source": null,
+          "explanation": "Lapte de vacă cu grăsimea ajustată la valoarea de pe etichetă. Aduce proteine, calciu și lactoză, zahărul natural din lapte.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": "Lapte"
         },
         {
-          "slug": null,
+          "slug": "demo-1",
           "name": "Smântână",
           "group": "fat",
           "role": "Grăsime și cremozitate",
-          "explanation": null,
-          "source": null,
+          "explanation": "Partea grasă a laptelui. Explică cele 10% grăsimi și textura densă.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": "Lapte"
         },
         {
-          "slug": null,
+          "slug": "demo-2",
           "name": "Culturi lactice vii",
           "group": "cult",
           "role": "Fermentare",
-          "explanation": null,
-          "source": null,
+          "explanation": "Bacterii care transformă laptele în iaurt și îi dau gustul acrișor.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": null
         }
       ],
@@ -277,9 +277,9 @@
       "mayContain": [],
       "imageUrl": null,
       "labelImageUrl": null,
-      "source": "Exemplu demonstrativ din prototip",
-      "addedAt": "2026-11-03",
-      "verifiedAt": "2026-11-03"
+      "source": "Eticheta producătorului",
+      "addedAt": "2026-10-14",
+      "verifiedAt": "2026-10-29"
     },
     "score": {
       "score": 64,
@@ -336,75 +336,75 @@
       "ingredientsText": "fulgi de ovăz 32%, făină de grâu, zahăr, ulei de palmier, ciocolată 15% (zahăr, masă de cacao, unt de cacao, lapte praf, emulsifiant: lecitină din soia), agent de afânare: bicarbonat de sodiu, sare.",
       "ingredients": [
         {
-          "slug": null,
+          "slug": "demo-0",
           "name": "Fulgi de ovăz (32%)",
           "group": "base",
           "role": "Cereale",
-          "explanation": null,
-          "source": null,
+          "explanation": "Ovăz presat, sursa principală de fibre din acești biscuiți. Conține gluten.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": "Gluten"
         },
         {
-          "slug": null,
+          "slug": "demo-1",
           "name": "Făină de grâu",
           "group": "base",
           "role": "Cereale",
-          "explanation": null,
-          "source": null,
+          "explanation": "Făină albă, rafinată, cu mai puține fibre decât cea integrală. Conține gluten.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": "Gluten"
         },
         {
-          "slug": null,
+          "slug": "demo-2",
           "name": "Zahăr",
           "group": "taste",
           "role": "Îndulcitor",
-          "explanation": null,
-          "source": null,
+          "explanation": "Adăugat de producător pentru gust. În tabelul nutrițional apare împreună cu zaharurile naturale, la „din care zaharuri”.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": null
         },
         {
-          "slug": null,
+          "slug": "demo-3",
           "name": "Ulei de palmier",
           "group": "fat",
           "role": "Grăsime",
-          "explanation": null,
-          "source": null,
+          "explanation": "Grăsime vegetală solidă la temperatura camerei, bogată în grăsimi saturate.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": null
         },
         {
-          "slug": null,
+          "slug": "demo-4",
           "name": "Ciocolată (15%)",
           "group": "taste",
           "role": "Gust",
-          "explanation": null,
-          "source": null,
-          "allergen": "Gluten"
+          "explanation": "Zahăr, masă de cacao, unt de cacao și lapte praf. Aduce și zahăr, și grăsimi saturate.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "allergen": "Lapte"
         },
         {
-          "slug": null,
+          "slug": "demo-5",
           "name": "Lecitină din soia (E322)",
           "group": "add",
           "role": "Emulsifiant",
-          "explanation": null,
-          "source": null,
-          "allergen": "Gluten"
+          "explanation": "Ajută grăsimea și apa să se amestece uniform. Provine din soia, alergen declarat.",
+          "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari",
+          "allergen": "Soia"
         },
         {
-          "slug": null,
+          "slug": "demo-6",
           "name": "Bicarbonat de sodiu (E500)",
           "group": "add",
           "role": "Agent de afânare",
-          "explanation": null,
-          "source": null,
+          "explanation": "Face aluatul să crească la coacere. Conține sodiu, deci contribuie puțin la cantitatea de sare.",
+          "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari",
           "allergen": null
         },
         {
-          "slug": null,
+          "slug": "demo-7",
           "name": "Sare",
           "group": "taste",
           "role": "Gust",
-          "explanation": null,
-          "source": null,
+          "explanation": "Adăugată pentru gust. Valoarea din tabel include și sodiul din alte ingrediente.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": null
         }
       ],
@@ -412,9 +412,9 @@
       "mayContain": ["Ouă", "Arahide"],
       "imageUrl": null,
       "labelImageUrl": null,
-      "source": "Exemplu demonstrativ din prototip",
-      "addedAt": "2026-11-03",
-      "verifiedAt": "2026-11-03"
+      "source": "Eticheta producătorului",
+      "addedAt": "2026-10-02",
+      "verifiedAt": "2026-10-20"
     },
     "score": {
       "score": 31,
@@ -471,57 +471,57 @@
       "ingredientsText": "făină integrală de grâu 45%, fulgi de ovăz 20%, zahăr, ulei de floarea-soarelui, agent de afânare: bicarbonat de sodiu, sare.",
       "ingredients": [
         {
-          "slug": null,
+          "slug": "demo-0",
           "name": "Făină integrală de grâu (45%)",
           "group": "base",
           "role": "Cereale",
-          "explanation": null,
-          "source": null,
+          "explanation": "Făină din bobul întreg, cu tărâțe. Are mult mai multe fibre decât făina albă. Conține gluten.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": "Gluten"
         },
         {
-          "slug": null,
+          "slug": "demo-1",
           "name": "Fulgi de ovăz (20%)",
           "group": "base",
           "role": "Cereale",
-          "explanation": null,
-          "source": null,
+          "explanation": "Ovăz presat, sursă de fibre. Conține gluten.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": "Gluten"
         },
         {
-          "slug": null,
+          "slug": "demo-2",
           "name": "Zahăr",
           "group": "taste",
           "role": "Îndulcitor",
-          "explanation": null,
-          "source": null,
+          "explanation": "Adăugat de producător pentru gust. În tabelul nutrițional apare împreună cu zaharurile naturale, la „din care zaharuri”.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": null
         },
         {
-          "slug": null,
+          "slug": "demo-3",
           "name": "Ulei de floarea-soarelui",
           "group": "fat",
           "role": "Grăsime",
-          "explanation": null,
-          "source": null,
+          "explanation": "Ulei vegetal lichid, cu puține grăsimi saturate.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": null
         },
         {
-          "slug": null,
+          "slug": "demo-4",
           "name": "Bicarbonat de sodiu (E500)",
           "group": "add",
           "role": "Agent de afânare",
-          "explanation": null,
-          "source": null,
+          "explanation": "Face aluatul să crească la coacere. Conține sodiu, deci contribuie puțin la cantitatea de sare.",
+          "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari",
           "allergen": null
         },
         {
-          "slug": null,
+          "slug": "demo-5",
           "name": "Sare",
           "group": "taste",
           "role": "Gust",
-          "explanation": null,
-          "source": null,
+          "explanation": "Adăugată pentru gust. Valoarea din tabel include și sodiul din alte ingrediente.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": null
         }
       ],
@@ -529,9 +529,9 @@
       "mayContain": ["Lapte", "Susan"],
       "imageUrl": null,
       "labelImageUrl": null,
-      "source": "Exemplu demonstrativ din prototip",
-      "addedAt": "2026-11-03",
-      "verifiedAt": "2026-11-03"
+      "source": "Eticheta producătorului",
+      "addedAt": "2026-10-05",
+      "verifiedAt": "2026-10-21"
     },
     "score": {
       "score": 52,
@@ -588,21 +588,21 @@
       "ingredientsText": "suc de mere din concentrat, antioxidant: acid ascorbic.",
       "ingredients": [
         {
-          "slug": null,
+          "slug": "demo-0",
           "name": "Suc de mere din concentrat",
           "group": "base",
           "role": "Ingredient de bază",
-          "explanation": null,
-          "source": null,
+          "explanation": "Sucul a fost concentrat prin eliminarea apei, apoi apa a fost adăugată la loc. Conține zaharurile naturale ale merelor.",
+          "source": "Fișă explicativă Pe Etichetă (date demo)",
           "allergen": null
         },
         {
-          "slug": null,
+          "slug": "demo-1",
           "name": "Acid ascorbic (E300)",
           "group": "add",
           "role": "Antioxidant",
-          "explanation": null,
-          "source": null,
+          "explanation": "Vitamina C, adăugată ca sucul să nu se închidă la culoare.",
+          "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari",
           "allergen": null
         }
       ],
@@ -610,9 +610,9 @@
       "mayContain": [],
       "imageUrl": null,
       "labelImageUrl": null,
-      "source": "Exemplu demonstrativ din prototip",
-      "addedAt": "2026-11-03",
-      "verifiedAt": "2026-11-03"
+      "source": "Eticheta producătorului (tabel incomplet)",
+      "addedAt": "2026-10-11",
+      "verifiedAt": "2026-10-25"
     },
     "score": {
       "score": null,

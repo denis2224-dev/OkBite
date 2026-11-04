@@ -32,6 +32,10 @@ function Navigation() {
 }
 export default function Layout() {
   const [loaded, error] = useFonts({
+    Manrope_400Regular: require("../assets/fonts/Manrope-Regular.ttf"),
+    Manrope_800ExtraBold: require("../assets/fonts/Manrope-ExtraBold.ttf"),
+    BricolageGrotesque_600SemiBold: require("../assets/fonts/BricolageGrotesque-SemiBold.ttf"),
+    BricolageGrotesque_800ExtraBold: require("../assets/fonts/BricolageGrotesque-ExtraBold.ttf"),
     Manrope_500Medium: require("../assets/fonts/Manrope-Medium.ttf"),
     Manrope_600SemiBold: require("../assets/fonts/Manrope-SemiBold.ttf"),
     Manrope_700Bold: require("../assets/fonts/Manrope-Bold.ttf"),

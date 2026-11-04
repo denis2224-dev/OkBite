@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Product, ScoreResult } from "../../data/models/contract";
 import { api, ApiError } from "../../data/repositories/product_repository";
-import { isPreview } from "../../shared/state/app_state";
+import { isPreview, getDemoState } from "../../shared/state/app_state";
 import { previewEntries } from "../../data/mock/mock_products";
 import {
   saveToHistory,
@@ -21,14 +21,17 @@ export function useProduct(id: string) {
       try {
         const cached = isPreview ? await getFromHistory(id) : undefined;
         const result = isPreview
-          ? (previewEntries.find((entry) => entry.product.id === id) ??
+          ? ((getDemoState().products[id]
+              ? { status: "found" as const, ...getDemoState().products[id] }
+              : undefined) ??
+            previewEntries.find((entry) => entry.product.id === id) ??
             (cached ? { status: "found" as const, ...cached } : undefined))
           : await api.lookup({ id });
         if (!result || result.status !== "found")
           throw new ApiError("not_found");
         let storageError = false;
         try {
-          await saveToHistory(result);
+          if (!isPreview) await saveToHistory(result);
         } catch {
           storageError = true;
         }

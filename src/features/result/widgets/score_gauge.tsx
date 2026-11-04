@@ -1,9 +1,7 @@
 import { View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import type { Grade } from "../../../data/models/contract";
-import { useTheme } from "../../../core/theme/app_theme";
 import { Body } from "../../../shared/widgets/typography";
-import { fonts } from "../../../core/theme/typography";
 import { ro } from "../../../core/constants/strings_ro";
 export function ScoreRing({
   score,
@@ -12,67 +10,67 @@ export function ScoreRing({
   score: number | null;
   grade: Grade;
 }) {
-  const { colors } = useTheme();
-  const color = grade === "unavailable" ? colors.muted : colors[grade];
-  const c = 2 * Math.PI * 48;
+  if (score === null)
+    return (
+      <Body accessibilityLabel={ro.result.scoreUnavailable}>
+        {ro.result.scoreUnavailable}
+      </Body>
+    );
+  const color =
+    grade === "good" ? "#2E6B45" : grade === "medium" ? "#C08A1E" : "#C2532B";
   return (
     <View
       accessible
       accessibilityRole="image"
-      accessibilityLabel={
-        score === null
-          ? ro.result.scoreUnavailable
-          : ro.score.ringLabel(score, grade)
-      }
+      accessibilityLabel={ro.score.ringLabel(score, grade)}
       style={{
-        width: 120,
-        height: 120,
+        width: 128,
+        height: 128,
         alignItems: "center",
         justifyContent: "center",
       }}
     >
       <Svg
-        width={120}
-        height={120}
-        viewBox="0 0 120 120"
-        style={{ position: "absolute" }}
+        width={128}
+        height={128}
+        viewBox="0 0 128 128"
         accessible={false}
+        style={{ position: "absolute" }}
       >
         <Circle
-          cx={60}
-          cy={60}
-          r={48}
+          cx={64}
+          cy={64}
+          r={52}
           fill="none"
-          stroke={colors.border}
-          strokeWidth={8}
+          stroke="#ECE7DA"
+          strokeWidth={12}
         />
-        {score !== null && (
-          <Circle
-            cx={60}
-            cy={60}
-            r={48}
-            fill="none"
-            stroke={color}
-            strokeWidth={8}
-            strokeDasharray={`${c * (score / 100)} ${c}`}
-            rotation={-90}
-            origin="60,60"
-            strokeLinecap="round"
-          />
-        )}
+        <Circle
+          cx={64}
+          cy={64}
+          r={52}
+          fill="none"
+          stroke={color}
+          strokeWidth={12}
+          strokeDasharray="326.73 326.73"
+          strokeDashoffset={326.73 * (1 - score / 100)}
+          rotation={-90}
+          origin="64,64"
+          strokeLinecap="round"
+        />
       </Svg>
+      <Body style={{ fontSize: 40, lineHeight: 44, fontWeight: "800" }}>
+        {score}
+      </Body>
       <Body
         style={{
-          fontFamily: fonts.heading,
-          fontSize: 37,
-          lineHeight: 42,
-          color,
+          fontSize: 12,
+          lineHeight: 18,
+          color: "#56615A",
+          fontWeight: "700",
         }}
       >
-        {score ?? "—"}
-      </Body>
-      <Body style={{ fontSize: 11, lineHeight: 16, color: colors.muted }}>
-        {score === null ? ro.app.unavailable : ro.score.outOf}
+        {ro.score.outOf}
       </Body>
     </View>
   );

@@ -20,7 +20,7 @@ it("shows missing data rather than a false zero", async () => {
     screen.getAllByText(ro.result.scoreUnavailable).length,
   ).toBeGreaterThan(0);
   expect(screen.queryByText("0 din 100")).toBeNull();
-  expect(screen.getByText(ro.score.disclaimer)).toBeTruthy();
+  expect(screen.queryByLabelText(ro.result.scoreUnavailable)).toBeNull();
 });
 it("shows allergens and the unverified notice", async () => {
   await render(

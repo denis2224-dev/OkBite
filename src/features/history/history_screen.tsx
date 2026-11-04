@@ -1,6 +1,5 @@
-import { routes } from "../../core/router/routes";
 import { useCallback, useState } from "react";
-import { View, Pressable, Modal } from "react-native";
+import { View, Modal, Pressable } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import {
   Screen,
@@ -10,106 +9,152 @@ import {
   Button,
   Icon,
 } from "../../shared/widgets";
+import { HistoryRows } from "../../shared/widgets/history_rows";
 import { useTheme } from "../../core/theme/app_theme";
-import { ro } from "../../core/constants/strings_ro";
+import { ro, plural } from "../../core/constants/strings_ro";
+import {
+  isPreview,
+  useDemoState,
+  demoActions,
+} from "../../shared/state/app_state";
 import {
   listHistory,
   clearHistory,
+  removeFromHistory,
   type HistoryEntry,
 } from "../../data/repositories/history_repository";
+import { useToast } from "../../shared/widgets/toast";
 export default function History() {
-  const { colors } = useTheme();
+  const { colors } = useTheme(),
+    demo = useDemoState(),
+    toast = useToast();
   const [rows, setRows] = useState<HistoryEntry[]>([]),
     [confirm, setConfirm] = useState(false),
     [error, setError] = useState("");
   const load = useCallback(() => {
-    listHistory()
-      .then(setRows)
-      .catch(() => setError(ro.history.storageError));
+    if (!isPreview)
+      void listHistory()
+        .then(setRows)
+        .catch(() => setError(ro.history.storageError));
   }, []);
   useFocusEffect(load);
+  const entries = isPreview ? demo.history : rows;
   async function clear() {
     try {
+      if (isPreview) demoActions.clearHistory();
       await clearHistory();
       setRows([]);
       setConfirm(false);
+      toast(ro.history.cleared);
     } catch {
       setError(ro.history.storageError);
     }
   }
+  async function remove(id: string) {
+    try {
+      if (isPreview) demoActions.removeHistory(id);
+      await removeFromHistory(id);
+      setRows((current) => current.filter((row) => row.product.id !== id));
+      toast(ro.app.design.deleted);
+    } catch {
+      setError(ro.history.storageError);
+    }
+  }
+  const header = (
+    <View
+      style={{
+        paddingHorizontal: 16,
+        paddingTop: 12,
+        paddingBottom: 6,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+      }}
+    >
+      <Heading style={{ fontSize: 21 }}>{ro.history.title}</Heading>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={ro.history.clear}
+        onPress={() => setConfirm(true)}
+        style={{
+          minHeight: 44,
+          paddingHorizontal: 12,
+          borderRadius: 22,
+          backgroundColor: colors.lowBg,
+          flexDirection: "row",
+          gap: 6,
+          alignItems: "center",
+        }}
+      >
+        <Icon name="trash" size={16} color={colors.low} />
+        <Body style={{ fontSize: 12, fontWeight: "800", color: colors.low }}>
+          {ro.history.clear}
+        </Body>
+      </Pressable>
+    </View>
+  );
   return (
-    <Screen title={ro.history.title}>
-      <Body style={{ color: colors.muted }}>{ro.history.description}</Body>
+    <Screen header={header}>
+      <Body style={{ fontSize: 13, color: colors.muted }}>
+        {ro.history.description}
+      </Body>
       {!!error && <Body accessibilityLiveRegion="polite">{error}</Body>}
-      {rows.length ? (
-        <>
-          <Body>{ro.history.count(rows.length)}</Body>
-          {rows.map(({ product, score, savedAt }) => (
-            <Pressable
-              key={product.id}
-              accessibilityRole="button"
-              accessibilityLabel={ro.history.open(product.name)}
-              onPress={() => router.push(`/product/${product.id}`)}
-            >
-              <Card
-                style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
-              >
-                <Icon name="tag" color={colors.primary} />
-                <View style={{ flex: 1, gap: 4 }}>
-                  <Heading style={{ fontSize: 18, lineHeight: 23 }}>
-                    {product.name}
-                  </Heading>
-                  <Body style={{ color: colors.muted, fontSize: 12 }}>
-                    {product.brand}
-                  </Body>
-                  <Body style={{ color: colors.muted, fontSize: 11 }}>
-                    {new Date(savedAt).toLocaleDateString("ro-RO")}
-                  </Body>
-                </View>
-                <Body style={{ fontWeight: "700" }}>{score.score ?? "—"}</Body>
-                <Icon name="arrow" size={18} color={colors.muted} />
-              </Card>
-            </Pressable>
-          ))}
-          <Button variant="ghost" icon="trash" onPress={() => setConfirm(true)}>
-            {ro.history.clear}
-          </Button>
-        </>
+      {entries.length ? (
+        <HistoryRows
+          entries={entries}
+          onOpen={({ product }) => router.push(`/product/${product.id}`)}
+          onRemove={(id) => void remove(id)}
+        />
       ) : (
-        <Card style={{ paddingVertical: 36 }}>
-          <Icon name="history" color={colors.primary} size={44} />
-          <Heading>{ro.history.emptyTitle}</Heading>
-          <Body style={{ color: colors.muted }}>{ro.history.empty}</Body>
-          <Button icon="camera" onPress={() => router.replace(routes.home)}>
-            {ro.nav.home}
+        <Card style={{ paddingVertical: 30, alignItems: "center" }}>
+          <Icon name="history" size={42} color={colors.muted} />
+          <Heading style={{ fontSize: 22, textAlign: "center" }}>
+            {ro.history.emptyTitle}
+          </Heading>
+          <Body style={{ color: colors.muted, textAlign: "center" }}>
+            {ro.history.empty}
+          </Body>
+          <Button icon="scan" onPress={() => router.push("/preview?step=scan")}>
+            {ro.app.design.primaryScan.replace("produsul", "un produs")}
           </Button>
         </Card>
       )}
       <Modal
-        transparent
         visible={confirm}
+        transparent
+        animationType="none"
         onRequestClose={() => setConfirm(false)}
       >
         <View
           style={{
             flex: 1,
-            justifyContent: "center",
-            padding: 24,
             backgroundColor: colors.scrim,
+            justifyContent: "flex-end",
           }}
         >
           <View
             accessibilityViewIsModal
-            style={{ width: "100%", maxWidth: 430, alignSelf: "center" }}
+            style={{
+              width: "100%",
+              maxWidth: 390,
+              alignSelf: "center",
+              backgroundColor: colors.ground,
+              padding: 20,
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              gap: 14,
+            }}
           >
-            <Card>
-              <Heading>{ro.history.clearTitle}</Heading>
-              <Body>{ro.history.clearBody}</Body>
-              <Button onPress={clear}>{ro.history.clearConfirm}</Button>
-              <Button variant="ghost" onPress={() => setConfirm(false)}>
-                {ro.app.cancel}
-              </Button>
-            </Card>
+            <Heading style={{ fontSize: 21 }}>{ro.history.clearTitle}</Heading>
+            <Body>
+              {ro.app.design.clearPrefix}
+              {plural(entries.length, "produs", "produse")}
+              {ro.app.design.clearSuffix}
+            </Body>
+            <Button onPress={() => void clear()}>{ro.history.clear}</Button>
+            <Button variant="secondary" onPress={() => setConfirm(false)}>
+              {ro.app.cancel}
+            </Button>
           </View>
         </View>
       </Modal>

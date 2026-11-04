@@ -26,8 +26,7 @@ export function ToastProvider({ children }: PropsWithChildren) {
   const show = useCallback((message: string, action?: Action) => {
     clearTimeout(timer.current);
     setNotice({ message, action });
-    if (!action)
-      timer.current = setTimeout(() => setNotice({ message: "" }), 4000);
+    timer.current = setTimeout(() => setNotice({ message: "" }), 2800);
   }, []);
   return (
     <Context.Provider value={show}>
@@ -36,12 +35,12 @@ export function ToastProvider({ children }: PropsWithChildren) {
         <View
           style={{
             position: "absolute",
-            bottom: 90,
+            bottom: 84,
             alignSelf: "center",
             maxWidth: 440,
-            margin: 20,
-            borderRadius: 16,
-            padding: 16,
+            margin: 16,
+            borderRadius: 14,
+            padding: 12,
             backgroundColor: colors.primary,
           }}
         >

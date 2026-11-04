@@ -1,71 +1,64 @@
 import { View } from "react-native";
-import { Body, Icon } from ".";
-import { useTheme } from "../../core/theme/app_theme";
-import { fonts } from "../../core/theme/typography";
+import { SvgXml } from "react-native-svg";
+import type { Product } from "../../data/models/contract";
+import {
+  visualFor,
+  packSvgs,
+  previewEntries,
+} from "../../data/mock/mock_products";
+import { Body } from "./typography";
 import { ro } from "../../core/constants/strings_ro";
 export function Pack({
-  name = ro.capture.preview.yogurt,
-  brand = ro.capture.preview.brand,
+  product = previewEntries[0]!.product,
+  width = 168,
+  height = 176,
+  badge = false,
 }: {
+  product?: Product;
   name?: string;
   brand?: string;
+  width?: number;
+  height?: number;
+  badge?: boolean;
 }) {
-  const { colors } = useTheme();
+  const meta = visualFor(product);
+  const xml = packSvgs[meta.kind]
+    .replaceAll("{{v.lid}}", meta.lid)
+    .replaceAll("{{v.short}}", meta.short)
+    .replace("Manrope, sans-serif", "Manrope_800ExtraBold")
+    .replace('font-weight="800"', 'font-weight="normal"');
   return (
     <View
       accessible
-      accessibilityLabel={name}
-      style={{ width: 160, alignSelf: "center", alignItems: "center" }}
+      accessibilityLabel={product.name}
+      style={{
+        width,
+        height,
+        borderRadius: 20,
+        backgroundColor: meta.tint,
+        justifyContent: "center",
+        alignItems: "center",
+        overflow: "hidden",
+      }}
     >
-      <View
-        style={{
-          height: 16,
-          width: 160,
-          borderRadius: 8,
-          backgroundColor: colors.primary,
-          marginBottom: -4,
-          zIndex: 1,
-        }}
-      />
-      <View
-        style={{
-          width: 145,
-          minHeight: 176,
-          backgroundColor: colors.surface,
-          borderBottomLeftRadius: 30,
-          borderBottomRightRadius: 30,
-          padding: 16,
-          alignItems: "center",
-          gap: 10,
-          borderWidth: 1,
-          borderColor: colors.border,
-        }}
-      >
-        <Body
+      <SvgXml xml={xml} width={width * 0.72} height={height * 0.86} />
+      {badge && (
+        <View
           style={{
-            fontSize: 12,
-            color: colors.primary,
-            fontFamily: fonts.bold,
-            textAlign: "center",
+            position: "absolute",
+            left: 8,
+            bottom: 8,
+            borderRadius: 14,
+            backgroundColor: "#FFFFFF",
+            paddingHorizontal: 6,
+            paddingVertical: 2,
           }}
         >
-          {brand}
-        </Body>
-        <Icon name="leaf" size={38} color={colors.primary} />
-        <Body
-          style={{
-            fontFamily: fonts.heading,
-            fontSize: 21,
-            lineHeight: 24,
-            textAlign: "center",
-          }}
-        >
-          {name}
-        </Body>
-        <Body style={{ fontSize: 10, color: colors.muted }}>
-          {ro.capture.preview.packNote}
-        </Body>
-      </View>
+          <Body style={{ fontSize: 10, lineHeight: 13, fontWeight: "800" }}>
+            {ro.app.design.photoDemo}
+          </Body>
+        </View>
+      )}
     </View>
   );
 }

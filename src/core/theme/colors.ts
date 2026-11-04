@@ -1,9 +1,14 @@
 export const light = {
+  forest: "#173A2A",
+  mint: "#E3EEDF",
+  warn: "#5A3D00",
+  warnBg: "#FFF5D9",
+  green: "#2E6B45",
   ground: "#F7F4EC",
-  surface: "#FFFDF8",
+  surface: "#FFFFFF",
   ink: "#1C2420",
   muted: "#56615A",
-  border: "#E2DECF",
+  border: "#CFC6B2",
   primary: "#173A2A",
   onPrimary: "#FFFFFF",
   accent: "#C8E07A",
@@ -24,6 +29,7 @@ export const light = {
 };
 export type Palette = typeof light;
 export const dark: Palette = {
+  ...light,
   ground: "#101C16",
   surface: "#192A21",
   ink: "#F7F4EC",

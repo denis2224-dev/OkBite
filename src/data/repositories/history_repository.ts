@@ -7,6 +7,7 @@ import {
   readHistory,
   writeHistory,
   deleteHistory,
+  deleteHistoryEntry,
 } from "../../core/services/storage_service";
 export type { HistoryEntry } from "../models/history_entry";
 export async function saveToHistory(entry: {
@@ -29,4 +30,8 @@ export async function getFromHistory(
 }
 export async function clearHistory(): Promise<void> {
   await deleteHistory();
+}
+
+export async function removeFromHistory(id: string): Promise<void> {
+  await deleteHistoryEntry(id);
 }

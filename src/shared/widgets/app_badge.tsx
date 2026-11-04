@@ -11,9 +11,8 @@ export function Badge({
     <View
       style={{
         alignSelf: "flex-start",
-        backgroundColor:
-          tone === "unverified" ? colors.mediumBg : colors.neutralBg,
-        borderRadius: 9,
+        backgroundColor: tone === "unverified" ? colors.mediumBg : colors.mint,
+        borderRadius: 14,
         paddingHorizontal: 10,
         paddingVertical: 5,
       }}
@@ -22,7 +21,7 @@ export function Badge({
         style={{
           fontSize: 12,
           lineHeight: 18,
-          color: tone === "unverified" ? colors.medium : colors.neutral,
+          color: tone === "unverified" ? colors.medium : colors.good,
         }}
       >
         {children}
