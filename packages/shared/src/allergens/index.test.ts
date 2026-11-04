@@ -25,6 +25,19 @@ describe('detectAllergens', () => {
     ['țelină, muștar, creveți', ['Crustacee', 'Țelină', 'Muștar'], []],
     ['telina, mustar', ['Țelină', 'Muștar'], []],
     ['poate conţine (cedilla) susan', [], ['Susan']],
+    // ș/ț inside keywords
+    ['extract de malț', ['Gluten'], []],
+    ['griș 40%', ['Gluten'], []],
+    ['albuș, gălbenuș', ['Ouă'], []],
+    ['frișcă', ['Lapte'], []],
+    ['grâu khorasan, alac', ['Gluten'], []],
+    // Anexa II pct. 1 exceptions (a)–(c): glucose syrups, dextrose, maltodextrins from wheat or barley
+    ['sirop de glucoză din grâu, dextroză din grâu', [], []],
+    ['maltodextrină din grâu, sirop de glucoză din orz', [], []],
+    ['sirop de glucoză din grâu, făină de grâu', ['Gluten'], []],
+    // pct. 7 exception (b): lactitol
+    ['lactitol', [], []],
   ])('detectAllergens(%s)', (text, allergens, may) =>
-    expect(detectAllergens(text)).toEqual({ allergens, mayContain: may }));
+    expect(detectAllergens(text)).toEqual({ allergens, mayContain: may }),
+  );
 });
