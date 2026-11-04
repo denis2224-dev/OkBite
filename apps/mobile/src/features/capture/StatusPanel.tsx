@@ -7,6 +7,8 @@ export const errorMessage = (code?: string): string => {
     case 'rate_limited': return ro.errors.rateLimited;
     case 'upstream_failed': return ro.errors.upstreamFailed;
     case 'invalid_response': return ro.errors.invalidResponse;
+    case 'duplicate': return ro.errors.duplicate;
+    case 'not_found': return ro.errors.notFound;
     default: return ro.errors.generic;
   }
 };
@@ -48,4 +50,3 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.5 },
   buttonText: { fontSize: 16, fontWeight: '600' },
 });
-

@@ -11,7 +11,10 @@ function jpegBytes(base64: string): number {
   return (base64.length * 3) / 4 - padding;
 }
 
-export async function compressPhoto(uri: string): Promise<{ uri: string; base64: string; bytes: number }> {
+export async function compressPhoto(
+  uri: string,
+  maxBytes = MAX_BYTES,
+): Promise<{ uri: string; base64: string; bytes: number }> {
   // maxWidth/maxHeight only reduce memory while decoding; the exact 1600 px limit is enforced below.
   let image = await ImageManipulator.manipulate(uri, { maxWidth: MAX_SIDE, maxHeight: MAX_SIDE }).renderAsync();
   if (Math.max(image.width, image.height) > MAX_SIDE) {
@@ -22,7 +25,7 @@ export async function compressPhoto(uri: string): Promise<{ uri: string; base64:
     const saved = await image.saveAsync({ compress, format: SaveFormat.JPEG, base64: true });
     const base64 = saved.base64 ?? '';
     const bytes = jpegBytes(base64);
-    if (base64 && bytes <= MAX_BYTES) return { uri: saved.uri, base64, bytes };
+    if (base64 && bytes <= maxBytes) return { uri: saved.uri, base64, bytes };
   }
   throw new Error('Photo is still over 1.5 MB after compression');
 }

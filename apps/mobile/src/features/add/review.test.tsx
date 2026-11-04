@@ -1,15 +1,31 @@
 import React from 'react';
-import { describe, it, expect, jest } from '@jest/globals';
+import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { render, fireEvent, screen, act } from '@testing-library/react-native';
 import {
   AddProductRequest,
   Category,
+  LookupResponse,
   ReadLabelResponse,
   type AddProductRequest as AddProductRequestType,
 } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { parseAddParams } from '../identify/routes';
+import ReviewRouteScreen from '../../../app/add/review';
+import { clearAddReviewDraft, setAddReviewDraft } from './draftStore';
 import { ReviewForm } from './ReviewForm';
+
+const mockReplace = jest.fn<(href: unknown) => void>();
+const mockAddProduct = jest.fn<(req: AddProductRequestType) => Promise<LookupResponse>>();
+
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ replace: mockReplace }),
+}));
+
+jest.mock('../../lib/api', () => ({
+  api: {
+    addProduct: (req: AddProductRequestType) => mockAddProduct(req),
+  },
+}));
 
 const CATEGORIES = [
   Category.parse({ slug: 'iaurt', name: 'Iaurturi', scoreKind: 'general' }),
@@ -43,8 +59,45 @@ const BASE_INITIAL = parseAddParams({
   photoPath: 'uploads/dev-1/front-1.jpg',
 });
 
-describe('ReviewForm and CategoryPicker (B7 slice)', () => {
-  it('pre-fills fields from parseAddParams and ReadLabelResponse, marks unclear fields, and disables save until category is chosen', async () => {
+const SAVED_LOOKUP = LookupResponse.parse({
+  status: 'found',
+  product: {
+    id: '2a7c9e40-1b2c-4d5e-8f90-1234567890ab',
+    code: '4840001000014',
+    status: 'unverified',
+    name: 'Iaurt natural 2,5%',
+    brand: 'Livada Verde',
+    quantity: '400 g',
+    category: CATEGORIES[0],
+    unit: 'g',
+    portion: { amount: 100, label: '100 g' },
+    nutrients: BASE_LABEL.nutrients,
+    ingredientsText: BASE_LABEL.ingredientsText!,
+    ingredients: [],
+    allergens: ['Lapte'],
+    mayContain: ['Arahide'],
+    imageUrl: null,
+    labelImageUrl: null,
+    source: 'Utilizator',
+    addedAt: '2026-11-04',
+    verifiedAt: null,
+  },
+  score: {
+    score: null,
+    letter: null,
+    grade: 'unavailable',
+    reasons: [],
+    missing: ['sugar'],
+  },
+});
+
+describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    clearAddReviewDraft();
+  });
+
+  it('pre-fills fields from parseAddParams and ReadLabelResponse, marks unclear fields, does not render technical nutrient keys as labels, and disables save until category is chosen', async () => {
     const onSubmit = jest.fn<(req: AddProductRequestType) => void>();
     await render(
       <ReviewForm
@@ -64,6 +117,11 @@ describe('ReviewForm and CategoryPicker (B7 slice)', () => {
     expect(screen.getByDisplayValue('2,5')).toBeTruthy();
     expect(screen.getByDisplayValue('1,6')).toBeTruthy();
 
+    // Do not expose raw technical keys like sugar or fruitVegPct as visible user-facing labels
+    expect(screen.queryByText('sugar')).toBeNull();
+    expect(screen.queryByText('fruitVegPct')).toBeNull();
+    expect(screen.queryByText('protein')).toBeNull();
+
     // Unclear banner and field markers
     expect(screen.getByText(ro.review.unclearTitle)).toBeTruthy();
     expect(screen.getByText(ro.review.unclearText)).toBeTruthy();
@@ -78,6 +136,36 @@ describe('ReviewForm and CategoryPicker (B7 slice)', () => {
     expect(saveButton.props.accessibilityState?.disabled).toBe(true);
     await fireEvent.press(saveButton);
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('requires explicit unit selection when OCR returns unit: null instead of silently assuming g', async () => {
+    const onSubmit = jest.fn<(req: AddProductRequestType) => void>();
+    const labelNullUnit = ReadLabelResponse.parse({
+      ...BASE_LABEL,
+      unit: null,
+    });
+
+    await render(
+      <ReviewForm
+        label={labelNullUnit}
+        initial={BASE_INITIAL}
+        categories={CATEGORIES}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Sucuri` }));
+    const saveButton = screen.getByRole('button', { name: ro.review.save });
+    expect(saveButton.props.accessibilityState?.disabled).toBe(true);
+    await fireEvent.press(saveButton);
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    // Explicitly select ml
+    await fireEvent.press(screen.getByRole('button', { name: ro.compare.per100('ml') }));
+    expect(saveButton.props.accessibilityState?.disabled).toBe(false);
+    await fireEvent.press(saveButton);
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0]?.[0]?.unit).toBe('ml');
   });
 
   it('updates detected allergens and mayContain traces live using detectAllergens as ingredientsText changes', async () => {
@@ -105,7 +193,7 @@ describe('ReviewForm and CategoryPicker (B7 slice)', () => {
     );
     expect(screen.getByText('Gluten')).toBeTruthy();
     expect(screen.getByText('Soia')).toBeTruthy();
-    expect(screen.queryByText('Lapte')).toBeNull(); // "unt de cacao" is not milk
+    expect(screen.queryByText('Lapte')).toBeNull();
     expect(screen.getByText('Ouă')).toBeTruthy();
     expect(screen.getByText('Susan')).toBeTruthy();
   });
@@ -150,7 +238,6 @@ describe('ReviewForm and CategoryPicker (B7 slice)', () => {
     );
 
     await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurturi` }));
-    // Leave sugar and fruitVegPct empty (null), set salt to "0,3" and fiber to "0"
     await fireEvent.changeText(screen.getByTestId('nutrient-salt'), '0,3');
     await fireEvent.changeText(screen.getByTestId('nutrient-fiber'), '0');
 
@@ -199,38 +286,79 @@ describe('ReviewForm and CategoryPicker (B7 slice)', () => {
 
     await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurturi` }));
 
-    // 1. Unsupported unit "300 mg" on salt -> error, no submit
     await fireEvent.changeText(screen.getByTestId('nutrient-salt'), '300 mg');
     await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByTestId('error-salt')).toBeTruthy();
 
-    // 2. Unsupported unit "418 kJ" on kcal -> error, no submit
     await fireEvent.changeText(screen.getByTestId('nutrient-salt'), '0,3');
     await fireEvent.changeText(screen.getByTestId('nutrient-kcal'), '418 kJ');
     await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByTestId('error-kcal')).toBeTruthy();
 
-    // 3. Incompatible suffix "13.2 g" on kcal -> error, no submit
     await fireEvent.changeText(screen.getByTestId('nutrient-kcal'), '13.2 g');
     await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByTestId('error-kcal')).toBeTruthy();
 
-    // 4. sat > fat -> shows ro.review.satOverFat, no submit
     await fireEvent.changeText(screen.getByTestId('nutrient-kcal'), '63 kcal');
     await fireEvent.changeText(screen.getByTestId('nutrient-sat'), '5,0');
     await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByText(ro.review.satOverFat)).toBeTruthy();
 
-    // 5. Invalid optional barcode -> shows ro.scan.manualInvalid, no submit
     await fireEvent.changeText(screen.getByTestId('nutrient-sat'), '1,6 g');
     await fireEvent.changeText(screen.getByTestId('input-code'), '4840001000017');
     await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByText(ro.scan.manualInvalid)).toBeTruthy();
+  });
+
+  it('catches rejected onSubmit calls, shows the approved Romanian error, preserves user edits, releases lock, and allows retry', async () => {
+    let callCount = 0;
+    const onSubmit = jest.fn(async (_req: AddProductRequestType) => {
+      callCount += 1;
+      if (callCount === 1) {
+        throw Object.assign(new Error('rate_limited'), { code: 'rate_limited' });
+      }
+      if (callCount === 2) {
+        throw Object.assign(new Error('upstream_failed'), { code: 'upstream_failed' });
+      }
+    });
+
+    await render(
+      <ReviewForm
+        label={BASE_LABEL}
+        initial={BASE_INITIAL}
+        categories={CATEGORIES}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    await fireEvent.changeText(screen.getByLabelText(ro.review.name), 'Iaurt editat');
+    await fireEvent.changeText(screen.getByTestId('nutrient-sugar'), '4,1');
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurturi` }));
+
+    const saveButton = screen.getByRole('button', { name: ro.review.save });
+
+    // First attempt -> rate_limited
+    await fireEvent.press(saveButton);
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText(ro.errors.rateLimited)).toBeTruthy();
+    expect(screen.getByDisplayValue('Iaurt editat')).toBeTruthy();
+    expect(screen.getByDisplayValue('4,1')).toBeTruthy();
+
+    // Second attempt -> upstream_failed
+    await fireEvent.press(saveButton);
+    expect(onSubmit).toHaveBeenCalledTimes(2);
+    expect(await screen.findByText(ro.errors.upstreamFailed)).toBeTruthy();
+
+    // Third attempt -> succeeds with preserved edits
+    await fireEvent.press(saveButton);
+    expect(onSubmit).toHaveBeenCalledTimes(3);
+    expect(onSubmit.mock.calls[2]?.[0]?.name).toBe('Iaurt editat');
+    expect(onSubmit.mock.calls[2]?.[0]?.nutrients.sugar).toBe(4.1);
   });
 
   it('prevents duplicate submissions while onSubmit is pending', async () => {
@@ -262,5 +390,33 @@ describe('ReviewForm and CategoryPicker (B7 slice)', () => {
       resolveSubmit();
     });
   });
-});
 
+  it('shows recovery actions when opening /add/review route without a valid draft and does not crash or invent data', async () => {
+    await render(<ReviewRouteScreen />);
+
+    expect(screen.getByText(ro.errors.generic)).toBeTruthy();
+    expect(screen.queryByText(ro.review.title)).toBeNull();
+
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.retakePhotos }));
+    expect(mockReplace).toHaveBeenCalledWith('/add');
+  });
+
+  it('renders /add/review route from draftStore, calls api.addProduct on save, and navigates to /product/<id>', async () => {
+    setAddReviewDraft({
+      initial: BASE_INITIAL,
+      label: BASE_LABEL,
+      categories: CATEGORIES,
+    });
+    mockAddProduct.mockResolvedValueOnce(SAVED_LOOKUP);
+
+    await render(<ReviewRouteScreen />);
+
+    expect(screen.getByDisplayValue('Iaurt natural 2,5%')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurturi` }));
+
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
+
+    expect(mockAddProduct).toHaveBeenCalledTimes(1);
+    expect(mockReplace).toHaveBeenCalledWith('/product/2a7c9e40-1b2c-4d5e-8f90-1234567890ab');
+  });
+});

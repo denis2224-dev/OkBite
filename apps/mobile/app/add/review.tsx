@@ -1,2 +1,1 @@
-export { ReviewForm as default, ReviewForm, type ReviewFormProps } from '../../src/features/add/ReviewForm';
-
+export { ReviewScreen as default, ReviewScreen, type ReviewScreenProps } from '../../src/features/add/ReviewScreen';

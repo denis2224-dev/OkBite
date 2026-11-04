@@ -14,9 +14,10 @@ import {
   type Unit,
 } from '@okbite/shared';
 import { ro } from '../../copy/ro';
-import { ActionButton } from '../capture/StatusPanel';
+import { ActionButton, errorMessage } from '../capture/StatusPanel';
 import type { AddInitialValues } from '../identify/routes';
 import { CategoryPicker } from './CategoryPicker';
+import { NutritionFields } from './NutritionFields';
 import { parseAmount, unitForNutrient } from './parseAmount';
 
 export interface ReviewFormProps {
@@ -33,31 +34,25 @@ function formatInitialNutrient(value: number | null): string {
   return value === null ? '' : String(value).replace('.', ',');
 }
 
-function buildInitialNutrients(nutrients: NutrientsType): Record<NutrientKey, string> {
+function buildInitialNutrients(n: NutrientsType): Record<NutrientKey, string> {
   return {
-    kcal: formatInitialNutrient(nutrients.kcal),
-    fat: formatInitialNutrient(nutrients.fat),
-    sat: formatInitialNutrient(nutrients.sat),
-    sugar: formatInitialNutrient(nutrients.sugar),
-    salt: formatInitialNutrient(nutrients.salt),
-    protein: formatInitialNutrient(nutrients.protein),
-    fiber: formatInitialNutrient(nutrients.fiber),
-    fruitVegPct: formatInitialNutrient(nutrients.fruitVegPct),
+    kcal: formatInitialNutrient(n.kcal),
+    fat: formatInitialNutrient(n.fat),
+    sat: formatInitialNutrient(n.sat),
+    sugar: formatInitialNutrient(n.sugar),
+    salt: formatInitialNutrient(n.salt),
+    protein: formatInitialNutrient(n.protein),
+    fiber: formatInitialNutrient(n.fiber),
+    fruitVegPct: formatInitialNutrient(n.fruitVegPct),
   };
 }
 
-export function ReviewForm({
-  label,
-  initial,
-  categories,
-  onSubmit,
-  onRetake,
-}: ReviewFormProps) {
+export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: ReviewFormProps) {
   const [name, setName] = useState(initial.name ?? '');
   const [brand, setBrand] = useState(initial.brand ?? '');
   const [quantity, setQuantity] = useState(initial.quantity ?? '');
   const [code, setCode] = useState(initial.code ?? '');
-  const [unit, setUnit] = useState<Unit>(label.unit ?? 'g');
+  const [unit, setUnit] = useState<Unit | null>(label.unit);
   const [categorySlug, setCategorySlug] = useState<string | null>(null);
   const [ingredientsText, setIngredientsText] = useState(label.ingredientsText ?? '');
   const [nutrientInputs, setNutrientInputs] = useState<Record<NutrientKey, string>>(() =>
@@ -69,10 +64,10 @@ export function ReviewForm({
   const inFlightRef = useRef(false);
 
   const detected = useMemo(() => detectAllergens(ingredientsText), [ingredientsText]);
-  const hasValidCategory =
-    categorySlug !== null && categories.some((c) => c.slug === categorySlug);
+  const hasValidCategory = categorySlug !== null && categories.some((c) => c.slug === categorySlug);
   const canSave =
     !submitting &&
+    unit !== null &&
     name.trim().length > 0 &&
     brand.trim().length > 0 &&
     ingredientsText.trim().length >= 3 &&
@@ -85,37 +80,23 @@ export function ReviewForm({
   };
 
   const handleSubmit = async () => {
-    if (!canSave || inFlightRef.current || !categorySlug) return;
+    if (!canSave || inFlightRef.current || !categorySlug || !unit) return;
 
     const trimmedCode = code.trim();
     const normalizedCode = trimmedCode ? normalizeCode(trimmedCode) : null;
-    if (trimmedCode && !normalizedCode) {
-      setFormError(ro.scan.manualInvalid);
-      return;
-    }
+    if (trimmedCode && !normalizedCode) return setFormError(ro.scan.manualInvalid);
 
     const parsedNutrients: Record<NutrientKey, number | null> = {
-      kcal: null,
-      fat: null,
-      sat: null,
-      sugar: null,
-      salt: null,
-      protein: null,
-      fiber: null,
-      fruitVegPct: null,
+      kcal: null, fat: null, sat: null, sugar: null, salt: null, protein: null, fiber: null, fruitVegPct: null,
     };
     const nextInvalid: Partial<Record<NutrientKey, boolean>> = {};
     let hasNutrientError = false;
 
     for (const key of NUTRIENT_KEYS) {
       const raw = nutrientInputs[key].trim();
-      if (!raw) {
-        parsedNutrients[key] = null;
-        continue;
-      }
+      if (!raw) continue;
       const parsedVal = parseAmount(raw, unitForNutrient(key));
-      const fieldSchema = Nutrients.shape[key];
-      if (parsedVal === null || !fieldSchema.safeParse(parsedVal).success) {
+      if (parsedVal === null || !Nutrients.shape[key].safeParse(parsedVal).success) {
         nextInvalid[key] = true;
         hasNutrientError = true;
       } else {
@@ -125,26 +106,16 @@ export function ReviewForm({
 
     if (hasNutrientError) {
       setInvalidNutrients(nextInvalid);
-      setFormError(ro.errors.generic);
-      return;
+      return setFormError(ro.errors.generic);
     }
-
-    if (
-      parsedNutrients.sat !== null &&
-      parsedNutrients.fat !== null &&
-      parsedNutrients.sat > parsedNutrients.fat
-    ) {
-      setFormError(ro.review.satOverFat);
-      return;
+    if (parsedNutrients.sat !== null && parsedNutrients.fat !== null && parsedNutrients.sat > parsedNutrients.fat) {
+      return setFormError(ro.review.satOverFat);
     }
 
     const cleanIngPhoto = label.ingredientsPhotoPath.trim();
-    if (!cleanIngPhoto) {
-      setFormError(ro.errors.generic);
-      return;
-    }
+    if (!cleanIngPhoto) return setFormError(ro.errors.generic);
 
-    const candidatePayload = {
+    const validated = AddProductRequest.safeParse({
       code: normalizedCode,
       name: name.trim(),
       brand: brand.trim(),
@@ -155,22 +126,18 @@ export function ReviewForm({
       nutrients: parsedNutrients,
       photoPath: initial.photoPath ? initial.photoPath.trim() || null : null,
       ingredientsPhotoPath: cleanIngPhoto,
-      nutritionPhotoPath: label.nutritionPhotoPath
-        ? label.nutritionPhotoPath.trim() || null
-        : null,
-    };
-
-    const validated = AddProductRequest.safeParse(candidatePayload);
-    if (!validated.success) {
-      setFormError(ro.errors.generic);
-      return;
-    }
+      nutritionPhotoPath: label.nutritionPhotoPath ? label.nutritionPhotoPath.trim() || null : null,
+    });
+    if (!validated.success) return setFormError(ro.errors.generic);
 
     inFlightRef.current = true;
     setSubmitting(true);
     setFormError(null);
     try {
       await onSubmit(validated.data);
+    } catch (err) {
+      const errCode = (err as { code?: string } | null)?.code;
+      setFormError(errCode === 'offline' ? ro.offline.subtitle : errorMessage(errCode));
     } finally {
       inFlightRef.current = false;
       setSubmitting(false);
@@ -186,88 +153,35 @@ export function ReviewForm({
         <View accessibilityRole="alert" style={styles.unclearBanner}>
           <Text style={styles.unclearBannerTitle}>{ro.review.unclearTitle}</Text>
           <Text style={styles.unclearBannerText}>{ro.review.unclearText}</Text>
-          {onRetake ? (
-            <ActionButton label={ro.review.retakePhoto} onPress={onRetake} />
-          ) : null}
+          {onRetake ? <ActionButton label={ro.review.retakePhoto} onPress={onRetake} /> : null}
         </View>
       ) : null}
 
       <View style={styles.card}>
         <Text style={styles.fieldLabel}>{ro.review.name}</Text>
-        <TextInput
-          accessibilityLabel={ro.review.name}
-          value={name}
-          onChangeText={(v) => {
-            setName(v);
-            setFormError(null);
-          }}
-          style={styles.input}
-        />
+        <TextInput accessibilityLabel={ro.review.name} value={name} onChangeText={(v) => { setName(v); setFormError(null); }} style={styles.input} />
 
         <Text style={styles.fieldLabel}>{ro.review.brand}</Text>
-        <TextInput
-          accessibilityLabel={ro.review.brand}
-          value={brand}
-          onChangeText={(v) => {
-            setBrand(v);
-            setFormError(null);
-          }}
-          style={styles.input}
-        />
+        <TextInput accessibilityLabel={ro.review.brand} value={brand} onChangeText={(v) => { setBrand(v); setFormError(null); }} style={styles.input} />
 
         <Text style={styles.fieldLabel}>{ro.review.quantity}</Text>
-        <TextInput
-          accessibilityLabel={ro.review.quantity}
-          value={quantity}
-          onChangeText={(v) => {
-            setQuantity(v);
-            setFormError(null);
-          }}
-          style={styles.input}
-        />
+        <TextInput accessibilityLabel={ro.review.quantity} value={quantity} onChangeText={(v) => { setQuantity(v); setFormError(null); }} style={styles.input} />
 
         <Text style={styles.fieldLabel}>{ro.scan.manualTitle}</Text>
-        <TextInput
-          testID="input-code"
-          accessibilityLabel={ro.scan.manualTitle}
-          value={code}
-          onChangeText={(v) => {
-            setCode(v);
-            setFormError(null);
-          }}
-          keyboardType="number-pad"
-          style={styles.input}
-        />
+        <TextInput testID="input-code" accessibilityLabel={ro.scan.manualTitle} value={code} onChangeText={(v) => { setCode(v); setFormError(null); }} keyboardType="number-pad" style={styles.input} />
 
         <View style={styles.unitRow}>
           {UNITS.map((u) => {
             const selected = unit === u;
             return (
-              <Pressable
-                key={u}
-                accessibilityRole="button"
-                accessibilityLabel={ro.compare.per100(u)}
-                accessibilityState={{ selected }}
-                onPress={() => setUnit(u)}
-                style={[styles.unitButton, selected && styles.unitButtonSelected]}
-              >
-                <Text style={[styles.unitText, selected && styles.unitTextSelected]}>
-                  {ro.compare.per100(u)}
-                </Text>
+              <Pressable key={u} accessibilityRole="button" accessibilityLabel={ro.compare.per100(u)} accessibilityState={{ selected }} onPress={() => { setUnit(u); setFormError(null); }} style={[styles.unitButton, selected && styles.unitButtonSelected]}>
+                <Text style={[styles.unitText, selected && styles.unitTextSelected]}>{ro.compare.per100(u)}</Text>
               </Pressable>
             );
           })}
         </View>
 
-        <CategoryPicker
-          categories={categories}
-          selectedSlug={categorySlug}
-          onSelect={(slug) => {
-            setCategorySlug(slug);
-            setFormError(null);
-          }}
-          disabled={submitting}
-        />
+        <CategoryPicker categories={categories} selectedSlug={categorySlug} onSelect={(slug) => { setCategorySlug(slug); setFormError(null); }} disabled={submitting} />
       </View>
 
       <View style={styles.card}>
@@ -278,16 +192,7 @@ export function ReviewForm({
             <Text style={styles.unclearMark}>{ro.review.unreadMark}</Text>
           </View>
         ) : null}
-        <TextInput
-          accessibilityLabel={ro.review.ingredients}
-          multiline
-          value={ingredientsText}
-          onChangeText={(v) => {
-            setIngredientsText(v);
-            setFormError(null);
-          }}
-          style={[styles.input, styles.multiline]}
-        />
+        <TextInput accessibilityLabel={ro.review.ingredients} multiline value={ingredientsText} onChangeText={(v) => { setIngredientsText(v); setFormError(null); }} style={[styles.input, styles.multiline]} />
 
         <Text style={styles.subLabel}>{ro.review.allergensDetected}</Text>
         {detected.allergens.length === 0 && detected.mayContain.length === 0 ? (
@@ -295,17 +200,13 @@ export function ReviewForm({
         ) : (
           <View style={styles.chipRow}>
             {detected.allergens.map((alg) => (
-              <View key={alg} style={styles.allergenChip}>
-                <Text style={styles.allergenChipText}>{alg}</Text>
-              </View>
+              <View key={alg} style={styles.allergenChip}><Text style={styles.allergenChipText}>{alg}</Text></View>
             ))}
             {detected.mayContain.length > 0 ? (
               <View style={styles.chipRow}>
                 <Text style={styles.muted}>{ro.result.mayContain}</Text>
                 {detected.mayContain.map((alg) => (
-                  <View key={`may-${alg}`} style={styles.mayChip}>
-                    <Text style={styles.mayChipText}>{alg}</Text>
-                  </View>
+                  <View key={`may-${alg}`} style={styles.mayChip}><Text style={styles.mayChipText}>{alg}</Text></View>
                 ))}
               </View>
             ) : null}
@@ -314,65 +215,12 @@ export function ReviewForm({
         <Text style={styles.muted}>{ro.review.allergensHint}</Text>
       </View>
 
-      <View style={styles.card}>
-        <View style={styles.nutritionHeader}>
-          <Text style={styles.fieldLabel}>{ro.review.nutritionTitle}</Text>
-          <Text style={styles.muted}>{ro.review.per100}</Text>
-        </View>
+      <NutritionFields values={nutrientInputs} unclear={label.unclear} invalid={invalidNutrients} onChange={setNutrientField} />
 
-        {NUTRIENT_KEYS.map((key) => {
-          const isUnclear = label.unclear.includes(key);
-          const isInvalid = Boolean(invalidNutrients[key]);
-          const expectedUnit = unitForNutrient(key);
-          return (
-            <View key={key} style={styles.nutrientRow}>
-              <View style={styles.nutrientLabelCol}>
-                <Text style={styles.nutrientKeyText}>{key}</Text>
-                {isUnclear ? (
-                  <Text testID={`unclear-${key}`} style={styles.unclearMark}>
-                    {ro.review.unclearField}
-                  </Text>
-                ) : null}
-                {isInvalid ? (
-                  <Text testID={`error-${key}`} style={styles.errorText}>
-                    {ro.errors.generic}
-                  </Text>
-                ) : null}
-              </View>
-              <TextInput
-                testID={`nutrient-${key}`}
-                accessibilityLabel={`${ro.review.nutritionTitle}: ${key}`}
-                value={nutrientInputs[key]}
-                onChangeText={(v) => setNutrientField(key, v)}
-                keyboardType="decimal-pad"
-                style={[styles.nutrientInput, isInvalid && styles.inputInvalid]}
-              />
-              <Text style={styles.unitSuffix}>{expectedUnit}</Text>
-            </View>
-          );
-        })}
-      </View>
+      {formError ? <Text accessibilityRole="alert" style={styles.errorBanner}>{formError}</Text> : null}
 
-      {formError ? (
-        <Text accessibilityRole="alert" style={styles.errorBanner}>
-          {formError}
-        </Text>
-      ) : null}
-
-      <ActionButton
-        label={ro.review.save}
-        onPress={() => {
-          void handleSubmit();
-        }}
-        disabled={!canSave}
-      />
-      {onRetake ? (
-        <ActionButton
-          label={ro.review.retakePhotos}
-          onPress={onRetake}
-          disabled={submitting}
-        />
-      ) : null}
+      <ActionButton label={ro.review.save} onPress={() => { void handleSubmit(); }} disabled={!canSave} />
+      {onRetake ? <ActionButton label={ro.review.retakePhotos} onPress={onRetake} disabled={submitting} /> : null}
     </ScrollView>
   );
 }
@@ -381,83 +229,25 @@ const styles = StyleSheet.create({
   container: { padding: 16, gap: 14, backgroundColor: '#F6F1E6' },
   title: { fontSize: 22, fontWeight: '800', color: '#1C2420' },
   hint: { fontSize: 14, color: '#56615A' },
-  unclearBanner: {
-    padding: 14,
-    borderRadius: 14,
-    backgroundColor: '#FFF5D9',
-    borderWidth: 1,
-    borderColor: '#E8D29A',
-    gap: 6,
-  },
+  unclearBanner: { padding: 14, borderRadius: 14, backgroundColor: '#FFF5D9', borderWidth: 1, borderColor: '#E8D29A', gap: 6 },
   unclearBannerTitle: { fontSize: 15, fontWeight: '800', color: '#5A3D00' },
   unclearBannerText: { fontSize: 14, color: '#5A3D00' },
-  card: {
-    padding: 14,
-    borderRadius: 16,
-    backgroundColor: '#FFFDF6',
-    gap: 8,
-  },
+  card: { padding: 14, borderRadius: 16, backgroundColor: '#FFFDF6', gap: 8 },
   fieldLabel: { fontSize: 15, fontWeight: '700', color: '#1C2420' },
   subLabel: { fontSize: 13, fontWeight: '700', color: '#56615A', marginTop: 4 },
   unclearMark: { fontSize: 12, fontWeight: '800', color: '#7A4E00' },
-  input: {
-    minHeight: 46,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#CFC8B8',
-    backgroundColor: '#FFFFFF',
-    color: '#1C2420',
-    fontSize: 15,
-  },
+  input: { minHeight: 46, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, borderWidth: 1.5, borderColor: '#CFC8B8', backgroundColor: '#FFFFFF', color: '#1C2420', fontSize: 15 },
   multiline: { minHeight: 96, textAlignVertical: 'top' },
-  inputInvalid: { borderColor: '#8E3417' },
   unitRow: { flexDirection: 'row', gap: 8 },
-  unitButton: {
-    minHeight: 44,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#CFC8B8',
-    justifyContent: 'center',
-  },
+  unitButton: { minHeight: 44, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1.5, borderColor: '#CFC8B8', justifyContent: 'center' },
   unitButtonSelected: { backgroundColor: '#173A2A', borderColor: '#173A2A' },
   unitText: { fontSize: 14, fontWeight: '600', color: '#1C2420' },
   unitTextSelected: { color: '#FFFFFF' },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' },
-  allergenChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    backgroundColor: '#5A3D00',
-  },
+  allergenChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: '#5A3D00' },
   allergenChipText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
-  mayChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    backgroundColor: '#ECE7DA',
-  },
+  mayChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: '#ECE7DA' },
   mayChipText: { fontSize: 13, fontWeight: '600', color: '#3F4842' },
   muted: { fontSize: 13, color: '#56615A' },
-  nutritionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  nutrientRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  nutrientLabelCol: { flex: 1 },
-  nutrientKeyText: { fontSize: 14, fontWeight: '600', color: '#1C2420' },
-  nutrientInput: {
-    width: 108,
-    minHeight: 46,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: '#CFC8B8',
-    backgroundColor: '#FFFFFF',
-    textAlign: 'right',
-    fontSize: 15,
-    color: '#1C2420',
-  },
-  unitSuffix: { width: 36, fontSize: 13, color: '#56615A' },
-  errorText: { fontSize: 12, fontWeight: '700', color: '#8E3417' },
   errorBanner: { fontSize: 14, fontWeight: '700', color: '#8E3417' },
 });

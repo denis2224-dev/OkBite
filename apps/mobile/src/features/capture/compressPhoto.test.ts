@@ -71,4 +71,12 @@ describe('compressPhoto', () => {
     stepReturns(image);
     await expect(compressPhoto('file:///raw.jpg')).rejects.toThrow(/1\.5 MB/);
   });
+
+  it('respects a custom maxBytes budget for two-photo label requests', async () => {
+    const image = nativeImage(1600, 1200, [950_000, 680_000]);
+    stepReturns(image);
+    const res = await compressPhoto('file:///label.jpg', 700_000);
+    expect(image.saveAsync.mock.calls.map(([o]) => (o as { compress: number }).compress)).toEqual([0.8, 0.6]);
+    expect(res.bytes).toBe(680_000);
+  });
 });
