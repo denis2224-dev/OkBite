@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   ci:
@@ -35,9 +35,9 @@ jobs:
           path: apps/mobile/dist
           retention-days: 7
       - uses: denoland/setup-deno@v2
-        if: hashFiles('supabase/functions/**/*.ts') != ''
+        if: hashFiles('supabase/functions/**/*.test.ts') != ''
         with:
           deno-version: v2.x
       - name: Test Edge Functions
-        if: hashFiles('supabase/functions/**/*.ts') != ''
+        if: hashFiles('supabase/functions/**/*.test.ts') != ''
         run: deno test --allow-all --ignore=supabase/functions/_shared supabase/functions/
