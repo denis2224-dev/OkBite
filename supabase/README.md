@@ -1,6 +1,6 @@
 # C2 local database handoff
 
-Branch: `C2-database-schema`, based on `C1-api-contract` at `1d9eac4`.
+Branch: `C2-database-schema`, based on cleaned `origin/C1-api-contract` at `33ff46a`.
 Depends on C1/PR #4; any C2 PR must target `C1-api-contract` while C1 is unmerged.
 Review was explicitly waived by the user. No AI review or human approval is claimed.
 No merge, deployment, remote reset or cloud configuration was performed.
@@ -23,8 +23,18 @@ pnpm lint && pnpm typecheck && pnpm test
 Only reset this worktree's `okbite-c2` stack (DB port 55432, API 55431).
 Do not link it to a hosted project to run tests. Tests wrap data changes in rollback.
 Red: before migration/seed, pgTAP failed for missing products, moderators and search.
-Green: 75 assertions across RLS/search/seed, no database lint errors; project lint,
+Initial C2 green: 75 assertions across RLS/search/seed, no database lint errors; project lint,
 typecheck and all 55 contract tests passed. Two pgTAP invocation errors were corrected without removing assertions.
+
+## Cleaned C1 reconciliation
+
+Replayed only implementation commit `30e97b2` as `fdb437e`; omitted graph refresh
+`51a8caf` and the obsolete C1 commits. D1 configuration, `APP_NAME`, corrected C1
+tests and `graphify-out/` match the cleaned base exactly. Database files/tests are unchanged.
+Rechecked against the existing isolated local stack without a reset: all 75 database
+assertions and database lint passed. Project lint exited 0 with 33 inherited
+schema/type-name warnings; typecheck, 56 shared tests and one mobile test passed.
+C2 remains a dependent PR targeting `C1-api-contract`; review remains waived.
 
 ## Consumer notes
 
