@@ -42,26 +42,34 @@ export function checkData(data: DataFiles = readData()): { errors: string[] } {
     ...validate('ingredients.json', data.ingredients, IngredientEntry, 'slug'),
     ...validate('score-fixtures.json', data.fixtures ?? [], ScoreFixture, 'name'),
   ];
+  // Duplicate checks only look at rows whose slug/aliases parse; validate() already reported the rest.
   const categorySlugs = new Set<string>();
-  for (const { slug } of data.categories as { slug?: string }[]) {
-    if (slug && categorySlugs.has(slug)) errors.push(`categories.json: duplicate slug ${slug}`);
-    if (slug) categorySlugs.add(slug);
+  for (const { slug } of parsed(data.categories, CategoryEntry.pick({ slug: true }))) {
+    if (categorySlugs.has(slug)) errors.push(`categories.json: duplicate slug ${slug}`);
+    categorySlugs.add(slug);
   }
   const slugs = new Set<string>();
   const aliases = new Map<string, string>();
-  for (const entry of data.ingredients as { slug?: string; aliases?: string[] }[]) {
-    if (entry.slug && slugs.has(entry.slug))
-      errors.push(`ingredients.json: duplicate slug ${entry.slug}`);
-    if (entry.slug) slugs.add(entry.slug);
-    for (const alias of entry.aliases ?? []) {
+  const keys = IngredientEntry.pick({ slug: true, aliases: true });
+  for (const { slug, aliases: names } of parsed(data.ingredients, keys)) {
+    if (slugs.has(slug)) errors.push(`ingredients.json: duplicate slug ${slug}`);
+    slugs.add(slug);
+    for (const alias of names) {
       const key = plain(alias);
       const owner = aliases.get(key);
-      if (owner && owner !== entry.slug)
-        errors.push(`ingredients.json: duplicate alias "${alias}" in ${owner} and ${entry.slug}`);
-      aliases.set(key, entry.slug ?? '?');
+      if (owner && owner !== slug)
+        errors.push(`ingredients.json: duplicate alias "${alias}" in ${owner} and ${slug}`);
+      aliases.set(key, slug);
     }
   }
   return { errors };
+}
+
+function parsed<T extends z.ZodTypeAny>(entries: unknown[], schema: T): z.infer<T>[] {
+  return entries.flatMap((entry) => {
+    const result = schema.safeParse(entry);
+    return result.success ? [result.data as z.infer<T>] : [];
+  });
 }
 
 function validate(file: string, entries: unknown[], schema: z.ZodTypeAny, idKey: string): string[] {

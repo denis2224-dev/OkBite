@@ -106,3 +106,15 @@ describe('checkData categories', () => {
     );
   });
 });
+
+describe('checkData malformed rows', () => {
+  it('returns errors instead of throwing for null rows and bad alias types', () => {
+    const bad = { ...ingredient, slug: 'x', aliases: [322] };
+    const odd = { ...ingredient, slug: 'y', aliases: {} };
+    const run = () => checkData({ categories: [null], ingredients: [null, bad, odd] });
+    expect(run).not.toThrow();
+    const errors = run().errors.join('\n');
+    expect(errors).toMatch(/categories\.json\[0\]/);
+    expect(errors).toMatch(/ingredients\.json\[1\] x: aliases/);
+  });
+});
