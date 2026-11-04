@@ -1,0 +1,4 @@
+import { start,next,validateReview } from './flow';
+it('follows photo to confirmation to result',()=>{expect(next(start(),'photo').step).toBe('confirm');expect(next(next(start(),'photo'),'confirm').step).toBe('result');});
+it('keeps an unknown product on the add and review path',()=>{let flow=next(start(),'unknown');expect(flow.step).toBe('notFound');flow=next(flow,'add');expect(flow.step).toBe('ingredientsPhoto');flow=next(flow,'photo');expect(flow.step).toBe('nutritionPhoto');flow=next(flow,'photo');expect(flow.step).toBe('review');});
+it('rejects blank and impossible nutrient values but accepts decimal commas',()=>{expect(validateReview({ingredients:'lapte',kcal:'63',sugar:'',sat:'1,6',fat:'2,5',salt:'0,1'})).toBe(false);expect(validateReview({ingredients:'lapte',kcal:'63',sugar:'4,1',sat:'1,6',fat:'2,5',salt:'0,1'})).toBe(true);expect(validateReview({ingredients:'lapte',kcal:'63',sugar:'4,1',sat:'3',fat:'2,5',salt:'0,1'})).toBe(false);});
