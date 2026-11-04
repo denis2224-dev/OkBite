@@ -1,4 +1,4 @@
-import type { ColorValue } from "react-native";
+import { Platform, type ColorValue } from "react-native";
 import Svg, { Path, Circle, Rect } from "react-native-svg";
 import paths from "../../../assets/icons/paths.json";
 export type IconName = keyof typeof paths;
@@ -21,7 +21,7 @@ export function Icon({
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
-      accessible={false}
+      accessible={Platform.OS === "web" ? undefined : false}
       aria-hidden
     >
       <Path d={paths[name]} />

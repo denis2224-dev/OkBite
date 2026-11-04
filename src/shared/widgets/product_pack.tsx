@@ -1,4 +1,4 @@
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import { SvgXml } from "react-native-svg";
 import type { Product } from "../../data/models/contract";
 import {
@@ -23,6 +23,7 @@ export function Pack({
 }) {
   const meta = visualFor(product);
   const xml = packSvgs[meta.kind]
+    .replace(' aria-hidden="true"', "")
     .replaceAll("{{v.lid}}", meta.lid)
     .replaceAll("{{v.short}}", meta.short)
     .replace("Manrope, sans-serif", "Manrope_800ExtraBold")
@@ -41,7 +42,15 @@ export function Pack({
         overflow: "hidden",
       }}
     >
-      <SvgXml xml={xml} width={width * 0.72} height={height * 0.86} />
+      <SvgXml
+        xml={xml}
+        override={{
+          width: width * 0.72,
+          height: height * 0.86,
+          accessible: Platform.OS === "web" ? undefined : false,
+          "aria-hidden": true,
+        }}
+      />
       {badge && (
         <View
           style={{

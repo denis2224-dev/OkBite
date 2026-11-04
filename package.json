@@ -50,7 +50,8 @@
     "dev": "expo start",
     "awake": "sh scripts/keep-awake.sh",
     "dev:awake": "sh scripts/keep-awake.sh expo start",
-    "web:awake": "sh scripts/keep-awake.sh expo start --web"
+    "web:awake": "sh scripts/keep-awake.sh expo start --web",
+    "test:web": "jest --config jest.web.config.cjs --runInBand"
   },
   "private": true,
   "packageManager": "pnpm@9.12.0"

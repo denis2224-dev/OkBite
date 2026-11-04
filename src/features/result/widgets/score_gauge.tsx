@@ -1,4 +1,4 @@
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import type { Grade } from "../../../data/models/contract";
 import { Body } from "../../../shared/widgets/typography";
@@ -34,7 +34,8 @@ export function ScoreRing({
         width={128}
         height={128}
         viewBox="0 0 128 128"
-        accessible={false}
+        accessible={Platform.OS === "web" ? undefined : false}
+        aria-hidden
         style={{ position: "absolute" }}
       >
         <Circle
@@ -54,8 +55,7 @@ export function ScoreRing({
           strokeWidth={12}
           strokeDasharray="326.73 326.73"
           strokeDashoffset={326.73 * (1 - score / 100)}
-          rotation={-90}
-          origin="64,64"
+          transform="rotate(-90 64 64)"
           strokeLinecap="round"
         />
       </Svg>

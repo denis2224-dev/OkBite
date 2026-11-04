@@ -1,4 +1,4 @@
-import { View, TextInput, Pressable } from "react-native";
+import { Platform, View, TextInput, Pressable } from "react-native";
 import Svg, { Rect, Line, Text as SvgText } from "react-native-svg";
 import { Heading, Card, Icon, Body, Button } from "../../shared/widgets";
 import { Pack } from "../../shared/widgets/product_pack";
@@ -133,7 +133,8 @@ export function ScannerScreen({
                 width="100%"
                 height={95}
                 viewBox="0 0 220 95"
-                accessible={false}
+                accessible={Platform.OS === "web" ? undefined : false}
+                aria-hidden
               >
                 {Array.from({ length: 45 }, (_, i) => (
                   <Rect
