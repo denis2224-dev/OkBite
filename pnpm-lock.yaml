@@ -8,7 +8,7 @@ importers:
 
   .: {}
 
-  apps/mobile:
+  frontend/mobile:
     dependencies:
       '@expo-google-fonts/bricolage-grotesque':
         specifier: ^0.4.1
@@ -21,7 +21,7 @@ importers:
         version: 58.0.17(@expo/log-box@58.0.15)(expo@58.0.23)(react-dom@19.3.0(react@19.3.0))(react-native@0.88.1(@babel/core@7.29.13)(@react-native/metro-config@0.88.1(@babel/core@7.29.13))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
       '@okbite/shared':
         specifier: workspace:*
-        version: link:../../packages/shared
+        version: link:../../shared/contracts
       '@react-native-async-storage/async-storage':
         specifier: 2.2.0
         version: 2.2.0(react-native@0.88.1(@babel/core@7.29.13)(@react-native/metro-config@0.88.1(@babel/core@7.29.13))(@types/react@19.3.0)(react@19.3.0))
@@ -114,7 +114,7 @@ importers:
         specifier: ~6.0.3
         version: 6.0.3
 
-  packages/shared:
+  shared/contracts:
     dependencies:
       zod:
         specifier: ^3.23.0

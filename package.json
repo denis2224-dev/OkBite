@@ -9,8 +9,8 @@
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm --filter mobile lint",
-    "awake": "caffeinate -dimsu",
-    "dev:awake": "caffeinate -dimsu pnpm dev",
-    "web:awake": "caffeinate -dimsu pnpm web"
+    "awake": "sh scripts/keep-awake.sh",
+    "dev:awake": "sh scripts/keep-awake.sh pnpm dev",
+    "web:awake": "sh scripts/keep-awake.sh pnpm web"
   }
 }
