@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Read `AGENTS.md` and `docs/superpowers/plans/2026-11-03-okbite-overall.md` (Global Constraints, Review Focus, dependencies) before Task D1.
 
-**Goal:** Give the team a working Expo monorepo with CI and phone previews on day one, then build the allergen matcher and barcode normaliser, the two AI functions (`identify`, `read-label`), end-to-end tests, error reporting, and the App Store and Google Play release.
+**Goal:** Give the team a working Expo monorepo (iOS, Android and web) with CI and phone and browser previews on day one, then build the allergen matcher and barcode normaliser, the two AI functions (`identify`, `read-label`), end-to-end tests, error reporting, and the App Store and Google Play release.
 
 **Architecture:** pnpm workspace with `apps/mobile` (Expo Router) and `packages/shared`; GitHub Actions for checks and EAS Update previews per PR; EAS Build and Submit for store builds; two Supabase projects (`okbite-staging`, `okbite-prod`). The AI functions are Deno Edge Functions that store the photo, ask Claude Haiku for strict JSON, and validate it against the contract.
 
@@ -83,8 +83,8 @@ Run: `pnpm --filter mobile test` → Expected: FAIL.
 
 - [ ] **Step 4: Minimal screen and app config**
 
-`app/index.tsx` renders `<Text accessibilityRole="header">OkBite</Text>` (B1 replaces it). `app.config.ts`: `name: 'OkBite'`, `slug: 'okbite'`, `scheme: 'okbite'`, `version: '1.0.0'`, `userInterfaceStyle: 'automatic'`, `ios: { bundleIdentifier: 'md.okbite.app', supportsTablet: false }`, `android: { package: 'md.okbite.app' }`, `plugins: ['expo-router', ['expo-camera', { cameraPermission: 'OkBite folosește camera ca să fotografieze produsul și eticheta lui.', recordAudioAndroid: false }], ['expo-image-picker', { photosPermission: 'OkBite deschide galeria ca să alegi o poză a produsului sau a etichetei.' }], 'expo-sqlite', 'expo-secure-store']`, `extra: { supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL, supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY }`. Install the native modules with `npx expo install expo-camera expo-image-picker expo-image-manipulator expo-sqlite expo-secure-store`. Placeholder icon and splash: brand green `#1F4A35` with a white check mark (A replaces them in A5).
-Run: `pnpm --filter mobile test` → Expected: PASS. Run `pnpm dev`, open in Expo Go on an iPhone and an Android phone → Expected: "OkBite" on screen.
+`app/index.tsx` renders `<Text accessibilityRole="header">OkBite</Text>` (B1 replaces it). `app.config.ts`: `name: 'OkBite'`, `slug: 'okbite'`, `scheme: 'okbite'`, `version: '1.0.0'`, `userInterfaceStyle: 'automatic'`, `ios: { bundleIdentifier: 'md.okbite.app', supportsTablet: false }`, `android: { package: 'md.okbite.app' }`, `plugins: ['expo-router', ['expo-camera', { cameraPermission: 'OkBite folosește camera ca să fotografieze produsul și eticheta lui.', recordAudioAndroid: false }], ['expo-image-picker', { photosPermission: 'OkBite deschide galeria ca să alegi o poză a produsului sau a etichetei.' }], 'expo-sqlite', 'expo-secure-store']`, `extra: { supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL, supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY }`. Install the native modules with `npx expo install expo-camera expo-image-picker expo-image-manipulator expo-sqlite expo-secure-store`, and web support with `npx expo install react-native-web react-dom @expo/metro-runtime`; set `web: { bundler: 'metro', output: 'single', favicon: './assets/favicon.png' }` and add the script `web: expo export -p web` (output `apps/mobile/dist`). Placeholder icon and splash: brand green `#1F4A35` with a white check mark (A replaces them in A5).
+Run: `pnpm --filter mobile test` → Expected: PASS. Run `pnpm dev`, open in Expo Go on an iPhone and an Android phone → Expected: "OkBite" on screen. Run `pnpm --filter mobile web` → Expected: `apps/mobile/dist/index.html` exists; `npx serve apps/mobile/dist` shows "OkBite" in a phone-sized browser window.
 
 - [ ] **Step 5: Lint and format**
 
@@ -105,6 +105,7 @@ Run: `pnpm lint && pnpm typecheck && pnpm test` → Expected: exit 0.
 
 - [ ] **Step 1: `ci.yml`** — on `pull_request` and `push` to `main`: checkout, `pnpm/action-setup@v4`, `actions/setup-node@v4` (`node-version-file: .nvmrc`, `cache: pnpm`), `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm typecheck`, `pnpm test`; also `denoland/setup-deno@v2` and `deno test --allow-all supabase/functions/ --ignore=supabase/functions/_shared` once functions exist. Job name `ci`.
 - [ ] **Step 2: `eas.json`** — `development` (`developmentClient: true`, `distribution: internal`, channel `development`), `preview` (`distribution: internal`, channel `preview`, staging env), `production` (`autoIncrement: true`, channel `production`, prod env). `preview.yml`: on `pull_request`, `expo/expo-github-action@v8` with `EXPO_TOKEN`, then `expo/expo-github-action/preview@v8` with `command: eas update --auto --branch pr-${{ github.event.number }}`, which comments a QR code.
+- [ ] **Step 2b: Web previews** — `ci.yml` also runs `pnpm --filter mobile web`. Cloudflare Pages (human connects the repo): build command `pnpm install && pnpm --filter mobile web`, output `apps/mobile/dist`, env `NODE_VERSION=22` plus the `EXPO_PUBLIC_*` staging values for previews and prod values for `main`; add a `_redirects` file in `apps/mobile/public/` with `/* /index.html 200` so deep links like `/product/<id>` load. Each PR then shows a browser preview link next to the QR code.
 - [ ] **Step 3: Development build** — `eas build --profile development --platform all`; share the install links in the team chat so everyone can test camera features on their own phone.
 - [ ] **Step 4: Human setup (Lane D person, 4 Nov)** — 1) Expo account + `EXPO_TOKEN` GitHub secret. 2) Enrol in the Apple Developer Program and register on Google Play Console (decide whose name is the seller; Apple can take several days). 3) Supabase projects `okbite-staging` and `okbite-prod`; staging keys into the EAS `preview` env and prod keys into `production`. 4) Protect `main`: PR required, 1 approval, `ci` passing, CODEOWNERS review.
 - [ ] **Step 5: `CODEOWNERS` and PR template** — lane paths from the overall plan mapped to placeholder handles `@lane-a` … `@lane-d` (the team replaces them). Template: task ID, acceptance checklist, "AI review by: Claude / Codex", "Tested on: iPhone / Android".
@@ -229,3 +230,21 @@ Run: `pnpm --filter @okbite/shared test` → Expected: FAIL.
 - [ ] **Step 4: `release.md`** — pre-flight checklist (checkpoints ticked, migrations on prod with `supabase db push`, function secrets set, data loaded, Maestro green on prod build), hotfix path (`eas update --channel production` for JS-only fixes), rollback (republish the previous update; for native issues, halt the Play rollout and remove the iOS build from sale).
 - [ ] **Step 5: Launch 8 Dec** — release both approved builds, tag `v1.0.0`, watch `daily_stats` and `client_errors` for the first 48 h.
 - [ ] **Step 6: Commit** — `docs(ops): release checklist, hotfix and rollback`
+
+---
+
+### Task D9: Web app — PWA install, offline shell, browser tests, okbite.md
+
+**Files:**
+- Create: `apps/mobile/public/manifest.webmanifest`, `apps/mobile/public/_redirects` (if not done in D2), `apps/mobile/workbox-config.cjs`, `apps/mobile/app/+html.tsx`, `e2e-web/playwright.config.ts`, `e2e-web/flows.spec.ts`
+- Modify: `apps/mobile/package.json` (`"web": "expo export -p web && workbox generateSW workbox-config.cjs"`), root `package.json` (`"e2e:web": "playwright test -c e2e-web"`), `.github/workflows/ci.yml` (web e2e job)
+
+**Interfaces:**
+- Consumes: the web variants from B1, B2, B6, B8; seeded products (C2).
+- Produces: an installable web app at `https://okbite.md` that opens offline to the shell and history.
+
+- [ ] **Step 1: Failing Playwright specs** (device profiles "iPhone 13" and "Pixel 7", against `npx serve apps/mobile/dist` + staging): manual code `4840001000014` → result shows "Lapte"; gallery upload of the test front photo → identify flow; unknown product → add flow with two uploaded label photos → result with "Neverificat"; offline (`context.setOffline(true)`) → history still opens; the manifest is linked and has name "OkBite", `display: standalone`, 192 and 512 icons.
+- [ ] **Step 2: Implement** — `+html.tsx` adds the manifest link, theme colour, `apple-mobile-web-app-capable`, and the apple-touch-icon; Workbox precaches the exported bundle and fonts and uses NetworkFirst for function calls (never caching POSTs); the service worker is registered only on web.
+- [ ] **Step 3: Verify** — Playwright PASS; Lighthouse (mobile) on the preview URL: PWA installable, accessibility ≥ 95; on a real iPhone (Safari) and Android (Chrome): add to home screen, photo flow works, history opens in airplane mode.
+- [ ] **Step 4 (human):** point `okbite.md` DNS to Cloudflare Pages (production branch `main`), HTTPS on.
+- [ ] **Step 5: Commit** — `feat(web): installable web app with offline shell and browser tests`

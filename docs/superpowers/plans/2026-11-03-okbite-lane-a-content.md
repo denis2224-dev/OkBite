@@ -30,7 +30,7 @@ See the overall plan. Lane-specific: every ingredient explanation, allergen syno
 **Interfaces:**
 - Produces: `export const ro = { … } as const;`, `export type Copy = typeof ro;`, and `plural(n: number, one: string, many: string): string` ("1 produs", "2 produse", "20 de produse" — "de" when `n % 100` is 0 or ≥ 20 and `n ≥ 20`).
 - Top-level sections, exactly: `app, nav, home, capture, identify, scan, result, score, ingredients, compare, add, review, history, offline, errors, share, legal`.
-- Keys other lanes already reference (must exist with these names): `home.title`, `home.photoButton`, `home.scanLink`, `capture.working`, `scan.manualInvalid`, `result.scoreUnavailable`, `result.unverifiedNote`, `result.teaspoons` (object with `underHalf`, `half`, `one`, `many: (n: string) => string`), `score.ringLabel: (score: number, grade: string) => string`, `score.disclaimer`, `ingredients.explanationSoon`, `compare.otherCategory`, `review.unclearField`, `share.storeLink`.
+- Keys other lanes already reference (must exist with these names): `home.title`, `home.photoButton`, `home.scanLink`, `capture.working`, `scan.manualInvalid`, `result.scoreUnavailable`, `result.unverifiedNote`, `result.teaspoons` (object with `underHalf`, `half`, `one`, `many: (n: string) => string`), `score.ringLabel: (score: number, grade: string) => string`, `score.disclaimer`, `ingredients.explanationSoon`, `compare.otherCategory`, `review.unclearField`, `scan.webManualOnly` (browser without barcode reading: "În acest browser introdu codul de mână sau fotografiază produsul.").
 
 - [ ] **Step 1: Failing tests**
 
@@ -91,16 +91,16 @@ Run: `pnpm --filter mobile test src/copy` → Expected: FAIL.
 ### Task A4: Legal and method screens, hosted privacy policy
 
 **Files:**
-- Create: `apps/mobile/app/(info)/about.tsx`, `privacy.tsx`, `terms.tsx`, `method.tsx`, `apps/mobile/src/features/legal/texts.ts`, `store/site/privacy.html`, `store/site/index.html`, `.github/workflows/pages.yml` (ask Lane D to review, since `.github/` is theirs)
+- Create: `apps/mobile/app/(info)/about.tsx`, `privacy.tsx`, `terms.tsx`, `method.tsx`, `apps/mobile/src/features/legal/texts.ts`
 - Test: `apps/mobile/src/features/legal/legal.test.tsx`
 
 **Interfaces:**
-- Consumes: UI kit (B1). Produces: routes `/about`, `/privacy`, `/terms`, `/method`; a public privacy policy URL on GitHub Pages for the store listings (A5).
+- Consumes: UI kit (B1). Produces: routes `/about`, `/privacy`, `/terms`, `/method`; because the app also runs on the web, `https://okbite.md/privacy` is the public privacy policy URL for the store listings (A5).
 
 - [ ] **Step 1: Failing test** — each screen renders a header and "Ultima actualizare"; privacy states that photos are sent to the Claude API for reading and stored with the product record, that a random device id is used, and that no account, name or location is collected; method contains `ro.score.disclaimer`; about lists data sources (producer labels, Open Food Facts with ODbL attribution, shopper photos, team checks).
-- [ ] **Step 2: Draft** the texts in `texts.ts` (one source for the screens and `privacy.html`); mention Moldova's Law 133/2011 on personal data protection and the contact email `[TEAM EMAIL]`; terms: information only, not medical advice, check the pack if allergic, shopper-added products are unverified until checked.
-- [ ] **Step 3 (human):** Read against the law and the spec; replace placeholders; enable GitHub Pages from `store/site/`.
-- [ ] **Step 4: Commit** — `feat(legal): privacy, terms, method and about screens plus hosted privacy policy`
+- [ ] **Step 2: Draft** the texts in `texts.ts` (one source for app and web); mention Moldova's Law 133/2011 on personal data protection and the contact email `[TEAM EMAIL]`; terms: information only, not medical advice, check the pack if allergic, shopper-added products are unverified until checked.
+- [ ] **Step 3 (human):** Read against the law and the spec; replace placeholders; open `/privacy` on the web preview to confirm it loads without the app.
+- [ ] **Step 4: Commit** — `feat(legal): privacy, terms, method and about screens`
 
 ---
 
@@ -138,5 +138,5 @@ Run: `pnpm --filter mobile test src/copy` → Expected: FAIL.
 ### Task A8: Launch posts (8 Dec)
 
 - [ ] **Step 1:** 30-second screen recording: photo of a product → result → ingredients; and photo of an unknown product → added.
-- [ ] **Step 2:** Romanian posts for student groups and local Facebook / Telegram groups with the App Store and Google Play links; no health claims.
+- [ ] **Step 2:** Romanian posts for student groups and local Facebook / Telegram groups with the App Store and Google Play links and `okbite.md` for use in the browser; no health claims.
 - [ ] **Step 3:** Publish once Lane D confirms both stores show the app.

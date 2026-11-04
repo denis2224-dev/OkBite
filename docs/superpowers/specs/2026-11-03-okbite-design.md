@@ -17,7 +17,9 @@ The core flow:
 
 The shopper can also **scan the barcode directly** with the live camera, or type it, as an alternative entry.
 
-History works offline. No shopper accounts. Romanian only. Target: both stores live on **2026-12-08** (subject to Apple and Google review). Pricing (free, paid, or in-app purchase) is **not decided**: build it free, with no payment code.
+The same app also runs **in the phone's browser** (Safari on iPhone, Chrome on Android) at `https://okbite.md`, built from the same code with Expo web, installable to the home screen as a PWA. The browser version has the same flows; where a browser lacks a feature (on-device barcode reading in iOS Safari, haptics), it falls back as described in §6.
+
+History works offline. No shopper accounts. Romanian only. Target: both stores live and the web app public on **2026-12-08** (subject to Apple and Google review). Pricing (free, paid, or in-app purchase) is **not decided**: build it free, with no payment code.
 
 ## 2. Screens (the prototype shows the look and copy; adapt layout to native)
 
@@ -65,6 +67,20 @@ History works offline. No shopper accounts. Romanian only. Target: both stores l
 
 ## 6. Architecture
 
+**Web (phone browser):** `apps/mobile` also builds for web (`npx expo export -p web`, react-native-web) and is hosted on Cloudflare Pages at `https://okbite.md`, with a web manifest and a service worker so it installs and opens offline. Platform differences live in `*.web.ts(x)` files next to the native ones:
+
+| Feature | Native | Web |
+|---|---|---|
+| Camera photo | expo-camera `CameraView` | expo-camera on web, or file input with `capture="environment"` |
+| Barcode in photo | `scanFromURLAsync` | browser `BarcodeDetector` when available (Chrome Android); otherwise skip to `identify`, which also reads printed digits |
+| Live barcode scan | `CameraView` scanner | `BarcodeDetector` on the video stream when available; otherwise manual entry only |
+| History and offline queue | expo-sqlite | IndexedDB |
+| Device id | expo-secure-store | `localStorage` |
+| Haptics, share sheet | expo-haptics, `Share` | none; Web Share API, else copy link |
+| Product links | `okbite://product/<id>` | `https://okbite.md/product/<id>` (also used in shared texts) |
+
+**Shared by all three platforms:**
+
 - `apps/mobile`: Expo SDK (latest stable), Expo Router, TypeScript, expo-camera, expo-image-manipulator, expo-sqlite (history and offline queue), expo-secure-store (device id), jest-expo + React Native Testing Library. Built and submitted with EAS Build / EAS Submit; JS fixes shipped with EAS Update.
 - `packages/shared`: contract (types + Zod), pure logic (EAN checksum, score, allergen matcher). Copied into `supabase/functions/_shared/` by `pnpm sync-shared`.
 - `supabase/`: Postgres + `pg_trgm`, Storage buckets `uploads` (private) and `products` (public), Edge Functions `lookup`, `identify`, `read-label`, `add-product`, `report`, `moderate`. Team sign-in with Supabase Auth (email magic link) for the moderation screen only.
@@ -89,7 +105,8 @@ Errors: HTTP 4xx/5xx with `{ error: 'bad_request' | 'rate_limited' | 'not_found'
 
 ## 8. Store and non-functional requirements
 
-- iOS 16+ and Android 9+; phones from 360 dp wide; light and dark mode.
+- iOS 16+ and Android 9+; in the browser, Safari on iOS 16.4+ and Chrome on Android (latest two versions); phones from 360 dp wide; light and dark mode.
+- Web: served over HTTPS only (camera needs it); Lighthouse PWA installable and accessibility ≥ 95 on the phone profile.
 - Camera and photo-library permission texts in Romanian (Info.plist / Android manifest), explaining photos are used to read labels.
 - Accessibility: every control has `accessibilityLabel`; Dynamic Type / font scaling up to 200% without clipping; touch targets ≥ 44 pt; contrast ≥ 4.5:1.
 - Time from photo to answer for a known product: under 3 s on 4G.

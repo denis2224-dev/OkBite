@@ -14,6 +14,8 @@
 
 See the overall plan. Lane-specific: you own `apps/mobile/**` except `src/copy/`, `src/features/legal/`, `app/(info)/` (A), `app/admin/`, `src/features/admin/` (C), and `app.config.ts`, `eas.json`, `src/lib/errorReporter.ts` (D). Ask Lane D for any new native permission or plugin. Fonts: Bricolage Grotesque (headings) and Manrope (text) via `@expo-google-fonts`; colours from the prototype, with a dark variant of each token.
 
+**Web (phone browser):** the same screens must work in Safari (iPhone) and Chrome (Android) through Expo web. Put platform differences in `*.web.ts(x)` files next to the native file with the same exports (spec §6 table); never `Platform.OS` checks scattered in screens. Each task below lists its web variant; test it with the PR's browser preview link.
+
 ## Review Focus (owned here)
 
 - The on-device barcode scan of a photo fails on blur or angle: the photo must still go to `identify`, never straight to "not found" (B2).
@@ -30,7 +32,7 @@ See the overall plan. Lane-specific: you own `apps/mobile/**` except `src/copy/`
 - Create: `apps/mobile/app/_layout.tsx` (replace D1's), `apps/mobile/app/(tabs)/_layout.tsx`, `apps/mobile/app/(tabs)/index.tsx`, `apps/mobile/app/(tabs)/compare.tsx`, `apps/mobile/app/(tabs)/history.tsx` (placeholders for B5/B6)
 - Create: `apps/mobile/src/theme/tokens.ts`, `apps/mobile/src/theme/useTheme.ts`
 - Create: `apps/mobile/src/ui/Button.tsx`, `Card.tsx`, `ScoreRing.tsx`, `AllergenChip.tsx`, `Badge.tsx`, `Screen.tsx`, `Toast.tsx`, `index.ts`
-- Create: `apps/mobile/src/lib/device.ts`, `apps/mobile/src/lib/api.ts`, `apps/mobile/src/lib/supabase.ts`, `apps/mobile/src/lib/format.ts`, `apps/mobile/src/test/fixtures.ts`
+- Create: `apps/mobile/src/lib/device.ts`, `apps/mobile/src/lib/device.web.ts` (same API, `localStorage`), `apps/mobile/src/lib/api.ts`, `apps/mobile/src/lib/supabase.ts`, `apps/mobile/src/lib/format.ts`, `apps/mobile/src/test/fixtures.ts`
 - Test: `apps/mobile/src/lib/api.test.ts`, `device.test.ts`, `format.test.ts`, `apps/mobile/src/ui/ScoreRing.test.tsx`, `apps/mobile/app/__tests__/index.test.tsx` (update)
 
 **Interfaces:**
@@ -82,7 +84,7 @@ Run: `pnpm --filter mobile test src/lib` → Expected: PASS.
 Run: `pnpm --filter mobile test src/ui` → Expected: PASS.
 
 - [ ] **Step 4: Shell** — root `_layout.tsx` loads fonts and sets the theme (D7 adds the error-reporter call in its own PR); tabs Acasă / Compară / Istoric; the home screen shows `ro.home.title`, the big `ro.home.photoButton` (→ `/capture`), the `ro.home.scanLink` (→ `/scan`) and the score legend.
-Run: `pnpm lint && pnpm typecheck && pnpm test` → Expected: exit 0. Open on both phones via the PR's QR code.
+Run: `pnpm lint && pnpm typecheck && pnpm test` → Expected: exit 0. Open on both phones via the PR's QR code and in Safari and Chrome via the browser preview link.
 
 - [ ] **Step 5: Commit** — `feat(mobile): app shell, theme, UI kit and typed API client`
 
@@ -100,7 +102,8 @@ Run: `pnpm lint && pnpm typecheck && pnpm test` → Expected: exit 0. Open on bo
 
 - [ ] **Step 1: Failing tests** (mock expo modules) — `compressPhoto` on a 4000×3000 image returns longest side 1600 and ≤ 1.5 MB; `findBarcode` returns the normalised code, `null` when nothing is found, and `null` (not a throw) when `scanFromURLAsync` throws; `useCaptureFlow`: barcode found + `found` → product route; barcode found + `not_found` → still calls `identify` with the photo; no barcode → `identify`; `identify` `found` → product route; `candidates`/`not_found` → `/identify` with the response; network error → offline state with the photo kept (B6 stores it). ManualCode: an invalid code shows `ro.scan.manualInvalid` and does not navigate.
 - [ ] **Step 2: Implement** — `/capture`: full-screen `CameraView` with one shutter button and "Alege din galerie" (expo-image-picker); a working state with `ro.capture.working`; camera permission denied → the prototype's refused state with "Alege din galerie" and "Deschide setările". `/scan`: `CameraView` with `barcodeScannerSettings` (ean13, ean8, upc_a), haptic tap on detection, then `api.lookup`; manual entry below the camera.
-- [ ] **Step 3: Verify** — tests PASS; on an iPhone and an Android phone: photo of a seeded product's barcode side → result; photo of its front → identify flow.
+- [ ] **Step 2b: Web variants** — `findBarcode.web.ts`: uses `BarcodeDetector` (formats ean_13, ean_8, upc_a) on the image when `'BarcodeDetector' in window`, else returns `null` so the photo goes to `identify`; `scan.web.tsx`: live scanning with `BarcodeDetector` on the camera stream when available, otherwise only manual entry with a short note (`ro.scan.webManualOnly`). Test: with `BarcodeDetector` undefined, `findBarcode` returns `null` and `useCaptureFlow` calls `identify`.
+- [ ] **Step 3: Verify** — tests PASS; on an iPhone and an Android phone, in the app and in the browser: photo of a seeded product's barcode side → result; photo of its front → identify flow.
 - [ ] **Step 4: Commit** — `feat(mobile): photo capture with on-device barcode reading, live scan and manual entry`
 
 ---
@@ -164,7 +167,8 @@ Run: `pnpm lint && pnpm typecheck && pnpm test` → Expected: exit 0. Open on bo
 
 - [ ] **Step 1: Failing tests** (in-memory SQLite) — save then list newest first; saving the same product twice keeps one row; `useProduct` falls back to history when `lookup` throws `offline`; `useCaptureFlow` enqueues the compressed photo when offline and shows `/offline`; `flushQueue` processes items in order, removes resolved ones, keeps failed ones.
 - [ ] **Step 2: Implement** — SQLite tables `history(id primary key, json, saved_at)` and `queue(id, kind, payload, created_at)`; queued photos copied to the app's document directory; flush on app foreground and on network regain (`@react-native-community/netinfo`), with a toast linking to the result.
-- [ ] **Step 3: Verify** — tests PASS; on a phone in airplane mode: history opens; a photo taken offline is identified after reconnecting.
+- [ ] **Step 2b: Web variant** — `db.web.ts` and `queue.web.ts` with the same exports on IndexedDB (`idb-keyval` or a small wrapper); queued photos stored as Blobs; flush on the `online` event. Test with `fake-indexeddb`.
+- [ ] **Step 3: Verify** — tests PASS; on a phone in airplane mode (app and browser): history opens; a photo taken offline is identified after reconnecting.
 - [ ] **Step 4: Commit** — `feat(mobile): offline history and queued photos`
 
 ---
@@ -192,8 +196,8 @@ Run: `pnpm lint && pnpm typecheck && pnpm test` → Expected: exit 0. Open on bo
 - Modify: files flagged by the audit; Create: `apps/mobile/src/features/share/shareProduct.ts`
 - Test: `apps/mobile/src/features/share/shareProduct.test.ts`
 
-- [ ] **Step 1: Audit** — VoiceOver (iPhone) and TalkBack (Android) walk through every screen: every control announced with a Romanian label, focus order matches the visual order; font scaling 200% without clipped text; dark mode on every screen with contrast ≥ 4.5:1.
+- [ ] **Step 1: Audit** — VoiceOver (iPhone, app and Safari) and TalkBack (Android, app and Chrome) walk through every screen: every control announced with a Romanian label, focus order matches the visual order; font scaling 200% without clipped text; dark mode on every screen with contrast ≥ 4.5:1.
 - [ ] **Step 2: Fix** every finding as small commits.
-- [ ] **Step 3: Share** — failing test: `shareProduct(product, score)` builds the text "<name> (<brand>): <score> din 100 pe OkBite" plus the store link from `ro.share.storeLink`; implement with React Native `Share`.
+- [ ] **Step 3: Share** — failing test: `shareProduct(product, score)` builds the text "<name> (<brand>): <score> din 100 pe OkBite" plus the link `https://okbite.md/product/<id>`; implement with React Native `Share`, and in `shareProduct.web.ts` with `navigator.share`, falling back to copying the link with a toast.
 - [ ] **Step 4: Polish** — haptics on capture and scan, skeleton loading states, empty states from the prototype, app icon and splash from A5.
 - [ ] **Step 5: Verify and commit** — Maestro flows (D6) still pass; `feat(mobile): accessibility, dark mode, sharing and polish`

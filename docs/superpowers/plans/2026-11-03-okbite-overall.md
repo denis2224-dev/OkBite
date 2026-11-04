@@ -2,11 +2,11 @@
 
 > **For agentic workers:** This file coordinates four lane plans. Do not implement from this file. Open your lane's plan and run it with superpowers:executing-plans (or superpowers:subagent-driven-development). Read this file first for the global rules, the contract owner, and which other lanes' tasks yours waits on.
 
-**Goal:** Ship OkBite as a native iPhone and Android app (App Store + Google Play) by 2026-12-08: photograph a product, get its analysis if it is known, otherwise photograph the label, get the analysis and add the product to the database.
+**Goal:** Ship OkBite as a native iPhone and Android app (App Store + Google Play) and as a web app for phone browsers (`https://okbite.md`, same code via Expo web) by 2026-12-08: photograph a product, get its analysis if it is known, otherwise photograph the label, get the analysis and add the product to the database.
 
 **Architecture:** One pnpm monorepo: `apps/mobile` (Expo + Expo Router), `packages/shared` (contract + pure logic), `supabase/` (Postgres with `pg_trgm`, Storage, Edge Functions that also call Claude for images), `data/` (hand-checked content). Lanes own folders, never task types, so agents running in parallel do not edit the same files. The contract in `packages/shared/src/contract.ts` is written first and changes only through Lane C.
 
-**Tech Stack:** Node 22, pnpm 9, TypeScript 5, Expo SDK (latest stable) with Expo Router, expo-camera, expo-image-manipulator, expo-sqlite, expo-secure-store, Zod 3, jest-expo, React Native Testing Library, Maestro (end-to-end), EAS Build / Submit / Update, Supabase (Postgres 15, Deno Edge Functions, Storage, Auth), Anthropic API (`claude-haiku-5-5`), GitHub Actions.
+**Tech Stack:** Node 22, pnpm 9, TypeScript 5, Expo SDK (latest stable) with Expo Router, expo-camera, expo-image-manipulator, expo-sqlite, expo-secure-store, Zod 3, jest-expo, React Native Testing Library, Maestro (end-to-end), react-native-web + Playwright for the browser version, Cloudflare Pages (web hosting), EAS Build / Submit / Update, Supabase (Postgres 15, Deno Edge Functions, Storage, Auth), Anthropic API (`claude-haiku-5-5`), GitHub Actions.
 
 **Spec:** `docs/superpowers/specs/2026-11-03-okbite-design.md`
 
@@ -17,7 +17,7 @@
 | A · Content, data, store listing | [name] | `2026-11-03-okbite-lane-a-content.md` | `apps/mobile/src/copy/`, `apps/mobile/src/features/legal/`, `apps/mobile/app/(info)/`, `data/`, `store/`, `scripts/check-data.ts` |
 | B · Mobile app | [name] | `2026-11-03-okbite-lane-b-frontend.md` | `apps/mobile/` except paths owned by A, C, D |
 | C · Backend and contract | [name] | `2026-11-03-okbite-lane-c-backend.md` | `packages/shared/src/contract.ts`, `packages/shared/src/score/`, `supabase/` except the `identify` and `read-label` functions, `apps/mobile/app/admin/`, `apps/mobile/src/features/admin/`, `scripts/` except `check-data.ts` |
-| D · AI, quality, release | [name] | `2026-11-03-okbite-lane-d-quality.md` | repo root config, `.github/`, `AGENTS.md`, `CLAUDE.md`, `apps/mobile/app.config.ts`, `apps/mobile/eas.json`, `packages/shared/src/allergens/`, `packages/shared/src/ean/`, `supabase/functions/identify/`, `supabase/functions/read-label/`, `supabase/functions/client-error/`, `.maestro/`, `apps/mobile/src/lib/errorReporter.ts` |
+| D · AI, quality, release | [name] | `2026-11-03-okbite-lane-d-quality.md` | repo root config, `.github/`, `AGENTS.md`, `CLAUDE.md`, `apps/mobile/app.config.ts`, `apps/mobile/eas.json`, `packages/shared/src/allergens/`, `packages/shared/src/ean/`, `supabase/functions/identify/`, `supabase/functions/read-label/`, `supabase/functions/client-error/`, `.maestro/`, `e2e-web/`, `apps/mobile/public/` (web manifest, service worker), `apps/mobile/src/lib/errorReporter.ts` |
 
 ## How each person starts a session
 
@@ -50,6 +50,7 @@ Inputs the spec implies but feature tests could miss. Each has a test in the own
 - A 12-digit UPC-A code from any source must become the EAN-13 with a leading `0` before lookup (D3).
 - Decimal commas ("0,3") from labels or typing parse as 0.3; blank stays `null`, never `0` (B7, D5).
 - A product with any of kcal, sugar, sat or salt missing shows "Date insuficiente", never a score of 0 (C4, B4).
+- In iOS Safari there is no on-device barcode reading: the photo must go straight to `identify`, and live scan must show manual entry instead of a broken camera (B2 web variants).
 - Two shoppers adding the same new barcode at once: the second gets the first one's product, not an error or a duplicate (C6).
 
 ## Phases and cross-lane dependencies
@@ -102,6 +103,7 @@ Dates are targets. A task may start as soon as everything it depends on is merge
 | Task | Lane | Waits on |
 |---|---|---|
 | B8 Accessibility, dark mode, share, polish | B | P2 gate |
+| D9 Web app: PWA manifest, service worker, Playwright, okbite.md | D | B7 |
 | D7 Error reporting and usage stats | D | P2 gate |
 | A5 Store listing: texts, screenshots, privacy and data-safety answers | A | P2 gate |
 | A7 Beta testers and feedback triage | A | D8 step 1 |
@@ -112,12 +114,12 @@ Dates are targets. A task may start as soon as everything it depends on is merge
 
 | Task | Lane | Waits on |
 |---|---|---|
-| D8 final step: release approved builds | D | store approvals |
+| D8 final step: release approved builds and point okbite.md at the production web build | D | store approvals, D9 |
 | A8 Launch posts | A | D8 |
 
-## Checkpoints (whole team, on real phones: at least one iPhone and one Android)
+## Checkpoints (whole team, on real phones: at least one iPhone and one Android, in the app and in the browser)
 
-- [ ] **8 Nov · P0:** the empty app opens in Expo Go on both platforms; `pnpm test` green on `main`; `lookup?code=4840001000014` returns the seeded yogurt; Apple and Google enrolment submitted.
+- [ ] **8 Nov · P0:** the empty app opens in Expo Go on both platforms and on the web preview URL in Safari and Chrome; `pnpm test` green on `main`; `lookup?code=4840001000014` returns the seeded yogurt; Apple and Google enrolment submitted.
 - [ ] **15 Nov · P1:** photo of a seeded product's barcode side and of its front both lead to the right result; ingredients, compare and history work; at least 50 imported products findable.
 - [ ] **22 Nov · P2:** an unknown product is added from label photos, shown as "Neverificat", and found by a second phone; a moderator verifies it.
 - [ ] **1 Dec:** both store builds submitted for review.

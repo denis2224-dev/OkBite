@@ -30,6 +30,7 @@ OkBite is a Romanian-language mobile app for iPhone and Android (Expo / React Na
 
 - TypeScript strict; named exports; one component per file; files under ~200 lines.
 - All UI text comes from `apps/mobile/src/copy/ro.ts`; Romanian diacritics with comma-below (ș, ț).
+- The same app runs on iOS, Android and the web (Expo web at okbite.md). Put platform differences in `*.web.ts(x)` files with the same exports as the native file; no scattered `Platform.OS` checks.
 - Every pressable has `accessibilityRole` and a Romanian `accessibilityLabel`; screens work in dark mode and at 200% font size.
 - No payment or subscription code: pricing is not decided.
 - Validate every API request and response with the Zod schemas from `@okbite/shared`.
@@ -39,4 +40,4 @@ OkBite is a Romanian-language mobile app for iPhone and Android (Expo / React Na
 
 ## Definition of done
 
-The task's acceptance steps pass, `pnpm lint && pnpm typecheck && pnpm test` is green, the other tool's AI review is addressed, the change was checked on a real iPhone and a real Android phone if it touches the UI, and the task box is ticked in the lane plan.
+The task's acceptance steps pass, `pnpm lint && pnpm typecheck && pnpm test` is green, the other tool's AI review is addressed, the change was checked on a real iPhone and a real Android phone, in the app and in the browser preview, if it touches the UI, and the task box is ticked in the lane plan.
