@@ -1,5 +1,6 @@
 import type { PropsWithChildren, ReactNode } from "react";
 import {
+  Platform,
   ScrollView,
   View,
   Pressable,
@@ -47,6 +48,9 @@ export function Screen({
   ];
   return (
     <SafeAreaView
+      role={Platform.OS === "web" ? "main" : undefined}
+      tabIndex={Platform.OS === "web" ? -1 : undefined}
+      aria-label={Platform.OS === "web" ? title ?? ro.app.name : undefined}
       style={{ flex: 1, backgroundColor: background }}
       edges={["top", "left", "right"]}
     >

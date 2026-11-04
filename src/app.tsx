@@ -8,12 +8,14 @@ import { useFonts } from "expo-font";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ThemeProvider, useTheme } from "./core/theme/app_theme";
 import { useQueueFlush } from "./core/services/connectivity_service";
+import { useNavigationFocus } from "./core/services/navigation_focus";
 import { ToastProvider } from "./shared/widgets/toast";
 function QueueListener() {
   useQueueFlush();
   return null;
 }
 function Navigation() {
+  useNavigationFocus();
   const { isDark, colors } = useTheme();
   return (
     <ToastProvider>
