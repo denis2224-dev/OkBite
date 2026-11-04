@@ -1,5 +1,6 @@
 import React from 'react';
-import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { describe, it, expect, jest, beforeAll, beforeEach, afterEach } from '@jest/globals';
 import { render, fireEvent, screen, act } from '@testing-library/react-native';
 import {
   Category,
@@ -116,6 +117,10 @@ const VALID_LABEL_RESPONSE = ReadLabelResponse.parse({
 });
 
 describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration (B7)', () => {
+  beforeAll(() => {
+    void [View, Text, Pressable, TextInput, ScrollView];
+  }, 15_000);
+
   beforeEach(() => {
     jest.resetAllMocks();
     clearAddReviewDraft();

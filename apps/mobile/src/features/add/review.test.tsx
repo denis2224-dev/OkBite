@@ -1,5 +1,6 @@
 import React from 'react';
-import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { describe, it, expect, jest, beforeAll, beforeEach, afterEach } from '@jest/globals';
 import { render, fireEvent, screen, act } from '@testing-library/react-native';
 import {
   AddProductRequest,
@@ -118,6 +119,12 @@ const SAVED_LOOKUP = LookupResponse.parse({
 });
 
 describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
+  // React Native exports View/Text/Pressable/TextInput/ScrollView as lazy getters (~7.2s cold Babel load);
+  // warm them in beforeAll so every individual test keeps Jest's strict 5000 ms timeout.
+  beforeAll(() => {
+    void [View, Text, Pressable, TextInput, ScrollView];
+  }, 15_000);
+
   beforeEach(() => {
     jest.resetAllMocks();
     clearAddReviewDraft();

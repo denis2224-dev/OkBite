@@ -1,5 +1,6 @@
 import React from 'react';
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import { Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { describe, it, expect, jest, beforeAll, beforeEach } from '@jest/globals';
 import { render, fireEvent, screen } from '@testing-library/react-native';
 import { IdentifyResponse } from '@okbite/shared';
 import { ro } from '../../copy/ro';
@@ -54,6 +55,10 @@ const ORIGINAL_READ = {
 const PHOTO_PATH = 'uploads/dev-1/front-1.jpg';
 
 describe('IdentifyScreen and B3 flow', () => {
+  beforeAll(() => {
+    void [View, Text, Pressable, Image, ScrollView];
+  }, 15_000);
+
   beforeEach(() => {
     jest.resetAllMocks();
     mockParams.value = {};
@@ -261,4 +266,3 @@ describe('IdentifyScreen and B3 flow', () => {
     });
   });
 });
-
