@@ -1,0 +1,14 @@
+{
+  "name": "okbite",
+  "private": true,
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "dev": "pnpm --filter mobile start",
+    "web": "pnpm --filter mobile web",
+    "build:web": "pnpm --filter mobile build:web",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm --filter mobile lint",
+    "awake": "caffeinate -dimsu"
+  }
+}
