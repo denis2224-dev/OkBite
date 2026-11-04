@@ -31,12 +31,32 @@ describe('detectAllergens', () => {
     ['albuș, gălbenuș', ['Ouă'], []],
     ['frișcă', ['Lapte'], []],
     ['grâu khorasan, alac', ['Gluten'], []],
-    // Anexa II pct. 1 exceptions (a)–(c): glucose syrups, dextrose, maltodextrins from wheat or barley
+    // Anexa II pct. 1 exceptions: (a)(b) wheat glucose syrup, dextrose, maltodextrin; (c) barley glucose syrup
     ['sirop de glucoză din grâu, dextroză din grâu', [], []],
     ['maltodextrină din grâu, sirop de glucoză din orz', [], []],
     ['sirop de glucoză din grâu, făină de grâu', ['Gluten'], []],
+    ['maltodextrină din orz', ['Gluten'], []],
     // pct. 7 exception (b): lactitol
     ['lactitol', [], []],
+    // review of PR #3: fish without diacritics, fish names, inflected forms, trace boundaries
+    ['Poate contine urme de peste.', [], ['Pește']],
+    ['Ingrediente: peste (70%), apa, sare.', ['Pește'], []],
+    ['păstrăv afumat, sare', ['Pește'], []],
+    ['șprot afumat, ulei', ['Pește'], []],
+    ['sardină, ulei', ['Pește'], []],
+    ['crabi, homari', ['Crustacee'], []],
+    ['crevete decorticat', ['Crustacee'], []],
+    ['stridie, scoică', ['Moluște'], []],
+    ['emulsifiant: cazeinați de sodiu', ['Lapte'], []],
+    ['nucile, alunele, migdalele', ['Fructe cu coajă lemnoasă'], []],
+    ['nucile de cocos, alunele de pământ', ['Arahide'], []],
+    [
+      'Poate conține urme de arahide\nIngrediente: lapte praf, făină de grâu',
+      ['Gluten', 'Lapte'],
+      ['Arahide'],
+    ],
+    ['Poate conține urme de susan; Ingrediente: ouă', ['Ouă'], ['Susan']],
+    ['poate conține urme de arahide ingrediente: lapte', ['Lapte'], ['Arahide']],
   ])('detectAllergens(%s)', (text, allergens, may) =>
     expect(detectAllergens(text)).toEqual({ allergens, mayContain: may }),
   );

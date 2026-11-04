@@ -1,8 +1,8 @@
 import { ALLERGENS, type Allergen } from '../contract';
 import { SYNONYMS } from './synonyms';
 
-// A trace clause runs from the marker to the end of its sentence.
-const TRACES = /(poate cont(s)?ine|urme de)[^.]*/g;
+// A trace clause runs from the marker to the next ".", ";", line break or "ingrediente".
+const TRACES = /(poate cont(s)?ine|urme de)(?:(?!ingrediente)[^.;\n])*/g;
 
 /** Allergens in an ingredients text; "poate conține …" / "urme de …" clauses go to mayContain. */
 export function detectAllergens(text: string): { allergens: Allergen[]; mayContain: Allergen[] } {
