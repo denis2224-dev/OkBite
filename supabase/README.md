@@ -67,3 +67,54 @@ shadow 56430, Studio 56433, inbox 56434. The running C2 stack stays untouched.
 its handler validates the random device UUID, which is telemetry, not authentication.
 R3/C4 is absent here: the temporary `computeScore` always returns unavailable.
 C6 still requires the real C4 engine and D3 allergen matcher.
+
+### C3 reproduction and evidence (2026-11-04)
+
+Use Node 22.23.4/pnpm 9.12.0, Deno 2.9.6, Supabase CLI 2.65.5 and Docker.
+The planned SDK alias `npm:@supabase/supabase-js@2` resolved to 2.118.0;
+JPEG decoding uses pinned `jpeg-js@0.4.4`. Root `deno.json` bridges the function
+import map and avoids Deno treating pnpm's node_modules as its npm installation.
+SDK/configuration references: [Supabase dependencies](https://supabase.com/docs/guides/functions/dependencies),
+[Deno configuration](https://docs.deno.com/runtime/reference/deno_json/).
+
+```sh
+pnpm install --frozen-lockfile
+pnpm sync-shared
+npx supabase@2.65.5 start
+# In a second terminal (leave running):
+npx supabase@2.65.5 functions serve lookup
+# Back in this terminal, after start/serve:
+node supabase/tests/local-cors.mjs
+# Supply local-only SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+# in ignored supabase/.env.c3-tests (values from supabase status -o env).
+deno check supabase/functions/_shared/index.ts supabase/functions/_lib/*.ts supabase/functions/lookup/*.ts
+deno test -A --env-file=supabase/.env.c3-tests supabase/functions/_lib/ supabase/functions/lookup/
+npx supabase@2.65.5 test db --local
+npx supabase@2.65.5 db lint --local --schema public --fail-on warning
+pnpm lint && pnpm typecheck && pnpm test
+```
+
+Supabase's local Kong default overwrites function CORS with `*` and answers OPTIONS
+itself. The guarded, idempotent `local-cors.mjs` removes only the functions CORS
+plugin on this worktree's C3 gateway; repeat after recreating the local stack.
+Live gateway tests require exact handler headers, 204 preflight and spoof rejection.
+Hosted gateway behavior still needs staging verification before a future deployment.
+No hosted gateway or cloud configuration was changed.
+
+Red evidence: missing score/HTTP/storage/lookup modules; EXIF round-trip initially
+failed because the encoder retained decoder metadata; live gateway failed strict CORS.
+Green: 16 Deno tests including real REST/storage/Edge Runtime round trips;
+75 pgTAP assertions and DB lint; project lint/typecheck, 6 generator tests,
+57 shared tests and 1 mobile test. Lint retains 33 inherited C1 schema/type warnings.
+Generation repeated byte-for-byte. No UI changed; no phone review is claimed.
+
+Lookup rejects missing, duplicate or conflicting selectors and accepts C1 code
+format only; R3/D3 checksum normalization is still unmerged. Code hits log one
+`barcode`; misses log one `not_found`; id hits do not count as barcode scans.
+The loader uses the anon role with explicit public columns, label-order ingredients,
+UTC dates and null nutrients. Only promoted product-bucket paths produce photo URLs;
+private upload paths are never advertised as public images. C2's demo photo-date
+mapping to `addedAt` remains unchanged. No contract or migration changes were needed.
+Count-only quotas are not atomic reservations; C6/D4/D5 must coordinate admission.
+C6 must bind upload prefixes to the caller, handle copy/DB compensation and wait for
+C4/D3. Graph navigation was refreshed locally; derived graph output is excluded.
