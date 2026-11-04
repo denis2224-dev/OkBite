@@ -55,3 +55,15 @@ No photos/URLs are invented. Demo `added_at` maps the prototype photo date and
 `verified_at` its checked date; no human verifier UUID is supplied.
 Production content loading/source validation remains R3/A2/C5; function integration
 continues in C3, AI/search consumers in R3/D4 and telemetry in R1/D7. No UI changed.
+
+## C3 dependent functions work
+
+C3 integrates C3a commits `7270b89` and `613d015` over C2 without the obsolete
+scaffold/graph commits. Dependencies: schema PR #7 and generation PR #8, both
+ultimately gated by cleaned C1/D1. Review is waived; no review approval is claimed.
+The C3 worktree uses **only** `okbite-c3-cd37`, API 56431, DB 56432,
+shadow 56430, Studio 56433, inbox 56434. The running C2 stack stays untouched.
+`lookup` disables gateway JWT verification because shoppers have no accounts;
+its handler validates the random device UUID, which is telemetry, not authentication.
+R3/C4 is absent here: the temporary `computeScore` always returns unavailable.
+C6 still requires the real C4 engine and D3 allergen matcher.
