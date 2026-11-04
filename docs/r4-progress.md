@@ -44,7 +44,7 @@ prototype. New examples are stored only on this device, and their score remains
 unavailable until a scoring service is connected.
 
 For connected operation, configure the two service settings from
-`frontend/mobile/.env.example` and set `EXPO_PUBLIC_PREVIEW=0`. Real capture,
+`client/.env.example` and set `EXPO_PUBLIC_PREVIEW=0`. Real capture,
 identification and contribution routes belong to R5; production ingredient,
 label and comparison routes belong to R1. Those routes are not implemented here.
 The preview-only equivalents demonstrate the intended design without service calls.
@@ -79,6 +79,14 @@ The three review findings were fixed and rechecked with targeted regression test
 ## Repository layout update
 
 `chore/full-stack-layout` builds on the completed R4 branch and moves the
-application into `frontend/mobile` and shared contracts into `shared/contracts`.
-Backend work belongs in `backend/supabase`; development helpers belong in
+application into `client` and shared contracts into `shared/contracts`.
+Backend work belongs in `server/supabase`; development helpers belong in
 `scripts`. Earlier feature branches retain the paths they used at their checkpoints.
+
+## Client/server naming
+
+The current layout is on `chore/client-server-layout`. The frontend is directly
+in `client`, with reusable components, hooks, services and helpers grouped
+under `src`. Expo Router screens live in `client/src/app`. Browser assets live
+in `client/public`, and server-side work belongs in `server/supabase`.
+The root development commands and shared package name remain unchanged.
