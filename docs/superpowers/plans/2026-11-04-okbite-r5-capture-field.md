@@ -84,8 +84,8 @@ See the overall plan. Role-specific: the graph puts your flows in the least cohe
 
 ---
 
-### Task A7: Beta testers and feedback triage (human, 24 Nov – 6 Dec)
+### Task A7: Beta testers and feedback triage (human, 23 Nov – 1 Dec)
 
-- [ ] **Step 1:** Recruit 25 testers with iPhones and Android phones (classmates, families, one allergy community); add them to TestFlight and the Play internal testing track (D8 step 1); send a 5-question feedback form.
+- [ ] **Step 1:** Recruit 25 testers with iPhones and Android phones (classmates, families, one allergy community). No store needed: Android testers install the EAS `preview` build link; iPhone testers register their device for the EAS internal build (`eas device:create`) or use the web preview in Safari. Send a 5-question feedback form.
 - [ ] **Step 2:** Daily: turn feedback into GitHub issues with severity P1 (wrong allergen, crash, data loss), P2, P3, assigned to the owning role.
-- [ ] **Step 3:** Checkpoint 6 Dec: zero open P1 issues.
+- [ ] **Step 3:** Checkpoint 1 Dec ("App complete"): zero open P1 issues.

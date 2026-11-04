@@ -1,24 +1,24 @@
-# OkBite R1 · Platform and Release Implementation Plan
+# OkBite R1 · Web, Quality and Product Details Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Read `AGENTS.md`, `docs/superpowers/plans/2026-11-04-okbite-overall.md` (Global Constraints, Review Focus, who owns what, dependencies) and the spec before your first task. Steps marked **(human)** are done or checked by the person, not the agent. Task IDs keep their original letters (A = content, B = app, C = backend, D = platform/AI) so cross-references stay stable.
 
-**Goal:** Day-one monorepo, CI and phone/browser previews; end-to-end tests; error reporting; the web app (PWA); the App Store, Google Play and okbite.md release, including the store listing and launch posts.
+**Goal:** A coding role from day one: the monorepo, CI and phone/browser previews (days 1–2), then the ingredients, original-label and compare screens, the installable web app, error reporting, and end-to-end tests on phone and browser. Launch work is not yours: it is a whole-team phase after the app is finished (`2026-11-04-okbite-launch.md`).
 
-**Owns (only this role edits these paths):** repo root config, `.github/`, `AGENTS.md`, `CLAUDE.md`, `apps/mobile/app.config.ts`, `apps/mobile/eas.json`, `apps/mobile/public/`, `apps/mobile/app/+html.tsx`, `apps/mobile/src/lib/errorReporter.ts`, `supabase/functions/client-error/`, `.maestro/`, `e2e-web/`, `store/`, `docs/ops/release.md`
+**Owns (only this role edits these paths):** repo root config, `.github/`, `AGENTS.md`, `CLAUDE.md`, `apps/mobile/app.config.ts`, `apps/mobile/eas.json`, `apps/mobile/public/`, `apps/mobile/app/+html.tsx`, `apps/mobile/app/product/[id]/ingredients.tsx`, `apps/mobile/app/product/[id]/label.tsx`, `apps/mobile/app/(tabs)/compare.tsx`, `apps/mobile/src/features/compare/`, `apps/mobile/src/lib/errorReporter.ts`, `supabase/functions/client-error/`, `.maestro/`, `e2e-web/`
 
-**Tasks in order:** D1 → D2 → D7 → D6 → D9 → A5 → D8 → A8
+**Tasks in order:** D1 → D2 → D7 → B5 → D9 → D6
 
 **Spec:** `docs/superpowers/specs/2026-11-03-okbite-design.md`
 
 ## Global Constraints
 
-See the overall plan. Role-specific: D1 and D2 block every other role, so do them first on 4 Nov, and start Apple and Google enrolment the same day (D2 step 4). You are the only role that changes native permissions, plugins and build profiles: other roles ask you.
+See the overall plan. Role-specific: D1 and D2 block every other role, so do them first on 4 Nov, and start Apple and Google enrolment the same day (D2 step 4). Day 1 also: open the Apple Developer, Google Play, Expo and Supabase accounts (D2 step 4), because Apple approval can take days. You are the only role that changes native permissions, plugins and build profiles: other roles ask you. B5 builds on R4's B4 (`useProduct`, UI kit): use them, do not edit them.
 
 ## Review Focus (owned here)
 
 - In iOS Safari there is no on-device barcode reading: the web build must still complete the photo flow through `identify` (D9 Playwright).
-- A JS-only hotfix must reach installed apps through `eas update` without a store review (D8 release.md).
-- Store review notes must let a reviewer test without an account (A5).
+- Ingredients missing from the knowledge base show "Explicație în curând", never an empty row (B5).
+- Comparing products of different categories shows a message, never a misleading table (B5).
 
 ---
 
@@ -128,19 +128,18 @@ Run: `pnpm lint && pnpm typecheck && pnpm test` → Expected: exit 0.
 
 ---
 
-### Task D6: Maestro end-to-end flows
+### Task B5: Ingredients, label and compare screens
 
 **Files:**
-- Create: `.maestro/known-by-photo.yaml`, `.maestro/known-by-code.yaml`, `.maestro/add-unknown.yaml`, `.maestro/offline-history.yaml`, `.maestro/media/` (test photos), `scripts/push-test-media.sh`
-- Modify: root `package.json` (`"e2e": "maestro test .maestro"`)
+- Create: `apps/mobile/app/product/[id]/ingredients.tsx`, `apps/mobile/app/product/[id]/label.tsx`, `apps/mobile/app/(tabs)/compare.tsx` (replace placeholder), `apps/mobile/src/features/compare/compare.ts`, `ProductPicker.tsx`
+- Test: `apps/mobile/src/features/product/ingredients.test.tsx`, `apps/mobile/src/features/compare/compare.test.ts`
 
 **Interfaces:**
-- Consumes: seeded products (C2), the gallery entry on the capture screen (B2), the copy in `ro.ts` (A1) for selectors.
+- Produces: `compareRows(a: Product, b: Product): { key: NutrientKey; a: number|null; b: number|null; better: 'a'|'b'|null }[]` — lower is better for kcal, fat, sat, sugar, salt; higher for protein, fiber; `null` if either side is missing or equal.
 
-- [ ] **Step 1: Test media** — photos of a seeded product's barcode side and front, and of an unknown product's label; `push-test-media.sh` adds them to the iOS simulator (`xcrun simctl addmedia`) or Android emulator (`adb push` + media scan).
-- [ ] **Step 2: Flows** — known by photo (gallery → barcode side → result shows "Lapte"); known by code (manual `4840001000014`); unknown (gallery → front → "Nu avem încă acest produs" → two label photos → review → save → result with "Neverificat"); offline history (airplane mode → history still opens the yogurt).
-- [ ] **Step 3: Run** on a development build against staging → all pass once B4, B6, B7 are merged. Document the run command in the PR.
-- [ ] **Step 4: Commit** — `test(e2e): Maestro flows for photo, code, add and offline`
+- [ ] **Step 1: Failing tests** — ingredients grouped base, fat, taste, add, cult (names from `ro`), each row expands to role, explanation and "Sursa explicației"; ingredients with `slug: null` show `ro.ingredients.explanationSoon`; `compareRows` for yogurts 014 vs 021: sugar → `a`, protein → `a`; different categories → `ro.compare.otherCategory` and no table.
+- [ ] **Step 2: Implement** — ingredients and label screens per the prototype; compare tab: pick A and B from history (same category first) or "Fotografiază alt produs".
+- [ ] **Step 3: Verify and commit** — tests PASS; `feat(mobile): ingredients explained, original label and compare`
 
 ---
 
@@ -162,37 +161,16 @@ Run: `pnpm lint && pnpm typecheck && pnpm test` → Expected: exit 0.
 
 ---
 
-### Task A5: Store listing material
+### Task D6: Maestro end-to-end flows
 
 **Files:**
-- Create: `store/listing.ro.md`, `store/privacy-answers.md`, `store/icon/icon.svg`, `store/screenshots/` (iPhone 6.7" and Android phone), `store/review-notes.md`
+- Create: `.maestro/known-by-photo.yaml`, `.maestro/known-by-code.yaml`, `.maestro/add-unknown.yaml`, `.maestro/offline-history.yaml`, `.maestro/media/` (test photos), `scripts/push-test-media.sh`
+- Modify: root `package.json` (`"e2e": "maestro test .maestro"`)
 
-- [ ] **Step 1:** `listing.ro.md` — app name "OkBite", subtitle (≤ 30 characters), short description (≤ 80, Google Play), full description (≤ 4000), keywords (≤ 100, App Store), category Food & Drink, support email, privacy policy URL from A4. No health claims, no comparison with named competitors.
-- [ ] **Step 2:** `privacy-answers.md` — answers for Apple's App Privacy labels and Google Play's Data safety form: photos (collected, not linked to identity, used for app functionality), device id (app functionality, not tracking), no location, no contacts, data encrypted in transit, deletion contact.
-- [ ] **Step 3:** Icon (1024×1024 source) and splash with the brand green; add them to `app.config.ts` in D8.
-- [ ] **Step 4 (human):** Six screenshots per platform from the beta build: home, photo, result, ingredients, add flow, compare; Romanian captions on each.
-- [ ] **Step 5:** `review-notes.md` — notes for Apple review: what the app does, that no login is needed, test barcodes `4840001000014` and `4840001000021`, and that the admin area is staff-only.
-- [ ] **Step 6: Commit** — `docs(store): listing texts, privacy answers, icon and screenshots`
+**Interfaces:**
+- Consumes: seeded products (C2), the gallery entry on the capture screen (B2), the copy in `ro.ts` (A1) for selectors.
 
----
-
-### Task D8: Store builds, beta tracks, submission and release
-
-**Files:**
-- Create: `docs/ops/release.md`
-- Modify: `apps/mobile/app.config.ts` (final icon, splash, version), `apps/mobile/eas.json` (submit profiles)
-
-- [ ] **Step 1: Beta (by 24 Nov)** — `eas build --profile production --platform all`, then `eas submit` to TestFlight and Google Play internal testing; add the A7 testers (TestFlight external testing needs a short Beta App Review).
-- [ ] **Step 2: Store records** — App Store Connect and Play Console apps for `md.okbite.app`; fill in A5's texts, screenshots, privacy labels / data-safety answers, age rating, support email and privacy policy URL; price set to free (pricing undecided — see overall plan).
-- [ ] **Step 3: Submit for review by 1 Dec** — release mode "manual" on both stores so the launch happens on 8 Dec together. If Apple rejects, fix and resubmit the same day.
-- [ ] **Step 4: `release.md`** — pre-flight checklist (checkpoints ticked, migrations on prod with `supabase db push`, function secrets set, data loaded, Maestro green on prod build), hotfix path (`eas update --channel production` for JS-only fixes), rollback (republish the previous update; for native issues, halt the Play rollout and remove the iOS build from sale).
-- [ ] **Step 5: Launch 8 Dec** — release both approved builds, tag `v1.0.0`, watch `daily_stats` and `client_errors` for the first 48 h.
-- [ ] **Step 6: Commit** — `docs(ops): release checklist, hotfix and rollback`
-
----
-
-### Task A8: Launch posts (8 Dec)
-
-- [ ] **Step 1:** 30-second screen recording: photo of a product → result → ingredients; and photo of an unknown product → added.
-- [ ] **Step 2:** Romanian posts for student groups and local Facebook / Telegram groups with the App Store and Google Play links and `okbite.md` for use in the browser; no health claims.
-- [ ] **Step 3:** Publish once both stores show the app (D8 step 5).
+- [ ] **Step 1: Test media** — photos of a seeded product's barcode side and front, and of an unknown product's label; `push-test-media.sh` adds them to the iOS simulator (`xcrun simctl addmedia`) or Android emulator (`adb push` + media scan).
+- [ ] **Step 2: Flows** — known by photo (gallery → barcode side → result shows "Lapte"); known by code (manual `4840001000014`); unknown (gallery → front → "Nu avem încă acest produs" → two label photos → review → save → result with "Neverificat"); offline history (airplane mode → history still opens the yogurt).
+- [ ] **Step 3: Run** on a development build against staging → all pass once B4, B6, B7 are merged. Document the run command in the PR.
+- [ ] **Step 4: Commit** — `test(e2e): Maestro flows for photo, code, add and offline`

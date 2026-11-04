@@ -2,17 +2,17 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Read `AGENTS.md`, `docs/superpowers/plans/2026-11-04-okbite-overall.md` (Global Constraints, Review Focus, who owns what, dependencies) and the spec before your first task. Steps marked **(human)** are done or checked by the person, not the agent. Task IDs keep their original letters (A = content, B = app, C = backend, D = platform/AI) so cross-references stay stable.
 
-**Goal:** The app shell, theme, UI kit, typed API client and Romanian copy, then the screens a shopper reads: result, ingredients, label, compare, history (offline), legal pages, and the final accessibility and polish pass — on iOS, Android and web.
+**Goal:** The app shell, theme, UI kit, typed API client and Romanian copy, then the screens a shopper reads: result, history (offline), legal pages, and the final accessibility and polish pass — on iOS, Android and web.
 
-**Owns (only this role edits these paths):** `apps/mobile/app/_layout.tsx`, `apps/mobile/app/(tabs)/`, `apps/mobile/app/product/`, `apps/mobile/app/(info)/`, `apps/mobile/app/offline.tsx`, `apps/mobile/src/{theme,ui,copy}/`, `apps/mobile/src/lib/` except `errorReporter.ts`, `apps/mobile/src/features/{product,compare,history,offline,share,legal}/`
+**Owns (only this role edits these paths):** `apps/mobile/app/_layout.tsx`, `apps/mobile/app/(tabs)/`, `apps/mobile/app/product/[id]/index.tsx`, `apps/mobile/app/(info)/`, `apps/mobile/app/offline.tsx`, `apps/mobile/src/{theme,ui,copy}/`, `apps/mobile/src/lib/` except `errorReporter.ts`, `apps/mobile/src/features/{product,history,offline,share,legal}/`
 
-**Tasks in order:** A1 → B1 → B4 → B5 → B6 → A4 → B8
+**Tasks in order:** A1 → B1 → B4 → B6 → A4 → B8
 
 **Spec:** `docs/superpowers/specs/2026-11-03-okbite-design.md`
 
 ## Global Constraints
 
-See the overall plan. Role-specific: A1 (copy) and B1 (shell, UI kit, API client) are the app-side foundation — the graph shows B1 bridges five areas of the project. Merge both by 8 Nov, because R5 builds on them. Put platform differences in `*.web.ts(x)` files.
+See the overall plan. Role-specific: A1 (copy) and B1 (shell, UI kit, API client) are the app-side foundation — the graph shows B1 bridges five areas of the project. Merge both by 8 Nov, because R1 and R5 build on them; B4 next, because R1's B5 builds on `useProduct`. Put platform differences in `*.web.ts(x)` files.
 
 ## Review Focus (owned here)
 
@@ -132,21 +132,6 @@ Run: `pnpm lint && pnpm typecheck && pnpm test` → Expected: exit 0. Open on bo
 - [ ] **Step 1: Failing tests** — `perPortion(13.2, 150) === 19.8`; `percentOfReference('sat', 2.4) === 12`; `teaspoons(19.8)` → "5 lingurițe"; `teaspoons(1.5)` → "sub jumătate de linguriță"; `ResultView` with `score: null` shows `ro.result.scoreUnavailable` and no text "0 din 100"; status `unverified` shows the "Neverificat" badge and `ro.result.unverifiedNote`; allergens `['Lapte']` show the chip; the disclaimer `ro.score.disclaimer` is always present.
 - [ ] **Step 2: Implement** per the prototype's "Analiza produsului": allergens and may-contain, score card with reasons, portion table, source card (source, added date, verified date or "Neverificat"), "Vezi eticheta originală", "Raportează o greșeală" (sheet → `api.report`), links to ingredients and compare.
 - [ ] **Step 3: Verify and commit** — tests PASS; all 6 seeded products checked on a phone against the prototype; `feat(mobile): product result screen`
-
----
-
-### Task B5: Ingredients, label and compare screens
-
-**Files:**
-- Create: `apps/mobile/app/product/[id]/ingredients.tsx`, `apps/mobile/app/product/[id]/label.tsx`, `apps/mobile/app/(tabs)/compare.tsx` (replace placeholder), `apps/mobile/src/features/compare/compare.ts`, `ProductPicker.tsx`
-- Test: `apps/mobile/src/features/product/ingredients.test.tsx`, `apps/mobile/src/features/compare/compare.test.ts`
-
-**Interfaces:**
-- Produces: `compareRows(a: Product, b: Product): { key: NutrientKey; a: number|null; b: number|null; better: 'a'|'b'|null }[]` — lower is better for kcal, fat, sat, sugar, salt; higher for protein, fiber; `null` if either side is missing or equal.
-
-- [ ] **Step 1: Failing tests** — ingredients grouped base, fat, taste, add, cult (names from `ro`), each row expands to role, explanation and "Sursa explicației"; ingredients with `slug: null` show `ro.ingredients.explanationSoon`; `compareRows` for yogurts 014 vs 021: sugar → `a`, protein → `a`; different categories → `ro.compare.otherCategory` and no table.
-- [ ] **Step 2: Implement** — ingredients and label screens per the prototype; compare tab: pick A and B from history (same category first) or "Fotografiază alt produs".
-- [ ] **Step 3: Verify and commit** — tests PASS; `feat(mobile): ingredients explained, original label and compare`
 
 ---
 

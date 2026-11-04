@@ -17,7 +17,8 @@
 The split comes from a knowledge graph of the spec and the previous plans, built with graphify (`graphify-out/GRAPH_REPORT.md`, `graphify-out/graph.html`: 147 nodes, 427 edges, 8 communities). What it showed and what we did with it:
 
 - **The most connected tasks gate everyone:** C1 contract (23 links), C2 schema (20), B1 app shell and API client (19). They are first in their owners' queues and due by 6–8 Nov.
-- **The communities became roles.** Backend functions + moderation → R2. Reference data + score + the AI functions → R3. Copy, UI kit, results and history → R4. Photo capture and add flow → R5. Platform, CI and release → R1.
+- **The communities became roles.** Backend functions + moderation → R2. Reference data + score + the AI functions → R3. Copy, UI kit, results and history → R4. Photo capture and add flow → R5. Platform and CI → R1, which also takes the ingredients/label/compare screens off R4 (the busiest role) and builds the web app, so all five people write code from day one.
+- **Launch is not a role.** Store listing, builds, submission and launch posts are a whole-team phase after the "App complete" checkpoint (`2026-11-04-okbite-launch.md`). The only early launch step is opening the store accounts on 4 Nov, because Apple approval can take days.
 - **Shared-file conflicts the graph found were removed.** B6 and B2 both edited `useCaptureFlow` (now R5 wires the queue in B2 step 2c). D7 and B1 both touched `_layout.tsx` (R1 adds one line with R4's review). C3 and C4 both write `score/index.ts` (C3 creates a stub, C4 replaces it). D2 and D9 both edit `ci.yml` (same person, R1).
 - **The least cohesive area (photo capture and add flow, 0.12)** depends on R2, R3 and R4 at once, so R5 has fewer coding tasks and leads the field work (shop photo runs, beta).
 
@@ -25,10 +26,11 @@ The split comes from a knowledge graph of the spec and the previous plans, built
 
 | Role | Person | Plan file | Tasks | Owns these paths | Reviews |
 |---|---|---|---|---|---|
-| R1 · Platform and Release | [name] | `2026-11-04-okbite-r1-platform.md` | D1, D2, D7, D6, D9, A5, D8, A8 | root config, `.github/`, `AGENTS.md`, `CLAUDE.md`, `app.config.ts`, `eas.json`, `apps/mobile/public/`, `app/+html.tsx`, `src/lib/errorReporter.ts`, `functions/client-error/`, `.maestro/`, `e2e-web/`, `store/`, `docs/ops/release.md` | R2 |
+| R1 · Web, Quality and Product Details | [name] | `2026-11-04-okbite-r1-web-quality.md` | D1, D2, D7, B5, D9, D6 | root config, `.github/`, `AGENTS.md`, `CLAUDE.md`, `app.config.ts`, `eas.json`, `apps/mobile/public/`, `app/+html.tsx`, `app/product/[id]/{ingredients,label}.tsx`, `app/(tabs)/compare.tsx`, `src/features/compare/`, `src/lib/errorReporter.ts`, `functions/client-error/`, `.maestro/`, `e2e-web/` | R2 |
 | R2 · Backend and Contract | [name] | `2026-11-04-okbite-r2-backend.md` | C1, C2, C3, C6, C7, C8 | `packages/shared/src/contract.ts`, `supabase/` (migrations, seed, `_lib` except `claude.ts`, lookup, add-product, report, moderate), `scripts/sync-shared.mjs`, admin screens, `docs/ops/moderation.md` | R3 |
 | R3 · AI and Data | [name] | `2026-11-04-okbite-r3-ai-data.md` | D3, A3, C4, A2, C5, D4, D5 | `packages/shared/src/{score,ean,allergens}/`, `functions/{identify,read-label}/`, `functions/_lib/claude.ts`, `data/`, `scripts/{check-data,load-data,import-off}.ts` | R4 |
-| R4 · App Foundation and Product Screens | [name] | `2026-11-04-okbite-r4-app-screens.md` | A1, B1, B4, B5, B6, A4, B8 | app shell, tabs, product, info and offline routes; `src/{theme,ui,copy,lib}/` (except `errorReporter.ts`); `src/features/{product,compare,history,offline,share,legal}/` | R5 |
+| R4 · App Foundation and Product Screens | [name] | `2026-11-04-okbite-r4-app-screens.md` | A1, B1, B4, B6, A4, B8 | app shell, tabs (except compare), `app/product/[id]/index.tsx`, info and offline routes; `src/{theme,ui,copy,lib}/` (except `errorReporter.ts`); `src/features/{product,history,offline,share,legal}/` | R5 |
+| Launch (whole team) | all | `2026-11-04-okbite-launch.md` | A5 (R4), D8 (R1), A8 (R5) | `store/`, `docs/ops/release.md` | — |
 | R5 · Capture, Contribution and Field Testing | [name] | `2026-11-04-okbite-r5-capture-field.md` | B2, B3, B7, A6, A7 | `app/{capture,scan,identify}.tsx`, `app/add/`, `src/features/{capture,scan,identify,add}/` | R1 |
 
 Task IDs keep their original letters (A content, B app, C backend, D platform/AI) so every cross-reference in the plans stays valid.
@@ -101,7 +103,7 @@ A task may start as soon as everything it waits on is merged to `main`.
 | B2 Capture, barcode in photo, live scan, manual entry | R5 | B1, D3 |
 | B3 Identify flow screens | R5 | B2, D4 |
 | B4 Result screen | R4 | B1, C3, C4 |
-| B5 Ingredients, label and compare | R4 | B4 |
+| B5 Ingredients, label and compare | R1 | B4 |
 | B6 History and offline queue | R4 | B4 |
 | D7 Error reporting and usage stats | R1 | C2, B1 |
 
@@ -118,42 +120,45 @@ A task may start as soon as everything it waits on is merged to `main`.
 | D6 Maestro end-to-end flows | R1 | B4, B6, B7 |
 | A6 Shop photo runs (12–29 Nov, all five; R5 leads) | R5 | B7 for the second run |
 
-### P3 · Beta and store submission (23 Nov–6 Dec) — gate: 25 testers on TestFlight / Play internal testing / web, no open P1 bugs, both builds submitted by 1 Dec
+### P3 · Hardening and beta (23 Nov–1 Dec) — gate "App complete": every task above merged, 25 testers used it (EAS preview builds + web preview, no store needed), zero open P1 bugs
 
 | Task | Role | Waits on |
 |---|---|---|
 | D9 Web app: PWA, offline shell, Playwright, okbite.md | R1 | B7, B6 |
 | B8 Accessibility, dark mode, sharing, polish | R4 | P2 gate |
-| A5 Store listing material | R1 | P2 gate, A4 |
-| D8 Store builds, beta tracks, submission (beta by 24 Nov, review by 1 Dec) | R1 | D2, A5 |
-| A7 Beta testers and feedback triage | R5 | D8 step 1 |
+| A7 Beta testers and feedback triage | R5 | P2 gate, D2 (preview builds) |
 | C8 Backups and moderation routine | R2 | C7 |
+| Bug fixes from the beta, each owner on their own paths | all | A7 issues |
 
-### Launch (8 Dec)
+### Launch phase (2–8 Dec, whole team, only after "App complete") — see `2026-11-04-okbite-launch.md`
 
-| Task | Role | Waits on |
+| Task | Who | Waits on |
 |---|---|---|
-| D8 final steps: release both store builds, point okbite.md at production | R1 | store approvals, D9 |
-| A8 Launch posts | R1 | D8 |
+| D2 step 4 (early, 4 Nov): open Apple, Google, Expo, Supabase accounts | R1 | — |
+| A5 Store listing texts, screenshots, privacy answers | R4 | App complete |
+| D8 Production builds, store submission (2–3 Dec), release on 8 Dec | R1 | App complete, A5 |
+| A8 Launch posts | R5 | D8 |
 
 ## Workload (coding tasks · human-heavy tasks)
 
 | Role | Coding | Human-heavy | Busiest weeks |
 |---|---|---|---|
-| R1 | D1, D2, D7, D6, D9, D8 | A5, A8, store accounts | 4–8 Nov, 23 Nov–8 Dec |
+| R1 | D1, D2, D7, B5, D9, D6 | store accounts (day 1) | 4 Nov–1 Dec |
 | R2 | C1, C2, C3, C6, C7 | C8 moderation | 4–22 Nov |
 | R3 | D3, C4, C5, D4, D5 | A2 drafts, A3 fixtures | 4–22 Nov |
-| R4 | A1, B1, B4, B5, B6, A4, B8 | — | 5–22 Nov, 30 Nov–6 Dec |
-| R5 | B2, B3, B7 | A6 lead, A7 lead | 9–22 Nov, 24 Nov–6 Dec |
+| R4 | A1, B1, B4, B6, A4, B8 | — | 5 Nov–1 Dec |
+| R5 | B2, B3, B7 | A6 lead, A7 lead | 9 Nov–1 Dec |
+
+In the launch phase (2–8 Dec) R1 does the builds and submission, R4 the listing, R5 the posts; R2 and R3 watch moderation and AI costs.
 
 ## Checkpoints (whole team; at least one iPhone and one Android, in the app and in the browser)
 
 - [ ] **8 Nov · P0:** empty app on both phones and in Safari/Chrome; `pnpm test` green on `main`; `lookup?code=4840001000014` returns the seeded yogurt; store enrolment submitted.
 - [ ] **15 Nov · P1:** photo of a seeded product's barcode side and of its front both lead to the right result; ingredients, compare and history work; at least 50 imported products findable.
 - [ ] **22 Nov · P2:** an unknown product is added from label photos, shown as "Neverificat", found by a second phone, verified by a moderator.
-- [ ] **1 Dec:** both store builds submitted for review; okbite.md serves the production web build behind a password or unlinked.
-- [ ] **6 Dec · P3:** 300 products, 25 testers, zero open P1 bugs.
-- [ ] **8 Dec · Launch:** both stores and okbite.md public.
+- [ ] **1 Dec · App complete:** all tasks merged, 300 products, 25 testers, zero open P1 bugs. Only now does the launch phase start.
+- [ ] **3 Dec:** both store builds submitted for review.
+- [ ] **8 Dec · Launch:** both stores and okbite.md public (or okbite.md first, stores when approved).
 
 ## Open decisions (owner: the team)
 
