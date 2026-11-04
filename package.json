@@ -51,7 +51,8 @@
     "awake": "sh scripts/keep-awake.sh",
     "dev:awake": "sh scripts/keep-awake.sh expo start",
     "web:awake": "sh scripts/keep-awake.sh expo start --web",
-    "test:web": "jest --config jest.web.config.cjs --runInBand"
+    "test:web": "jest --config jest.web.config.cjs --runInBand",
+    "check": "npm run typecheck && npm run lint && npm test && npm run test:web"
   },
   "private": true,
   "packageManager": "pnpm@9.12.0"

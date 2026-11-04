@@ -39,7 +39,7 @@ export default function Home() {
   );
   const entries = (isPreview ? demo.history : history).slice(0, 3);
   const tab = (path: "/" | "/compare" | "/history") => {
-    router.dismissAll();
+    if (router.canDismiss()) router.dismissAll();
     router.replace(path);
   };
   const header = (

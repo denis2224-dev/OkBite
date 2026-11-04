@@ -41,7 +41,7 @@ export default function TabLayout() {
           listeners={{
             tabPress: (event) => {
               event.preventDefault();
-              router.dismissAll();
+              if (router.canDismiss()) router.dismissAll();
               router.replace(
                 name === "index"
                   ? "/"

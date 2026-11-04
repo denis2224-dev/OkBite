@@ -194,7 +194,7 @@ export function ScannerScreen({
             keyboardType="number-pad"
             value={code}
             onChangeText={(v) => {
-              setCode(v.replace(/D/g, ""));
+              setCode(v.replace(/\D/g, ""));
               setError("");
             }}
             onSubmitEditing={findCode}
