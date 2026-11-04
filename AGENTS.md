@@ -5,8 +5,8 @@ OkBite is a Romanian-language mobile app for iPhone and Android (Expo / React Na
 ## Read first, in this order
 
 1. `docs/superpowers/specs/2026-11-03-okbite-design.md` — what we build.
-2. `docs/superpowers/plans/2026-11-03-okbite-overall.md` — lanes, folder owners, global constraints, dependencies.
-3. Your lane plan in `docs/superpowers/plans/` — the tasks you implement, with superpowers:executing-plans.
+2. `docs/superpowers/plans/2026-11-04-okbite-overall.md` — the 5 roles, folder owners, global constraints, dependencies, how to use Claude Code and Codex together.
+3. Your role plan (`docs/superpowers/plans/2026-11-04-okbite-r<N>-*.md`) — the tasks you implement, with superpowers:executing-plans.
 4. `docs/prototype/Main.dc.html` — the clickable prototype: exact screens, copy, colours and demo data.
 
 ## Working rules
@@ -15,14 +15,14 @@ OkBite is a Romanian-language mobile app for iPhone and Android (Expo / React Na
 2. Work in your own git worktree; never share a working folder with another agent session.
 3. Tests first: write the failing test from the task, see it fail, then implement. Do not weaken or delete a test to make it pass.
 4. Cross-review: work written with Claude gets a Codex review, work written with Codex gets a Claude review, then one human approves.
-5. Only Lane C edits `packages/shared/src/contract.ts` and `supabase/migrations/`. If your task needs a contract change, stop and ask.
+5. Only R2 (Backend) edits `packages/shared/src/contract.ts` and `supabase/migrations/`. If your task needs a contract change, stop and ask.
 6. No fact without a source: allergens, ingredient explanations and score rules must cite a source a human has opened. Never invent nutrition values, products or sources.
-7. Stay inside your lane's folders (see the overall plan). If a task needs a file another lane owns, stop and ask.
+7. Stay inside your role's folders (see the overall plan). If a task needs a file another role owns, stop and ask.
 
 ## Commands
 
 - `pnpm install` · `pnpm dev` (Expo dev server; open in Expo Go or the development build) · `pnpm test` · `pnpm lint` · `pnpm typecheck` · `pnpm e2e` (Maestro)
-- `eas build --profile development|preview|production` · `eas update` (Lane D owns `app.config.ts` and `eas.json`)
+- `eas build --profile development|preview|production` · `eas update` (R1 owns `app.config.ts` and `eas.json`)
 - `pnpm sync-shared` after any change in `packages/shared/src/` (regenerates `supabase/functions/_shared/`, never edit that folder)
 - `supabase start` · `supabase db reset` · `supabase test db` · `deno test supabase/functions/<name>/`
 
@@ -40,4 +40,4 @@ OkBite is a Romanian-language mobile app for iPhone and Android (Expo / React Na
 
 ## Definition of done
 
-The task's acceptance steps pass, `pnpm lint && pnpm typecheck && pnpm test` is green, the other tool's AI review is addressed, the change was checked on a real iPhone and a real Android phone, in the app and in the browser preview, if it touches the UI, and the task box is ticked in the lane plan.
+The task's acceptance steps pass, `pnpm lint && pnpm typecheck && pnpm test` is green, the other tool's AI review is addressed, the change was checked on a real iPhone and a real Android phone, in the app and in the browser preview, if it touches the UI, and the task box is ticked in the role plan.

@@ -90,7 +90,7 @@ History works offline. No shopper accounts. Romanian only. Target: both stores l
 
 ## 7. Contract
 
-Exact types live in `packages/shared/src/contract.ts` (Lane C, Task C1).
+Exact types live in `packages/shared/src/contract.ts` (R2, Task C1).
 
 | Function | Method | Request | Response |
 |---|---|---|---|

@@ -1,28 +1,57 @@
-# OkBite Lane B (Mobile App) Implementation Plan
+# OkBite R4 · App Foundation and Product Screens Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Read `AGENTS.md`, `docs/superpowers/plans/2026-11-03-okbite-overall.md`, the spec, and the prototype source in `docs/prototype/Main.dc.html` before Task B1.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Read `AGENTS.md`, `docs/superpowers/plans/2026-11-04-okbite-overall.md` (Global Constraints, Review Focus, who owns what, dependencies) and the spec before your first task. Steps marked **(human)** are done or checked by the person, not the agent. Task IDs keep their original letters (A = content, B = app, C = backend, D = platform/AI) so cross-references stay stable.
 
-**Goal:** Build every shopper screen as a native iPhone and Android app: photograph a product, get the answer or add the product, plus live barcode scan, history offline, ingredients and comparison.
+**Goal:** The app shell, theme, UI kit, typed API client and Romanian copy, then the screens a shopper reads: result, ingredients, label, compare, history (offline), legal pages, and the final accessibility and polish pass — on iOS, Android and web.
 
-**Architecture:** Expo Router with file-based routes in `apps/mobile/app/` and one folder per feature in `apps/mobile/src/features/`. Screens never call `fetch` directly: they use `apps/mobile/src/lib/api.ts`, which validates every response with the contract's Zod schemas. History and the offline queue live in SQLite (expo-sqlite). All copy comes from `apps/mobile/src/copy/ro.ts` (Lane A). The look follows the prototype, adapted to native controls.
+**Owns (only this role edits these paths):** `apps/mobile/app/_layout.tsx`, `apps/mobile/app/(tabs)/`, `apps/mobile/app/product/`, `apps/mobile/app/(info)/`, `apps/mobile/app/offline.tsx`, `apps/mobile/src/{theme,ui,copy}/`, `apps/mobile/src/lib/` except `errorReporter.ts`, `apps/mobile/src/features/{product,compare,history,offline,share,legal}/`
 
-**Tech Stack:** Expo SDK (latest stable), Expo Router, React Native, TypeScript 5, expo-camera (`CameraView`, `scanFromURLAsync`), expo-image-picker, expo-image-manipulator, expo-sqlite, expo-secure-store, expo-haptics, react-native-svg, Zod 3, jest-expo, React Native Testing Library.
+**Tasks in order:** A1 → B1 → B4 → B5 → B6 → A4 → B8
 
 **Spec:** `docs/superpowers/specs/2026-11-03-okbite-design.md`
 
 ## Global Constraints
 
-See the overall plan. Lane-specific: you own `apps/mobile/**` except `src/copy/`, `src/features/legal/`, `app/(info)/` (A), `app/admin/`, `src/features/admin/` (C), and `app.config.ts`, `eas.json`, `src/lib/errorReporter.ts` (D). Ask Lane D for any new native permission or plugin. Fonts: Bricolage Grotesque (headings) and Manrope (text) via `@expo-google-fonts`; colours from the prototype, with a dark variant of each token.
-
-**Web (phone browser):** the same screens must work in Safari (iPhone) and Chrome (Android) through Expo web. Put platform differences in `*.web.ts(x)` files next to the native file with the same exports (spec §6 table); never `Platform.OS` checks scattered in screens. Each task below lists its web variant; test it with the PR's browser preview link.
+See the overall plan. Role-specific: A1 (copy) and B1 (shell, UI kit, API client) are the app-side foundation — the graph shows B1 bridges five areas of the project. Merge both by 8 Nov, because R5 builds on them. Put platform differences in `*.web.ts(x)` files.
 
 ## Review Focus (owned here)
 
-- The on-device barcode scan of a photo fails on blur or angle: the photo must still go to `identify`, never straight to "not found" (B2).
-- "0,3" typed or read → 0.3; empty field → `null`, never `0` (B7).
-- Missing kcal/sugar/sat/salt → "Scor indisponibil" card, never "0 din 100" (B4).
-- A 12 MP photo → JPEG with longest side 1600 px and ≤ 1.5 MB before upload (B2, B7).
-- Offline: a photo or code taken without network is kept and processed when the network returns; history opens offline (B6).
+- Missing kcal/sugar/sat/salt → "Scor indisponibil", never "0 din 100" (B4).
+- Offline: history opens and results fall back to history (B6).
+- Every key other roles use exists in `ro.ts` with the agreed name (A1).
+
+---
+
+### Task A1: Romanian copy file (fully specified structure)
+
+**Files:**
+- Create: `apps/mobile/src/copy/ro.ts`
+- Test: `apps/mobile/src/copy/ro.test.ts`
+
+**Interfaces:**
+- Produces: `export const ro = { … } as const;`, `export type Copy = typeof ro;`, and `plural(n: number, one: string, many: string): string` ("1 produs", "2 produse", "20 de produse" — "de" when `n % 100` is 0 or ≥ 20 and `n ≥ 20`).
+- Top-level sections, exactly: `app, nav, home, capture, identify, scan, result, score, ingredients, compare, add, review, history, offline, errors, share, legal`.
+- Keys other roles already reference (must exist with these names): `home.title`, `home.photoButton`, `home.scanLink`, `capture.working`, `scan.manualInvalid`, `result.scoreUnavailable`, `result.unverifiedNote`, `result.teaspoons` (object with `underHalf`, `half`, `one`, `many: (n: string) => string`), `score.ringLabel: (score: number, grade: string) => string`, `score.disclaimer`, `ingredients.explanationSoon`, `compare.otherCategory`, `review.unclearField`, `scan.webManualOnly` (browser without barcode reading: "În acest browser introdu codul de mână sau fotografiază produsul.").
+
+- [ ] **Step 1: Failing tests**
+
+```ts
+import { ro, plural } from './ro';
+it('has every section in order', () => {
+  expect(Object.keys(ro)).toEqual(['app','nav','home','capture','identify','scan','result','score','ingredients','compare','add','review','history','offline','errors','share','legal']);
+});
+it('uses comma-below diacritics only', () => { expect(JSON.stringify(ro)).not.toMatch(/[şţŞŢ]/); });
+it.each([[1, '1 produs'], [2, '2 produse'], [19, '19 produse'], [20, '20 de produse'], [101, '101 produse'], [120, '120 de produse']])(
+  'plural %i', (n, s) => expect(plural(n, 'produs', 'produse')).toBe(s));
+it('has the score disclaimer verbatim', () => {
+  expect(ro.score.disclaimer).toBe('Calculat la 100 g; nu indică riscul unei boli.');
+});
+```
+Run: `pnpm --filter mobile test src/copy` → Expected: FAIL.
+
+- [ ] **Step 2: Fill `ro.ts`** — every visible string from `docs/prototype/Main.dc.html`, plus the new photo-first strings: home "Fotografiază produsul", capture working state ("Caut produsul…"), identify ("Este acesta?", "Alege produsul", "Nu e niciunul"), add ("Fotografiază lista de ingrediente", "Acum tabelul nutrițional", "Sunt pe aceeași poză"), the "Neverificat" badge and its note ("Adăugat de un utilizator. Echipa îl verifică în curând."). One key per string, camelCase names describing purpose; strings with numbers are functions.
+- [ ] **Step 3: Verify** — tests PASS; **(human)** read every string in the context of its screen.
+- [ ] **Step 4: Commit** — `feat(copy): Romanian copy for all screens`. Tell R5 the keys are merged.
 
 ---
 
@@ -90,40 +119,6 @@ Run: `pnpm lint && pnpm typecheck && pnpm test` → Expected: exit 0. Open on bo
 
 ---
 
-### Task B2: Capture screen, barcode in photo, live scan and manual entry
-
-**Files:**
-- Create: `apps/mobile/app/capture.tsx`, `apps/mobile/app/scan.tsx`, `apps/mobile/src/features/capture/compressPhoto.ts`, `apps/mobile/src/features/capture/findBarcode.ts`, `apps/mobile/src/features/capture/useCaptureFlow.ts`, `apps/mobile/src/features/scan/ManualCode.tsx`
-- Test: `apps/mobile/src/features/capture/compressPhoto.test.ts`, `findBarcode.test.ts`, `useCaptureFlow.test.ts`, `apps/mobile/src/features/scan/ManualCode.test.tsx`
-
-**Interfaces:**
-- Consumes: `normalizeCode` (D3), `api.lookup`, `api.identify` (B1).
-- Produces: `compressPhoto(uri: string): Promise<{ uri: string; base64: string; bytes: number }>` (longest side 1600, JPEG 0.8, re-compress at 0.6 if > 1.5 MB); `findBarcode(uri: string): Promise<string | null>` (`scanFromURLAsync` for ean13/ean8/upc_a → `normalizeCode`); `useCaptureFlow()` returning `{ state, takePhoto, pickFromGallery }` that ends in `router.replace('/product/<id>')`, `router.replace('/identify', …)`, or the offline state.
-
-- [ ] **Step 1: Failing tests** (mock expo modules) — `compressPhoto` on a 4000×3000 image returns longest side 1600 and ≤ 1.5 MB; `findBarcode` returns the normalised code, `null` when nothing is found, and `null` (not a throw) when `scanFromURLAsync` throws; `useCaptureFlow`: barcode found + `found` → product route; barcode found + `not_found` → still calls `identify` with the photo; no barcode → `identify`; `identify` `found` → product route; `candidates`/`not_found` → `/identify` with the response; network error → offline state with the photo kept (B6 stores it). ManualCode: an invalid code shows `ro.scan.manualInvalid` and does not navigate.
-- [ ] **Step 2: Implement** — `/capture`: full-screen `CameraView` with one shutter button and "Alege din galerie" (expo-image-picker); a working state with `ro.capture.working`; camera permission denied → the prototype's refused state with "Alege din galerie" and "Deschide setările". `/scan`: `CameraView` with `barcodeScannerSettings` (ean13, ean8, upc_a), haptic tap on detection, then `api.lookup`; manual entry below the camera.
-- [ ] **Step 2b: Web variants** — `findBarcode.web.ts`: uses `BarcodeDetector` (formats ean_13, ean_8, upc_a) on the image when `'BarcodeDetector' in window`, else returns `null` so the photo goes to `identify`; `scan.web.tsx`: live scanning with `BarcodeDetector` on the camera stream when available, otherwise only manual entry with a short note (`ro.scan.webManualOnly`). Test: with `BarcodeDetector` undefined, `findBarcode` returns `null` and `useCaptureFlow` calls `identify`.
-- [ ] **Step 3: Verify** — tests PASS; on an iPhone and an Android phone, in the app and in the browser: photo of a seeded product's barcode side → result; photo of its front → identify flow.
-- [ ] **Step 4: Commit** — `feat(mobile): photo capture with on-device barcode reading, live scan and manual entry`
-
----
-
-### Task B3: Identify flow screens
-
-**Files:**
-- Create: `apps/mobile/app/identify.tsx`, `apps/mobile/src/features/identify/ConfirmMatch.tsx`, `CandidateList.tsx`, `NotFound.tsx`
-- Test: `apps/mobile/src/features/identify/identify.test.tsx`
-
-**Interfaces:**
-- Consumes: `IdentifyResponse`, `Candidate`, `FrontRead` (C1); route params from B2.
-- Produces: navigation to `/product/[id]`, or to `/add` with params `{ code?, brand?, name?, quantity?, photoPath }` pre-filled from `read`.
-
-- [ ] **Step 1: Failing tests** — one candidate with similarity ≥ 0.6 → `ConfirmMatch` ("Este acesta?", photo, name, brand, quantity; "Da" → product; "Nu" → `/add` pre-filled); several or lower similarity → `CandidateList` with each candidate and "Nu e niciunul" → `/add`; `not_found` → `NotFound` with the steps from the prototype and "Fotografiază eticheta" → `/add` pre-filled.
-- [ ] **Step 2: Implement** following the prototype's "Confirmă produsul" and "Produs negăsit" screens.
-- [ ] **Step 3: Verify and commit** — tests PASS; `feat(mobile): confirm, choose or add after identifying a photo`
-
----
-
 ### Task B4: Result screen
 
 **Files:**
@@ -159,13 +154,13 @@ Run: `pnpm lint && pnpm typecheck && pnpm test` → Expected: exit 0. Open on bo
 
 **Files:**
 - Create: `apps/mobile/src/features/history/db.ts`, `store.ts` (replace B4's stub), `apps/mobile/app/(tabs)/history.tsx` (replace placeholder), `apps/mobile/src/features/offline/queue.ts`, `apps/mobile/src/features/offline/useQueueFlush.ts`, `apps/mobile/app/offline.tsx`
-- Modify: `apps/mobile/src/features/product/useProduct.ts`, `apps/mobile/src/features/capture/useCaptureFlow.ts`
+- Modify: `apps/mobile/src/features/product/useProduct.ts` (R5 wires the queue into `useCaptureFlow` in their B2 step 2c, so you never edit R5's files)
 - Test: `apps/mobile/src/features/history/store.test.ts`, `apps/mobile/src/features/offline/queue.test.ts`
 
 **Interfaces:**
 - Produces: `saveToHistory(entry: { product: Product; score: ScoreResult }): Promise<void>`, `listHistory(): Promise<HistoryEntry[]>` (newest first, max 200), `getFromHistory(id): Promise<HistoryEntry | undefined>`, `clearHistory(): Promise<void>`, `enqueue(item: { kind: 'photo'; uri: string } | { kind: 'code'; code: string }): Promise<void>`, `flushQueue(): Promise<{ resolved: number }>`.
 
-- [ ] **Step 1: Failing tests** (in-memory SQLite) — save then list newest first; saving the same product twice keeps one row; `useProduct` falls back to history when `lookup` throws `offline`; `useCaptureFlow` enqueues the compressed photo when offline and shows `/offline`; `flushQueue` processes items in order, removes resolved ones, keeps failed ones.
+- [ ] **Step 1: Failing tests** (in-memory SQLite) — save then list newest first; saving the same product twice keeps one row; `useProduct` falls back to history when `lookup` throws `offline`; `enqueue` of a photo keeps a copy of the file; `flushQueue` processes items in order, removes resolved ones, keeps failed ones.
 - [ ] **Step 2: Implement** — SQLite tables `history(id primary key, json, saved_at)` and `queue(id, kind, payload, created_at)`; queued photos copied to the app's document directory; flush on app foreground and on network regain (`@react-native-community/netinfo`), with a toast linking to the result.
 - [ ] **Step 2b: Web variant** — `db.web.ts` and `queue.web.ts` with the same exports on IndexedDB (`idb-keyval` or a small wrapper); queued photos stored as Blobs; flush on the `online` event. Test with `fake-indexeddb`.
 - [ ] **Step 3: Verify** — tests PASS; on a phone in airplane mode (app and browser): history opens; a photo taken offline is identified after reconnecting.
@@ -173,20 +168,19 @@ Run: `pnpm lint && pnpm typecheck && pnpm test` → Expected: exit 0. Open on bo
 
 ---
 
-### Task B7: Add flow (two shots, review, save, result)
+### Task A4: Legal and method screens, hosted privacy policy
 
 **Files:**
-- Create: `apps/mobile/app/add/index.tsx`, `apps/mobile/app/add/review.tsx`, `apps/mobile/src/features/add/parseAmount.ts`, `useAddFlow.ts`, `CategoryPicker.tsx`
-- Test: `apps/mobile/src/features/add/parseAmount.test.ts`, `apps/mobile/src/features/add/review.test.tsx`
+- Create: `apps/mobile/app/(info)/about.tsx`, `privacy.tsx`, `terms.tsx`, `method.tsx`, `apps/mobile/src/features/legal/texts.ts`
+- Test: `apps/mobile/src/features/legal/legal.test.tsx`
 
 **Interfaces:**
-- Consumes: `compressPhoto` (B2), `api.readLabel`, `api.addProduct` (B1), `detectAllergens` (D3), params from B3.
-- Produces: `parseAmount(s: string): number | null`.
+- Consumes: UI kit (B1). Produces: routes `/about`, `/privacy`, `/terms`, `/method`; because the app also runs on the web, `https://okbite.md/privacy` is the public privacy policy URL for the store listings (A5).
 
-- [ ] **Step 1: Failing tests** — `parseAmount('0,3') === 0.3`, `parseAmount(' 13.2 g') === 13.2`, `parseAmount('') === null`, `parseAmount('abc') === null`; review screen: fields from `unclear` are marked with `ro.review.unclearField`; save is disabled until name, brand, category and ingredients are filled; detected allergens update live as the ingredients text changes; brand/name/quantity/code are pre-filled from the params; after `addProduct` succeeds the app opens `/product/<id>` showing "Neverificat"; `rate_limited` and `upstream_failed` show the prototype's retry states.
-- [ ] **Step 2: Implement** — `/add`: shot 1 ingredients list, shot 2 nutrition table, with "Sunt pe aceeași poză" (sends `nutritionImage: null`); `api.readLabel` → `/add/review` (editable ingredients text, nutrition fields, name, brand, quantity, category picker from the categories table, optional barcode) → `api.addProduct` → result.
-- [ ] **Step 3: Verify** — tests PASS; on a phone, add one real unknown product on staging, then find it from a second phone by photo.
-- [ ] **Step 4: Commit** — `feat(mobile): add unknown products from label photos and show the analysis`
+- [ ] **Step 1: Failing test** — each screen renders a header and "Ultima actualizare"; privacy states that photos are sent to the Claude API for reading and stored with the product record, that a random device id is used, and that no account, name or location is collected; method contains `ro.score.disclaimer`; about lists data sources (producer labels, Open Food Facts with ODbL attribution, shopper photos, team checks).
+- [ ] **Step 2: Draft** the texts in `texts.ts` (one source for app and web); mention Moldova's Law 133/2011 on personal data protection and the contact email `[TEAM EMAIL]`; terms: information only, not medical advice, check the pack if allergic, shopper-added products are unverified until checked.
+- [ ] **Step 3 (human):** Read against the law and the spec; replace placeholders; open `/privacy` on the web preview to confirm it loads without the app.
+- [ ] **Step 4: Commit** — `feat(legal): privacy, terms, method and about screens`
 
 ---
 

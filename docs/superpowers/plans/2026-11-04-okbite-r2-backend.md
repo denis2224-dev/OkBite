@@ -1,24 +1,23 @@
-# OkBite Lane C (Backend and Contract) Implementation Plan
+# OkBite R2 · Backend and Contract Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Read `AGENTS.md` and `docs/superpowers/plans/2026-11-03-okbite-overall.md` (Global Constraints, Review Focus, dependencies) before Task C1.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Read `AGENTS.md`, `docs/superpowers/plans/2026-11-04-okbite-overall.md` (Global Constraints, Review Focus, who owns what, dependencies) and the spec before your first task. Steps marked **(human)** are done or checked by the person, not the agent. Task IDs keep their original letters (A = content, B = app, C = backend, D = platform/AI) so cross-references stay stable.
 
-**Goal:** Define the shared contract and database, then build lookup, product search, scoring, data loading, adding products from shoppers, and moderation.
+**Goal:** The shared contract, the database (with trigram search), the function helpers, lookup, add-product, report, and moderation.
 
-**Architecture:** The contract (`packages/shared/src/contract.ts`) is the single source of types and Zod schemas; it is copied into `supabase/functions/_shared/` for the Deno functions. Postgres holds products (verified, unverified, hidden) with a trigram index for name search. Shoppers never write to tables directly, only through functions using the service role. The score is a pure function in `packages/shared/src/score/`.
+**Owns (only this role edits these paths):** `packages/shared/src/contract.ts`, `supabase/` except `functions/identify/`, `functions/read-label/`, `functions/client-error/`, `functions/_lib/claude.ts`; `scripts/sync-shared.mjs`; `apps/mobile/app/admin/`, `apps/mobile/src/features/admin/`; `docs/ops/moderation.md`
 
-**Tech Stack:** TypeScript 5, Zod 3, Vitest, Supabase CLI, Postgres 15 with RLS, `pg_trgm` and `unaccent`, Deno Edge Functions, Supabase Storage and Auth, React Native (admin screens only).
+**Tasks in order:** C1 → C2 → C3 → C6 → C7 → C8
 
 **Spec:** `docs/superpowers/specs/2026-11-03-okbite-design.md`
 
 ## Global Constraints
 
-See the overall plan. Lane-specific: you are the only lane allowed to change `contract.ts` and `supabase/migrations/`. A contract change needs a new migration when it touches stored data, a `pnpm sync-shared` run, and a message in the team chat naming the change.
+See the overall plan. Role-specific: the graph shows C1 (contract) and C2 (schema) are the two most connected tasks in the project — 23 and 20 links. Merge them by 6 Nov; every other role waits on them. You are the only role that changes `contract.ts` and `supabase/migrations/`; announce each change in the team chat and run `pnpm sync-shared`.
 
 ## Review Focus (owned here)
 
-- Any of kcal, sugar, sat or salt `null` → `score: null`, `grade: 'unavailable'`, `missing` lists exactly those keys (C4).
 - `lookup` with a malformed code → 400 `bad_request`, not `not_found` (C3).
-- Two `add-product` calls for the same new code at once → one product; the second call returns it with status `found` (C6).
+- Two `add-product` calls for the same new code at once → one product; the second returns it (C6).
 - Search ignores case and diacritics: "branza" finds "Brânză" (C2).
 
 ---
@@ -31,7 +30,7 @@ See the overall plan. Lane-specific: you are the only lane allowed to change `co
 - Test: `packages/shared/src/contract.test.ts`
 
 **Interfaces:**
-- Produces: every schema and type below. Other lanes import them from `@okbite/shared` (app) or `../_shared/contract.ts` (functions).
+- Produces: every schema and type below. Other roles import them from `@okbite/shared` (app) or `../_shared/contract.ts` (functions).
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -162,7 +161,7 @@ export const ModerateRequest = z.discriminatedUnion('action', [
 export const ErrorCode = z.enum(['bad_request', 'rate_limited', 'not_found', 'unauthorized', 'upstream_failed', 'duplicate']);
 export const ErrorBody = z.object({ error: ErrorCode, message: z.string() });
 
-// Hand-maintained data files in /data (Lane A)
+// Hand-maintained data files in /data (R3)
 export const CategoryEntry = Category;
 export const IngredientEntry = z.object({
   slug: z.string(), name: z.string(), aliases: z.array(z.string()), group: IngredientGroup, role: z.string(),
@@ -268,47 +267,6 @@ Run: `deno test --allow-all supabase/functions/lookup/` (with `supabase start`) 
 - [ ] **Step 3: Implement** the helpers and `lookup` (validate → `loadProduct` → log `barcode` or `not_found` → `json`). Run → Expected: PASS.
 
 - [ ] **Step 4: Commit** — `feat(functions): shared helpers and product lookup`
-
----
-
-### Task C4: Score engine
-
-**Files:**
-- Create: `packages/shared/src/score/nutriscore.ts`, `toHundred.ts`, `reasons.ts`
-- Modify: `packages/shared/src/score/index.ts` (replace the temporary body)
-- Test: `packages/shared/src/score/nutriscore.test.ts`, `toHundred.test.ts`, `index.test.ts`
-
-**Interfaces:**
-- Consumes: `Nutrients`, `ScoreKind`, `ScoreResult`, `ScoreFixture` (C1); `data/score-fixtures.json` (A3).
-- Produces: `nutriScorePoints(n: Nutrients, kind: ScoreKind): { points: number; letter: Letter; components: Record<string, number> }`, `toHundred(points: number, letter: Letter, kind: ScoreKind): number`, `computeScore(n, kind): ScoreResult` (same signature as in C3).
-
-- [ ] **Step 1: Failing tests**
-  - `nutriscore.test.ts`: every entry of `data/score-fixtures.json` gives its `expectedPoints` and `expectedLetter`.
-  - `toHundred.test.ts`: best possible `general` points → 100; worst → 0; first points value of B → 79; last points value of C → 40; never outside 0–100.
-  - `index.test.ts`: `sugar: null` → `{ score: null, grade: 'unavailable', missing: ['sugar'] }`; letters A/B → `good`, C → `medium`, D/E → `low`; ≤ 3 reasons in Romanian whose detail contains the real number with a decimal comma ("13,2 g la 100 g").
-  Run: `pnpm --filter @okbite/shared test score` → Expected: FAIL.
-- [ ] **Step 2: Implement `nutriScorePoints`** exactly as in Santé publique France's 2023 update reports (general foods incl. cheese and red meat; fats, oils, nuts and seeds; beverages incl. water), with the report's table references as comments. Missing positive components count as 0; missing kcal/sugar/sat/salt is handled in `computeScore`.
-- [ ] **Step 3: Implement `toHundred`** per spec §4: inside a band, `score = top − round((points − bandMin) / (bandMax − bandMin) × (top − bottom))`, using the kind's letter cut-offs and its minimum/maximum possible points for open ends.
-- [ ] **Step 4: Implement `reasons.ts` and `computeScore`** — bad reasons from the two highest negative components scoring at least half their maximum; one good reason from the highest positive component scoring ≥ 2; a neutral reason only if fewer than 2 exist. Wording follows the prototype ("Zahăr adăugat", "Bogat în fibre", "Grăsimi saturate: nivel mediu").
-- [ ] **Step 5: Verify** — tests PASS; the human owner checks 5 fixtures against the official calculator before the PR.
-- [ ] **Step 6: Commit** — `feat(shared): Nutri-Score 2023 points and the 0–100 OkBite score`
-
----
-
-### Task C5: Data loaders and Open Food Facts import
-
-**Files:**
-- Create: `scripts/load-data.ts`, `scripts/import-off.ts`
-- Modify: root `package.json` (`"data:load": "tsx scripts/load-data.ts"`, `"data:off": "tsx scripts/import-off.ts"`)
-- Test: `scripts/import-off.test.ts`
-
-**Interfaces:**
-- Consumes: `data/categories.json`, `data/ingredients.json` (A2), `checkData()` from `scripts/check-data.ts` (A2); env `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
-
-- [ ] **Step 1: Failing test** for `mapOffProduct(off): AddProductRequest | null` — maps name, brand, quantity, `nutriments.*_100g`; returns `null` unless the code starts with `484` and has a name; absent nutrients stay `null`.
-- [ ] **Step 2: Implement** — `load-data` refuses to run if `checkData()` reports errors, then upserts categories and ingredients. `import-off` pages through the Open Food Facts search API for codes starting with 484, inserts new codes as `unverified` with `source = 'Open Food Facts'` and category `necunoscut` unless mapped, skips existing codes, and is safe to re-run.
-- [ ] **Step 3: Run** — `pnpm data:load && pnpm data:off` against staging → counts printed; a second run inserts 0.
-- [ ] **Step 4: Commit** — `feat(scripts): load checked data and import Moldovan products from Open Food Facts`
 
 ---
 
