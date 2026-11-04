@@ -108,6 +108,22 @@ describe('checkData categories', () => {
 });
 
 describe('checkData malformed rows', () => {
+  it.each([
+    ['categories', 'slug', 'categories.json'],
+    ['ingredients', 'slug', 'ingredients.json'],
+    ['fixtures', 'name', 'score-fixtures.json'],
+  ] as const)('uses the row index for malformed identifiers in %s', (key, idKey, file) => {
+    for (const id of [{ toString: 0 }, [{ toString: 0 }]]) {
+      const { errors } = checkData({
+        categories: [],
+        ingredients: [],
+        [key]: [{ [idKey]: id }],
+      });
+      expect(errors.length).toBeGreaterThan(0);
+      expect(errors.every((error) => error.startsWith(`${file}[0] #0:`))).toBe(true);
+    }
+  });
+
   it('returns errors instead of throwing for null rows and bad alias types', () => {
     const bad = { ...ingredient, slug: 'x', aliases: [322] };
     const odd = { ...ingredient, slug: 'y', aliases: {} };

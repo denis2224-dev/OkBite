@@ -76,9 +76,10 @@ function validate(file: string, entries: unknown[], schema: z.ZodTypeAny, idKey:
   return entries.flatMap((entry, i) => {
     const result = schema.safeParse(entry);
     if (result.success) return [];
-    const id = (entry as Record<string, unknown>)?.[idKey] ?? `#${i}`;
+    const rawId = (entry as Record<string, unknown>)?.[idKey];
+    const id = typeof rawId === 'string' ? rawId : `#${i}`;
     return result.error.issues.map(
-      (issue) => `${file}[${i}] ${String(id)}: ${issue.path.join('.')} ${issue.message}`,
+      (issue) => `${file}[${i}] ${id}: ${issue.path.join('.')} ${issue.message}`,
     );
   });
 }
