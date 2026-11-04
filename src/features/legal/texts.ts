@@ -38,7 +38,7 @@ export const texts = {
   terms: [
     {
       title: ro.legal.termsLead,
-      body: "OkBite oferă informații despre etichete și nu înlocuiește recomandările unui specialist. Scorul descrie calitatea nutrițională, nu siguranța unui aliment pentru o anumită persoană.",
+      body: "okBite oferă informații despre etichete și nu înlocuiește recomandările unui specialist. Scorul descrie calitatea nutrițională, nu siguranța unui aliment pentru o anumită persoană.",
     },
     {
       title: "Verifică ambalajul",

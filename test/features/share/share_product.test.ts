@@ -12,7 +12,7 @@ it("shares the product with the public link", async () => {
   await shareProduct(foundYogurt.product, foundYogurt.score);
   expect(send).toHaveBeenCalledWith({
     message:
-      "Iaurt natural 2,5% (Livada Verde): 78 din 100 pe OkBite\nhttps://okbite.md/product/" +
+      "Iaurt natural 2,5% (Livada Verde): 78 din 100 pe okBite\nhttps://okbite.md/product/" +
       foundYogurt.product.id,
   });
   send.mockRestore();

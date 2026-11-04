@@ -32,7 +32,7 @@ export const ro = {
       viewfinder: "Încadrează codul de bare în chenar",
       deniedTitle: "Camera nu este permisă",
       scanDenied:
-        "Fără acces la cameră nu putem citi codul de bare. Poți permite accesul din setările browserului (Setări › Site-uri › Pe Etichetă › Cameră) sau poți introduce codul mai jos.",
+        "Fără acces la cameră nu putem citi codul de bare. Poți permite accesul din setările browserului (Setări › Site-uri › okBite › Cameră) sau poți introduce codul mai jos.",
       captureDenied:
         "Poți alege o fotografie a etichetei din galerie sau poți permite accesul la cameră din setările browserului.",
       allow: "Am permis accesul, reîncearcă",
@@ -108,7 +108,7 @@ export const ro = {
     },
 
     integrationTitle: "Acest ecran este în pregătire",
-    name: "Pe Etichetă",
+    name: "okBite",
     back: "Înapoi",
     close: "Închide",
     cancel: "Anulează",
@@ -132,7 +132,7 @@ export const ro = {
     home: "Acasă",
     compare: "Compară",
     history: "Istoric",
-    about: "Despre OkBite",
+    about: "Despre okBite",
     privacy: "Confidențialitate",
     terms: "Termeni de utilizare",
     method: "Cum calculăm scorul",
@@ -374,7 +374,7 @@ export const ro = {
     copied: "Link copiat.",
     error: "Nu am putut distribui produsul.",
     text: (name: string, brand: string, score: string) =>
-      `${name} (${brand}): ${score} pe OkBite`,
+      `${name} (${brand}): ${score} pe okBite`,
     score: (n: number) => `${n} din 100`,
   },
   legal: {
@@ -386,7 +386,7 @@ export const ro = {
     sources: "Sursele noastre",
     aboutLead: "Înțelege eticheta. Alege informat.",
     aboutBody:
-      "OkBite te ajută să citești etichetele produselor din Moldova. Fără cont de cumpărător și fără plăți.",
+      "okBite te ajută să citești etichetele produselor din Moldova. Fără cont de cumpărător și fără plăți.",
     privacyLead: "Date puține. Explicații clare.",
     termsLead: "Un instrument de informare",
     methodLead: "Un scor, explicat",

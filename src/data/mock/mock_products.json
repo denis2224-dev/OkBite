@@ -35,7 +35,7 @@
           "group": "base",
           "role": "Ingredient de bază",
           "explanation": "Lapte de vacă cu grăsimea ajustată la valoarea de pe etichetă. Aduce proteine, calciu și lactoză, zahărul natural din lapte.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": "Lapte"
         },
         {
@@ -44,7 +44,7 @@
           "group": "cult",
           "role": "Fermentare",
           "explanation": "Bacterii care transformă laptele în iaurt și îi dau gustul acrișor.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": null
         }
       ],
@@ -116,7 +116,7 @@
           "group": "base",
           "role": "Ingredient de bază",
           "explanation": "Lapte de vacă cu grăsimea ajustată la valoarea de pe etichetă. Aduce proteine, calciu și lactoză, zahărul natural din lapte.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": "Lapte"
         },
         {
@@ -125,7 +125,7 @@
           "group": "taste",
           "role": "Fructe",
           "explanation": "Amestec de căpșuni, zahăr și îngroșători. Procentul de 12% se referă la tot preparatul, nu doar la fructe.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": null
         },
         {
@@ -134,7 +134,7 @@
           "group": "taste",
           "role": "Îndulcitor",
           "explanation": "Adăugat de producător pentru gust. În tabelul nutrițional apare împreună cu zaharurile naturale, la „din care zaharuri”.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": null
         },
         {
@@ -179,7 +179,7 @@
           "group": "cult",
           "role": "Fermentare",
           "explanation": "Bacterii care transformă laptele în iaurt și îi dau gustul acrișor.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": null
         }
       ],
@@ -251,7 +251,7 @@
           "group": "base",
           "role": "Ingredient de bază",
           "explanation": "Lapte de vacă cu grăsimea ajustată la valoarea de pe etichetă. Aduce proteine, calciu și lactoză, zahărul natural din lapte.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": "Lapte"
         },
         {
@@ -260,7 +260,7 @@
           "group": "fat",
           "role": "Grăsime și cremozitate",
           "explanation": "Partea grasă a laptelui. Explică cele 10% grăsimi și textura densă.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": "Lapte"
         },
         {
@@ -269,7 +269,7 @@
           "group": "cult",
           "role": "Fermentare",
           "explanation": "Bacterii care transformă laptele în iaurt și îi dau gustul acrișor.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": null
         }
       ],
@@ -341,7 +341,7 @@
           "group": "base",
           "role": "Cereale",
           "explanation": "Ovăz presat, sursa principală de fibre din acești biscuiți. Conține gluten.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": "Gluten"
         },
         {
@@ -350,7 +350,7 @@
           "group": "base",
           "role": "Cereale",
           "explanation": "Făină albă, rafinată, cu mai puține fibre decât cea integrală. Conține gluten.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": "Gluten"
         },
         {
@@ -359,7 +359,7 @@
           "group": "taste",
           "role": "Îndulcitor",
           "explanation": "Adăugat de producător pentru gust. În tabelul nutrițional apare împreună cu zaharurile naturale, la „din care zaharuri”.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": null
         },
         {
@@ -368,7 +368,7 @@
           "group": "fat",
           "role": "Grăsime",
           "explanation": "Grăsime vegetală solidă la temperatura camerei, bogată în grăsimi saturate.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": null
         },
         {
@@ -377,7 +377,7 @@
           "group": "taste",
           "role": "Gust",
           "explanation": "Zahăr, masă de cacao, unt de cacao și lapte praf. Aduce și zahăr, și grăsimi saturate.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": "Lapte"
         },
         {
@@ -404,7 +404,7 @@
           "group": "taste",
           "role": "Gust",
           "explanation": "Adăugată pentru gust. Valoarea din tabel include și sodiul din alte ingrediente.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": null
         }
       ],
@@ -476,7 +476,7 @@
           "group": "base",
           "role": "Cereale",
           "explanation": "Făină din bobul întreg, cu tărâțe. Are mult mai multe fibre decât făina albă. Conține gluten.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": "Gluten"
         },
         {
@@ -485,7 +485,7 @@
           "group": "base",
           "role": "Cereale",
           "explanation": "Ovăz presat, sursă de fibre. Conține gluten.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": "Gluten"
         },
         {
@@ -494,7 +494,7 @@
           "group": "taste",
           "role": "Îndulcitor",
           "explanation": "Adăugat de producător pentru gust. În tabelul nutrițional apare împreună cu zaharurile naturale, la „din care zaharuri”.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": null
         },
         {
@@ -503,7 +503,7 @@
           "group": "fat",
           "role": "Grăsime",
           "explanation": "Ulei vegetal lichid, cu puține grăsimi saturate.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": null
         },
         {
@@ -521,7 +521,7 @@
           "group": "taste",
           "role": "Gust",
           "explanation": "Adăugată pentru gust. Valoarea din tabel include și sodiul din alte ingrediente.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": null
         }
       ],
@@ -593,7 +593,7 @@
           "group": "base",
           "role": "Ingredient de bază",
           "explanation": "Sucul a fost concentrat prin eliminarea apei, apoi apa a fost adăugată la loc. Conține zaharurile naturale ale merelor.",
-          "source": "Fișă explicativă Pe Etichetă (date demo)",
+          "source": "Fișă explicativă okBite (date demo)",
           "allergen": null
         },
         {

@@ -136,7 +136,7 @@ export const napIngredients: import("../models/contract").Ingredient[] = [
     group: "base",
     role: "Cereale",
     explanation: "Făină albă, rafinată. Conține gluten.",
-    source: "Fișă explicativă Pe Etichetă (date demo)",
+    source: "Fișă explicativă okBite (date demo)",
     allergen: "Gluten",
   },
   {
@@ -146,7 +146,7 @@ export const napIngredients: import("../models/contract").Ingredient[] = [
     role: "Îndulcitor",
     explanation:
       "Adăugat de producător pentru gust. În tabelul nutrițional apare împreună cu zaharurile naturale, la „din care zaharuri”.",
-    source: "Fișă explicativă Pe Etichetă (date demo)",
+    source: "Fișă explicativă okBite (date demo)",
     allergen: null,
   },
   {
@@ -156,7 +156,7 @@ export const napIngredients: import("../models/contract").Ingredient[] = [
     role: "Grăsime",
     explanation:
       "Grăsime vegetală solidă la temperatura camerei, bogată în grăsimi saturate.",
-    source: "Fișă explicativă Pe Etichetă (date demo)",
+    source: "Fișă explicativă okBite (date demo)",
     allergen: null,
   },
   {
@@ -165,7 +165,7 @@ export const napIngredients: import("../models/contract").Ingredient[] = [
     group: "taste",
     role: "Gust",
     explanation: "Pudră de cacao din care s-a extras o parte din grăsime.",
-    source: "Fișă explicativă Pe Etichetă (date demo)",
+    source: "Fișă explicativă okBite (date demo)",
     allergen: null,
   },
   {
@@ -174,7 +174,7 @@ export const napIngredients: import("../models/contract").Ingredient[] = [
     group: "base",
     role: "Ingredient lactat",
     explanation: "Lapte deshidratat; conține lactoză și proteine din lapte.",
-    source: "Fișă explicativă Pe Etichetă (date demo)",
+    source: "Fișă explicativă okBite (date demo)",
     allergen: "Lapte",
   },
   {
@@ -194,7 +194,7 @@ export const napIngredients: import("../models/contract").Ingredient[] = [
     role: "Gust",
     explanation:
       "Adăugată pentru gust. Valoarea din tabel include și sodiul din alte ingrediente.",
-    source: "Fișă explicativă Pe Etichetă (date demo)",
+    source: "Fișă explicativă okBite (date demo)",
     allergen: null,
   },
   {
@@ -203,7 +203,7 @@ export const napIngredients: import("../models/contract").Ingredient[] = [
     group: "taste",
     role: "Aromă",
     explanation: "Eticheta nu precizează dacă aroma este naturală.",
-    source: "Fișă explicativă Pe Etichetă (date demo)",
+    source: "Fișă explicativă okBite (date demo)",
     allergen: null,
   },
 ];

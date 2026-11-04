@@ -1,4 +1,4 @@
-# OkBite
+# okBite
 
 The Expo application lives directly inside `PWA_Moldova`. It follows the supplied
 feature-oriented layout using TypeScript instead of Dart.
