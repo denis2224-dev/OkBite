@@ -1,17 +1,19 @@
 import {
+  Category,
   ReadLabelResponse,
-  type Category,
+  type Category as CategoryType,
   type ReadLabelResponse as ReadLabelResponseType,
 } from '@okbite/shared';
-import type { AddInitialValues } from '../identify/routes';
+import { parseAddParams, type AddInitialValues } from '../identify/routes';
 
 export interface AddReviewDraft {
   initial: AddInitialValues;
   label: ReadLabelResponseType;
-  categories?: readonly Category[];
 }
 
 let currentDraft: AddReviewDraft | null = null;
+let availableCategories: readonly CategoryType[] = [];
+let retakeIdentity: AddInitialValues | null = null;
 
 function isValidDraft(draft: AddReviewDraft | null): draft is AddReviewDraft {
   if (!draft) return false;
@@ -29,13 +31,44 @@ function isValidDraft(draft: AddReviewDraft | null): draft is AddReviewDraft {
 
 export function setAddReviewDraft(draft: AddReviewDraft): void {
   currentDraft = isValidDraft(draft) ? draft : null;
+  if (currentDraft) {
+    retakeIdentity = null;
+  }
 }
 
 export function getAddReviewDraft(): AddReviewDraft | null {
   return isValidDraft(currentDraft) ? currentDraft : null;
 }
 
-export function clearAddReviewDraft(): void {
-  currentDraft = null;
+export function setAvailableCategories(categories: readonly CategoryType[]): void {
+  const valid: CategoryType[] = [];
+  for (const item of categories) {
+    const parsed = Category.safeParse(item);
+    if (parsed.success) valid.push(parsed.data);
+  }
+  availableCategories = valid;
 }
 
+export function getAvailableCategories(): readonly CategoryType[] {
+  return availableCategories;
+}
+
+export function beginRetakeWithIdentity(identity: AddInitialValues): void {
+  currentDraft = null;
+  retakeIdentity = identity;
+}
+
+export function resolveAddInitialValues(
+  rawParams: Record<string, string | string[] | undefined>,
+): AddInitialValues {
+  if (retakeIdentity) {
+    return retakeIdentity;
+  }
+  return parseAddParams(rawParams);
+}
+
+export function clearAddReviewDraft(): void {
+  currentDraft = null;
+  availableCategories = [];
+  retakeIdentity = null;
+}

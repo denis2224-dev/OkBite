@@ -4,8 +4,7 @@ import { launchImageLibraryAsync } from 'expo-image-picker';
 import { ReadLabelRequest, ReadLabelResponse } from '@okbite/shared';
 import { api } from '../../lib/api';
 import { compressPhoto } from '../capture/compressPhoto';
-import { parseAddParams } from '../identify/routes';
-import { setAddReviewDraft } from './draftStore';
+import { resolveAddInitialValues, setAddReviewDraft } from './draftStore';
 
 export type AddFlowState =
   | { status: 'idle' }
@@ -66,7 +65,7 @@ export function useAddFlow() {
       }
 
       setAddReviewDraft({
-        initial: parseAddParams(rawParams),
+        initial: resolveAddInitialValues(rawParams),
         label: parsedRes.data,
       });
       setState(IDLE);
@@ -163,4 +162,3 @@ export function useAddFlow() {
     canRetry: lastAttemptRef.current !== null,
   };
 }
-

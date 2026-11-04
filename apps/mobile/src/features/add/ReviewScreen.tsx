@@ -4,23 +4,22 @@ import { useRouter } from 'expo-router';
 import {
   LookupResponse,
   type AddProductRequest,
-  type Category,
 } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { api } from '../../lib/api';
 import { StatusPanel } from '../capture/StatusPanel';
-import { productRoute } from '../identify/routes';
-import { clearAddReviewDraft, getAddReviewDraft, type AddReviewDraft } from './draftStore';
+import { addProductRoute, productRoute, type AddInitialValues } from '../identify/routes';
+import {
+  beginRetakeWithIdentity,
+  clearAddReviewDraft,
+  getAddReviewDraft,
+  getAvailableCategories,
+} from './draftStore';
 import { ReviewForm } from './ReviewForm';
 
-export interface ReviewScreenProps {
-  draft?: AddReviewDraft | null;
-  categories?: readonly Category[];
-}
-
-export function ReviewScreen({ draft: propDraft, categories: propCategories }: ReviewScreenProps = {}) {
+export function ReviewScreen() {
   const router = useRouter();
-  const activeDraft = propDraft !== undefined ? propDraft : getAddReviewDraft();
+  const activeDraft = getAddReviewDraft();
 
   if (!activeDraft) {
     return (
@@ -36,7 +35,7 @@ export function ReviewScreen({ draft: propDraft, categories: propCategories }: R
     );
   }
 
-  const categories = propCategories ?? activeDraft.categories ?? [];
+  const categories = getAvailableCategories();
 
   const handleSubmit = async (req: AddProductRequest) => {
     const rawResult = await api.addProduct(req);
@@ -48,9 +47,19 @@ export function ReviewScreen({ draft: propDraft, categories: propCategories }: R
     router.replace(productRoute(parsed.data.product.id));
   };
 
-  const handleRetake = () => {
-    clearAddReviewDraft();
-    router.replace('/add');
+  const handleRetake = (currentIdentity: AddInitialValues) => {
+    beginRetakeWithIdentity(currentIdentity);
+    router.replace(
+      addProductRoute({
+        read: {
+          code: currentIdentity.code,
+          brand: currentIdentity.brand,
+          name: currentIdentity.name,
+          quantity: currentIdentity.quantity,
+        },
+        photoPath: currentIdentity.photoPath,
+      }),
+    );
   };
 
   return (
@@ -69,4 +78,3 @@ export default ReviewScreen;
 const styles = StyleSheet.create({
   emptyRoot: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#F6F1E6' },
 });
-

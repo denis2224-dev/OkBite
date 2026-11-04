@@ -1,18 +1,28 @@
 import React from 'react';
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { render, fireEvent, screen, act } from '@testing-library/react-native';
 import {
+  Category,
+  LookupResponse,
   ReadLabelRequest,
   ReadLabelResponse,
+  type AddProductRequest as AddProductRequestType,
+  type NutrientKey,
   type ReadLabelRequest as ReadLabelRequestType,
 } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import AddScreen from '../../../app/add/index';
-import { clearAddReviewDraft, getAddReviewDraft } from './draftStore';
+import ReviewRouteScreen from '../../../app/add/review';
+import {
+  clearAddReviewDraft,
+  getAddReviewDraft,
+  setAvailableCategories,
+} from './draftStore';
 
 const mockReplace = jest.fn<(href: unknown) => void>();
 const mockParams: { value: Record<string, string | string[] | undefined> } = { value: {} };
 const mockReadLabel = jest.fn<(req: ReadLabelRequestType) => Promise<ReadLabelResponse>>();
+const mockAddProduct = jest.fn<(req: AddProductRequestType) => Promise<LookupResponse>>();
 const mockCompressPhoto = jest.fn<
   (uri: string, maxBytes?: number) => Promise<{ uri: string; base64: string; bytes: number }>
 >();
@@ -57,8 +67,28 @@ jest.mock('../capture/compressPhoto', () => ({
 jest.mock('../../lib/api', () => ({
   api: {
     readLabel: (req: ReadLabelRequestType) => mockReadLabel(req),
+    addProduct: (req: AddProductRequestType) => mockAddProduct(req),
   },
 }));
+
+const COMPLETE_NUTRIENT_LABELS: Record<NutrientKey, string> = {
+  kcal: 'Energie',
+  fat: 'Grăsimi',
+  sat: 'din care saturate',
+  sugar: 'Zaharuri',
+  salt: 'Sare',
+  protein: 'Proteine',
+  fiber: 'Fibre',
+  fruitVegPct: 'Fructe, legume și leguminoase',
+};
+
+const mutableReviewCopy = ro.review as unknown as {
+  nutrients?: Partial<Record<NutrientKey, string>>;
+};
+
+const CATEGORIES = [
+  Category.parse({ slug: 'biscuiti', name: 'Biscuiți', scoreKind: 'general' }),
+];
 
 const cameraReady = () =>
   act(() => {
@@ -78,15 +108,17 @@ const VALID_LABEL_RESPONSE = ReadLabelResponse.parse({
     fiber: 7.8,
     fruitVegPct: null,
   },
-  unclear: [],
+  unclear: ['sugar'],
   ingredientsPhotoPath: 'uploads/dev-1/ing-1.jpg',
   nutritionPhotoPath: 'uploads/dev-1/nut-1.jpg',
 });
 
-describe('AddCaptureScreen and useAddFlow (B7 label capture slice)', () => {
+describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration (B7)', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     clearAddReviewDraft();
+    setAvailableCategories(CATEGORIES);
+    mutableReviewCopy.nutrients = { ...COMPLETE_NUTRIENT_LABELS };
     mockPermissionState.value = { status: 'granted', granted: true };
     mockParams.value = {
       code: '4840001000014',
@@ -101,6 +133,10 @@ describe('AddCaptureScreen and useAddFlow (B7 label capture slice)', () => {
       base64: uri.includes('shot-2') ? 'BASE64_NUTRITION' : 'BASE64_INGREDIENTS',
       bytes: Math.min(400_000, maxBytes),
     }));
+  });
+
+  afterEach(() => {
+    delete mutableReviewCopy.nutrients;
   });
 
   it('captures shot 1 (ingredients), advances to step 2, and supports "Sunt pe aceeași poză" (nutritionImage: null)', async () => {
@@ -118,7 +154,6 @@ describe('AddCaptureScreen and useAddFlow (B7 label capture slice)', () => {
     expect(screen.getByText(ro.add.ingredientsHint)).toBeTruthy();
     expect(screen.queryByText(ro.add.samePhoto)).toBeNull();
 
-    // Take shot 1 (ingredients)
     await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
 
     expect(screen.getByText(ro.add.stepOf(2))).toBeTruthy();
@@ -126,7 +161,6 @@ describe('AddCaptureScreen and useAddFlow (B7 label capture slice)', () => {
     expect(screen.getByText(ro.add.nutritionHint)).toBeTruthy();
     expect(screen.getByText(ro.add.ingredientsDone)).toBeTruthy();
 
-    // Press "Sunt pe aceeași poză"
     await fireEvent.press(screen.getByRole('button', { name: ro.add.samePhoto }));
 
     expect(mockCompressPhoto).toHaveBeenCalledWith('file:///cam-shot-1.jpg', 1_450_000);
@@ -158,10 +192,7 @@ describe('AddCaptureScreen and useAddFlow (B7 label capture slice)', () => {
     await render(<AddScreen />);
     await cameraReady();
 
-    // Shot 1
     await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
-
-    // Shot 2
     await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
 
     expect(mockCompressPhoto).toHaveBeenCalledWith('file:///cam-shot-1.jpg', 700_000);
@@ -175,6 +206,121 @@ describe('AddCaptureScreen and useAddFlow (B7 label capture slice)', () => {
     expect(mockReplace).toHaveBeenCalledWith('/add/review');
   });
 
+  it('preserves edited product identity across review -> retake -> capture -> review and replaces label-photo paths', async () => {
+    // 1. Capture first label pair on /add
+    mockReadLabel.mockResolvedValueOnce(VALID_LABEL_RESPONSE);
+    mockTakePicture
+      .mockResolvedValueOnce({ uri: 'file:///cam-shot-1.jpg' })
+      .mockResolvedValueOnce({ uri: 'file:///cam-shot-2.jpg' });
+
+    const addRender1 = await render(<AddScreen />);
+    await cameraReady();
+    await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
+    await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
+    expect(mockReplace).toHaveBeenLastCalledWith('/add/review');
+    addRender1.unmount();
+
+    // 2. Open /add/review (with zero props), edit identity fields, then press Retake
+    const reviewRender1 = await render(<ReviewRouteScreen />);
+    await fireEvent.changeText(screen.getByLabelText(ro.review.name), 'Biscuiți integrali cu ovăz');
+    await fireEvent.changeText(screen.getByLabelText(ro.review.brand), 'Morărița Nou');
+    await fireEvent.changeText(screen.getByLabelText(ro.review.quantity), '250 g');
+
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.retakePhoto }));
+
+    expect(mockReplace).toHaveBeenLastCalledWith({
+      pathname: '/add',
+      params: {
+        code: '4840001000014',
+        brand: 'Morărița Nou',
+        name: 'Biscuiți integrali cu ovăz',
+        quantity: '250 g',
+        photoPath: 'uploads/dev-1/front-1.jpg',
+      },
+    });
+    expect(getAddReviewDraft()).toBeNull();
+    reviewRender1.unmount();
+
+    // 3. Re-capture new label photos on /add -> new OCR response with new label photo paths
+    const secondLabelResponse = ReadLabelResponse.parse({
+      ...VALID_LABEL_RESPONSE,
+      ingredientsText: 'făină integrală de grâu 45%, fulgi de ovăz 20%, zahăr, sare',
+      unclear: [],
+      ingredientsPhotoPath: 'uploads/dev-1/ing-retake-2.jpg',
+      nutritionPhotoPath: null,
+    });
+    mockReadLabel.mockResolvedValueOnce(secondLabelResponse);
+    mockTakePicture.mockResolvedValueOnce({ uri: 'file:///cam-retake-1.jpg' });
+
+    const addRender2 = await render(<AddScreen />);
+    await cameraReady();
+    await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
+    await fireEvent.press(screen.getByRole('button', { name: ro.add.samePhoto }));
+    expect(mockReplace).toHaveBeenLastCalledWith('/add/review');
+    addRender2.unmount();
+
+    // 4. Open /add/review again (with zero props): verify edited identity is preserved and new label paths are submitted
+    const savedResponse = LookupResponse.parse({
+      status: 'found',
+      product: {
+        id: '9f8e7d6c-5b4a-4321-8765-abcdef012345',
+        code: '4840001000014',
+        status: 'unverified',
+        name: 'Biscuiți integrali cu ovăz',
+        brand: 'Morărița Nou',
+        quantity: '250 g',
+        category: CATEGORIES[0],
+        unit: 'g',
+        portion: { amount: 100, label: '100 g' },
+        nutrients: secondLabelResponse.nutrients,
+        ingredientsText: secondLabelResponse.ingredientsText!,
+        ingredients: [],
+        allergens: ['Gluten'],
+        mayContain: [],
+        imageUrl: null,
+        labelImageUrl: null,
+        source: 'Utilizator',
+        addedAt: '2026-11-04',
+        verifiedAt: null,
+      },
+      score: {
+        score: 52,
+        letter: 'C',
+        grade: 'medium',
+        reasons: [],
+        missing: [],
+      },
+    });
+    mockAddProduct.mockResolvedValueOnce(savedResponse);
+
+    await render(<ReviewRouteScreen />);
+
+    expect(screen.getByDisplayValue('Biscuiți integrali cu ovăz')).toBeTruthy();
+    expect(screen.getByDisplayValue('Morărița Nou')).toBeTruthy();
+    expect(screen.getByDisplayValue('250 g')).toBeTruthy();
+    expect(screen.getByDisplayValue('4840001000014')).toBeTruthy();
+    expect(screen.getByDisplayValue(secondLabelResponse.ingredientsText!)).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Biscuiți` }));
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
+
+    expect(mockAddProduct).toHaveBeenCalledWith({
+      code: '4840001000014',
+      name: 'Biscuiți integrali cu ovăz',
+      brand: 'Morărița Nou',
+      quantity: '250 g',
+      unit: 'g',
+      categorySlug: 'biscuiti',
+      ingredientsText: secondLabelResponse.ingredientsText,
+      nutrients: secondLabelResponse.nutrients,
+      photoPath: 'uploads/dev-1/front-1.jpg',
+      ingredientsPhotoPath: 'uploads/dev-1/ing-retake-2.jpg',
+      nutritionPhotoPath: null,
+    });
+    expect(mockReplace).toHaveBeenLastCalledWith(`/product/${savedResponse.product.id}`);
+    expect(getAddReviewDraft()).toBeNull();
+  });
+
   it('preserves captured photos when readLabel fails (rate_limited / upstream_failed / offline) and retries without re-capturing', async () => {
     mockReadLabel
       .mockRejectedValueOnce(Object.assign(new Error('upstream'), { code: 'upstream_failed' }))
@@ -186,15 +332,12 @@ describe('AddCaptureScreen and useAddFlow (B7 label capture slice)', () => {
     await render(<AddScreen />);
     await cameraReady();
 
-    // Shot 1
     await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
-    // Shot 2 -> fails with upstream_failed
     await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
 
     expect(await screen.findByText(ro.errors.upstreamFailed)).toBeTruthy();
     expect(mockReplace).not.toHaveBeenCalled();
 
-    // Retry reuses the preserved photos and succeeds
     await fireEvent.press(screen.getByRole('button', { name: ro.errors.retry }));
 
     expect(mockReadLabel).toHaveBeenCalledTimes(2);
@@ -246,15 +389,12 @@ describe('AddCaptureScreen and useAddFlow (B7 label capture slice)', () => {
 
     expect(screen.getByText(ro.capture.deniedTitle)).toBeTruthy();
 
-    // Pick shot 1 from gallery
     await fireEvent.press(screen.getByRole('button', { name: ro.add.gallery }));
     expect(screen.getByText(ro.add.stepOf(2))).toBeTruthy();
 
-    // Pick shot 2 from gallery -> rate_limited error is visible even with camera denied
     await fireEvent.press(screen.getByRole('button', { name: ro.add.gallery }));
     expect(await screen.findByText(ro.errors.rateLimited)).toBeTruthy();
 
-    // Retry uses the same gallery photos
     await fireEvent.press(screen.getByRole('button', { name: ro.errors.retry }));
     expect(mockReadLabel).toHaveBeenCalledTimes(2);
     expect(mockReplace).toHaveBeenCalledWith('/add/review');

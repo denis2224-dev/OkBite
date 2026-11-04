@@ -1,1 +1,1 @@
-export { ReviewScreen as default, ReviewScreen, type ReviewScreenProps } from '../../src/features/add/ReviewScreen';
+export { ReviewScreen as default, ReviewScreen } from '../../src/features/add/ReviewScreen';
