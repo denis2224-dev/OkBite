@@ -1,19 +1,92 @@
 [
-  { "slug": "iaurt", "name": "Iaurt", "scoreKind": "general" },
-  { "slug": "lapte", "name": "Lapte", "scoreKind": "beverage" },
-  { "slug": "branza", "name": "Brânză", "scoreKind": "cheese" },
-  { "slug": "unt-si-smantana", "name": "Unt și smântână", "scoreKind": "fat" },
-  { "slug": "biscuiti", "name": "Biscuiți", "scoreKind": "general" },
-  { "slug": "ciocolata-si-dulciuri", "name": "Ciocolată și dulciuri", "scoreKind": "general" },
-  { "slug": "cereale", "name": "Cereale", "scoreKind": "general" },
-  { "slug": "paine", "name": "Pâine", "scoreKind": "general" },
-  { "slug": "mezeluri", "name": "Mezeluri", "scoreKind": "red_meat" },
-  { "slug": "ulei", "name": "Ulei", "scoreKind": "fat" },
-  { "slug": "snacks-sarate", "name": "Snacks sărate", "scoreKind": "general" },
-  { "slug": "suc", "name": "Suc", "scoreKind": "beverage" },
-  { "slug": "bauturi-racoritoare", "name": "Băuturi răcoritoare", "scoreKind": "beverage" },
-  { "slug": "apa", "name": "Apă", "scoreKind": "water" },
-  { "slug": "inghetata", "name": "Înghețată", "scoreKind": "general" },
-  { "slug": "conserve", "name": "Conserve", "scoreKind": "general" },
-  { "slug": "necunoscut", "name": "Necunoscut", "scoreKind": "general" }
+  {
+    "slug": "iaurt",
+    "name": "Iaurt",
+    "scoreKind": "general"
+  },
+  {
+    "slug": "lapte",
+    "name": "Lapte",
+    "scoreKind": "beverage"
+  },
+  {
+    "slug": "branza",
+    "name": "Brânză",
+    "scoreKind": "cheese"
+  },
+  {
+    "slug": "unt-si-smantana",
+    "name": "Unt și smântână",
+    "scoreKind": "fat"
+  },
+  {
+    "slug": "biscuiti",
+    "name": "Biscuiți",
+    "scoreKind": "general"
+  },
+  {
+    "slug": "ciocolata-si-dulciuri",
+    "name": "Ciocolată și dulciuri",
+    "scoreKind": "general"
+  },
+  {
+    "slug": "cereale",
+    "name": "Cereale",
+    "scoreKind": "general"
+  },
+  {
+    "slug": "paine",
+    "name": "Pâine",
+    "scoreKind": "general"
+  },
+  {
+    "slug": "mezeluri",
+    "name": "Mezeluri din porc sau vită",
+    "scoreKind": "red_meat"
+  },
+  {
+    "slug": "mezeluri-pasare",
+    "name": "Mezeluri din pasăre",
+    "scoreKind": "general"
+  },
+  {
+    "slug": "ulei",
+    "name": "Ulei",
+    "scoreKind": "fat"
+  },
+  {
+    "slug": "snacks-sarate",
+    "name": "Snacks sărate",
+    "scoreKind": "general"
+  },
+  {
+    "slug": "suc",
+    "name": "Suc",
+    "scoreKind": "beverage"
+  },
+  {
+    "slug": "bauturi-racoritoare",
+    "name": "Băuturi răcoritoare",
+    "scoreKind": "beverage"
+  },
+  {
+    "slug": "apa",
+    "name": "Apă",
+    "scoreKind": "water"
+  },
+  {
+    "slug": "inghetata",
+    "name": "Înghețată",
+    "scoreKind": "general"
+  },
+  {
+    "slug": "conserve",
+    "name": "Conserve",
+    "scoreKind": "general"
+  },
+  {
+    "slug": "necunoscut",
+    "name": "Necunoscut",
+    "scoreKind": "general"
+  }
 ]

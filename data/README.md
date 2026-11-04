@@ -14,4 +14,4 @@ Hand-checked content. `pnpm data:check` must report `0 errors` before merge; `pn
 3. Add `"checkedBy": "<your name>"` and `"checkedAt": "YYYY-MM-DD"`, move the entry from `ingredients.draft.json` to `ingredients.json`.
 4. Run `pnpm data:check`.
 
-Split: entries 1–34 R1, 35–68 R2, 69–102 R3, 103–136 R4, 137–170 R5.
+Split: entries 1–35 R1, 36–70 R2, 71–104 R3, 105–138 R4, 139–172 R5.
