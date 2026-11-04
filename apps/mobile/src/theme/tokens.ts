@@ -1,10 +1,57 @@
 export const light = {
- ground:'#F7F4EC',surface:'#FFFDF8',ink:'#1C2420',muted:'#56615A',border:'#E2DECF',primary:'#173A2A',onPrimary:'#FFFFFF',accent:'#C8E07A',onAccent:'#173A2A',soft:'#ECE7DA',good:'#1F4A35',goodBg:'#E1EEDC',medium:'#6B4600',mediumBg:'#FCEFD2',low:'#8E3417',lowBg:'#FBE3D8',neutral:'#3F4842',neutralBg:'#ECE7DA',hero:'#173A2A',heroText:'#FFFFFF',heroMuted:'#D3E1D6',scrim:'rgba(0,0,0,0.5)',
+  ground: "#F7F4EC",
+  surface: "#FFFDF8",
+  ink: "#1C2420",
+  muted: "#56615A",
+  border: "#E2DECF",
+  primary: "#173A2A",
+  onPrimary: "#FFFFFF",
+  accent: "#C8E07A",
+  onAccent: "#173A2A",
+  soft: "#ECE7DA",
+  good: "#1F4A35",
+  goodBg: "#E1EEDC",
+  medium: "#6B4600",
+  mediumBg: "#FCEFD2",
+  low: "#8E3417",
+  lowBg: "#FBE3D8",
+  neutral: "#3F4842",
+  neutralBg: "#ECE7DA",
+  hero: "#173A2A",
+  heroText: "#FFFFFF",
+  heroMuted: "#D3E1D6",
+  scrim: "rgba(0,0,0,0.5)",
 };
 export type Palette = typeof light;
 export const dark: Palette = {
- ground:'#101C16',surface:'#192A21',ink:'#F7F4EC',muted:'#B6C5BA',border:'#354A3E',primary:'#C8E07A',onPrimary:'#173A2A',accent:'#C8E07A',onAccent:'#173A2A',soft:'#263C2F',good:'#C8E6BB',goodBg:'#24412F',medium:'#FFE0A2',mediumBg:'#493A1C',low:'#FFCAB6',lowBg:'#4C2B20',neutral:'#D8DED8',neutralBg:'#304236',hero:'#244B36',heroText:'#FFFFFF',heroMuted:'#D3E1D6',scrim:'rgba(0,0,0,0.7)',
+  ground: "#101C16",
+  surface: "#192A21",
+  ink: "#F7F4EC",
+  muted: "#B6C5BA",
+  border: "#354A3E",
+  primary: "#C8E07A",
+  onPrimary: "#173A2A",
+  accent: "#C8E07A",
+  onAccent: "#173A2A",
+  soft: "#263C2F",
+  good: "#C8E6BB",
+  goodBg: "#24412F",
+  medium: "#FFE0A2",
+  mediumBg: "#493A1C",
+  low: "#FFCAB6",
+  lowBg: "#4C2B20",
+  neutral: "#D8DED8",
+  neutralBg: "#304236",
+  hero: "#244B36",
+  heroText: "#FFFFFF",
+  heroMuted: "#D3E1D6",
+  scrim: "rgba(0,0,0,0.7)",
 };
-export const radii = {small:12,card:22,hero:28,pill:999};
-export const spacing = {xs:4,sm:8,md:12,lg:16,xl:24,xxl:32};
-export const fonts = {body:'Manrope_500Medium',medium:'Manrope_600SemiBold',bold:'Manrope_700Bold',heading:'BricolageGrotesque_700Bold'};
+export const radii = { small: 12, card: 22, hero: 28, pill: 999 };
+export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
+export const fonts = {
+  body: "Manrope_500Medium",
+  medium: "Manrope_600SemiBold",
+  bold: "Manrope_700Bold",
+  heading: "BricolageGrotesque_700Bold",
+};

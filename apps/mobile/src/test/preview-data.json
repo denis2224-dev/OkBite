@@ -48,9 +48,7 @@
           "allergen": null
         }
       ],
-      "allergens": [
-        "Lapte"
-      ],
+      "allergens": ["Lapte"],
       "mayContain": [],
       "imageUrl": null,
       "labelImageUrl": null,
@@ -185,12 +183,8 @@
           "allergen": null
         }
       ],
-      "allergens": [
-        "Lapte"
-      ],
-      "mayContain": [
-        "Fructe cu coajă lemnoasă"
-      ],
+      "allergens": ["Lapte"],
+      "mayContain": ["Fructe cu coajă lemnoasă"],
       "imageUrl": null,
       "labelImageUrl": null,
       "source": "Exemplu demonstrativ din prototip",
@@ -279,9 +273,7 @@
           "allergen": null
         }
       ],
-      "allergens": [
-        "Lapte"
-      ],
+      "allergens": ["Lapte"],
       "mayContain": [],
       "imageUrl": null,
       "labelImageUrl": null,
@@ -416,15 +408,8 @@
           "allergen": null
         }
       ],
-      "allergens": [
-        "Gluten",
-        "Lapte",
-        "Soia"
-      ],
-      "mayContain": [
-        "Ouă",
-        "Arahide"
-      ],
+      "allergens": ["Gluten", "Lapte", "Soia"],
+      "mayContain": ["Ouă", "Arahide"],
       "imageUrl": null,
       "labelImageUrl": null,
       "source": "Exemplu demonstrativ din prototip",
@@ -540,13 +525,8 @@
           "allergen": null
         }
       ],
-      "allergens": [
-        "Gluten"
-      ],
-      "mayContain": [
-        "Lapte",
-        "Susan"
-      ],
+      "allergens": ["Gluten"],
+      "mayContain": ["Lapte", "Susan"],
       "imageUrl": null,
       "labelImageUrl": null,
       "source": "Exemplu demonstrativ din prototip",
@@ -639,12 +619,7 @@
       "letter": null,
       "grade": "unavailable",
       "reasons": [],
-      "missing": [
-        "sat",
-        "sugar",
-        "salt",
-        "fiber"
-      ]
+      "missing": ["sat", "sugar", "salt", "fiber"]
     }
   }
 ]

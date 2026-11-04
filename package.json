@@ -9,6 +9,8 @@
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm --filter mobile lint",
-    "awake": "caffeinate -dimsu"
+    "awake": "caffeinate -dimsu",
+    "dev:awake": "caffeinate -dimsu pnpm dev",
+    "web:awake": "caffeinate -dimsu pnpm web"
   }
 }

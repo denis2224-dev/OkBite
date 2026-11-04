@@ -23,11 +23,6 @@
       "output": "single"
     },
     "scheme": "okbite",
-    "plugins": [
-      "expo-router",
-      "expo-secure-store",
-      "expo-sqlite",
-      "expo-font"
-    ]
+    "plugins": ["expo-router", "expo-secure-store", "expo-sqlite", "expo-font"]
   }
 }
