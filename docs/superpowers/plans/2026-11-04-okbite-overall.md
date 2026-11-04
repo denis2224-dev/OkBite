@@ -18,7 +18,7 @@ The split comes from a knowledge graph of the spec and the previous plans, built
 
 - **The most connected tasks gate everyone:** C1 contract (23 links), C2 schema (20), B1 app shell and API client (19). They are first in their owners' queues and due by 6–8 Nov.
 - **The communities became roles.** Backend functions + moderation → R2. Reference data + score + the AI functions → R3. Copy, UI kit, results and history → R4. Photo capture and add flow → R5. Platform and CI → R1, which also takes the ingredients/label/compare screens off R4 (the busiest role) and builds the web app, so all five people write code from day one.
-- **Launch is not a role.** Store listing, builds, submission and launch posts are a whole-team phase after the "App complete" checkpoint (`2026-11-04-okbite-launch.md`). The only early launch step is opening the store accounts on 4 Nov, because Apple approval can take days.
+- **Launch is not a role.** Store listing, builds, submission and launch posts are a whole-team phase after the "App complete" checkpoint (`2026-11-04-okbite-launch.md`). The Apple developer account comes from the professor, so no store step is needed early.
 - **Shared-file conflicts the graph found were removed.** B6 and B2 both edited `useCaptureFlow` (now R5 wires the queue in B2 step 2c). D7 and B1 both touched `_layout.tsx` (R1 adds one line with R4's review). C3 and C4 both write `score/index.ts` (C3 creates a stub, C4 replaces it). D2 and D9 both edit `ci.yml` (same person, R1).
 - **The least cohesive area (photo capture and add flow, 0.12)** depends on R2, R3 and R4 at once, so R5 has fewer coding tasks and leads the field work (shop photo runs, beta).
 
@@ -77,12 +77,12 @@ Inputs the spec implies but feature tests could miss. Each has a test in the own
 
 A task may start as soon as everything it waits on is merged to `main`.
 
-### P0 · Foundation (4–8 Nov) — gate: the empty app opens in Expo Go on both phones and in the browser preview; CI green; contract, schema, copy and shell merged; Apple and Google enrolment started
+### P0 · Foundation (4–8 Nov) — gate: the empty app opens in Expo Go on both phones and in the browser preview; CI green; contract, schema, copy and shell merged
 
 | Order | Task | Role | Waits on |
 |---|---|---|---|
 | 1 | D1 Expo monorepo scaffold (4 Nov morning) | R1 | — |
-| 1 | D2 step 4 (human): Apple, Google, Expo, Supabase accounts (4 Nov) | R1 | — |
+| 1 | D2 step 4 (human): Expo and Supabase accounts (4 Nov) | R1 | — |
 | 2 | D2 CI, EAS profiles, phone and web previews | R1 | D1 |
 | 2 | C1 Contract (by 5 Nov) | R2 | D1 |
 | 2 | A1 Romanian copy file | R4 | D1 |
@@ -134,7 +134,7 @@ A task may start as soon as everything it waits on is merged to `main`.
 
 | Task | Who | Waits on |
 |---|---|---|
-| D2 step 4 (early, 4 Nov): open Apple, Google, Expo, Supabase accounts | R1 | — |
+| Get access to the professor's Apple developer account; register Google Play (25 USD) | R1 | App complete |
 | A5 Store listing texts, screenshots, privacy answers | R4 | App complete |
 | D8 Production builds, store submission (2–3 Dec), release on 8 Dec | R1 | App complete, A5 |
 | A8 Launch posts | R5 | D8 |
@@ -163,5 +163,5 @@ In the launch phase (2–8 Dec) R1 does the builds and submission, R4 the listin
 ## Open decisions (owner: the team)
 
 - App price / business model: not decided. Build free with no payment code; revisit after launch.
-- Who pays the Apple Developer Program (99 USD/year), Google Play registration (25 USD once), the okbite.md domain and the Anthropic API monthly cap.
+- Who pays Google Play registration (25 USD once), the okbite.md domain and the Anthropic API monthly cap (the Apple account comes from the professor).
 - Whose name appears as the seller in the stores.

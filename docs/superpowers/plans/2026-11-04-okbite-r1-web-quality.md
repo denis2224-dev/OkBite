@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-See the overall plan. Role-specific: D1 and D2 block every other role, so do them first on 4 Nov, and start Apple and Google enrolment the same day (D2 step 4). Day 1 also: open the Apple Developer, Google Play, Expo and Supabase accounts (D2 step 4), because Apple approval can take days. You are the only role that changes native permissions, plugins and build profiles: other roles ask you. B5 builds on R4's B4 (`useProduct`, UI kit): use them, do not edit them.
+See the overall plan. Role-specific: D1 and D2 block every other role, so do them first on 4 Nov. Day 1 also: Expo and Supabase accounts (D2 step 4). The Apple developer account comes from the professor; ask for access to its App Store Connect team when the launch phase starts. You are the only role that changes native permissions, plugins and build profiles: other roles ask you. B5 builds on R4's B4 (`useProduct`, UI kit): use them, do not edit them.
 
 ## Review Focus (owned here)
 
@@ -106,7 +106,7 @@ Run: `pnpm lint && pnpm typecheck && pnpm test` → Expected: exit 0.
 - [ ] **Step 2: `eas.json`** — `development` (`developmentClient: true`, `distribution: internal`, channel `development`), `preview` (`distribution: internal`, channel `preview`, staging env), `production` (`autoIncrement: true`, channel `production`, prod env). `preview.yml`: on `pull_request`, `expo/expo-github-action@v8` with `EXPO_TOKEN`, then `expo/expo-github-action/preview@v8` with `command: eas update --auto --branch pr-${{ github.event.number }}`, which comments a QR code.
 - [ ] **Step 2b: Web previews** — `ci.yml` also runs `pnpm --filter mobile web`. Cloudflare Pages (human connects the repo): build command `pnpm install && pnpm --filter mobile web`, output `apps/mobile/dist`, env `NODE_VERSION=22` plus the `EXPO_PUBLIC_*` staging values for previews and prod values for `main`; add a `_redirects` file in `apps/mobile/public/` with `/* /index.html 200` so deep links like `/product/<id>` load. Each PR then shows a browser preview link next to the QR code.
 - [ ] **Step 3: Development build** — `eas build --profile development --platform all`; share the install links in the team chat so everyone can test camera features on their own phone.
-- [ ] **Step 4: Human setup (R1, 4 Nov)** — 1) Expo account + `EXPO_TOKEN` GitHub secret. 2) Enrol in the Apple Developer Program and register on Google Play Console (decide whose name is the seller; Apple can take several days). 3) Supabase projects `okbite-staging` and `okbite-prod`; staging keys into the EAS `preview` env and prod keys into `production`. 4) Protect `main`: PR required, 1 approval, `ci` passing, CODEOWNERS review.
+- [ ] **Step 4: Human setup (R1, 4 Nov)** — 1) Expo account + `EXPO_TOKEN` GitHub secret. 2) Google Play Console registration can wait for the launch phase; the Apple account is the professor's (request App Store Connect access before 2 Dec). 3) Supabase projects `okbite-staging` and `okbite-prod`; staging keys into the EAS `preview` env and prod keys into `production`. 4) Protect `main`: PR required, 1 approval, `ci` passing, CODEOWNERS review.
 - [ ] **Step 5: `CODEOWNERS` and PR template** — role paths from the overall plan mapped to placeholder handles `@role-r1` … `@role-r5` (the team replaces them). Template: task ID, acceptance checklist, "AI review by: Claude / Codex", "Tested on: iPhone / Android".
 - [ ] **Step 6: Verify and commit** — this PR shows the `ci` check and a preview QR code that opens on both phones. `ci: checks, EAS profiles and PR previews`
 

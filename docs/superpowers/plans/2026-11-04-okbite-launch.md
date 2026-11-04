@@ -6,7 +6,7 @@
 
 **Who does what:** R1 runs the builds and store submission (D8, it knows EAS); R4 writes the listing texts and takes the screenshots (A5, it owns the copy); R5 runs the launch posts (A8, it ran the beta). Everyone answers store-review questions on their own area.
 
-**Order:** A5 → D8 → A8. The only launch step done early is opening the Apple, Google, Expo and Supabase accounts on 4 Nov (R1, D2 step 4), because Apple can take several days.
+**Order:** A5 → D8 → A8. Store accounts: the Apple developer account comes from the professor (request App Store Connect access by 1 Dec); register Google Play at the start of this phase.
 
 **Spec:** `docs/superpowers/specs/2026-11-03-okbite-design.md`
 
