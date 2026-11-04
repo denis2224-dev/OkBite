@@ -88,3 +88,17 @@ previous worktree. Current branch: `refactor/expo-feature-layout`.
 See [integration notes](docs/r4-progress.md), [design reference](design/README.md),
 [backend responsibilities](server/supabase/README.md) and
 [local design skills](docs/design-resources.md).
+
+## Team review and integration
+
+The full review branch is r4/ready-for-review. See
+[the integration handoff](docs/integration-handoff.md) for branch coverage,
+the current folder layout, verification commands, and teammate integration.
+
+The team's planning documents are preserved alongside the application:
+
+- [Specification](docs/superpowers/specs/2026-11-03-okbite-design.md)
+- [Overall plan](docs/superpowers/plans/2026-11-04-okbite-overall.md)
+- [Application screens plan](docs/superpowers/plans/2026-11-04-okbite-r4-app-screens.md)
+- [Team prototype](docs/prototype/)
+- [Planning graph](graphify-out/GRAPH_REPORT.md)

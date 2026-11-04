@@ -36,3 +36,30 @@ and `src/shared` for shared widgets and state. Route files in `src/app` delegate
 to feature screens. Keep tests under root `test`, local fonts in `assets/fonts`,
 and icon data in `assets/icons`. The `design` folder is reference-only and must
 never be imported by application code. Keep platform variants in `.web.ts(x)`.
+
+## Team integration
+
+Read the specification and role plans in docs/superpowers/ before changing
+shared behavior or connecting services. The user's approved root-level Expo
+layout and the reference in design/ remain authoritative for this preview.
+The prototype in docs/prototype/ is retained from main for context.
+
+The team plans and other contributors' branches use apps/mobile,
+packages/shared, and supabase. This branch uses src, assets, and
+server/supabase. Reconcile these paths when integrating that work; do not
+create a second application or move the approved frontend silently.
+
+Backend contract and migration changes remain owned by the backend role.
+Keep service schemas synchronized before connecting a real repository.
+Do not alter a teammate's branch as part of frontend work. Keep feature
+changes in their own branches and obtain review before merging into main.
+
+Keep Romanian copy in src/core/constants/strings_ro.ts, preserve strict
+TypeScript and runtime response validation, and use decimal commas for
+display values. Keep scoring explanations beside the score, and do not add
+payment or subscription functionality.
+
+Run npm run check and the required platform bundle checks before publishing
+a review branch. Physical-device testing and a human-reviewed main merge
+remain separate acceptance steps. Keep secrets out of Git; only
+.env.example is permitted as an environment template.
