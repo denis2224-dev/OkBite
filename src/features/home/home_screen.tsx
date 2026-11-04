@@ -53,18 +53,6 @@ export default function Home() {
         gap: 10,
       }}
     >
-      <View
-        style={{
-          width: 38,
-          height: 38,
-          borderRadius: 12,
-          backgroundColor: colors.forest,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Icon name="tag" size={22} color={colors.accent} />
-      </View>
       <Heading
         style={{ fontSize: 21, lineHeight: 26, color: colors.forest, flex: 1 }}
       >
