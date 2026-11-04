@@ -13,14 +13,15 @@ import {
 import { ro } from '../../copy/ro';
 import AddScreen from '../../../app/add/index';
 import ReviewRouteScreen from '../../../app/add/review';
+import { addProductRoute } from '../identify/routes';
 import {
   clearAddReviewDraft,
   getAddReviewDraft,
   setAvailableCategories,
 } from './draftStore';
 
-const mockReplace = jest.fn<(href: unknown) => void>();
 const mockParams: { value: Record<string, string | string[] | undefined> } = { value: {} };
+const mockReplace = jest.fn<(href: unknown) => void>();
 const mockReadLabel = jest.fn<(req: ReadLabelRequestType) => Promise<ReadLabelResponse>>();
 const mockAddProduct = jest.fn<(req: AddProductRequestType) => Promise<LookupResponse>>();
 const mockCompressPhoto = jest.fn<
@@ -88,12 +89,13 @@ const mutableReviewCopy = ro.review as unknown as {
 
 const CATEGORIES = [
   Category.parse({ slug: 'biscuiti', name: 'Biscuiți', scoreKind: 'general' }),
-];
+] as const;
 
-const cameraReady = () =>
-  act(() => {
+const cameraReady = async () => {
+  await act(async () => {
     (screen.getByTestId('add-camera-view').props.onCameraReady as () => void)();
   });
+};
 
 const VALID_LABEL_RESPONSE = ReadLabelResponse.parse({
   ingredientsText: 'făină de grâu, zahăr, ulei de floarea-soarelui',
@@ -127,6 +129,14 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
       quantity: '200 g',
       photoPath: 'uploads/dev-1/front-1.jpg',
     };
+    mockReplace.mockImplementation((href: unknown) => {
+      if (href && typeof href === 'object' && 'params' in href) {
+        const routeObj = href as { params?: Record<string, string | undefined> };
+        mockParams.value = { ...(routeObj.params ?? {}) };
+      } else if (typeof href === 'string' && !href.includes('?')) {
+        mockParams.value = {};
+      }
+    });
     mockTakePicture.mockResolvedValue({ uri: 'file:///cam-shot-1.jpg' });
     mockCompressPhoto.mockImplementation(async (uri: string, maxBytes = 1_500_000) => ({
       uri: `${uri}-compressed`,
@@ -136,6 +146,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
   });
 
   afterEach(() => {
+    setAvailableCategories([]);
     delete mutableReviewCopy.nutrients;
   });
 
@@ -218,7 +229,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
     await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
     await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
     expect(mockReplace).toHaveBeenLastCalledWith('/add/review');
-    addRender1.unmount();
+    await addRender1.unmount();
 
     // 2. Open /add/review (with zero props), edit identity fields, then press Retake
     const reviewRender1 = await render(<ReviewRouteScreen />);
@@ -239,7 +250,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
       },
     });
     expect(getAddReviewDraft()).toBeNull();
-    reviewRender1.unmount();
+    await reviewRender1.unmount();
 
     // 3. Re-capture new label photos on /add -> new OCR response with new label photo paths
     const secondLabelResponse = ReadLabelResponse.parse({
@@ -249,6 +260,10 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
       ingredientsPhotoPath: 'uploads/dev-1/ing-retake-2.jpg',
       nutritionPhotoPath: null,
     });
+    if (secondLabelResponse.ingredientsText === null) {
+      throw new Error('Expected non-null ingredientsText in secondLabelResponse fixture');
+    }
+
     mockReadLabel.mockResolvedValueOnce(secondLabelResponse);
     mockTakePicture.mockResolvedValueOnce({ uri: 'file:///cam-retake-1.jpg' });
 
@@ -257,7 +272,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
     await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
     await fireEvent.press(screen.getByRole('button', { name: ro.add.samePhoto }));
     expect(mockReplace).toHaveBeenLastCalledWith('/add/review');
-    addRender2.unmount();
+    await addRender2.unmount();
 
     // 4. Open /add/review again (with zero props): verify edited identity is preserved and new label paths are submitted
     const savedResponse = LookupResponse.parse({
@@ -273,7 +288,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
         unit: 'g',
         portion: { amount: 100, label: '100 g' },
         nutrients: secondLabelResponse.nutrients,
-        ingredientsText: secondLabelResponse.ingredientsText!,
+        ingredientsText: secondLabelResponse.ingredientsText,
         ingredients: [],
         allergens: ['Gluten'],
         mayContain: [],
@@ -291,6 +306,10 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
         missing: [],
       },
     });
+    if (savedResponse.status !== 'found') {
+      throw new Error('Expected found LookupResponse in savedResponse fixture');
+    }
+
     mockAddProduct.mockResolvedValueOnce(savedResponse);
 
     await render(<ReviewRouteScreen />);
@@ -299,7 +318,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
     expect(screen.getByDisplayValue('Morărița Nou')).toBeTruthy();
     expect(screen.getByDisplayValue('250 g')).toBeTruthy();
     expect(screen.getByDisplayValue('4840001000014')).toBeTruthy();
-    expect(screen.getByDisplayValue(secondLabelResponse.ingredientsText!)).toBeTruthy();
+    expect(screen.getByDisplayValue(secondLabelResponse.ingredientsText)).toBeTruthy();
 
     await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Biscuiți` }));
     await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
@@ -319,6 +338,63 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
     });
     expect(mockReplace).toHaveBeenLastCalledWith(`/product/${savedResponse.product.id}`);
     expect(getAddReviewDraft()).toBeNull();
+  });
+
+  it('does not leak product A identity when retake is abandoned and /add is opened for product B', async () => {
+    // 1. Capture Product A (code 4840001000014) -> open /add/review -> begin retake
+    mockReadLabel.mockResolvedValueOnce(VALID_LABEL_RESPONSE);
+    const addRenderA = await render(<AddScreen />);
+    await cameraReady();
+    await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
+    await fireEvent.press(screen.getByRole('button', { name: ro.add.samePhoto }));
+    await addRenderA.unmount();
+
+    const reviewRenderA = await render(<ReviewRouteScreen />);
+    await fireEvent.changeText(screen.getByLabelText(ro.review.name), 'Produs A Editat');
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.retakePhotos }));
+    await reviewRenderA.unmount();
+
+    // 2. Abandon retake for Product A and navigate to /add for Product B (code 4840001000021)
+    mockParams.value = addProductRoute({
+      read: {
+        code: '4840001000021',
+        brand: 'Fabrica B',
+        name: 'Produs B Nou',
+        quantity: '500 ml',
+      },
+      photoPath: 'uploads/dev-1/front-b.jpg',
+    }).params;
+
+    const productBLabel = ReadLabelResponse.parse({
+      ...VALID_LABEL_RESPONSE,
+      unit: 'ml',
+      ingredientsPhotoPath: 'uploads/dev-1/ing-b.jpg',
+      nutritionPhotoPath: null,
+    });
+    mockReadLabel.mockResolvedValueOnce(productBLabel);
+    mockTakePicture.mockResolvedValueOnce({ uri: 'file:///cam-prod-b.jpg' });
+
+    const addRenderB = await render(<AddScreen />);
+    await cameraReady();
+    await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
+    await fireEvent.press(screen.getByRole('button', { name: ro.add.samePhoto }));
+    await addRenderB.unmount();
+
+    const draftB = getAddReviewDraft();
+    expect(draftB).not.toBeNull();
+    expect(draftB?.initial).toEqual({
+      code: '4840001000021',
+      brand: 'Fabrica B',
+      name: 'Produs B Nou',
+      quantity: '500 ml',
+      photoPath: 'uploads/dev-1/front-b.jpg',
+    });
+
+    await render(<ReviewRouteScreen />);
+    expect(screen.getByDisplayValue('4840001000021')).toBeTruthy();
+    expect(screen.getByDisplayValue('Produs B Nou')).toBeTruthy();
+    expect(screen.getByDisplayValue('Fabrica B')).toBeTruthy();
+    expect(screen.queryByDisplayValue('Produs A Editat')).toBeNull();
   });
 
   it('preserves captured photos when readLabel fails (rate_limited / upstream_failed / offline) and retries without re-capturing', async () => {

@@ -86,7 +86,7 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
     const trimmedCode = code.trim();
     const normalizedCode = trimmedCode ? normalizeCode(trimmedCode) : null;
     onRetake({
-      code: normalizedCode ?? (trimmedCode || null),
+      code: normalizedCode ?? (trimmedCode ? initial.code : null),
       brand: brand.trim() || null,
       name: name.trim() || null,
       quantity: quantity.trim() || null,

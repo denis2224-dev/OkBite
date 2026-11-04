@@ -4,7 +4,7 @@ import {
   type Category as CategoryType,
   type ReadLabelResponse as ReadLabelResponseType,
 } from '@okbite/shared';
-import { parseAddParams, type AddInitialValues } from '../identify/routes';
+import type { AddInitialValues } from '../identify/routes';
 
 export interface AddReviewDraft {
   initial: AddInitialValues;
@@ -13,7 +13,6 @@ export interface AddReviewDraft {
 
 let currentDraft: AddReviewDraft | null = null;
 let availableCategories: readonly CategoryType[] = [];
-let retakeIdentity: AddInitialValues | null = null;
 
 function isValidDraft(draft: AddReviewDraft | null): draft is AddReviewDraft {
   if (!draft) return false;
@@ -31,13 +30,14 @@ function isValidDraft(draft: AddReviewDraft | null): draft is AddReviewDraft {
 
 export function setAddReviewDraft(draft: AddReviewDraft): void {
   currentDraft = isValidDraft(draft) ? draft : null;
-  if (currentDraft) {
-    retakeIdentity = null;
-  }
 }
 
 export function getAddReviewDraft(): AddReviewDraft | null {
   return isValidDraft(currentDraft) ? currentDraft : null;
+}
+
+export function clearAddReviewDraft(): void {
+  currentDraft = null;
 }
 
 export function setAvailableCategories(categories: readonly CategoryType[]): void {
@@ -53,22 +53,6 @@ export function getAvailableCategories(): readonly CategoryType[] {
   return availableCategories;
 }
 
-export function beginRetakeWithIdentity(identity: AddInitialValues): void {
-  currentDraft = null;
-  retakeIdentity = identity;
-}
-
-export function resolveAddInitialValues(
-  rawParams: Record<string, string | string[] | undefined>,
-): AddInitialValues {
-  if (retakeIdentity) {
-    return retakeIdentity;
-  }
-  return parseAddParams(rawParams);
-}
-
-export function clearAddReviewDraft(): void {
-  currentDraft = null;
+export function resetAvailableCategories(): void {
   availableCategories = [];
-  retakeIdentity = null;
 }

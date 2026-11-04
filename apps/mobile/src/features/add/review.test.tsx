@@ -16,6 +16,7 @@ import ReviewRouteScreen from '../../../app/add/review';
 import {
   clearAddReviewDraft,
   getAddReviewDraft,
+  getAvailableCategories,
   setAddReviewDraft,
   setAvailableCategories,
 } from './draftStore';
@@ -53,10 +54,13 @@ const CATEGORIES = [
   Category.parse({ slug: 'iaurt', name: 'Iaurturi', scoreKind: 'general' }),
   Category.parse({ slug: 'biscuiti', name: 'Biscuiți', scoreKind: 'general' }),
   Category.parse({ slug: 'suc', name: 'Sucuri', scoreKind: 'beverage' }),
-];
+] as const;
+
+const BASE_INGREDIENTS =
+  'lapte normalizat, culturi lactice vii. Poate conține urme de arahide.';
 
 const BASE_LABEL = ReadLabelResponse.parse({
-  ingredientsText: 'lapte normalizat, culturi lactice vii. Poate conține urme de arahide.',
+  ingredientsText: BASE_INGREDIENTS,
   unit: 'g',
   nutrients: {
     kcal: 63,
@@ -94,7 +98,7 @@ const SAVED_LOOKUP = LookupResponse.parse({
     unit: 'g',
     portion: { amount: 100, label: '100 g' },
     nutrients: BASE_LABEL.nutrients,
-    ingredientsText: BASE_LABEL.ingredientsText!,
+    ingredientsText: BASE_INGREDIENTS,
     ingredients: [],
     allergens: ['Lapte'],
     mayContain: ['Arahide'],
@@ -122,6 +126,7 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
   });
 
   afterEach(() => {
+    setAvailableCategories([]);
     delete mutableReviewCopy.nutrients;
   });
 
@@ -147,7 +152,7 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     expect(saveBtnMissing.props.accessibilityState?.disabled).toBe(true);
     await fireEvent.press(saveBtnMissing);
     expect(onSubmit).not.toHaveBeenCalled();
-    unmount();
+    await unmount();
 
     // 2. Partial nutrient labels (missing fruitVegPct)
     const { fruitVegPct: _omitted, ...partialLabels } = COMPLETE_NUTRIENT_LABELS;
@@ -196,7 +201,7 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     expect(screen.getByDisplayValue('Livada Verde')).toBeTruthy();
     expect(screen.getByDisplayValue('400 g')).toBeTruthy();
     expect(screen.getByDisplayValue('4840001000014')).toBeTruthy();
-    expect(screen.getByDisplayValue(BASE_LABEL.ingredientsText!)).toBeTruthy();
+    expect(screen.getByDisplayValue(BASE_INGREDIENTS)).toBeTruthy();
     expect(screen.getByDisplayValue('63')).toBeTruthy();
     expect(screen.getByDisplayValue('2,5')).toBeTruthy();
     expect(screen.getByDisplayValue('1,6')).toBeTruthy();
@@ -334,7 +339,7 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
       quantity: '400 g',
       unit: 'g',
       categorySlug: 'iaurt',
-      ingredientsText: BASE_LABEL.ingredientsText,
+      ingredientsText: BASE_INGREDIENTS,
       nutrients: {
         kcal: 63,
         fat: 2.5,
@@ -488,6 +493,10 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
   });
 
   it('renders /add/review route with zero props, blocks when categories/copy missing, and clears draft after successful save', async () => {
+    if (SAVED_LOOKUP.status !== 'found') {
+      throw new Error('Expected found LookupResponse fixture');
+    }
+
     setAddReviewDraft({
       initial: BASE_INITIAL,
       label: BASE_LABEL,
@@ -503,5 +512,67 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     expect(mockAddProduct).toHaveBeenCalledTimes(1);
     expect(mockReplace).toHaveBeenCalledWith(`/product/${SAVED_LOOKUP.product.id}`);
     expect(getAddReviewDraft()).toBeNull();
+  });
+
+  it('preserves availableCategories after saving product A so starting product B still has the category catalog', async () => {
+    if (SAVED_LOOKUP.status !== 'found') {
+      throw new Error('Expected found LookupResponse fixture');
+    }
+
+    // Load categories once at app startup
+    setAvailableCategories(CATEGORIES);
+
+    // Save Product A
+    setAddReviewDraft({
+      initial: BASE_INITIAL,
+      label: BASE_LABEL,
+    });
+    mockAddProduct.mockResolvedValueOnce(SAVED_LOOKUP);
+
+    const renderA = await render(<ReviewRouteScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurturi` }));
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
+    expect(getAddReviewDraft()).toBeNull();
+    expect(getAvailableCategories()).toEqual(CATEGORIES);
+    await renderA.unmount();
+
+    // Start Product B without reloading categories
+    const productBInitial = parseAddParams({
+      code: '4840001000021',
+      brand: 'Brutăria Veche',
+      name: 'Biscuiți de casă',
+      quantity: '250 g',
+      photoPath: 'uploads/dev-1/front-2.jpg',
+    });
+    const savedProductB = LookupResponse.parse({
+      ...SAVED_LOOKUP,
+      product: {
+        ...SAVED_LOOKUP.product,
+        id: '3b8d0f51-2c3d-4e6f-9a01-234567890abc',
+        code: '4840001000021',
+        name: 'Biscuiți de casă',
+        brand: 'Brutăria Veche',
+        quantity: '250 g',
+        category: CATEGORIES[1],
+      },
+    });
+    if (savedProductB.status !== 'found') {
+      throw new Error('Expected found LookupResponse fixture for product B');
+    }
+
+    setAddReviewDraft({
+      initial: productBInitial,
+      label: BASE_LABEL,
+    });
+    mockAddProduct.mockResolvedValueOnce(savedProductB);
+
+    await render(<ReviewRouteScreen />);
+    expect(screen.getByDisplayValue('Biscuiți de casă')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Biscuiți` }));
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
+
+    expect(mockAddProduct).toHaveBeenCalledTimes(2);
+    expect(mockAddProduct.mock.calls[1]?.[0]?.categorySlug).toBe('biscuiti');
+    expect(mockReplace).toHaveBeenLastCalledWith(`/product/${savedProductB.product.id}`);
   });
 });

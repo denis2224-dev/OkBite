@@ -10,7 +10,6 @@ import { api } from '../../lib/api';
 import { StatusPanel } from '../capture/StatusPanel';
 import { addProductRoute, productRoute, type AddInitialValues } from '../identify/routes';
 import {
-  beginRetakeWithIdentity,
   clearAddReviewDraft,
   getAddReviewDraft,
   getAvailableCategories,
@@ -48,7 +47,7 @@ export function ReviewScreen() {
   };
 
   const handleRetake = (currentIdentity: AddInitialValues) => {
-    beginRetakeWithIdentity(currentIdentity);
+    clearAddReviewDraft();
     router.replace(
       addProductRoute({
         read: {
