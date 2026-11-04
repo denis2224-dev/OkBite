@@ -1,197 +1,199 @@
-# OkBite Lane B (Frontend) Implementation Plan
+# OkBite Lane B (Mobile App) Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Read `AGENTS.md`, `docs/superpowers/plans/2026-11-03-okbite-overall.md` and the prototype source in `docs/prototype/Main.dc.html` before Task B1.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Read `AGENTS.md`, `docs/superpowers/plans/2026-11-03-okbite-overall.md`, the spec, and the prototype source in `docs/prototype/Main.dc.html` before Task B1.
 
-**Goal:** Build every shopper screen of the prototype as a working, installable, offline-capable PWA on top of the shared contract.
+**Goal:** Build every shopper screen as a native iPhone and Android app: photograph a product, get the answer or add the product, plus live barcode scan, history offline, ingredients and comparison.
 
-**Architecture:** React 18 + react-router with one folder per feature under `apps/web/src/features/`. Screens never call `fetch` directly: they use `apps/web/src/lib/api.ts`, which validates every response with the contract's Zod schemas. History and the offline queue live in IndexedDB via Dexie. All copy comes from `apps/web/src/copy/ro.ts` (Lane A).
+**Architecture:** Expo Router with file-based routes in `apps/mobile/app/` and one folder per feature in `apps/mobile/src/features/`. Screens never call `fetch` directly: they use `apps/mobile/src/lib/api.ts`, which validates every response with the contract's Zod schemas. History and the offline queue live in SQLite (expo-sqlite). All copy comes from `apps/mobile/src/copy/ro.ts` (Lane A). The look follows the prototype, adapted to native controls.
 
-**Tech Stack:** React 18, TypeScript 5, react-router-dom 6, vite-plugin-pwa (Workbox), Dexie 4, @zxing/browser, Zod 3, Vitest, Testing Library, fake-indexeddb (tests).
+**Tech Stack:** Expo SDK (latest stable), Expo Router, React Native, TypeScript 5, expo-camera (`CameraView`, `scanFromURLAsync`), expo-image-picker, expo-image-manipulator, expo-sqlite, expo-secure-store, expo-haptics, react-native-svg, Zod 3, jest-expo, React Native Testing Library.
 
 **Spec:** `docs/superpowers/specs/2026-11-03-okbite-design.md`
 
 ## Global Constraints
 
-See the overall plan. Lane-specific: you own `apps/web/**` except `src/copy/` and `src/features/legal/` (A), `src/features/admin/` (C) and `src/lib/errorReporter.ts` (D); you also own `packages/shared/src/ean/`. Match the prototype's layout, colours, fonts (Bricolage Grotesque for headings, Manrope for text) and copy; take exact colour values from `docs/prototype/Main.dc.html`.
+See the overall plan. Lane-specific: you own `apps/mobile/**` except `src/copy/`, `src/features/legal/`, `app/(info)/` (A), `app/admin/`, `src/features/admin/` (C), and `app.config.ts`, `eas.json`, `src/lib/errorReporter.ts` (D). Ask Lane D for any new native permission or plugin. Fonts: Bricolage Grotesque (headings) and Manrope (text) via `@expo-google-fonts`; colours from the prototype, with a dark variant of each token.
 
 ## Review Focus (owned here)
 
-- 12-digit UPC-A from the scanner → EAN-13 with leading `0` (B2).
+- The on-device barcode scan of a photo fails on blur or angle: the photo must still go to `identify`, never straight to "not found" (B2).
 - "0,3" typed or read → 0.3; empty field → `null`, never `0` (B7).
-- Products with missing kcal/sugar/sat/salt → "Scor indisponibil" card, never "0 din 100" (B3).
-- 12 MP photo → JPEG ≤ 1.5 MB, longest side ≤ 1600 px, EXIF gone (B7).
-- Offline scan → code queued, result opens when back online; history readable offline (B6).
+- Missing kcal/sugar/sat/salt → "Scor indisponibil" card, never "0 din 100" (B4).
+- A 12 MP photo → JPEG with longest side 1600 px and ≤ 1.5 MB before upload (B2, B7).
+- Offline: a photo or code taken without network is kept and processed when the network returns; history opens offline (B6).
 
 ---
 
-### Task B1: App shell, UI kit and API client (fully specified)
+### Task B1: App shell, theme, UI kit and API client (fully specified)
 
 **Files:**
-- Create: `apps/web/src/App.tsx` (replace D1's), `apps/web/src/routes.tsx`, `apps/web/src/styles/tokens.css`, `apps/web/src/styles/global.css`
-- Create: `apps/web/src/ui/Button.tsx`, `Card.tsx`, `ScoreRing.tsx`, `AllergenChip.tsx`, `TopBar.tsx`, `BottomNav.tsx`, `Sheet.tsx`, `Toast.tsx`, `index.ts`
-- Create: `apps/web/src/lib/device.ts`, `apps/web/src/lib/api.ts`, `apps/web/src/lib/supabase.ts`, `apps/web/src/lib/format.ts`
-- Test: `apps/web/src/lib/api.test.ts`, `apps/web/src/lib/device.test.ts`, `apps/web/src/lib/format.test.ts`, `apps/web/src/ui/ScoreRing.test.tsx`, `apps/web/src/App.test.tsx`
+- Create: `apps/mobile/app/_layout.tsx` (replace D1's), `apps/mobile/app/(tabs)/_layout.tsx`, `apps/mobile/app/(tabs)/index.tsx`, `apps/mobile/app/(tabs)/compare.tsx`, `apps/mobile/app/(tabs)/history.tsx` (placeholders for B5/B6)
+- Create: `apps/mobile/src/theme/tokens.ts`, `apps/mobile/src/theme/useTheme.ts`
+- Create: `apps/mobile/src/ui/Button.tsx`, `Card.tsx`, `ScoreRing.tsx`, `AllergenChip.tsx`, `Badge.tsx`, `Screen.tsx`, `Toast.tsx`, `index.ts`
+- Create: `apps/mobile/src/lib/device.ts`, `apps/mobile/src/lib/api.ts`, `apps/mobile/src/lib/supabase.ts`, `apps/mobile/src/lib/format.ts`, `apps/mobile/src/test/fixtures.ts`
+- Test: `apps/mobile/src/lib/api.test.ts`, `device.test.ts`, `format.test.ts`, `apps/mobile/src/ui/ScoreRing.test.tsx`, `apps/mobile/app/__tests__/index.test.tsx` (update)
 
 **Interfaces:**
-- Consumes: contract types and schemas from `@okbite/shared` (C1); `ro` from `apps/web/src/copy/ro.ts` (A1).
-- Produces (all later B tasks and C7, D6 use these names):
-  - `getDeviceId(): string` — UUID created once, kept in `localStorage['okbite.deviceId']`.
-  - `api.lookup(code: string): Promise<LookupResponse>`, `api.readLabel(req: ReadLabelRequest): Promise<ReadLabelResponse>`, `api.submit(req: SubmitRequest): Promise<SubmitResponse>`, `api.report(req: ReportRequest): Promise<void>`.
+- Consumes: contract from `@okbite/shared` (C1); `ro` from `src/copy/ro.ts` (A1).
+- Produces (all later tasks and C7, D7 use these names):
+  - `getDeviceId(): Promise<string>` — UUID created once, kept in secure store key `okbite.deviceId`.
+  - `api.lookup(by: { code: string } | { id: string }): Promise<LookupResponse>`, `api.identify(photoBase64: string): Promise<IdentifyResponse>`, `api.readLabel(req: ReadLabelRequest): Promise<ReadLabelResponse>`, `api.addProduct(req: AddProductRequest): Promise<LookupResponse>`, `api.report(req: ReportRequest): Promise<void>`.
   - `class ApiError extends Error { code: ErrorCode | 'offline' | 'invalid_response' }`.
-  - `formatAmount(n: number, decimals?: number): string` — Romanian decimal comma, e.g. `formatAmount(13.2) === '13,2'`.
-  - UI: `<Button variant="primary|secondary|ghost">`, `<Card>`, `<ScoreRing score={number|null} grade={Grade} />`, `<AllergenChip name={Allergen} />`, `<TopBar title back? />`, `<BottomNav />` (Acasă, Compară, Istoric), `<Sheet open onClose>`, `useToast()`.
-  - Routes from the spec §2 registered in `routes.tsx` with placeholder pages; `/admin` lazy-loads `features/admin/AdminPage`.
+  - `formatAmount(n: number): string` — Romanian decimal comma: 0 decimals ≥ 100, 1 decimal ≥ 1, else 2, trailing zeros dropped.
+  - UI: `<Button variant="primary|secondary|ghost">`, `<Card>`, `<ScoreRing score={number|null} grade={Grade} />`, `<AllergenChip name={Allergen} />`, `<Badge tone="unverified|info">`, `<Screen title back?>`, `useToast()`, `useTheme()` (light/dark from the system).
 
 - [ ] **Step 1: Failing tests**
 
 ```ts
-// lib/api.test.ts
+// src/lib/api.test.ts
 it('sends the device id and validates a found product', async () => {
   fetchMock.mockResolvedValueOnce(new Response(JSON.stringify(foundYogurt)));
-  const r = await api.lookup('4840001000014');
+  const r = await api.lookup({ code: '4840001000014' });
   expect(fetchMock.mock.calls[0][1].headers['x-device-id']).toMatch(/^[0-9a-f-]{36}$/);
   expect(r.status).toBe('found');
 });
-it('throws invalid_response when the body does not match the contract', async () => {
+it('throws invalid_response when the body breaks the contract', async () => {
   fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ status: 'found' })));
-  await expect(api.lookup('4840001000014')).rejects.toMatchObject({ code: 'invalid_response' });
+  await expect(api.lookup({ code: '4840001000014' })).rejects.toMatchObject({ code: 'invalid_response' });
 });
 it('throws offline when the network fails', async () => {
-  fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
-  await expect(api.lookup('4840001000014')).rejects.toMatchObject({ code: 'offline' });
+  fetchMock.mockRejectedValueOnce(new TypeError('Network request failed'));
+  await expect(api.identify('aGVsbG8=')).rejects.toMatchObject({ code: 'offline' });
 });
-it('maps error bodies to ApiError codes', async () => {
+it('maps error bodies to codes', async () => {
   fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ error: 'rate_limited', message: 'x' }), { status: 429 }));
-  await expect(api.submit(validSubmit)).rejects.toMatchObject({ code: 'rate_limited' });
+  await expect(api.addProduct(validAdd)).rejects.toMatchObject({ code: 'rate_limited' });
 });
-// lib/format.test.ts
-it.each([[13.2, '13,2'], [0.1, '0,1'], [478, '478'], [2.56, '2,6']])('formats %s', (n, s) => expect(formatAmount(n)).toBe(s));
-// ui/ScoreRing.test.tsx
+// src/lib/format.test.ts
+it.each([[13.2, '13,2'], [0.1, '0,1'], [478, '478'], [2.56, '2,6'], [4, '4']])('formatAmount(%s)', (n, s) => expect(formatAmount(n)).toBe(s));
+// src/ui/ScoreRing.test.tsx
 it('labels the score for screen readers', () => {
   render(<ScoreRing score={78} grade="good" />);
-  expect(screen.getByRole('img', { name: '78 din 100, calitate nutrițională bună' })).toBeInTheDocument();
+  expect(screen.getByLabelText('78 din 100, calitate nutrițională bună')).toBeTruthy();
 });
 ```
-(`foundYogurt` fixture: the seeded product `4840001000014` shaped as `LookupResponse`; put it in `apps/web/src/test/fixtures.ts`.)
-Run: `pnpm --filter web test` → Expected: FAIL.
+(`foundYogurt` and `validAdd` live in `src/test/fixtures.ts`; `foundYogurt` is the seeded product `4840001000014` as a `LookupResponse`.)
+Run: `pnpm --filter mobile test` → Expected: FAIL.
 
-- [ ] **Step 2: Implement** `device.ts`, `api.ts` (base URL `import.meta.env.VITE_FUNCTIONS_URL`; GET for lookup with `?code=`, POST JSON otherwise; headers `x-device-id`, `apikey` and `Authorization: Bearer <anon key>`), `format.ts`, `supabase.ts` (`createClient(VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)`).
-Run: `pnpm --filter web test lib` → Expected: PASS.
+- [ ] **Step 2: Implement** `device.ts`, `api.ts` (base `${EXPO_PUBLIC_SUPABASE_URL}/functions/v1`; headers `x-device-id`, `apikey`, `Authorization: Bearer <anon key>`; GET for lookup, POST JSON otherwise; 20 s timeout → `offline`), `format.ts`, `supabase.ts` (`createClient` with AsyncStorage session, used only by the admin screens).
+Run: `pnpm --filter mobile test src/lib` → Expected: PASS.
 
-- [ ] **Step 3: Implement tokens and UI kit** — CSS custom properties copied from the prototype (ground, ink, three grade colour sets good/medium/low/neutral, radii, spacing); Google Fonts link for Bricolage Grotesque and Manrope in `index.html`; every interactive element is a real `<button>` or `<a>` ≥ 44 px. `ScoreRing` is an SVG ring with `role="img"` and the label from `ro.score.ringLabel`.
-Run: `pnpm --filter web test ui` → Expected: PASS.
+- [ ] **Step 3: Theme and UI kit** — tokens copied from the prototype (ground, ink, grade colour sets good/medium/low/neutral, radii, spacing) with dark variants; every pressable has `accessibilityRole`, `accessibilityLabel` and a 44 pt minimum; text uses `allowFontScaling` and wraps at 200%. `ScoreRing` is an SVG with `accessibilityLabel` from `ro.score.ringLabel`.
+Run: `pnpm --filter mobile test src/ui` → Expected: PASS.
 
-- [ ] **Step 4: Shell and routes** — `App` renders `RouterProvider` with the routes, `BottomNav` on `/`, `/compare`, `/history`; `App.test.tsx` updated to expect the home heading from `ro.home.title` at `/`.
-Run: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` → Expected: exit 0.
+- [ ] **Step 4: Shell** — root `_layout.tsx` loads fonts and sets the theme (D7 adds the error-reporter call in its own PR); tabs Acasă / Compară / Istoric; the home screen shows `ro.home.title`, the big `ro.home.photoButton` (→ `/capture`), the `ro.home.scanLink` (→ `/scan`) and the score legend.
+Run: `pnpm lint && pnpm typecheck && pnpm test` → Expected: exit 0. Open on both phones via the PR's QR code.
 
-- [ ] **Step 5: Commit** — `feat(web): app shell, UI kit and typed API client`
-
----
-
-### Task B2: EAN checksum, scanner and manual entry
-
-**Files:**
-- Create: `packages/shared/src/ean/index.ts`, `apps/web/src/features/scan/ScanPage.tsx`, `apps/web/src/features/scan/useBarcodeScanner.ts`, `apps/web/src/features/scan/ManualCode.tsx`
-- Test: `packages/shared/src/ean/index.test.ts`, `apps/web/src/features/scan/ManualCode.test.tsx`
-
-**Interfaces:**
-- Produces: `normalizeCode(raw: string): string | null` (digits only; UPC-A 12 → EAN-13 with leading 0; valid EAN-8/13 checksum or `null`), exported from `@okbite/shared`. Scan success navigates to `/p/:code`.
-
-- [ ] **Step 1: Failing tests** — `normalizeCode('4840001000014') === '4840001000014'`; `normalizeCode('036000291452') === '0036000291452'`; `normalizeCode('4840001000017') === null`; `normalizeCode('96385074') === '96385074'`; `normalizeCode(' 4840001 000014 ') === '4840001000014'`. ManualCode: invalid code shows `ro.scan.manualInvalid` and does not navigate.
-- [ ] **Step 2: Implement** — `useBarcodeScanner` uses `BarcodeDetector` when available (formats `ean_13`, `ean_8`, `upc_a`), else `@zxing/browser`; stops the camera on unmount; camera permission denied → the "Camera nu este permisă" state from the prototype with manual entry below.
-- [ ] **Step 3: Verify** — tests PASS; on a real Android phone and an iPhone via the preview URL, scanning a real product navigates to `/p/<code>`.
-- [ ] **Step 4: Commit** — `feat(web): barcode scanner with manual entry and EAN validation`
+- [ ] **Step 5: Commit** — `feat(mobile): app shell, theme, UI kit and typed API client`
 
 ---
 
-### Task B3: Confirm and result screens
+### Task B2: Capture screen, barcode in photo, live scan and manual entry
 
 **Files:**
-- Create: `apps/web/src/features/product/ProductPage.tsx`, `ConfirmProduct.tsx`, `ResultView.tsx`, `ScoreCard.tsx`, `PortionTable.tsx`, `SourceCard.tsx`, `NotFound.tsx`, `portion.ts`, `useProduct.ts`
-- Test: `apps/web/src/features/product/portion.test.ts`, `ResultView.test.tsx`, `ProductPage.test.tsx`
+- Create: `apps/mobile/app/capture.tsx`, `apps/mobile/app/scan.tsx`, `apps/mobile/src/features/capture/compressPhoto.ts`, `apps/mobile/src/features/capture/findBarcode.ts`, `apps/mobile/src/features/capture/useCaptureFlow.ts`, `apps/mobile/src/features/scan/ManualCode.tsx`
+- Test: `apps/mobile/src/features/capture/compressPhoto.test.ts`, `findBarcode.test.ts`, `useCaptureFlow.test.ts`, `apps/mobile/src/features/scan/ManualCode.test.tsx`
 
 **Interfaces:**
-- Consumes: `api.lookup`, UI kit (B1); `ScoreResult` (C1); `saveToHistory(entry)` (B6 — until B6 merges, `useProduct` calls a no-op stub exported from `features/history/store.ts`, which B6 replaces).
-- Produces: `perPortion(per100: number, portionAmount: number): number`, `percentOfReference(key: 'kcal'|'sugar'|'sat'|'salt', amount: number): number` (references 2000 / 90 / 20 / 6), `teaspoons(sugarGrams: number): string` (4 g per teaspoon, rounded to the nearest half; texts from `ro.result.teaspoons`).
+- Consumes: `normalizeCode` (D3), `api.lookup`, `api.identify` (B1).
+- Produces: `compressPhoto(uri: string): Promise<{ uri: string; base64: string; bytes: number }>` (longest side 1600, JPEG 0.8, re-compress at 0.6 if > 1.5 MB); `findBarcode(uri: string): Promise<string | null>` (`scanFromURLAsync` for ean13/ean8/upc_a → `normalizeCode`); `useCaptureFlow()` returning `{ state, takePhoto, pickFromGallery }` that ends in `router.replace('/product/<id>')`, `router.replace('/identify', …)`, or the offline state.
 
-- [ ] **Step 1: Failing tests** — `perPortion(13.2, 150) === 19.8`; `percentOfReference('sat', 2.4) === 12`; `teaspoons(19.8)` → "5 lingurițe", `teaspoons(1.5)` → "sub jumătate de linguriță"; `ResultView` with `score: null` shows `ro.result.scoreUnavailable` and the missing-data text, and no element with text "0 din 100"; with allergens `['Lapte']` shows the chip; NotFound for `not_found` shows the code and the "Fotografiază eticheta" link to `/add/:code`.
-- [ ] **Step 2: Implement** — `/p/:code` shows `ConfirmProduct` first ("Da, arată analiza" / "Nu, e alt produs" → back to `/scan`); after confirming, `ResultView`: allergens and may-contain, `ScoreCard` with reasons and the fixed disclaimer, portion table, source card with "Vezi eticheta originală" (→ `/p/:code/label`) and "Raportează o greșeală" (sheet → `api.report`), links to ingredients and compare.
-- [ ] **Step 3: Verify** — tests PASS; manual check on the preview with all 6 seeded codes against the prototype screens.
-- [ ] **Step 4: Commit** — `feat(web): product confirmation and result screens`
+- [ ] **Step 1: Failing tests** (mock expo modules) — `compressPhoto` on a 4000×3000 image returns longest side 1600 and ≤ 1.5 MB; `findBarcode` returns the normalised code, `null` when nothing is found, and `null` (not a throw) when `scanFromURLAsync` throws; `useCaptureFlow`: barcode found + `found` → product route; barcode found + `not_found` → still calls `identify` with the photo; no barcode → `identify`; `identify` `found` → product route; `candidates`/`not_found` → `/identify` with the response; network error → offline state with the photo kept (B6 stores it). ManualCode: an invalid code shows `ro.scan.manualInvalid` and does not navigate.
+- [ ] **Step 2: Implement** — `/capture`: full-screen `CameraView` with one shutter button and "Alege din galerie" (expo-image-picker); a working state with `ro.capture.working`; camera permission denied → the prototype's refused state with "Alege din galerie" and "Deschide setările". `/scan`: `CameraView` with `barcodeScannerSettings` (ean13, ean8, upc_a), haptic tap on detection, then `api.lookup`; manual entry below the camera.
+- [ ] **Step 3: Verify** — tests PASS; on an iPhone and an Android phone: photo of a seeded product's barcode side → result; photo of its front → identify flow.
+- [ ] **Step 4: Commit** — `feat(mobile): photo capture with on-device barcode reading, live scan and manual entry`
 
 ---
 
-### Task B4: Ingredients and original-label screens
+### Task B3: Identify flow screens
 
 **Files:**
-- Create: `apps/web/src/features/product/IngredientsPage.tsx`, `IngredientRow.tsx`, `LabelPage.tsx`
-- Test: `apps/web/src/features/product/IngredientsPage.test.tsx`
+- Create: `apps/mobile/app/identify.tsx`, `apps/mobile/src/features/identify/ConfirmMatch.tsx`, `CandidateList.tsx`, `NotFound.tsx`
+- Test: `apps/mobile/src/features/identify/identify.test.tsx`
 
 **Interfaces:**
-- Consumes: `useProduct(code)` (B3), `Ingredient`, `IngredientGroup` (C1).
+- Consumes: `IdentifyResponse`, `Candidate`, `FrontRead` (C1); route params from B2.
+- Produces: navigation to `/product/[id]`, or to `/add` with params `{ code?, brand?, name?, quantity?, photoPath }` pre-filled from `read`.
 
-- [ ] **Step 1: Failing tests** — ingredients grouped in the order base, fat, taste, add, cult with group names from `ro`; tapping a row expands role, explanation and "Sursa explicației: …"; allergen ingredients show the allergen badge; the raw label text is shown under the list.
-- [ ] **Step 2: Implement** — rows are `<button aria-expanded>`; `LabelPage` shows `labelImageUrl` (or a placeholder) and the label text, per the prototype sheet.
-- [ ] **Step 3: Verify and commit** — tests PASS; `feat(web): ingredients explained and original label view`
+- [ ] **Step 1: Failing tests** — one candidate with similarity ≥ 0.6 → `ConfirmMatch` ("Este acesta?", photo, name, brand, quantity; "Da" → product; "Nu" → `/add` pre-filled); several or lower similarity → `CandidateList` with each candidate and "Nu e niciunul" → `/add`; `not_found` → `NotFound` with the steps from the prototype and "Fotografiază eticheta" → `/add` pre-filled.
+- [ ] **Step 2: Implement** following the prototype's "Confirmă produsul" and "Produs negăsit" screens.
+- [ ] **Step 3: Verify and commit** — tests PASS; `feat(mobile): confirm, choose or add after identifying a photo`
 
 ---
 
-### Task B5: Compare screen
+### Task B4: Result screen
 
 **Files:**
-- Create: `apps/web/src/features/compare/ComparePage.tsx`, `compare.ts`, `ProductPicker.tsx`
-- Test: `apps/web/src/features/compare/compare.test.ts`, `ComparePage.test.tsx`
+- Create: `apps/mobile/app/product/[id]/index.tsx`, `apps/mobile/src/features/product/useProduct.ts`, `ResultView.tsx`, `ScoreCard.tsx`, `PortionTable.tsx`, `SourceCard.tsx`, `ReportSheet.tsx`, `portion.ts`
+- Test: `apps/mobile/src/features/product/portion.test.ts`, `ResultView.test.tsx`
 
 **Interfaces:**
-- Produces: `compareRows(a: Product, b: Product): { key: NutrientKey; a: number|null; b: number|null; better: 'a'|'b'|null }[]` — lower is better for kcal, fat, sat, sugar, salt; higher is better for protein, fiber; `null` when either side is missing or equal.
+- Consumes: `api.lookup({ id })`, UI kit (B1), `saveToHistory` (B6; until B6 merges, `useProduct` calls the stub exported from `src/features/history/store.ts`, which B6 replaces).
+- Produces: `useProduct(id): { data?: { product: Product; score: ScoreResult }; error?: ApiError; loading: boolean }`; `perPortion(per100: number, portionAmount: number): number`; `percentOfReference(key: 'kcal'|'sugar'|'sat'|'salt', amount: number): number` (2000 / 90 / 20 / 6); `teaspoons(sugarGrams: number): string` (4 g each, nearest half, texts from `ro.result.teaspoons`).
 
-- [ ] **Step 1: Failing tests** — yogurt 014 vs 021: sugar better `a`, protein better `a`; products in different categories show `ro.compare.otherCategory` and no table; picker lists products from history in the same category.
-- [ ] **Step 2: Implement** — `/compare?a=&b=`; missing `b` opens the picker (history first, then scan).
-- [ ] **Step 3: Verify and commit** — tests PASS; `feat(web): compare two products of one category`
+- [ ] **Step 1: Failing tests** — `perPortion(13.2, 150) === 19.8`; `percentOfReference('sat', 2.4) === 12`; `teaspoons(19.8)` → "5 lingurițe"; `teaspoons(1.5)` → "sub jumătate de linguriță"; `ResultView` with `score: null` shows `ro.result.scoreUnavailable` and no text "0 din 100"; status `unverified` shows the "Neverificat" badge and `ro.result.unverifiedNote`; allergens `['Lapte']` show the chip; the disclaimer `ro.score.disclaimer` is always present.
+- [ ] **Step 2: Implement** per the prototype's "Analiza produsului": allergens and may-contain, score card with reasons, portion table, source card (source, added date, verified date or "Neverificat"), "Vezi eticheta originală", "Raportează o greșeală" (sheet → `api.report`), links to ingredients and compare.
+- [ ] **Step 3: Verify and commit** — tests PASS; all 6 seeded products checked on a phone against the prototype; `feat(mobile): product result screen`
+
+---
+
+### Task B5: Ingredients, label and compare screens
+
+**Files:**
+- Create: `apps/mobile/app/product/[id]/ingredients.tsx`, `apps/mobile/app/product/[id]/label.tsx`, `apps/mobile/app/(tabs)/compare.tsx` (replace placeholder), `apps/mobile/src/features/compare/compare.ts`, `ProductPicker.tsx`
+- Test: `apps/mobile/src/features/product/ingredients.test.tsx`, `apps/mobile/src/features/compare/compare.test.ts`
+
+**Interfaces:**
+- Produces: `compareRows(a: Product, b: Product): { key: NutrientKey; a: number|null; b: number|null; better: 'a'|'b'|null }[]` — lower is better for kcal, fat, sat, sugar, salt; higher for protein, fiber; `null` if either side is missing or equal.
+
+- [ ] **Step 1: Failing tests** — ingredients grouped base, fat, taste, add, cult (names from `ro`), each row expands to role, explanation and "Sursa explicației"; ingredients with `slug: null` show `ro.ingredients.explanationSoon`; `compareRows` for yogurts 014 vs 021: sugar → `a`, protein → `a`; different categories → `ro.compare.otherCategory` and no table.
+- [ ] **Step 2: Implement** — ingredients and label screens per the prototype; compare tab: pick A and B from history (same category first) or "Fotografiază alt produs".
+- [ ] **Step 3: Verify and commit** — tests PASS; `feat(mobile): ingredients explained, original label and compare`
 
 ---
 
 ### Task B6: History and offline queue
 
 **Files:**
-- Create: `apps/web/src/features/history/db.ts`, `store.ts` (replace B3's stub), `HistoryPage.tsx`, `apps/web/src/features/offline/OfflinePage.tsx`, `apps/web/src/features/offline/queue.ts`
-- Modify: `apps/web/vite.config.ts` (Workbox runtime caching), `apps/web/src/features/product/useProduct.ts`
-- Test: `apps/web/src/features/history/store.test.ts`, `apps/web/src/features/offline/queue.test.ts`
+- Create: `apps/mobile/src/features/history/db.ts`, `store.ts` (replace B4's stub), `apps/mobile/app/(tabs)/history.tsx` (replace placeholder), `apps/mobile/src/features/offline/queue.ts`, `apps/mobile/src/features/offline/useQueueFlush.ts`, `apps/mobile/app/offline.tsx`
+- Modify: `apps/mobile/src/features/product/useProduct.ts`, `apps/mobile/src/features/capture/useCaptureFlow.ts`
+- Test: `apps/mobile/src/features/history/store.test.ts`, `apps/mobile/src/features/offline/queue.test.ts`
 
 **Interfaces:**
-- Produces: `saveToHistory(entry: { code: string; product: Product; score: ScoreResult }): Promise<void>`, `listHistory(): Promise<HistoryEntry[]>` (newest first, max 200), `clearHistory(): Promise<void>`, `getFromHistory(code): Promise<HistoryEntry | undefined>`, `enqueue(code): Promise<void>`, `flushQueue(lookup): Promise<string[]>` (returns codes resolved).
+- Produces: `saveToHistory(entry: { product: Product; score: ScoreResult }): Promise<void>`, `listHistory(): Promise<HistoryEntry[]>` (newest first, max 200), `getFromHistory(id): Promise<HistoryEntry | undefined>`, `clearHistory(): Promise<void>`, `enqueue(item: { kind: 'photo'; uri: string } | { kind: 'code'; code: string }): Promise<void>`, `flushQueue(): Promise<{ resolved: number }>`.
 
-- [ ] **Step 1: Failing tests** (fake-indexeddb) — save then list returns newest first; saving the same code twice keeps one entry with the newest date; `useProduct` falls back to history when `api.lookup` throws `offline`; an offline lookup with no history enqueues the code and shows the offline page; `flushQueue` resolves queued codes and empties the queue.
-- [ ] **Step 2: Implement** — Dexie DB `okbite` with tables `history` (key `code`) and `queue` (key `code`); `window.addEventListener('online', …)` flushes and toasts "Am găsit produsul" with a link; Workbox precaches the shell and caches `labels` bucket images (CacheFirst, 30 days).
-- [ ] **Step 3: Verify** — tests PASS; on a phone: scan two products, switch to airplane mode, history and both results still open.
-- [ ] **Step 4: Commit** — `feat(web): offline history and queued lookups`
+- [ ] **Step 1: Failing tests** (in-memory SQLite) — save then list newest first; saving the same product twice keeps one row; `useProduct` falls back to history when `lookup` throws `offline`; `useCaptureFlow` enqueues the compressed photo when offline and shows `/offline`; `flushQueue` processes items in order, removes resolved ones, keeps failed ones.
+- [ ] **Step 2: Implement** — SQLite tables `history(id primary key, json, saved_at)` and `queue(id, kind, payload, created_at)`; queued photos copied to the app's document directory; flush on app foreground and on network regain (`@react-native-community/netinfo`), with a toast linking to the result.
+- [ ] **Step 3: Verify** — tests PASS; on a phone in airplane mode: history opens; a photo taken offline is identified after reconnecting.
+- [ ] **Step 4: Commit** — `feat(mobile): offline history and queued photos`
 
 ---
 
-### Task B7: Capture, review and submit flow
+### Task B7: Add flow (two shots, review, save, result)
 
 **Files:**
-- Create: `apps/web/src/features/contribute/CapturePage.tsx`, `ReviewPage.tsx`, `compressImage.ts`, `parseAmount.ts`, `useContribution.ts`
-- Test: `apps/web/src/features/contribute/parseAmount.test.ts`, `compressImage.test.ts`, `ReviewPage.test.tsx`
+- Create: `apps/mobile/app/add/index.tsx`, `apps/mobile/app/add/review.tsx`, `apps/mobile/src/features/add/parseAmount.ts`, `useAddFlow.ts`, `CategoryPicker.tsx`
+- Test: `apps/mobile/src/features/add/parseAmount.test.ts`, `apps/mobile/src/features/add/review.test.tsx`
 
 **Interfaces:**
-- Consumes: `api.readLabel`, `api.submit` (B1); `detectAllergens` (D3); `ReadLabelResponse`, `SubmitRequest` (C1).
-- Produces: `parseAmount(s: string): number | null`, `compressImage(file: File): Promise<{ base64: string; bytes: number }>`.
+- Consumes: `compressPhoto` (B2), `api.readLabel`, `api.addProduct` (B1), `detectAllergens` (D3), params from B3.
+- Produces: `parseAmount(s: string): number | null`.
 
-- [ ] **Step 1: Failing tests** — `parseAmount('0,3') === 0.3`, `parseAmount(' 13.2 g') === 13.2`, `parseAmount('') === null`, `parseAmount('abc') === null`; `compressImage` on a 4000×3000 test image returns ≤ 1.5 MB with longest side 1600; ReviewPage marks fields listed in `unclear` with `ro.review.unclearField`, disables submit until every `unclear` nutrient is filled or explicitly left blank, and shows detected allergens live as the ingredients text is edited.
-- [ ] **Step 2: Implement** — `/add/:code`: two steps (ingredients, then nutrition table) using `<input type="file" accept="image/*" capture="environment">` plus "Alege din galerie"; compress with a canvas (drops EXIF); `api.readLabel` → `/add/:code/review` with editable fields → `api.submit` → confirmation "Ai trimis produsul. Apare după verificarea echipei." Errors: `rate_limited` and `upstream_failed` show the prototype's retry states.
-- [ ] **Step 3: Verify** — tests PASS; on a phone, add one real missing product end to end on staging.
-- [ ] **Step 4: Commit** — `feat(web): add missing products from two label photos`
+- [ ] **Step 1: Failing tests** — `parseAmount('0,3') === 0.3`, `parseAmount(' 13.2 g') === 13.2`, `parseAmount('') === null`, `parseAmount('abc') === null`; review screen: fields from `unclear` are marked with `ro.review.unclearField`; save is disabled until name, brand, category and ingredients are filled; detected allergens update live as the ingredients text changes; brand/name/quantity/code are pre-filled from the params; after `addProduct` succeeds the app opens `/product/<id>` showing "Neverificat"; `rate_limited` and `upstream_failed` show the prototype's retry states.
+- [ ] **Step 2: Implement** — `/add`: shot 1 ingredients list, shot 2 nutrition table, with "Sunt pe aceeași poză" (sends `nutritionImage: null`); `api.readLabel` → `/add/review` (editable ingredients text, nutrition fields, name, brand, quantity, category picker from the categories table, optional barcode) → `api.addProduct` → result.
+- [ ] **Step 3: Verify** — tests PASS; on a phone, add one real unknown product on staging, then find it from a second phone by photo.
+- [ ] **Step 4: Commit** — `feat(mobile): add unknown products from label photos and show the analysis`
 
 ---
 
-### Task B8: Accessibility, performance, install and share
+### Task B8: Accessibility, dark mode, sharing and polish
 
 **Files:**
-- Modify: files flagged by the audits; Create: `apps/web/src/features/install/InstallPrompt.tsx`, `apps/web/lighthouserc.json`
-- Test: `apps/web/src/features/install/InstallPrompt.test.tsx`
+- Modify: files flagged by the audit; Create: `apps/mobile/src/features/share/shareProduct.ts`
+- Test: `apps/mobile/src/features/share/shareProduct.test.ts`
 
-- [ ] **Step 1:** Add Lighthouse CI (`@lhci/cli`) to CI on the preview URL with assertions: PWA installable, accessibility ≥ 0.95, performance ≥ 0.85 (mobile).
-- [ ] **Step 2:** Fix every failure; keyboard-only walk through all screens; screen-reader labels on icon buttons.
-- [ ] **Step 3:** Install prompt after the second scan (Android `beforeinstallprompt`; iOS instruction sheet); share button on results using `navigator.share` with `/p/:code`, falling back to copy-link.
-- [ ] **Step 4: Verify and commit** — Lighthouse CI green; `feat(web): install prompt, sharing and accessibility fixes`
+- [ ] **Step 1: Audit** — VoiceOver (iPhone) and TalkBack (Android) walk through every screen: every control announced with a Romanian label, focus order matches the visual order; font scaling 200% without clipped text; dark mode on every screen with contrast ≥ 4.5:1.
+- [ ] **Step 2: Fix** every finding as small commits.
+- [ ] **Step 3: Share** — failing test: `shareProduct(product, score)` builds the text "<name> (<brand>): <score> din 100 pe OkBite" plus the store link from `ro.share.storeLink`; implement with React Native `Share`.
+- [ ] **Step 4: Polish** — haptics on capture and scan, skeleton loading states, empty states from the prototype, app icon and splash from A5.
+- [ ] **Step 5: Verify and commit** — Maestro flows (D6) still pass; `feat(mobile): accessibility, dark mode, sharing and polish`

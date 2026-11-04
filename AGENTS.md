@@ -1,6 +1,6 @@
 # OkBite — instructions for AI agents (Claude Code and Codex)
 
-OkBite is a Romanian-language PWA for Moldova: scan a food barcode, see allergens, a 0–100 nutrition score with reasons, ingredients explained, comparisons, and add missing products from label photos.
+OkBite is a Romanian-language mobile app for iPhone and Android (Expo / React Native, published in the App Store and Google Play) for shoppers in Moldova: photograph a product, and if it is in the database see its allergens, a 0–100 nutrition score with reasons, ingredients explained and comparisons; if it is not, photograph the label, get the analysis, and the product is added to the database. Barcode scanning is an alternative entry.
 
 ## Read first, in this order
 
@@ -21,14 +21,17 @@ OkBite is a Romanian-language PWA for Moldova: scan a food barcode, see allergen
 
 ## Commands
 
-- `pnpm install` · `pnpm dev` (web app) · `pnpm test` · `pnpm lint` · `pnpm typecheck` · `pnpm build` · `pnpm e2e`
+- `pnpm install` · `pnpm dev` (Expo dev server; open in Expo Go or the development build) · `pnpm test` · `pnpm lint` · `pnpm typecheck` · `pnpm e2e` (Maestro)
+- `eas build --profile development|preview|production` · `eas update` (Lane D owns `app.config.ts` and `eas.json`)
 - `pnpm sync-shared` after any change in `packages/shared/src/` (regenerates `supabase/functions/_shared/`, never edit that folder)
 - `supabase start` · `supabase db reset` · `supabase test db` · `deno test supabase/functions/<name>/`
 
 ## Conventions
 
 - TypeScript strict; named exports; one component per file; files under ~200 lines.
-- All UI text comes from `apps/web/src/copy/ro.ts`; Romanian diacritics with comma-below (ș, ț).
+- All UI text comes from `apps/mobile/src/copy/ro.ts`; Romanian diacritics with comma-below (ș, ț).
+- Every pressable has `accessibilityRole` and a Romanian `accessibilityLabel`; screens work in dark mode and at 200% font size.
+- No payment or subscription code: pricing is not decided.
 - Validate every API request and response with the Zod schemas from `@okbite/shared`.
 - Numbers shown to users use a decimal comma (`13,2 g`); stored values are per 100 g or 100 ml.
 - Never display the Nutri-Score logo. Always show "Calculat la 100 g; nu indică riscul unei boli." next to a score.
@@ -36,4 +39,4 @@ OkBite is a Romanian-language PWA for Moldova: scan a food barcode, see allergen
 
 ## Definition of done
 
-The task's acceptance steps pass, `pnpm lint && pnpm typecheck && pnpm test && pnpm build` is green, the other tool's AI review is addressed, the change was checked on a real phone if it touches the UI, and the task box is ticked in the lane plan.
+The task's acceptance steps pass, `pnpm lint && pnpm typecheck && pnpm test` is green, the other tool's AI review is addressed, the change was checked on a real iPhone and a real Android phone if it touches the UI, and the task box is ticked in the lane plan.

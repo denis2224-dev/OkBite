@@ -2,11 +2,11 @@
 
 > **For agentic workers:** This file coordinates four lane plans. Do not implement from this file. Open your lane's plan and run it with superpowers:executing-plans (or superpowers:subagent-driven-development). Read this file first for the global rules, the contract owner, and which other lanes' tasks yours waits on.
 
-**Goal:** Ship the OkBite PWA publicly on 2026-12-08, built by four people who each drive Claude Code or Codex in their own lane.
+**Goal:** Ship OkBite as a native iPhone and Android app (App Store + Google Play) by 2026-12-08: photograph a product, get its analysis if it is known, otherwise photograph the label, get the analysis and add the product to the database.
 
-**Architecture:** One pnpm monorepo: `apps/web` (React PWA), `packages/shared` (contract + pure logic), `supabase/` (Postgres, Storage, Edge Functions), `data/` (hand-checked content). Lanes own folders, never task types, so agents running in parallel do not edit the same files. The contract in `packages/shared/src/contract.ts` is written first and changes only through Lane C.
+**Architecture:** One pnpm monorepo: `apps/mobile` (Expo + Expo Router), `packages/shared` (contract + pure logic), `supabase/` (Postgres with `pg_trgm`, Storage, Edge Functions that also call Claude for images), `data/` (hand-checked content). Lanes own folders, never task types, so agents running in parallel do not edit the same files. The contract in `packages/shared/src/contract.ts` is written first and changes only through Lane C.
 
-**Tech Stack:** Node 22, pnpm 9, TypeScript 5, Vite 6, React 18, react-router 6, vite-plugin-pwa, Dexie 4, @zxing/browser, Zod 3, Vitest, Testing Library, Playwright, Supabase (Postgres 15, Deno Edge Functions, Storage, Auth), Anthropic API (`claude-haiku-5-5`), Cloudflare Pages, GitHub Actions.
+**Tech Stack:** Node 22, pnpm 9, TypeScript 5, Expo SDK (latest stable) with Expo Router, expo-camera, expo-image-manipulator, expo-sqlite, expo-secure-store, Zod 3, jest-expo, React Native Testing Library, Maestro (end-to-end), EAS Build / Submit / Update, Supabase (Postgres 15, Deno Edge Functions, Storage, Auth), Anthropic API (`claude-haiku-5-5`), GitHub Actions.
 
 **Spec:** `docs/superpowers/specs/2026-11-03-okbite-design.md`
 
@@ -14,104 +14,117 @@
 
 | Lane | Owner | Plan file | Owns these paths |
 |---|---|---|---|
-| A · Content and data | [name] | `2026-11-03-okbite-lane-a-content.md` | `apps/web/src/copy/`, `apps/web/src/features/legal/`, `data/`, `scripts/check-data.ts` |
-| B · Frontend | [name] | `2026-11-03-okbite-lane-b-frontend.md` | `apps/web/` except paths owned by A, C, D; `packages/shared/src/ean/` |
-| C · Backend and contract | [name] | `2026-11-03-okbite-lane-c-backend.md` | `packages/shared/src/contract.ts`, `packages/shared/src/score/`, `supabase/` except `supabase/functions/read-label/`, `apps/web/src/features/admin/`, `scripts/` except `check-data.ts` |
-| D · Labels, quality, release | [name] | `2026-11-03-okbite-lane-d-quality.md` | repo root config, `.github/`, `AGENTS.md`, `CLAUDE.md`, `packages/shared/src/allergens/`, `supabase/functions/read-label/`, `e2e/` |
+| A · Content, data, store listing | [name] | `2026-11-03-okbite-lane-a-content.md` | `apps/mobile/src/copy/`, `apps/mobile/src/features/legal/`, `apps/mobile/app/(info)/`, `data/`, `store/`, `scripts/check-data.ts` |
+| B · Mobile app | [name] | `2026-11-03-okbite-lane-b-frontend.md` | `apps/mobile/` except paths owned by A, C, D |
+| C · Backend and contract | [name] | `2026-11-03-okbite-lane-c-backend.md` | `packages/shared/src/contract.ts`, `packages/shared/src/score/`, `supabase/` except the `identify` and `read-label` functions, `apps/mobile/app/admin/`, `apps/mobile/src/features/admin/`, `scripts/` except `check-data.ts` |
+| D · AI, quality, release | [name] | `2026-11-03-okbite-lane-d-quality.md` | repo root config, `.github/`, `AGENTS.md`, `CLAUDE.md`, `apps/mobile/app.config.ts`, `apps/mobile/eas.json`, `packages/shared/src/allergens/`, `packages/shared/src/ean/`, `supabase/functions/identify/`, `supabase/functions/read-label/`, `supabase/functions/client-error/`, `.maestro/`, `apps/mobile/src/lib/errorReporter.ts` |
 
 ## How each person starts a session
 
 1. `git pull` on `main`, then create a worktree for the task: `git worktree add ../okbite-<task-id> -b <task-id>-<short-name>`.
 2. Open Claude Code or Codex in that worktree and say: "Use superpowers:executing-plans to implement Task <ID> from docs/superpowers/plans/<your lane file>. Read AGENTS.md and the spec first."
-3. When the task's last step passes, push and open a PR titled `<ID>: <task title>`.
+3. When the task's last step passes, push and open a PR titled `<ID>: <task title>`. Test UI changes on a real phone with Expo Go or the development build.
 4. Ask the other tool for a review (Claude reviews Codex work, Codex reviews Claude work), fix findings, then ask your reviewer lane for approval: A reviews B, B reviews C, C reviews D, D reviews A.
 5. Merge, delete the worktree, tick the task in your lane file in a follow-up commit.
 
 ## Global Constraints
 
-- All user-facing text is Romanian and comes from `apps/web/src/copy/ro.ts`; never hard-code copy in components.
+- All user-facing text is Romanian and comes from `apps/mobile/src/copy/ro.ts`; never hard-code copy in components.
 - Every function request and response is validated with the Zod schemas in `packages/shared/src/contract.ts`.
 - `supabase/functions/_shared/` is generated by `pnpm sync-shared`; never edit it by hand.
 - Only Lane C changes `packages/shared/src/contract.ts` and `supabase/migrations/`. Others open an issue tagged `contract` and wait.
+- Only Lane D changes `app.config.ts` and `eas.json` (permissions, bundle ids, build profiles).
 - No PR over about 400 changed lines (generated files and data JSON excepted).
-- Tests first: every task starts with a failing test. CI (`pnpm lint && pnpm typecheck && pnpm test && pnpm build`) must pass before review.
+- Tests first: every task starts with a failing test. CI (`pnpm lint && pnpm typecheck && pnpm test`) must pass before review.
 - No fact without a source: ingredient explanations, allergen synonyms and score rules are drafted by agents but checked by a human against a cited source before merge.
-- Secrets live only in Supabase and Cloudflare environment settings; `.env.local` is git-ignored. Anthropic key name: `ANTHROPIC_API_KEY`.
+- Secrets live only in Supabase function secrets and EAS environment variables; `.env*` is git-ignored except `.env.example`. Anthropic key name: `ANTHROPIC_API_KEY`. The app holds only the Supabase URL and anon key.
 - Never show the Nutri-Score logo; always show "Calculat la 100 g; nu indică riscul unei boli." beside a score.
-- Device id header name: `x-device-id`. Rate limits: 20 `read-label`, 10 `submit` per device per 24 h.
+- Bundle id / package name: `md.okbite.app`. Device id header: `x-device-id`. Rate limits per spec §6.
+- No payment or subscription code: pricing is not decided.
 
 ## Review Focus
 
-These are inputs the spec implies but feature tests could miss. Each has a test in the owning task.
+Inputs the spec implies but feature tests could miss. Each has a test in the owning task.
 
-- A 12-digit UPC-A code from the scanner must be treated as the EAN-13 with a leading `0` (B2).
-- Decimal commas from labels or typing ("0,3") must parse as 0.3, and a blank field stays `null`, never `0` (B7, D4).
-- A product with any of kcal, sugar, sat or salt missing shows the "Date insuficiente" state, never a score of 0 (C4, B3).
-- A 12-megapixel photo must be compressed to ≤ 1.5 MB before upload, and functions reject bodies over 2 MB with `bad_request` (B7, D4).
-- Scanning while offline queues the code and opens the result once back online; history stays readable offline (B6).
+- A product photo with a barcode visible but at an angle or partly blurred: `scanFromURLAsync` may fail, so the photo must still go to `identify`, which may read the digits (B2, D4).
+- A 12-digit UPC-A code from any source must become the EAN-13 with a leading `0` before lookup (D3).
+- Decimal commas ("0,3") from labels or typing parse as 0.3; blank stays `null`, never `0` (B7, D5).
+- A product with any of kcal, sugar, sat or salt missing shows "Date insuficiente", never a score of 0 (C4, B4).
+- Two shoppers adding the same new barcode at once: the second gets the first one's product, not an error or a duplicate (C6).
 
 ## Phases and cross-lane dependencies
 
 Dates are targets. A task may start as soon as everything it depends on is merged to `main`.
 
-### P0 · Foundation (4–8 Nov) — gate: empty app on a preview URL, CI green, contract and schema merged
+### P0 · Foundation (4–8 Nov) — gate: the empty OkBite app opens in Expo Go on an iPhone and an Android phone, CI green, contract and schema merged, Apple and Google developer enrolment started
 
 | Order | Task | Lane | Waits on |
 |---|---|---|---|
-| 1 | D1 Repo scaffold and agent rules (do first, 4 Nov morning) | D | — |
-| 2 | D2 CI and preview deploys | D | D1 |
+| 1 | D1 Expo monorepo scaffold (do first, 4 Nov morning) | D | — |
+| 1 | D2 step 4 (human): Apple Developer and Google Play enrolment (4 Nov; Apple can take days) | D | — |
+| 2 | D2 CI, EAS profiles and PR previews | D | D1 |
 | 2 | C1 Contract | C | D1 |
 | 2 | A1 Romanian copy file | A | D1 |
-| 3 | C2 Database schema, RLS, seed | C | C1 |
-| 3 | B1 App shell, UI kit, API client | B | C1, A1 |
-| 4 | C3 sync-shared and `lookup` function | C | C2 |
+| 3 | C2 Database schema, RLS, search, seed | C | C1 |
+| 3 | B1 App shell, theme, UI kit, API client | B | C1, A1 |
+| 4 | C3 sync-shared, function helpers, `lookup` | C | C2 |
 
-### P1 · Core features (9–15 Nov) — gate: on a real phone, scanning a seeded product shows result, ingredients and comparison
+### P1 · Known products (9–15 Nov) — gate: on a real phone, photographing a seeded product (barcode side or front) shows its result, ingredients and a comparison
 
 | Task | Lane | Waits on |
 |---|---|---|
-| B2 EAN checksum, scanner, manual entry | B | B1 |
-| B3 Confirm and result screens | B | B2, C3, C4 |
-| B4 Ingredients and original-label screens | B | B3 |
-| B5 Compare screen | B | B3 |
-| B6 History and offline queue | B | B3 |
+| D3 EAN normaliser and allergen matcher (do first in P1: B2, D4 and C6 need it) | D | C1 |
+| B2 Capture screen, barcode in photo, live scan, manual entry | B | B1, D3 |
+| D4 `identify` function | D | C2, C3, D3 |
+| B3 Identify flow screens (confirm, pick, not found) | B | B2, D4 |
+| B4 Result screen | B | B3, C4 |
+| B5 Ingredients, label and compare screens | B | B4 |
+| B6 History and offline queue | B | B4 |
 | C4 Score engine | C | C1, A3 |
 | C5 Data loaders and Open Food Facts import | C | C2, A2 |
-| D3 Allergen matcher | D | C1 |
-| D5 End-to-end tests (first flows) | D | B3, B6 |
 | A2 Categories and ingredient knowledge base | A | C1 |
 | A3 Score test fixtures | A | C1 |
 
-### P2 · Label reading and moderation (16–22 Nov) — gate: a stranger adds a missing product from two photos, a moderator publishes it
+### P2 · Unknown products (16–22 Nov) — gate: a product not in the database is photographed, analysed and added; a second phone then finds it by photo
 
 | Task | Lane | Waits on |
 |---|---|---|
-| D4 `read-label` function | D | C2, C3 |
-| B7 Capture, review and submit flow | B | D4, C6, D3 |
-| C6 `submit` and `report` functions | C | C3 |
-| C7 Moderation function and `/admin` page | C | C6, D3 |
-| A4 Legal and method pages | A | B1 |
-| A5 Shop photo runs (12–29 Nov, all four people) | A | B7 merged for the second run |
+| D5 `read-label` function | D | C3 |
+| C6 `add-product` and `report` functions | C | C3, C4, D3 |
+| B7 Add flow (two shots, review, save, result) | B | D5, C6 |
+| C7 Moderation function and admin screens | C | C6 |
+| D6 Maestro end-to-end flows | D | B4, B6, B7 |
+| A4 Legal and method screens | A | B1 |
+| A6 Shop photo runs (12–29 Nov, all four people) | A | B7 for the second run |
 
-### P3 · Hardening and closed beta (23 Nov–6 Dec) — gate: 25 testers, no open P1 bugs, Lighthouse checks pass
-
-| Task | Lane | Waits on |
-|---|---|---|
-| B8 Accessibility, performance, install, share | B | P2 gate |
-| D6 Usage events and error logging | D | P2 gate |
-| C8 Backups and moderation rota | C | P2 gate |
-| A6 Beta testers and feedback triage | A | P2 gate |
-
-### Launch (7–8 Dec)
+### P3 · Beta and store submission (23 Nov–6 Dec) — gate: 25 testers on TestFlight / Play internal testing, no open P1 bugs, both builds submitted for review by 1 Dec
 
 | Task | Lane | Waits on |
 |---|---|---|
-| D7 Production release and launch-day watch | D | P3 gate |
-| A7 Landing page and launch posts | A | P3 gate |
+| B8 Accessibility, dark mode, share, polish | B | P2 gate |
+| D7 Error reporting and usage stats | D | P2 gate |
+| A5 Store listing: texts, screenshots, privacy and data-safety answers | A | P2 gate |
+| A7 Beta testers and feedback triage | A | D8 step 1 |
+| C8 Backups and moderation routine | C | P2 gate |
+| D8 Store builds, beta tracks, submission, release | D | D2, A5 |
 
-## Checkpoints (whole team, on a real phone)
+### Launch (8 Dec)
 
-- [ ] **8 Nov · P0:** preview URL opens the empty OkBite shell; `pnpm test` green on `main`; `lookup?code=4840001000014` returns the seeded yogurt.
-- [ ] **15 Nov · P1:** scan → confirm → result → ingredients → compare → history works for the 6 seeded products and at least 50 imported ones.
-- [ ] **22 Nov · P2:** a product added from two photos appears publicly after moderator approval.
-- [ ] **6 Dec · P3:** 300 products live, 25 testers, zero open P1 bugs, Lighthouse PWA installable and accessibility ≥ 95.
+| Task | Lane | Waits on |
+|---|---|---|
+| D8 final step: release approved builds | D | store approvals |
+| A8 Launch posts | A | D8 |
+
+## Checkpoints (whole team, on real phones: at least one iPhone and one Android)
+
+- [ ] **8 Nov · P0:** the empty app opens in Expo Go on both platforms; `pnpm test` green on `main`; `lookup?code=4840001000014` returns the seeded yogurt; Apple and Google enrolment submitted.
+- [ ] **15 Nov · P1:** photo of a seeded product's barcode side and of its front both lead to the right result; ingredients, compare and history work; at least 50 imported products findable.
+- [ ] **22 Nov · P2:** an unknown product is added from label photos, shown as "Neverificat", and found by a second phone; a moderator verifies it.
+- [ ] **1 Dec:** both store builds submitted for review.
+- [ ] **6 Dec · P3:** 300 products, 25 testers, zero open P1 bugs.
+
+## Open decisions (owner: the team)
+
+- App price / business model: not decided. Build free with no payment code; revisit after launch.
+- Who pays the Apple Developer Program (99 USD/year) and Google Play registration (25 USD once), and the Anthropic API monthly cap.
+- Which team member's or organisation's name appears as the seller in the stores.
