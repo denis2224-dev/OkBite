@@ -17,46 +17,45 @@ export default function CaptureScreen() {
   if (!permission || permission.status === 'undetermined') {
     return <View style={styles.center}><ActivityIndicator size="large" testID="permission-loading" /></View>;
   }
-  const gallery = { label: ro.capture.gallery, onPress: pickFromGallery };
-  if (!permission.granted) {
-    return (
-      <View style={styles.center}>
-        <StatusPanel
-          title={ro.capture.deniedTitle}
-          message={ro.capture.deniedText}
-          actions={[gallery, { label: ro.capture.openSettings, onPress: () => { void Linking.openSettings(); } }, { label: ro.capture.retry, onPress: () => { void requestPermission(); } }]}
-        />
-      </View>
-    );
-  }
-  if (mountFailed) {
-    return (
-      <View style={styles.center}>
-        <StatusPanel
-          message={ro.errors.generic}
-          actions={[gallery, { label: ro.errors.retry, onPress: () => { setMountFailed(false); setReady(false); } }]}
-        />
-      </View>
-    );
-  }
+  const gallery = { label: ro.capture.gallery, onPress: () => { void pickFromGallery(); } };
+  const cameraActive = permission.granted && !mountFailed;
 
   return (
     <View style={styles.root}>
-      <CameraView ref={camera} style={StyleSheet.absoluteFill} facing="back" onCameraReady={() => setReady(true)} onMountError={() => setMountFailed(true)} />
-      <Text style={styles.hint}>{ro.capture.hint}</Text>
-      <View style={styles.controls}>
-        <ActionButton {...gallery} disabled={working} />
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={ro.capture.shutter}
-          accessibilityState={{ disabled: !ready || working }}
-          disabled={!ready || working}
-          onPress={() => { void takePhoto(camera.current); }}
-          style={[styles.shutter, (!ready || working) && styles.shutterOff]}
-        >
-          <View style={styles.shutterInner} />
-        </Pressable>
-      </View>
+      {cameraActive ? (
+        <>
+          <CameraView ref={camera} style={StyleSheet.absoluteFill} facing="back" onCameraReady={() => setReady(true)} onMountError={() => setMountFailed(true)} />
+          <Text style={styles.hint}>{ro.capture.hint}</Text>
+          <View style={styles.controls}>
+            <ActionButton {...gallery} disabled={working} />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={ro.capture.shutter}
+              accessibilityState={{ disabled: !ready || working }}
+              disabled={!ready || working}
+              onPress={() => { void takePhoto(camera.current); }}
+              style={[styles.shutter, (!ready || working) && styles.shutterOff]}
+            >
+              <View style={styles.shutterInner} />
+            </Pressable>
+          </View>
+        </>
+      ) : state.status === 'idle' ? (
+        <View style={styles.center}>
+          {!permission.granted ? (
+            <StatusPanel
+              title={ro.capture.deniedTitle}
+              message={ro.capture.deniedText}
+              actions={[gallery, { label: ro.capture.openSettings, onPress: () => { void Linking.openSettings(); } }, { label: ro.capture.retry, onPress: () => { void requestPermission(); } }]}
+            />
+          ) : (
+            <StatusPanel
+              message={ro.errors.generic}
+              actions={[gallery, { label: ro.errors.retry, onPress: () => { setMountFailed(false); setReady(false); } }]}
+            />
+          )}
+        </View>
+      ) : null}
       {working ? (
         <View style={[StyleSheet.absoluteFill, styles.overlay]}><ActivityIndicator size="large" color="#fff" /><Text style={styles.overlayText}>{ro.capture.working}</Text></View>
       ) : null}

@@ -138,4 +138,78 @@ describe('CaptureScreen', () => {
     expect(screen.getByRole('button', { name: ro.capture.gallery })).toBeTruthy();
     expect(screen.queryByTestId('camera')).toBeNull();
   });
+
+  it.each(['camera-denied', 'camera-mount-failed'] as const)(
+    'shows gallery working, offline retry on the same photo, and fallback recovery when %s',
+    async (mode) => {
+      const pick = launchImageLibraryAsync as unknown as AsyncMock;
+      if (mode === 'camera-denied') {
+        mockPermission.value = { granted: false, status: 'denied', canAskAgain: false };
+      }
+      await render(<CaptureScreen />);
+      if (mode === 'camera-mount-failed') {
+        await act(() => { (camera().props.onMountError as () => void)(); });
+      }
+      const assertFallbackVisible = () => {
+        if (mode === 'camera-denied') {
+          expect(screen.getByText(ro.capture.deniedTitle)).toBeTruthy();
+          expect(screen.getByRole('button', { name: ro.capture.openSettings })).toBeTruthy();
+        } else {
+          expect(screen.getByText(ro.errors.generic)).toBeTruthy();
+          expect(screen.getByRole('button', { name: ro.errors.retry })).toBeTruthy();
+        }
+      };
+
+      // 1. Gallery cancellation keeps the user on the appropriate camera fallback.
+      pick.mockResolvedValueOnce({ canceled: true, assets: null });
+      await fireEvent.press(screen.getByRole('button', { name: ro.capture.gallery }));
+      assertFallbackVisible();
+      expect(identify).not.toHaveBeenCalled();
+
+      // 2. Pending gallery photo shows working feedback and hides fallback buttons to prevent duplicate requests.
+      let rejectWorking!: (err: unknown) => void;
+      pick.mockResolvedValueOnce({ canceled: false, assets: [{ uri: 'file:///gal-1.jpg' }] });
+      identify.mockReturnValueOnce(new Promise((_r, rej) => { rejectWorking = rej; }));
+      await fireEvent.press(screen.getByRole('button', { name: ro.capture.gallery }));
+      expect(await screen.findByText(ro.capture.working)).toBeTruthy();
+      expect(screen.queryByRole('button', { name: ro.capture.gallery })).toBeNull();
+
+      // 3. Rejecting with offline surfaces the offline panel; retry reuses the same gallery photo.
+      identify.mockResolvedValueOnce(identifyFound);
+      await act(async () => {
+        rejectWorking(Object.assign(new Error('offline'), { code: 'offline' }));
+      });
+      expect(await screen.findByText(ro.offline.title)).toBeTruthy();
+      expect(screen.getByText(ro.offline.subtitle)).toBeTruthy();
+      await fireEvent.press(screen.getByRole('button', { name: ro.offline.retry }));
+      expect(pick).toHaveBeenCalledTimes(2); // 1 cancelled + 1 selected (not re-opened on retry)
+      expect(identify).toHaveBeenCalledTimes(2);
+      expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+    },
+  );
+
+  it.each(['camera-denied', 'camera-mount-failed'] as const)(
+    'shows API error from gallery and returns to the %s fallback on close',
+    async (mode) => {
+      const pick = launchImageLibraryAsync as unknown as AsyncMock;
+      if (mode === 'camera-denied') {
+        mockPermission.value = { granted: false, status: 'denied', canAskAgain: false };
+      }
+      await render(<CaptureScreen />);
+      if (mode === 'camera-mount-failed') {
+        await act(() => { (camera().props.onMountError as () => void)(); });
+      }
+      pick.mockResolvedValueOnce({ canceled: false, assets: [{ uri: 'file:///gal-err.jpg' }] });
+      identify.mockRejectedValueOnce(Object.assign(new Error('upstream'), { code: 'upstream_failed' }));
+      await fireEvent.press(screen.getByRole('button', { name: ro.capture.gallery }));
+      expect(await screen.findByText(ro.errors.upstreamFailed)).toBeTruthy();
+      await fireEvent.press(screen.getByRole('button', { name: ro.nav.close }));
+      expect(screen.queryByText(ro.errors.upstreamFailed)).toBeNull();
+      if (mode === 'camera-denied') {
+        expect(screen.getByText(ro.capture.deniedTitle)).toBeTruthy();
+      } else {
+        expect(screen.getByText(ro.errors.generic)).toBeTruthy();
+      }
+    },
+  );
 });

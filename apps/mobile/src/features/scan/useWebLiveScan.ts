@@ -20,7 +20,10 @@ export async function startLiveScan(video: HTMLVideoElement, onCode: (code: stri
 
   const stream = await media.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
   let timer: ReturnType<typeof setInterval> | undefined;
+  let stopped = false;
   const stop = () => {
+    if (stopped) return;
+    stopped = true;
     clearInterval(timer);
     stream.getTracks().forEach((track) => track.stop());
     video.srcObject = null;
@@ -34,11 +37,11 @@ export async function startLiveScan(video: HTMLVideoElement, onCode: (code: stri
   }
   let reading = false;
   timer = setInterval(async () => {
-    if (reading) return;
+    if (reading || stopped) return;
     reading = true;
     try {
       const code = await firstValidCode(detector, video);
-      if (code) onCode(code);
+      if (!stopped && code) onCode(code);
     } catch {
       // A frame that cannot be read is skipped; the next one is tried.
     } finally {
@@ -59,7 +62,9 @@ export function useWebLiveScan(onCode: (code: string) => void) {
     if (!video) return;
     let cancelled = false;
     let stop: (() => void) | null = null;
-    startLiveScan(video, (code) => latest.current(code)).then(
+    startLiveScan(video, (code) => {
+      if (!cancelled) latest.current(code);
+    }).then(
       (stopFn) => {
         if (cancelled) return stopFn?.(); // unmounted while the camera was starting: release it right away
         stop = stopFn;
@@ -76,4 +81,3 @@ export function useWebLiveScan(onCode: (code: string) => void) {
   const retry = () => { setStatus('starting'); setAttempt((n) => n + 1); };
   return { status, videoRef: setVideo, retry };
 }
-

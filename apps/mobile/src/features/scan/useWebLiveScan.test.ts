@@ -1,6 +1,11 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { renderHook, act } from '@testing-library/react-native';
+import { api } from '../../lib/api';
+import { useScanLookup } from './useScanLookup';
 import { startLiveScan, useWebLiveScan } from './useWebLiveScan';
+
+jest.mock('expo-router', () => ({ useRouter: () => ({ replace: jest.fn() }) }));
+jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
 
 type G = Record<string, unknown>;
 const g = globalThis as unknown as G;
@@ -75,6 +80,24 @@ describe('startLiveScan', () => {
     stop?.();
   });
 
+  it('suppresses an in-flight detection that resolves after stop() and makes stop() idempotent', async () => {
+    const s = stream();
+    install(jest.fn(async () => s));
+    let finish!: (v: { rawValue?: string }[]) => void;
+    detect.mockReturnValueOnce(new Promise((r) => { finish = r; }));
+    const onCode = jest.fn();
+    const stop = await startLiveScan(fakeVideo(), onCode);
+    await tick();
+    expect(detect).toHaveBeenCalledTimes(1);
+    stop?.();
+    stop?.();
+    await act(async () => { finish([{ rawValue: '4840001000014' }]); });
+    await tick();
+    expect(onCode).not.toHaveBeenCalled();
+    expect(s.tracks.every((t) => t.stop.mock.calls.length === 1)).toBe(true);
+    expect(detect).toHaveBeenCalledTimes(1);
+  });
+
   it('rejects when the camera is refused, without leaving anything running', async () => {
     install(jest.fn(async () => { throw Object.assign(new Error('denied'), { name: 'NotAllowedError' }); }));
     await expect(startLiveScan(fakeVideo(), jest.fn())).rejects.toThrow('denied');
@@ -124,6 +147,33 @@ describe('useWebLiveScan', () => {
     expect(result.current.status).toBe('live');
     await unmount();
     expect(s.tracks.every((t) => t.stop.mock.calls.length === 1)).toBe(true);
+  });
+
+  it('does not deliver a barcode or trigger a lookup when a pending frame detection resolves after unmount', async () => {
+    jest.useFakeTimers();
+    try {
+      const s = stream();
+      install(jest.fn(async () => s));
+      let finish!: (v: { rawValue?: string }[]) => void;
+      detect.mockReturnValueOnce(new Promise((r) => { finish = r; }));
+      const lookup = api.lookup as unknown as jest.Mock;
+      lookup.mockClear();
+      const { result: scan } = await renderHook(() => useScanLookup());
+      const onCode = jest.fn((code: string) => { void scan.current.onCameraCode(code); });
+      const { result, unmount } = await renderHook(() => useWebLiveScan(onCode));
+      await act(async () => { result.current.videoRef(fakeVideo()); });
+      await tick();
+      expect(detect).toHaveBeenCalledTimes(1);
+      await unmount();
+      await act(async () => { finish([{ rawValue: '4840001000014' }]); });
+      await tick();
+      expect(onCode).not.toHaveBeenCalled();
+      expect(lookup).not.toHaveBeenCalled();
+      expect(s.tracks.every((t) => t.stop.mock.calls.length === 1)).toBe(true);
+      expect(detect).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('releases a camera that opens after the screen was already left', async () => {
