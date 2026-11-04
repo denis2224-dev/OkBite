@@ -12,6 +12,6 @@ Add the Supabase project here when backend implementation begins:
 - `seed.sql` — development records.
 - `config.toml` — local service configuration.
 
-Import shared schemas from `shared/contracts` at the repository root through
+Import shared schemas from `src/data/models/contract.ts` through
 the agreed server-side synchronization process. Keep server credentials out
 of the frontend and out of version control.

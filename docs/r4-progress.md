@@ -90,3 +90,15 @@ in `client`, with reusable components, hooks, services and helpers grouped
 under `src`. Expo Router screens live in `client/src/app`. Browser assets live
 in `client/public`, and server-side work belongs in `server/supabase`.
 The root development commands and shared package name remain unchanged.
+
+## Root feature-oriented application
+
+The current application is directly in `PWA_Moldova` on
+`refactor/expo-feature-layout`. `src/core`, `src/data`, `src/features` and
+`src/shared` replace the previous client-folder organization. Tests are now
+under root `test`. The shared validation schemas are local models in
+`src/data/models/contract.ts`, and the application is one package rather than
+a nested workspace. Use the root README for current paths and run commands.
+The previous sections describe preserved feature checkpoints and their paths.
+
+Root-layout verification: 62 tests passed, along with type checking, lint and all-platform exports. Reference HTML and canvas files match the supplied archive.
