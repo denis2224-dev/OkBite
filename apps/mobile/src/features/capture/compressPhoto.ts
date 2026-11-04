@@ -1,25 +1,28 @@
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 
+const MAX_SIDE = 1600;
 const MAX_BYTES = 1_500_000;
-const PASSES = [{ side: 1600, compress: 0.8 }, { side: 1600, compress: 0.6 }, { side: 1200, compress: 0.4 }] as const;
+// Quality only changes the encoder step; the image is resized once. Each step is measured, not assumed.
+const QUALITIES = [0.8, 0.6, 0.4, 0.25];
 
-function base64Bytes(b64: string): number {
-  const pad = b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0;
-  return Math.floor((b64.length * 3) / 4) - pad;
+// Size of the JPEG that the base64 string encodes.
+function jpegBytes(base64: string): number {
+  const padding = base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0;
+  return (base64.length * 3) / 4 - padding;
 }
 
 export async function compressPhoto(uri: string): Promise<{ uri: string; base64: string; bytes: number }> {
-  let portrait = false;
-  for (const { side, compress } of PASSES) {
-    const opts = { compress, format: SaveFormat.JPEG, base64: true };
-    let res = await manipulateAsync(uri, [{ resize: portrait ? { height: side } : { width: side } }], opts);
-    if (!portrait && res.height > side) {
-      portrait = true;
-      res = await manipulateAsync(uri, [{ resize: { height: side } }], opts);
-    }
-    const base64 = res.base64 ?? '';
-    const bytes = base64Bytes(base64);
-    if (base64 && bytes <= MAX_BYTES) return { uri: res.uri, base64, bytes };
+  // maxWidth/maxHeight only reduce memory while decoding; the exact 1600 px limit is enforced below.
+  let image = await ImageManipulator.manipulate(uri, { maxWidth: MAX_SIDE, maxHeight: MAX_SIDE }).renderAsync();
+  if (Math.max(image.width, image.height) > MAX_SIDE) {
+    const size = image.width >= image.height ? { width: MAX_SIDE } : { height: MAX_SIDE };
+    image = await ImageManipulator.manipulate(image).resize(size).renderAsync();
   }
-  throw new Error('Photo exceeds 1.5 MB limit after compression');
+  for (const compress of QUALITIES) {
+    const saved = await image.saveAsync({ compress, format: SaveFormat.JPEG, base64: true });
+    const base64 = saved.base64 ?? '';
+    const bytes = jpegBytes(base64);
+    if (base64 && bytes <= MAX_BYTES) return { uri: saved.uri, base64, bytes };
+  }
+  throw new Error('Photo is still over 1.5 MB after compression');
 }

@@ -1,59 +1,79 @@
-import { useState, useRef, useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { launchImageLibraryAsync } from 'expo-image-picker';
-import { LookupResponse, IdentifyResponse } from '@okbite/shared';
 import { api } from '../../lib/api';
+import { identifyPhotoRoute, productRoute } from '../identify/routes';
 import { compressPhoto } from './compressPhoto';
 import { findBarcode } from './findBarcode';
 
-export type CaptureState = 'idle' | 'working' | 'offline' | 'error';
+export type CaptureState =
+  | { status: 'idle' }
+  | { status: 'working' }
+  | { status: 'offline' }
+  | { status: 'error'; code?: string };
+
+type Camera = { takePictureAsync(): Promise<{ uri: string } | undefined> };
+
+const IDLE: CaptureState = { status: 'idle' };
 
 export function useCaptureFlow() {
   const router = useRouter();
-  const [state, setState] = useState<CaptureState>('idle');
-  const busyRef = useRef(false);
+  const [state, setState] = useState<CaptureState>(IDLE);
+  const busy = useRef(false);
+  const lastUri = useRef<string | null>(null);
 
-  const processUri = useCallback(async (rawUri: string): Promise<string | null> => {
-    if (busyRef.current) return null;
-    busyRef.current = true;
-    setState('working');
-    try {
-      const compressed = await compressPhoto(rawUri);
-      const code = await findBarcode(compressed.uri);
-      if (code) {
-        const lookupRes = LookupResponse.parse(await api.lookup({ code }));
-        if (lookupRes.status === 'found') {
-          setState('idle');
-          router.replace(`/product/${lookupRes.product.id}`);
-          return 'found';
+  // One request at a time: camera, gallery and retry all go through here.
+  const run = useCallback(
+    async (getUri: () => Promise<string | null>) => {
+      if (busy.current) return;
+      busy.current = true;
+      setState({ status: 'working' });
+      try {
+        const uri = await getUri();
+        if (!uri) return setState(IDLE);
+        lastUri.current = uri;
+        const photo = await compressPhoto(uri);
+        const code = await findBarcode(photo.uri);
+        if (code) {
+          const hit = await api.lookup({ code });
+          if (hit.status === 'found') {
+            setState(IDLE);
+            return router.replace(productRoute(hit.product.id));
+          }
         }
+        // No readable barcode, or an unknown one: the photo itself decides.
+        const result = await api.identify(photo.base64);
+        setState(IDLE);
+        router.replace(result.status === 'found' ? productRoute(result.product.id) : identifyPhotoRoute(result));
+      } catch (err) {
+        const code = (err as { code?: string }).code;
+        setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
+      } finally {
+        busy.current = false;
       }
-      const identifyRes = IdentifyResponse.parse(await api.identify(compressed.base64));
-      setState('idle');
-      if (identifyRes.status === 'found') router.replace(`/product/${identifyRes.product.id}`);
-      else router.replace({ pathname: '/identify', params: { payload: JSON.stringify(identifyRes) } });
-      return identifyRes.status;
-    } catch (err) {
-      // shortcut: offline queue enqueue({ kind: 'photo', uri }) awaits R4 Task B6 (Step 2c)
-      const next = (err as { code?: string })?.code === 'offline' ? 'offline' : 'error';
-      setState(next);
-      return next;
-    } finally {
-      busyRef.current = false;
-    }
-  }, [router]);
+    },
+    [router],
+  );
 
-  const takePhoto = useCallback(async (camera: { takePictureAsync?: () => Promise<{ uri?: string } | undefined> } | null) => {
-    if (!camera?.takePictureAsync || busyRef.current) return null;
-    const photo = await camera.takePictureAsync();
-    return photo?.uri ? processUri(photo.uri) : null;
-  }, [processUri]);
+  const takePhoto = useCallback(
+    async (camera: Camera | null) => {
+      if (camera) await run(async () => (await camera.takePictureAsync())?.uri ?? null);
+    },
+    [run],
+  );
 
-  const pickFromGallery = useCallback(async () => {
-    if (busyRef.current) return null;
-    const picked = await launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
-    return !picked.canceled && picked.assets?.[0]?.uri ? processUri(picked.assets[0].uri) : null;
-  }, [processUri]);
+  const pickFromGallery = useCallback(
+    () =>
+      run(async () => {
+        const picked = await launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
+        return picked.canceled ? null : (picked.assets[0]?.uri ?? null);
+      }),
+    [run],
+  );
 
-  return { state, takePhoto, pickFromGallery, processUri };
+  // shortcut: with R4 B6 merged, offline will call enqueue({ kind: 'photo', uri }) and open /offline (B2 step 2c).
+  const retry = useCallback(() => run(async () => lastUri.current), [run]);
+  const dismiss = useCallback(() => { if (!busy.current) setState(IDLE); }, []);
+
+  return { state, takePhoto, pickFromGallery, retry, dismiss, canRetry: lastUri.current !== null };
 }
