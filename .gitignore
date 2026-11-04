@@ -9,3 +9,11 @@ coverage/
 
 /.worktrees/
 /.pnpm-store/
+expo-env.d.ts
+ios/
+android/
+supabase/.temp/
+*.jks
+*.p8
+*.p12
+*.mobileprovision

@@ -102,3 +102,9 @@ The team's planning documents are preserved alongside the application:
 - [Application screens plan](docs/superpowers/plans/2026-11-04-okbite-r4-app-screens.md)
 - [Team prototype](docs/prototype/)
 - [Planning graph](graphify-out/GRAPH_REPORT.md)
+
+
+The implemented frontend remains at the repository root. The team baseline
+in apps/mobile and the shared contract in packages/shared are also preserved.
+Use npm run web for the implemented app; npm run dev:scaffold starts only the
+baseline scaffold. Run npm run check to verify the app and both workspaces.

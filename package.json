@@ -29,31 +29,44 @@
     "zod": "^3.23.0"
   },
   "devDependencies": {
-    "@types/jest": "30.0.0",
-    "@types/react": "~19.3.0",
     "eslint": "^9.39.5",
     "eslint-config-expo": "~58.0.4",
+    "prettier": "^3.6.2",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.46.3",
+    "@types/jest": "30.0.0",
+    "@types/react": "~19.3.0",
     "fake-indexeddb": "^6.2.7",
     "jest": "~30.5.2",
-    "jest-expo": "~58.0.14",
-    "typescript": "~6.0.3"
+    "jest-expo": "~58.0.14"
   },
   "scripts": {
+    "dev": "expo start",
+    "test": "jest --runInBand",
+    "lint": "expo lint",
+    "typecheck": "tsc --noEmit",
+    "e2e": "echo \"set up in D6\" && exit 1",
+    "sync-shared": "echo \"set up in C3\" && exit 1",
+    "format": "prettier --write .",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "jest --runInBand",
-    "typecheck": "tsc --noEmit",
-    "lint": "expo lint",
     "build:web": "expo export -p web",
-    "dev": "expo start",
     "awake": "sh scripts/keep-awake.sh",
     "dev:awake": "sh scripts/keep-awake.sh expo start",
     "web:awake": "sh scripts/keep-awake.sh expo start --web",
     "test:web": "jest --config jest.web.config.cjs --runInBand",
-    "check": "npm run typecheck && npm run lint && npm test && npm run test:web"
+    "check": "npm run typecheck && npm run lint && npm test && npm run test:web && npm run test:shared && npm run typecheck:shared && npm run test:scaffold && npm run typecheck:scaffold",
+    "dev:scaffold": "npm --prefix apps/mobile start",
+    "test:shared": "npm --prefix packages/shared test",
+    "typecheck:shared": "npm --prefix packages/shared run typecheck",
+    "test:scaffold": "npm --prefix apps/mobile test",
+    "typecheck:scaffold": "npm --prefix apps/mobile run typecheck"
   },
   "private": true,
-  "packageManager": "pnpm@9.12.0"
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=22"
+  }
 }

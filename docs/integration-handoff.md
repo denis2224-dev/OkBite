@@ -6,8 +6,9 @@ and the project design skills. Earlier feature branches are preserved for
 review. Their commits are already ancestors of this branch, so they do not
 need to be merged individually.
 
-The latest origin/main planning history has been merged into this review
-branch. Main itself has not been changed. The README and project guidance
+The latest origin/main history, including the D1 scaffold and C1 shared
+contract, has been merged into this review branch. Main itself has not been
+changed by this work. The README and project guidance
 preserve the runnable application instructions and the team's planning links.
 
 ## Branch responsibilities
@@ -29,7 +30,7 @@ preserve the runnable application instructions and the team's planning links.
 
 ## Current folders
 
-- src/: Expo routes, core services and theme, data contracts and repositories,
+- packages/shared/: the backend-owned team API contract and its tests.\n- apps/mobile/: the team baseline scaffold, preserved as a separate workspace.\n- src/: Expo routes, core services and theme, data contracts and repositories,
   feature screens, shared widgets, and application state.
 - assets/: local fonts, icon paths, and application images.
 - public/: browser icons, manifest, and browser document template.
@@ -43,10 +44,15 @@ preserve the runnable application instructions and the team's planning links.
 
 ## Teammate branches
 
-The other contributors' implementation branches remain separate. Their
-scaffold uses apps/mobile, packages/shared, and a root supabase area.
-Before merging those branches, reconcile those paths with this branch's
-approved layout and select one application entry point.
+The D1 scaffold and C1 shared contract are already included through main.
+Their source files are preserved in apps/mobile and packages/shared.
+The approved application in src remains the default app for npm run dev
+and npm run web. The baseline scaffold can be started separately with
+npm run dev:scaffold; it does not replace the implemented application.
+
+The remaining teammates' branches are separate. Backend branches use a
+root supabase area. Reconcile backend paths and shared-schema imports
+before connecting the frontend to real services.
 
 In particular, review package scripts, the lockfile, lint configuration,
 application configuration, Romanian copy, shared contracts, and backend
@@ -60,9 +66,7 @@ be verified with the corresponding contributors' implementation.
 
 ## Verification
 
-Run npm run check for TypeScript, lint, component/integration tests, and
-browser regression tests. Router tests exercise the actual application
-routes and reject console warnings and errors.
+Run npm run check for frontend TypeScript, lint, component/integration tests,\nbrowser regression tests, shared-contract tests/types, and scaffold tests/types.\nRouter tests exercise the actual application routes and reject console warnings\nand errors. All workspace dependencies are declared in their package files.
 
 Run ./node_modules/.bin/expo export --platform all to verify web, iOS, and
 Android bundles. These checks do not replace physical-device testing.
