@@ -146,7 +146,7 @@
     "group": "base",
     "role": "Ingredient de bază",
     "explanation": "Cereală fără gluten, folosită întreagă sau ca făină.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II pct. 1 (cerealele cu gluten: grâu, secară, orz, ovăz; orezul nu e listat) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
     "allergen": null
   },
   {
@@ -156,7 +156,7 @@
     "group": "base",
     "role": "Ingredient de bază",
     "explanation": "Cereală fără gluten, folosită ca făină sau boabe.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II pct. 1 (cerealele cu gluten: grâu, secară, orz, ovăz; porumbul nu e listat) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
     "allergen": null
   },
   {
@@ -166,7 +166,7 @@
     "group": "base",
     "role": "Agent de îngroșare",
     "explanation": "Amidon extras din porumb; îngroașă și leagă.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa VII Partea B (denumirea „amidon”) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
     "allergen": null
   },
   {
@@ -176,7 +176,7 @@
     "group": "base",
     "role": "Agent de îngroșare",
     "explanation": "Amidon extras din cartofi; îngroașă și leagă.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa VII Partea B (denumirea „amidon”) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
     "allergen": null
   },
   {
@@ -216,7 +216,7 @@
     "group": "base",
     "role": "Ingredient de bază",
     "explanation": "Boabe de cacao măcinate după ce s-a scos o parte din grăsime.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Directiva 2000/36/CE privind produsele din cacao și ciocolată, Anexa I — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32000L0036",
     "allergen": null
   },
   {
@@ -226,7 +226,7 @@
     "group": "base",
     "role": "Ingredient de bază",
     "explanation": "Boabe de cacao măcinate fin; baza ciocolatei.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Directiva 2000/36/CE privind produsele din cacao și ciocolată, Anexa I — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32000L0036",
     "allergen": null
   },
   {
@@ -286,7 +286,7 @@
     "group": "base",
     "role": "Ingredient de bază",
     "explanation": "Semințe bogate în grăsimi nesaturate.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "USDA FoodData Central, compoziție „Seeds, sunflower seed kernels” — https://fdc.nal.usda.gov/",
     "allergen": null
   },
   {
@@ -296,7 +296,7 @@
     "group": "base",
     "role": "Ingredient de bază",
     "explanation": "Carne roșie; ingredientul principal al multor mezeluri.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa VII Partea B pct. 17 (definiția „carne”) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
     "allergen": null
   },
   {
@@ -306,7 +306,7 @@
     "group": "base",
     "role": "Ingredient de bază",
     "explanation": "Carne roșie, bogată în proteine și fier.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa VII Partea B pct. 17 (definiția „carne”) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
     "allergen": null
   },
   {
@@ -316,7 +316,7 @@
     "group": "base",
     "role": "Ingredient de bază",
     "explanation": "Carne albă, bogată în proteine.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa VII Partea B pct. 17 (definiția „carne”) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
     "allergen": null
   },
   {
@@ -326,7 +326,7 @@
     "group": "base",
     "role": "Ingredient de bază",
     "explanation": "Carne recuperată de pe oase cu utilaje; textură fină, folosită în crenvurști și parizer.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Reg. (CE) nr. 853/2004, Anexa I pct. 1.14 (carne separată mecanic) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32004R0853",
     "allergen": null
   },
   {
@@ -336,7 +336,7 @@
     "group": "fat",
     "role": "Grăsime",
     "explanation": "Țesut gras de porc; bogat în grăsimi saturate.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "USDA FoodData Central, compoziție „Pork, fresh, backfat” — https://fdc.nal.usda.gov/",
     "allergen": null
   },
   {
@@ -346,7 +346,7 @@
     "group": "fat",
     "role": "Grăsime",
     "explanation": "Grăsime de porc topită; bogată în grăsimi saturate.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Reg. (CE) nr. 853/2004, Anexa III Secțiunea XII (grăsimi animale topite) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32004R0853",
     "allergen": null
   },
   {
@@ -366,7 +366,7 @@
     "group": "base",
     "role": "Ingredient de bază",
     "explanation": "Fructe zdrobite; aduc gust, fibre și zaharuri naturale.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Directiva 2001/112/CE privind sucurile de fructe, Anexa I (piure de fructe) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32001L0112",
     "allergen": null
   },
   {
@@ -376,7 +376,7 @@
     "group": "base",
     "role": "Ingredient de bază",
     "explanation": "Suc de fructe din care s-a scos apa; apa se adaugă înapoi la îmbuteliere.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Directiva 2001/112/CE privind sucurile de fructe, Anexa I (suc concentrat) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32001L0112",
     "allergen": null
   },
   {
@@ -386,7 +386,7 @@
     "group": "base",
     "role": "Ingredient de bază",
     "explanation": "Fructe adăugate pentru gust; cantitatea apare adesea în procente.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Reg. (UE) nr. 1169/2011, art. 22 și Anexa VIII (indicarea cantității ingredientelor, %) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
     "allergen": null
   },
   {
@@ -396,7 +396,7 @@
     "group": "base",
     "role": "Ingredient de bază",
     "explanation": "Roșii fierte și concentrate.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Codex Alimentarius CXS 57-1981, Standard for Processed Tomato Concentrates — https://codex.fao.org/",
     "allergen": null
   },
   {
@@ -406,7 +406,7 @@
     "group": "base",
     "role": "Ingredient de bază",
     "explanation": "Legumă folosită pentru gust.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "USDA FoodData Central, compoziție „Onions, raw / Onion powder” — https://fdc.nal.usda.gov/",
     "allergen": null
   },
   {
@@ -416,7 +416,7 @@
     "group": "base",
     "role": "Ingredient de bază",
     "explanation": "Legumă folosită pentru gust.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "USDA FoodData Central, compoziție „Garlic, raw / Garlic powder” — https://fdc.nal.usda.gov/",
     "allergen": null
   },
   {
@@ -426,7 +426,7 @@
     "group": "base",
     "role": "Ingredient de bază",
     "explanation": "Legumă bogată în amidon; baza chipsurilor.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "USDA FoodData Central, compoziție „Potatoes, raw” — https://fdc.nal.usda.gov/",
     "allergen": null
   },
   {
@@ -436,7 +436,7 @@
     "group": "base",
     "role": "Ingredient de bază",
     "explanation": "Apă potabilă; pe etichetă apare când e peste 5% din produs.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa VII Partea A pct. 1 (apa adăugată peste 5%) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
     "allergen": null
   },
   {
@@ -446,7 +446,7 @@
     "group": "base",
     "role": "Agent de afânare",
     "explanation": "Ciuperci microscopice care fac aluatul să crească.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "USDA FoodData Central, compoziție „Leavening agents, yeast, baker's” — https://fdc.nal.usda.gov/",
     "allergen": null
   },
   {
@@ -456,7 +456,7 @@
     "group": "taste",
     "role": "Potențiator de gust",
     "explanation": "Drojdie descompusă; dă gust sărat-savuros, asemănător glutamatului.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "USDA FoodData Central, compoziție „Yeast extract spread” — https://fdc.nal.usda.gov/",
     "allergen": null
   },
   {
@@ -506,7 +506,7 @@
     "group": "fat",
     "role": "Grăsime",
     "explanation": "Ulei vegetal bogat în grăsimi nesaturate.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Codex Alimentarius CXS 210-1999, Standard for Named Vegetable Oils (compoziția în acizi grași) — https://codex.fao.org/",
     "allergen": null
   },
   {
@@ -516,7 +516,7 @@
     "group": "fat",
     "role": "Grăsime",
     "explanation": "Grăsime vegetală solidă la temperatura camerei; bogată în grăsimi saturate.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Codex Alimentarius CXS 210-1999, Standard for Named Vegetable Oils (compoziția în acizi grași) — https://codex.fao.org/",
     "allergen": null
   },
   {
@@ -526,7 +526,7 @@
     "group": "fat",
     "role": "Grăsime",
     "explanation": "Ulei vegetal cu puține grăsimi saturate.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Codex Alimentarius CXS 210-1999, Standard for Named Vegetable Oils (compoziția în acizi grași) — https://codex.fao.org/",
     "allergen": null
   },
   {
@@ -536,7 +536,7 @@
     "group": "fat",
     "role": "Grăsime",
     "explanation": "Ulei din măsline, bogat în grăsimi mononesaturate.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Reg. (UE) nr. 1308/2013, Anexa VII Partea VIII, și Reg. delegat (UE) 2022/2104 (uleiurile de măsline) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32022R2104",
     "allergen": null
   },
   {
@@ -546,7 +546,7 @@
     "group": "fat",
     "role": "Grăsime",
     "explanation": "Grăsime vegetală foarte bogată în grăsimi saturate.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Codex Alimentarius CXS 210-1999, Standard for Named Vegetable Oils (compoziția în acizi grași) — https://codex.fao.org/",
     "allergen": null
   },
   {
@@ -556,7 +556,7 @@
     "group": "fat",
     "role": "Grăsime",
     "explanation": "Amestec de uleiuri din plante; tipul exact ar trebui scris în paranteză.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa VII Partea A pct. 8 (uleiuri și grăsimi vegetale: originea specifică) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
     "allergen": null
   },
   {
@@ -570,7 +570,7 @@
     "group": "fat",
     "role": "Grăsime",
     "explanation": "Ulei întărit industrial; poate conține grăsimi trans, limitate prin lege în UE.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Reg. (UE) 2019/649 (limita grăsimilor trans: 2 g/100 g grăsime) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32019R0649; Reg. (UE) nr. 1169/2011, Anexa VII Partea A pct. 8",
     "allergen": null
   },
   {
@@ -590,7 +590,7 @@
     "group": "fat",
     "role": "Grăsime",
     "explanation": "Grăsime tartinabilă din uleiuri vegetale.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Reg. (UE) nr. 1308/2013, Anexa VII Partea VII (grăsimi tartinabile) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32013R1308",
     "allergen": null
   },
   {
@@ -600,7 +600,7 @@
     "group": "fat",
     "role": "Grăsime",
     "explanation": "Grăsimea din boabele de cacao; nu conține lapte, în ciuda numelui.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Directiva 2000/36/CE privind produsele din cacao și ciocolată, Anexa I — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32000L0036",
     "allergen": null
   },
   {
@@ -610,7 +610,7 @@
     "group": "taste",
     "role": "Îndulcitor",
     "explanation": "Zahăr din sfeclă sau trestie; aduce calorii fără alte substanțe nutritive.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Directiva 2001/111/CE privind anumite zaharuri, Anexa — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32001L0111",
     "allergen": null
   },
   {
@@ -620,7 +620,7 @@
     "group": "taste",
     "role": "Îndulcitor",
     "explanation": "Zahăr cu urme de melasă; nutritiv, aproape la fel ca zahărul alb.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "USDA FoodData Central, compoziție „Sugars, brown” — https://fdc.nal.usda.gov/",
     "allergen": null
   },
   {
@@ -630,7 +630,7 @@
     "group": "taste",
     "role": "Îndulcitor",
     "explanation": "Sirop din amidon descompus; îndulcește și păstrează produsul moale.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Directiva 2001/111/CE privind anumite zaharuri, Anexa (sirop de glucoză) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32001L0111",
     "allergen": null
   },
   {
@@ -640,7 +640,7 @@
     "group": "taste",
     "role": "Îndulcitor",
     "explanation": "Sirop din amidon de porumb sau grâu, bogat în fructoză.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Reg. (UE) nr. 1308/2013, Anexa II Partea III (izoglucoză) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32013R1308",
     "allergen": null
   },
   {
@@ -650,7 +650,7 @@
     "group": "taste",
     "role": "Îndulcitor",
     "explanation": "Zahărul din fructe, adăugat ca îndulcitor.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Directiva 2001/111/CE privind anumite zaharuri, Anexa (fructoză) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32001L0111",
     "allergen": null
   },
   {
@@ -660,7 +660,7 @@
     "group": "taste",
     "role": "Îndulcitor",
     "explanation": "Glucoză obținută din amidon; un zahăr.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Directiva 2001/111/CE privind anumite zaharuri, Anexa (dextroză) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32001L0111",
     "allergen": null
   },
   {
@@ -670,7 +670,7 @@
     "group": "taste",
     "role": "Agent de umplutură",
     "explanation": "Amidon parțial descompus; dă corp produsului și se digeră ca zahărul.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II pct. 1 lit. (b) (maltodextrine pe bază de grâu) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
     "allergen": null
   },
   {
@@ -690,7 +690,7 @@
     "group": "taste",
     "role": "Îndulcitor",
     "explanation": "Zahăr descompus în glucoză și fructoză; ține produsul moale.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Directiva 2001/111/CE privind anumite zaharuri, Anexa (sirop de zahăr invertit) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32001L0111",
     "allergen": null
   },
   {
@@ -700,7 +700,7 @@
     "group": "taste",
     "role": "Îndulcitor",
     "explanation": "Produs al albinelor, format în mare parte din zaharuri.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Directiva 2001/110/CE privind mierea, Anexa I — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32001L0110",
     "allergen": null
   },
   {
@@ -710,7 +710,7 @@
     "group": "taste",
     "role": "Condiment",
     "explanation": "Clorură de sodiu; prea multă sare crește tensiunea arterială.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "OMS, fișa „Salt reduction” — https://www.who.int/news-room/fact-sheets/detail/salt-reduction",
     "allergen": null
   },
   {
@@ -720,7 +720,7 @@
     "group": "taste",
     "role": "Condiment",
     "explanation": "Sare cu iod adăugat, pentru prevenirea lipsei de iod.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "OMS, Guideline: fortification of food-grade salt with iodine (2014) — https://www.who.int/publications/i/item/9789241507929",
     "allergen": null
   },
   {
@@ -730,7 +730,7 @@
     "group": "taste",
     "role": "Condiment",
     "explanation": "Plante uscate pentru gust; lista exactă nu e mereu dată.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "USDA FoodData Central, compoziție „Spices” — https://fdc.nal.usda.gov/",
     "allergen": null
   },
   {
@@ -740,7 +740,7 @@
     "group": "taste",
     "role": "Condiment",
     "explanation": "Condiment iute din boabe de piper.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "USDA FoodData Central, compoziție „Spices, pepper, black” — https://fdc.nal.usda.gov/",
     "allergen": null
   },
   {
@@ -750,7 +750,7 @@
     "group": "taste",
     "role": "Condiment",
     "explanation": "Ardei roșu uscat și măcinat.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Codex Alimentarius CXS 353-2022, Standard for Dried or Dehydrated Chilli Pepper and Paprika — https://codex.fao.org/",
     "allergen": null
   },
   {
@@ -800,7 +800,7 @@
     "group": "taste",
     "role": "Condiment",
     "explanation": "Lichid acru din fermentare; dă gust și ajută la conservare.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Codex Alimentarius CXS 162-1987, Regional Standard for Vinegar (Europa) — https://codex.fao.org/",
     "allergen": null
   },
   {
@@ -810,7 +810,7 @@
     "group": "taste",
     "role": "Acidifiant",
     "explanation": "Dă gust acrișor și ajută la păstrarea culorii.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Directiva 2001/112/CE privind sucurile de fructe, Anexa I — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32001L0112",
     "allergen": null
   },
   {
@@ -820,7 +820,7 @@
     "group": "cult",
     "role": "Fermentare",
     "explanation": "Bacterii care transformă laptele în iaurt sau brânză.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "EFSA, Qualified Presumption of Safety (QPS) — https://www.efsa.europa.eu/en/topics/topic/qualified-presumption-safety-qps",
     "allergen": null
   },
   {
@@ -830,7 +830,7 @@
     "group": "cult",
     "role": "Fermentare",
     "explanation": "Bacterii vii adăugate în unele iaurturi.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "EFSA, Qualified Presumption of Safety (QPS), Bifidobacterium — https://www.efsa.europa.eu/en/topics/topic/qualified-presumption-safety-qps",
     "allergen": null
   },
   {
@@ -840,7 +840,7 @@
     "group": "cult",
     "role": "Fermentare",
     "explanation": "Bacterie lactică folosită în produse fermentate din lapte.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "EFSA, Qualified Presumption of Safety (QPS), Lactobacillus acidophilus — https://www.efsa.europa.eu/en/topics/topic/qualified-presumption-safety-qps",
     "allergen": null
   },
   {
@@ -854,7 +854,7 @@
     "group": "cult",
     "role": "Fermentare",
     "explanation": "Una din cele două bacterii clasice ale iaurtului.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Codex Alimentarius CXS 243-2003, Standard for Fermented Milks (iaurt: S. thermophilus și L. delbrueckii subsp. bulgaricus) — https://codex.fao.org/",
     "allergen": null
   },
   {
@@ -864,7 +864,7 @@
     "group": "cult",
     "role": "Fermentare",
     "explanation": "Una din cele două bacterii clasice ale iaurtului.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Codex Alimentarius CXS 243-2003, Standard for Fermented Milks (iaurt: S. thermophilus și L. delbrueckii subsp. bulgaricus) — https://codex.fao.org/",
     "allergen": null
   },
   {
@@ -874,7 +874,7 @@
     "group": "cult",
     "role": "Coagulant",
     "explanation": "Enzimă care închegă laptele pentru brânză.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Reg. (CE) nr. 1332/2008 privind enzimele alimentare — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1332",
     "allergen": null
   },
   {
@@ -884,7 +884,7 @@
     "group": "cult",
     "role": "Ajutor de procesare",
     "explanation": "Proteine care grăbesc o transformare, de exemplu în aluat.",
-    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "source": "Reg. (CE) nr. 1332/2008 privind enzimele alimentare — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1332",
     "allergen": null
   },
   {
