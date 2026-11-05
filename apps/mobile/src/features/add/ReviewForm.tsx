@@ -14,6 +14,8 @@ import {
   type Unit,
 } from '@okbite/shared';
 import { ro } from '../../copy/ro';
+import type { Palette } from '../../theme/tokens';
+import { useTheme } from '../../theme/useTheme';
 import { AllergenChip } from '../../ui/AllergenChip';
 import { ActionButton, errorMessage } from '../capture/StatusPanel';
 import type { AddInitialValues } from '../identify/routes';
@@ -49,6 +51,8 @@ function buildInitialNutrients(n: NutrientsType): Record<NutrientKey, string> {
 }
 
 export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: ReviewFormProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [name, setName] = useState(initial.name ?? '');
   const [brand, setBrand] = useState(initial.brand ?? '');
   const [quantity, setQuantity] = useState(initial.quantity ?? '');
@@ -87,6 +91,7 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
     const trimmedCode = code.trim();
     const normalizedCode = trimmedCode ? normalizeCode(trimmedCode) : null;
     onRetake({
+      ...initial,
       code: normalizedCode ?? (trimmedCode ? initial.code : null),
       brand: brand.trim() || null,
       name: name.trim() || null,
@@ -154,7 +159,6 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
     } catch (err) {
       const errCode = (err as { code?: string } | null)?.code;
       setFormError(errCode === 'offline' ? ro.offline.subtitle : errorMessage(errCode));
-    } finally {
       inFlightRef.current = false;
       setSubmitting(false);
     }
@@ -249,28 +253,28 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 16, gap: 14, backgroundColor: '#F6F1E6' },
-  title: { fontSize: 22, fontWeight: '800', color: '#1C2420' },
-  hint: { fontSize: 14, color: '#56615A' },
-  unclearBanner: { padding: 14, borderRadius: 14, backgroundColor: '#FFF5D9', borderWidth: 1, borderColor: '#E8D29A', gap: 6 },
-  unclearBannerTitle: { fontSize: 15, fontWeight: '800', color: '#5A3D00' },
-  unclearBannerText: { fontSize: 14, color: '#5A3D00' },
-  card: { padding: 14, borderRadius: 16, backgroundColor: '#FFFDF6', gap: 8 },
-  fieldLabel: { fontSize: 15, fontWeight: '700', color: '#1C2420' },
-  subLabel: { fontSize: 13, fontWeight: '700', color: '#56615A', marginTop: 4 },
-  unclearMark: { fontSize: 12, fontWeight: '800', color: '#7A4E00' },
-  input: { minHeight: 46, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, borderWidth: 1.5, borderColor: '#CFC8B8', backgroundColor: '#FFFFFF', color: '#1C2420', fontSize: 15 },
+const makeStyles = (colors: Palette) => StyleSheet.create({
+  container: { padding: 16, gap: 14, backgroundColor: colors.ground },
+  title: { fontSize: 22, fontWeight: '800', color: colors.ink },
+  hint: { fontSize: 14, color: colors.muted },
+  unclearBanner: { padding: 14, borderRadius: 14, backgroundColor: colors.mediumBg, borderWidth: 1, borderColor: colors.border, gap: 6 },
+  unclearBannerTitle: { fontSize: 15, fontWeight: '800', color: colors.medium },
+  unclearBannerText: { fontSize: 14, color: colors.medium },
+  card: { padding: 14, borderRadius: 16, backgroundColor: colors.surface, gap: 8 },
+  fieldLabel: { fontSize: 15, fontWeight: '700', color: colors.ink },
+  subLabel: { fontSize: 13, fontWeight: '700', color: colors.muted, marginTop: 4 },
+  unclearMark: { fontSize: 12, fontWeight: '800', color: colors.medium },
+  input: { minHeight: 46, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surface, color: colors.ink, fontSize: 15 },
   multiline: { minHeight: 96, textAlignVertical: 'top' },
   unitRow: { flexDirection: 'row', gap: 8 },
-  unitButton: { minHeight: 44, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1.5, borderColor: '#CFC8B8', justifyContent: 'center' },
-  unitButtonSelected: { backgroundColor: '#173A2A', borderColor: '#173A2A' },
-  unitText: { fontSize: 14, fontWeight: '600', color: '#1C2420' },
-  unitTextSelected: { color: '#FFFFFF' },
+  unitButton: { minHeight: 44, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1.5, borderColor: colors.border, justifyContent: 'center' },
+  unitButtonSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  unitText: { fontSize: 14, fontWeight: '600', color: colors.ink },
+  unitTextSelected: { color: colors.onPrimary },
   allergensSection: { gap: 6 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' },
-  mayChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: '#ECE7DA' },
-  mayChipText: { fontSize: 13, fontWeight: '600', color: '#3F4842' },
-  muted: { fontSize: 13, color: '#56615A' },
-  errorBanner: { fontSize: 14, fontWeight: '700', color: '#8E3417' },
+  mayChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: colors.neutralBg },
+  mayChipText: { fontSize: 13, fontWeight: '600', color: colors.neutral },
+  muted: { fontSize: 13, color: colors.muted },
+  errorBanner: { fontSize: 14, fontWeight: '700', color: colors.low },
 });

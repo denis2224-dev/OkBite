@@ -28,6 +28,9 @@ import { ReviewForm } from './ReviewForm';
 
 const mockReplace = jest.fn<(href: unknown) => void>();
 const mockAddProduct = jest.fn<(req: AddProductRequestType) => Promise<LookupResponse>>();
+const mockResolveQueued = jest.fn<(id: string, productId: string) => Promise<void>>();
+
+jest.mock('../offline/queue', () => ({ resolveQueued: (id: string, productId: string) => mockResolveQueued(id, productId) }));
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace }),
@@ -506,6 +509,10 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     await act(async () => {
       resolveSubmit();
     });
+    const savedButton = screen.getByRole('button', { name: ro.review.save });
+    expect(savedButton.props.accessibilityState?.disabled).toBe(true);
+    await fireEvent.press(savedButton);
+    expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
   it('shows recovery actions when opening /add/review route without a valid draft and does not crash or invent data', async () => {
@@ -597,5 +604,25 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     expect(mockAddProduct).toHaveBeenCalledTimes(2);
     expect(mockAddProduct.mock.calls[1]?.[0]?.categorySlug).toBe('biscuiti');
     expect(mockReplace).toHaveBeenLastCalledWith(`/product/${savedProductB.product.id}`);
+  });
+
+  it('retries queue cleanup after saving without submitting the product again', async () => {
+    if (SAVED_LOOKUP.status !== 'found') throw new Error('Expected found LookupResponse fixture');
+    const queuedId = SAVED_LOOKUP.product.id;
+    setAddReviewDraft({ initial: { ...BASE_INITIAL, queuedId }, label: BASE_LABEL });
+    mockAddProduct.mockRejectedValueOnce(new ApiError('offline')).mockResolvedValueOnce(SAVED_LOOKUP);
+    mockResolveQueued.mockRejectedValueOnce(new Error('file locked')).mockResolvedValueOnce(undefined);
+    await render(<ReviewRouteScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurt` }));
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
+    expect(mockResolveQueued).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
+    expect(screen.queryByRole('button', { name: ro.review.save })).toBeNull();
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(mockResolveQueued).toHaveBeenCalledWith(queuedId, SAVED_LOOKUP.product.id);
+    await fireEvent.press(screen.getByRole('button', { name: ro.app.retry }));
+    expect(mockAddProduct).toHaveBeenCalledTimes(2);
+    expect(mockResolveQueued).toHaveBeenCalledTimes(2);
+    expect(mockReplace).toHaveBeenCalledWith(`/product/${SAVED_LOOKUP.product.id}`);
   });
 });

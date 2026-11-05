@@ -10,6 +10,7 @@ import type { AddInitialValues } from '../identify/routes';
 export interface AddReviewDraft {
   initial: AddInitialValues;
   label: ReadLabelResponseType;
+  savedProductId?: string;
 }
 
 function parseUniqueCategories(entries: readonly unknown[]): readonly CategoryType[] {
