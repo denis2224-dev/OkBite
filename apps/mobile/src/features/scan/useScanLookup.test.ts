@@ -84,6 +84,18 @@ describe('useScanLookup', () => {
     expect(lookup).toHaveBeenCalledTimes(2);
   });
 
+  it('reports a storage failure and retries the same offline barcode', async () => {
+    lookup.mockRejectedValue(offline);
+    mockEnqueue.mockRejectedValueOnce(new Error('storage full'));
+    const { result } = await renderHook(() => useScanLookup());
+    await act(async () => { await result.current.onManualCode(CODE); });
+    expect(result.current.state).toEqual({ status: 'error', code: 'storage' });
+    expect(mockReplace).not.toHaveBeenCalled();
+    await act(async () => { await result.current.retry(); });
+    expect(mockEnqueue.mock.calls).toEqual([[{ kind: 'code', code: CODE }], [{ kind: 'code', code: CODE }]]);
+    expect(mockReplace).toHaveBeenCalledWith('/offline');
+  });
+
   it('accepts a manual code after a failure without dismissing first', async () => {
     lookup.mockRejectedValueOnce(offline).mockResolvedValue(lookupFound);
     const { result } = await renderHook(() => useScanLookup());

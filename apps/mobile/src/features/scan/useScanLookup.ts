@@ -37,13 +37,18 @@ export function useScanLookup(onCameraAccept?: () => void) {
         router.replace(res.status === 'found' ? productRoute(res.product.id) : identifyCodeRoute(code));
       } catch (err) {
         failed.current = true;
-        const errorCode = (err as { code?: string }).code;
+        const errorCode = (err as { code?: string } | null)?.code;
         if (errorCode === 'offline') {
           if (enqueuedCode.current !== code) {
-            enqueuedCode.current = code;
-            await Promise.resolve(enqueue({ kind: 'code', code })).catch(() => {});
+            try {
+              await enqueue({ kind: 'code', code });
+              enqueuedCode.current = code;
+            } catch {
+              return setState({ status: 'error', code: 'storage' });
+            }
           }
           setState({ status: 'offline' });
+          router.replace('/offline');
         } else {
           setState({ status: 'error', code: errorCode });
         }

@@ -14,6 +14,7 @@ const mockPermission: { value: unknown } = { value: null };
 const mockRequestPermission = jest.fn();
 const mockTakePicture = jest.fn<() => Promise<unknown>>();
 jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }) }));
+jest.mock('../offline/queue', () => ({ enqueue: async () => undefined }));
 jest.mock('expo-image-manipulator', () => ({ SaveFormat: { JPEG: 'jpeg' }, ImageManipulator: { manipulate: jest.fn() } }));
 jest.mock('expo-image-picker', () => ({ launchImageLibraryAsync: jest.fn() }));
 jest.mock('../../lib/api', () => {

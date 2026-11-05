@@ -16,6 +16,8 @@ export type CaptureState =
 type Camera = { takePictureAsync(): Promise<{ uri: string } | undefined> };
 
 const IDLE: CaptureState = { status: 'idle' };
+// Base64 and JSON add overhead to the backend's 2 MB request limit.
+const IDENTIFY_PHOTO_MAX_BYTES = 1_450_000;
 
 export function useCaptureFlow() {
   const router = useRouter();
@@ -23,6 +25,7 @@ export function useCaptureFlow() {
   const [canRetry, setCanRetry] = useState(false);
   const busy = useRef(false);
   const lastUri = useRef<string | null>(null);
+  const prepared = useRef<Awaited<ReturnType<typeof compressPhoto>> | null>(null);
   const enqueuedPayload = useRef<string | null>(null);
 
   // One request at a time: camera, gallery and retry all go through here.
@@ -38,10 +41,11 @@ export function useCaptureFlow() {
         if (!uri) return setState(IDLE);
         if (uri !== lastUri.current) {
           enqueuedPayload.current = null;
+          prepared.current = null;
         }
         lastUri.current = uri;
         setCanRetry(true);
-        const photo = await compressPhoto(uri);
+        const photo = prepared.current ??= await compressPhoto(uri, IDENTIFY_PHOTO_MAX_BYTES);
         currentPhotoUri = photo.uri;
         const code = await findBarcode(photo.uri);
         if (code) {
@@ -51,27 +55,26 @@ export function useCaptureFlow() {
             setState(IDLE);
             return router.replace(productRoute(hit.product.id));
           }
+          currentCode = null;
         }
         // No readable barcode, or an unknown one: the photo itself decides.
         const result = await api.identify(photo.base64);
         setState(IDLE);
         router.replace(result.status === 'found' ? productRoute(result.product.id) : identifyPhotoRoute(result));
       } catch (err) {
-        const code = (err as { code?: string }).code;
-        if (code === 'offline') {
-          const payloadKey = currentCode ? `code:${currentCode}` : currentPhotoUri ? `photo:${currentPhotoUri}` : null;
-          if (payloadKey && enqueuedPayload.current !== payloadKey) {
+        const code = (err as { code?: string } | null)?.code;
+        if (code !== 'offline' || !currentPhotoUri) return setState({ status: 'error', code });
+        const payloadKey = currentCode ? `code:${currentCode}` : 'photo';
+        if (enqueuedPayload.current !== payloadKey) {
+          try {
+            await enqueue(currentCode ? { kind: 'code', code: currentCode } : { kind: 'photo', uri: currentPhotoUri });
             enqueuedPayload.current = payloadKey;
-            if (currentCode) {
-              await Promise.resolve(enqueue({ kind: 'code', code: currentCode })).catch(() => {});
-            } else if (currentPhotoUri) {
-              await Promise.resolve(enqueue({ kind: 'photo', uri: currentPhotoUri })).catch(() => {});
-            }
+          } catch {
+            return setState({ status: 'error', code: 'storage' });
           }
-          setState({ status: 'offline' });
-        } else {
-          setState({ status: 'error', code });
         }
+        setState({ status: 'offline' });
+        router.replace('/offline');
       } finally {
         busy.current = false;
       }

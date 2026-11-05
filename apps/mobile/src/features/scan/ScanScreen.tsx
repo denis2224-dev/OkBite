@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { notificationAsync, NotificationFeedbackType } from 'expo-haptics';
 import { ro } from '../../copy/ro';
+import type { Palette } from '../../theme/tokens';
+import { useTheme } from '../../theme/useTheme';
 import { StatusPanel, errorMessage } from '../capture/StatusPanel';
 import { ManualCode } from './ManualCode';
 import { useScanLookup } from './useScanLookup';
@@ -10,6 +12,8 @@ import { useScanLookup } from './useScanLookup';
 const tapOnDetection = () => { void notificationAsync(NotificationFeedbackType.Success).catch(() => undefined); };
 
 export default function ScanScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [permission, requestPermission] = useCameraPermissions({ request: true });
   const [mountFailed, setMountFailed] = useState(false);
   const { state, onCameraCode, onManualCode, retry, dismiss } = useScanLookup(tapOnDetection);
@@ -46,7 +50,7 @@ export default function ScanScreen() {
     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Text accessibilityRole="header" style={styles.title}>{ro.scan.title}</Text>
       <View style={styles.preview}>{preview}</View>
-      {working ? <View style={styles.status}><ActivityIndicator /><Text>{ro.capture.working}</Text></View> : null}
+      {working ? <View style={styles.status}><ActivityIndicator /><Text style={styles.working}>{ro.capture.working}</Text></View> : null}
       {state.status === 'error' || state.status === 'offline' ? (
         <StatusPanel
           title={state.status === 'offline' ? ro.offline.title : undefined}
@@ -62,10 +66,11 @@ export default function ScanScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   content: { padding: 16, gap: 16 },
-  title: { fontSize: 22, fontWeight: '700' },
-  preview: { height: 280, borderRadius: 16, overflow: 'hidden', backgroundColor: '#000', justifyContent: 'center' },
-  frameHint: { position: 'absolute', bottom: 12, left: 12, right: 12, color: '#fff', textAlign: 'center' },
+  title: { color: colors.ink, fontSize: 22, fontWeight: '700' },
+  preview: { height: 280, borderRadius: 16, overflow: 'hidden', backgroundColor: colors.hero, justifyContent: 'center' },
+  frameHint: { position: 'absolute', bottom: 12, left: 12, right: 12, backgroundColor: colors.hero, color: colors.heroText, textAlign: 'center' },
+  working: { color: colors.ink },
   status: { flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },
 });

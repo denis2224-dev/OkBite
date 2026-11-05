@@ -12,6 +12,7 @@ const mockReplace = jest.fn();
 const mockPermission: { value: unknown } = { value: null };
 const mockRequestPermission = jest.fn();
 jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }) }));
+jest.mock('../offline/queue', () => ({ enqueue: async () => undefined }));
 jest.mock('expo-haptics', () => ({ notificationAsync: jest.fn(async () => undefined), NotificationFeedbackType: { Success: 'success' } }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
 jest.mock('expo-camera', () => {

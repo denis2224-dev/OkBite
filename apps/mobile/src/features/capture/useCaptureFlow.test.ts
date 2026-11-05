@@ -139,7 +139,7 @@ describe('useCaptureFlow', () => {
     const { result } = await capture();
     expect(result.current.state).toEqual({ status: 'offline' });
     expect(result.current.canRetry).toBe(true);
-    expect(mockReplace).not.toHaveBeenCalled();
+    expect(mockReplace).toHaveBeenCalledWith('/offline');
     expect(mockEnqueue).toHaveBeenCalledTimes(1);
     expect(mockEnqueue).toHaveBeenCalledWith({ kind: 'photo', uri: 'file:///c.jpg' });
     await act(async () => { await result.current.retry(); });
@@ -153,6 +153,57 @@ describe('useCaptureFlow', () => {
     lookup.mockRejectedValue(offline);
     expect((await capture()).result.current.state).toEqual({ status: 'offline' });
     expect(mockEnqueue).toHaveBeenCalledWith({ kind: 'code', code: CODE });
+  });
+
+  it('queues the prepared photo when identify goes offline after a barcode miss', async () => {
+    scan.mockResolvedValue([{ data: CODE }]);
+    lookup.mockResolvedValue(lookupNotFound);
+    identify.mockRejectedValue(offline);
+    await capture();
+    expect(mockEnqueue).toHaveBeenCalledWith({ kind: 'photo', uri: 'file:///c.jpg' });
+    expect(mockReplace).toHaveBeenCalledWith('/offline');
+  });
+
+  it('retries failed photo storage and enqueues the prepared photo only once after success', async () => {
+    identify.mockRejectedValue(offline);
+    const saveAsync = jest.fn<() => Promise<{ uri: string; base64: string }>>()
+      .mockResolvedValueOnce({ uri: 'file:///first.jpg', base64: 'cGhvdG8=' })
+      .mockResolvedValue({ uri: 'file:///another.jpg', base64: 'cGhvdG8=' });
+    (ImageManipulator.manipulate as unknown as jest.Mock).mockReturnValue({
+      renderAsync: async () => ({ width: 1200, height: 900, saveAsync }),
+    });
+    mockEnqueue.mockRejectedValueOnce(new Error('storage full'));
+    const { result } = await capture();
+    expect(result.current.state).toEqual({ status: 'error', code: 'storage' });
+    expect(mockReplace).not.toHaveBeenCalled();
+    await act(async () => { await result.current.retry(); });
+    await act(async () => { await result.current.retry(); });
+    expect(saveAsync).toHaveBeenCalledTimes(1);
+    expect(mockEnqueue.mock.calls).toEqual([
+      [{ kind: 'photo', uri: 'file:///first.jpg' }],
+      [{ kind: 'photo', uri: 'file:///first.jpg' }],
+    ]);
+    expect(mockReplace).toHaveBeenCalledWith('/offline');
+  });
+
+  it('keeps the queued JPEG and its identify request within the upload limit', async () => {
+    const saveAsync = jest.fn<() => Promise<{ uri: string; base64: string }>>()
+      .mockResolvedValueOnce({ uri: 'file:///large.jpg', base64: Buffer.alloc(1_500_000).toString('base64') })
+      .mockResolvedValueOnce({ uri: 'file:///small.jpg', base64: Buffer.alloc(1_440_000).toString('base64') });
+    (ImageManipulator.manipulate as unknown as jest.Mock).mockReturnValue({
+      renderAsync: async () => ({ width: 1600, height: 1200, saveAsync }),
+    });
+    identify.mockRejectedValue(offline);
+    await capture();
+    expect(Buffer.byteLength(JSON.stringify({ photo: identify.mock.calls[0]?.[0] }))).toBeLessThanOrEqual(2_000_000);
+    expect(mockEnqueue).toHaveBeenCalledWith({ kind: 'photo', uri: 'file:///small.jpg' });
+  });
+
+  it.each([null, undefined])('shows a retryable error when identify rejects with %s', async reason => {
+    identify.mockRejectedValue(reason);
+    const { result } = await capture();
+    expect(result.current.state).toEqual({ status: 'error', code: undefined });
+    expect(result.current.canRetry).toBe(true);
   });
 
   it.each([
