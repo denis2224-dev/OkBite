@@ -186,4 +186,29 @@ describe('useCaptureFlow', () => {
     expect((await capture()).result.current.state.status).toBe('error');
     expect(identify).not.toHaveBeenCalled();
   });
+
+  it('recompresses a 1.5 MB JPEG so identify JSON fits the 2 MB HTTP body limit', async () => {
+    const saveAsync = jest.fn<() => Promise<{ uri: string; base64: string }>>()
+      .mockResolvedValueOnce({ uri: 'file:///large.jpg', base64: Buffer.alloc(1_500_000).toString('base64') })
+      .mockResolvedValueOnce({ uri: 'file:///smaller.jpg', base64: Buffer.alloc(1_440_000).toString('base64') });
+    (ImageManipulator.manipulate as unknown as jest.Mock).mockReturnValue({
+      renderAsync: async () => ({ width: 1600, height: 1200, saveAsync }),
+    });
+    identify.mockResolvedValue(identifyFound);
+    await capture();
+    const sent = identify.mock.calls[0]?.[0];
+    expect(typeof sent).toBe('string');
+    expect(Buffer.byteLength(JSON.stringify({ photo: sent }), 'utf8')).toBeLessThanOrEqual(2_000_000);
+    expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+  });
+
+  it.each([null, undefined])('shows a recoverable error when an IO boundary rejects with %s', async (reason) => {
+    identify.mockRejectedValue(reason);
+    const { result } = await capture();
+    expect(result.current.state).toEqual({ status: 'error', code: undefined });
+    expect(result.current.canRetry).toBe(true);
+    identify.mockResolvedValue(identifyFound);
+    await act(async () => { await result.current.retry(); });
+    expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+  });
 });

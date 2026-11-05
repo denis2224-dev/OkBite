@@ -15,6 +15,8 @@ export type CaptureState =
 type Camera = { takePictureAsync(): Promise<{ uri: string } | undefined> };
 
 const IDLE: CaptureState = { status: 'idle' };
+// Base64 adds a third plus JSON overhead; stay within readJsonBody's 2 MB limit.
+const IDENTIFY_PHOTO_MAX_BYTES = 1_450_000;
 
 export function useCaptureFlow() {
   const router = useRouter();
@@ -34,7 +36,7 @@ export function useCaptureFlow() {
         if (!uri) return setState(IDLE);
         lastUri.current = uri;
         setCanRetry(true);
-        const photo = await compressPhoto(uri);
+        const photo = await compressPhoto(uri, IDENTIFY_PHOTO_MAX_BYTES);
         const code = await findBarcode(photo.uri);
         if (code) {
           const hit = await api.lookup({ code });
@@ -48,7 +50,7 @@ export function useCaptureFlow() {
         setState(IDLE);
         router.replace(result.status === 'found' ? productRoute(result.product.id) : identifyPhotoRoute(result));
       } catch (err) {
-        const code = (err as { code?: string }).code;
+        const code = (err as { code?: string } | null)?.code;
         setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
       } finally {
         busy.current = false;
