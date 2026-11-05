@@ -5,6 +5,7 @@ import { scanFromURLAsync } from 'expo-camera';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { LookupResponse, IdentifyResponse } from '@okbite/shared';
 import { api } from '../../lib/api';
+import { enqueue } from '../offline/queue';
 import { useCaptureFlow } from './useCaptureFlow';
 import { CODE, PRODUCT_ID, identifyCandidates, identifyFound, identifyNotFound, lookupFound, lookupNotFound } from './__fixtures__/responses';
 
@@ -14,6 +15,7 @@ jest.mock('expo-image-manipulator', () => ({ SaveFormat: { JPEG: 'jpeg' }, Image
 jest.mock('expo-camera', () => ({ scanFromURLAsync: jest.fn() }));
 jest.mock('expo-image-picker', () => ({ launchImageLibraryAsync: jest.fn() }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
+jest.mock('../offline/queue', () => ({ enqueue: jest.fn() }));
 
 type AsyncMock = jest.Mock<(...a: unknown[]) => Promise<unknown>>;
 const scan = scanFromURLAsync as unknown as AsyncMock;
@@ -40,6 +42,7 @@ describe('fixtures', () => {
 describe('useCaptureFlow', () => {
   beforeEach(() => {
     jest.resetAllMocks();
+    jest.mocked(enqueue).mockRejectedValue(new Error('storage unavailable'));
     photo.takePictureAsync.mockResolvedValue({ uri: 'file:///shot.jpg' });
     const image = { width: 1200, height: 900, saveAsync: async () => ({ uri: 'file:///c.jpg', base64: Buffer.from('jpeg-bytes').toString('base64') }) };
     (ImageManipulator.manipulate as unknown as jest.Mock).mockReturnValue({ resize: jest.fn(), renderAsync: async () => image });
@@ -147,6 +150,24 @@ describe('useCaptureFlow', () => {
     scan.mockResolvedValue([{ data: CODE }]);
     lookup.mockRejectedValue(offline);
     expect((await capture()).result.current.state).toEqual({ status: 'offline' });
+  });
+
+  it.each(['identify', 'lookup'])('durably queues the compressed photo before leaving an offline %s', async (boundary) => {
+    const saved = deferred<void>();
+    jest.mocked(enqueue).mockReturnValue(saved.promise);
+    if (boundary === 'lookup') {
+      scan.mockResolvedValue([{ data: CODE }]);
+      lookup.mockRejectedValue(offline);
+    } else identify.mockRejectedValue(offline);
+    const { result } = await renderHook(() => useCaptureFlow());
+    let pending!: Promise<void>;
+    await act(async () => { pending = result.current.takePhoto(photo); });
+    expect(enqueue).toHaveBeenCalledWith({ kind: 'photo', uri: 'file:///c.jpg' });
+    expect(mockReplace).not.toHaveBeenCalled();
+    await act(async () => { saved.resolve(); await pending; });
+    expect(mockReplace).toHaveBeenCalledWith('/offline');
+    expect(result.current.state).toEqual({ status: 'idle' });
+    expect(result.current.canRetry).toBe(false);
   });
 
   it.each([

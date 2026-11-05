@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { api } from '../../lib/api';
 import { identifyPhotoRoute, productRoute } from '../identify/routes';
+import { enqueue } from '../offline/queue';
 import { compressPhoto } from './compressPhoto';
 import { findBarcode } from './findBarcode';
 
@@ -31,12 +32,14 @@ export function useCaptureFlow() {
       if (busy.current) return;
       busy.current = true;
       setState({ status: 'working' });
+      let compressedUri: string | undefined;
       try {
         const uri = await getUri();
         if (!uri) return setState(IDLE);
         lastUri.current = uri;
         setCanRetry(true);
         const photo = await compressPhoto(uri, IDENTIFY_PHOTO_MAX_BYTES);
+        compressedUri = photo.uri;
         const code = await findBarcode(photo.uri);
         if (code) {
           const hit = await api.lookup({ code });
@@ -51,6 +54,16 @@ export function useCaptureFlow() {
         router.replace(result.status === 'found' ? productRoute(result.product.id) : identifyPhotoRoute(result));
       } catch (err) {
         const code = (err as { code?: string } | null)?.code;
+        if (code === 'offline' && compressedUri) {
+          try {
+            await enqueue({ kind: 'photo', uri: compressedUri });
+            lastUri.current = null;
+            setCanRetry(false);
+            setState(IDLE);
+            router.replace('/offline');
+            return;
+          } catch { /* Keep the original photo available for retry if durable storage fails. */ }
+        }
         setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
       } finally {
         busy.current = false;
@@ -75,7 +88,6 @@ export function useCaptureFlow() {
     [run],
   );
 
-  // shortcut: with R4 B6 merged, offline will call enqueue({ kind: 'photo', uri }) and open /offline (B2 step 2c).
   const retry = useCallback(() => run(async () => lastUri.current), [run]);
   const dismiss = useCallback(() => { if (!busy.current) setState(IDLE); }, []);
 

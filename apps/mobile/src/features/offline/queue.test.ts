@@ -5,7 +5,8 @@ import { mkdtempSync as mockMkdtempSync } from 'node:fs';
 import { tmpdir as mockTmpdir } from 'node:os';
 import { join as mockJoin } from 'node:path';
 import * as FileSystem from 'expo-file-system/legacy';
-import { enqueue, flushQueue } from './queue';
+import { enqueue, flushQueue, subscribeQueueResults } from './queue';
+import { identifyCandidates, identifyNotFound } from '../capture/__fixtures__/responses';
 import { listQueued, deleteQueued } from '../history/db';
 import { getFromHistory, clearHistory } from '../history/store';
 import { api, ApiError } from '../../lib/api';
@@ -86,4 +87,31 @@ it('drops a queued photo whose stored file is gone and keeps processing later it
   expect(await flushQueue()).toEqual({ resolved: 1 });
   expect(api.identify).not.toHaveBeenCalled();
   expect(await listQueued()).toEqual([]);
+});
+it.each([identifyCandidates, identifyNotFound])('retains $status until an active screen accepts the handoff', async (response) => {
+  const source = FileSystem.documentDirectory! + 'unknown.jpg';
+  await mockFs.writeFile(source, 'unknown photo');
+  await enqueue({ kind: 'photo', uri: source });
+  jest.mocked(api.identify).mockResolvedValue(response);
+  await flushQueue();
+  const kept = (await listQueued())[0]!;
+  expect(await mockFs.readFile(kept.payload, 'utf8')).toBe('unknown photo');
+  const handled = jest.fn(() => true);
+  const unsubscribe = subscribeQueueResults(handled);
+  try {
+    await flushQueue();
+    expect(handled).toHaveBeenCalledWith({ item: kept, result: response });
+    expect(await listQueued()).toEqual([]);
+    await expect(mockFs.stat(kept.payload)).rejects.toThrow();
+  } finally { unsubscribe(); }
+});
+it('retains an unknown code after listeners unsubscribe', async () => {
+  await enqueue({ kind: 'code', code: '12345670' });
+  const handled = jest.fn(() => true);
+  const unsubscribe = subscribeQueueResults(handled);
+  unsubscribe();
+  jest.mocked(api.lookup).mockResolvedValue({ status: 'not_found' });
+  await flushQueue();
+  expect(handled).not.toHaveBeenCalled();
+  expect(await listQueued()).toHaveLength(1);
 });

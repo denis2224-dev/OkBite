@@ -1,9 +1,20 @@
 import { randomUUID } from 'expo-crypto';
-import { Code } from '@okbite/shared';
+import { Code, type IdentifyResponse, type LookupResponse } from '@okbite/shared';
 import { api, ApiError } from '../../lib/api';
-import { putQueued, listQueued, deleteQueued } from '../history/db';
+import { putQueued, listQueued, deleteQueued, type QueuedItem } from '../history/db';
 import { saveToHistory } from '../history/store';
 import { keepPhoto, readPhoto, removePhoto } from './photos';
+
+export type QueueResult = { item: QueuedItem; result: LookupResponse | IdentifyResponse };
+const listeners = new Set<(event: QueueResult) => boolean>();
+export function subscribeQueueResults(listener: (event: QueueResult) => boolean): () => void {
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+}
+function handoff(event: QueueResult): boolean {
+  for (const listener of listeners) if (listener(event)) return true;
+  return false;
+}
 
 export async function enqueue(item: { kind: 'photo'; uri: string } | { kind: 'code'; code: string }): Promise<void> {
   const payload = item.kind === 'photo' ? await keepPhoto(item.uri) : Code.parse(item.code);
@@ -29,13 +40,18 @@ async function drain(onResolved?: (id: string) => void) {
     }
     try {
       const result = photo === undefined ? await api.lookup({ code: item.payload }) : await api.identify(photo);
-      // R5 resumes confirmation/contribution for candidates and not_found; retain their capture until then.
-      if (result.status !== 'found') continue;
-      await saveToHistory(result);
+      // Unknown products stay durable until a visible screen accepts their complete response.
+      const accepted = result.status !== 'found' && handoff({ item, result });
+      if (result.status !== 'found' && !accepted) continue;
+      if (result.status === 'found') await saveToHistory(result);
       await deleteQueued(item.id);
       if (item.kind === 'photo') await removePhoto(item.payload).catch(() => {});
       resolved++;
-      onResolved?.(result.product.id);
+      if (result.status === 'found') {
+        onResolved?.(result.product.id);
+        if (handoff({ item, result })) break;
+      }
+      if (accepted) break;
     } catch (error) {
       if (error instanceof ApiError && (error.code === 'offline' || error.code === 'rate_limited' || error.code === 'configuration')) break;
     }

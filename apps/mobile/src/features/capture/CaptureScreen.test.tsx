@@ -5,6 +5,7 @@ import { Linking, StyleSheet } from 'react-native';
 import { ImageManipulator } from 'expo-image-manipulator';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { ApiError, api } from '../../lib/api';
+import { enqueue } from '../offline/queue';
 import { ro } from '../../copy/ro';
 import CaptureScreen from './CaptureScreen';
 import { PRODUCT_ID, identifyFound } from './__fixtures__/responses';
@@ -16,6 +17,7 @@ const mockTakePicture = jest.fn<() => Promise<unknown>>();
 jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }) }));
 jest.mock('expo-image-manipulator', () => ({ SaveFormat: { JPEG: 'jpeg' }, ImageManipulator: { manipulate: jest.fn() } }));
 jest.mock('expo-image-picker', () => ({ launchImageLibraryAsync: jest.fn() }));
+jest.mock('../offline/queue', () => ({ enqueue: jest.fn(async () => { throw new Error('storage unavailable'); }) }));
 jest.mock('../../lib/api', () => {
   const actual = jest.requireActual<typeof import('../../lib/api')>('../../lib/api');
   return { ...actual, api: { ...actual.api, lookup: jest.fn(), identify: jest.fn() } };
@@ -41,6 +43,7 @@ const cameraReady = () => act(() => { (camera().props.onCameraReady as () => voi
 describe('CaptureScreen', () => {
   beforeEach(() => {
     jest.resetAllMocks();
+    jest.mocked(enqueue).mockRejectedValue(new Error('storage unavailable'));
     mockPermission.value = granted;
     mockTakePicture.mockImplementation(async () => ({ uri: 'file:///shot.jpg' }));
     const image = { width: 1200, height: 900, saveAsync: async () => ({ uri: 'file:///c.jpg', base64: Buffer.from('jpeg').toString('base64') }) };
@@ -102,7 +105,7 @@ describe('CaptureScreen', () => {
     expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
   });
 
-  it('shows the offline state with retry, and recovers when the network returns', async () => {
+  it('offers retry on the same photo when offline queue storage fails', async () => {
     identify.mockRejectedValueOnce(Object.assign(new Error('offline'), { code: 'offline' })).mockResolvedValue(identifyFound);
     await render(<CaptureScreen />);
     await cameraReady();
