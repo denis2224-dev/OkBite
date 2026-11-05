@@ -25,3 +25,7 @@ export async function listQueued(): Promise<QueuedItem[]> {
 export async function deleteQueued(id: string): Promise<void> {
   await update<QueuedItem[]>('entries', rows => (rows ?? []).filter(row => row.id !== id), queue);
 }
+
+export async function saveQueuedState(id: string, state: string | null): Promise<void> {
+  await update<QueuedItem[]>('entries', rows => (rows ?? []).map(row => row.id === id ? { ...row, state } : row), queue);
+}
