@@ -30,7 +30,7 @@ R1 integrates #38 first, then each child below, retargeting to main only after t
 5. R4 [#52](https://github.com/denis2224-dev/OkBite/pull/52): `c092d4d0ccf3912cec1d56dc2918b8f01445e10e`, base r4/B6e-compatible-history; legal/method and release drafts.
 6. R4 [#53](https://github.com/denis2224-dev/OkBite/pull/53): `1d2d4635593d310662db113b7b3918a3046a43d9`, base r4/A4-compatible-legal; sharing/text polish.
 7. R4 [#54](https://github.com/denis2224-dev/OkBite/pull/54): `1851db1cba4e828fda75f99c38257f5824939449`, base r4/B8-sharing-polish; category-aware display guards.
-8. R4 [#55](https://github.com/denis2224-dev/OkBite/pull/55): `12995e5`, base r4/B4-score-display; approved binary brand inputs, separately accounted from handwritten documentation.
+8. R4 [#55](https://github.com/denis2224-dev/OkBite/pull/55): `12995e585a4c188bf6c8597c70785d2583dbab46`, base r4/B4-score-display; approved binary brand inputs, separately accounted from handwritten documentation.
 9. This handoff is the final documentation-only child of #55; its PR head is available in GitHub rather than self-embedded in its own commit.
 
 All implementation PRs were opened ready for review. Concurrent #45/#47 were closed as superseded by #49/#50; their branches were kept, never force-rewritten or deleted.
@@ -47,7 +47,7 @@ Actual Safari flow at localhost8768: seeded one clearly marked fictional prototy
 
 Unavailable/failed attempts: initial restricted-network install encountered DNS failure and was rerun successfully with authorized network access; initial pnpm test flag placement was rejected before tests, then corrected; initial candidate suite lacked host Corepack, remedied only with temporary tooling and rerun successfully. A root-level export from the old monorepo-only parent used the wrong working directory and failed resolving App; correct target-app exports passed. No test was weakened. Local logs are `/private/tmp/r4-final-*.log`, `/private/tmp/r4-integration-check-final.log`, `/private/tmp/r4-integration-export-{web,native}.log`, `/private/tmp/r4-c4-integration-evidence.txt` and matching detailed C4 logs.
 
-Remote #49–#54 checks were inspected; #54 ci/preview succeeded, fork-notice skipped. Remaining exact-head check states must be re-read before merge. A green preview setup gate does not establish an actual EAS update/device preview; no deployed preview is claimed.
+Remote #49–#54 exact-head ci and preview checks all succeeded; fork-notice was skipped. Documentation/asset children #55/#56 had preview success and CI in progress at handoff. Remaining exact-head check states must be re-read before merge. A green preview setup gate does not establish an actual EAS update/device preview; no deployed preview is claimed.
 
 ## Exact owner interfaces and follow-up
 
@@ -67,4 +67,4 @@ R1 #41 defaults dev/start/web/build to apps/mobile while retaining root preview 
 
 ## Readiness and human/account/device requirements
 
-Ready for R1 integration review after #38 and required approvals/checks, with clean tested compatibility against #41 and #31. Not release-ready or whole-app complete. Outstanding: R5 unresolved-item consumer navigation/save acknowledgement; R1 target icon/splash/PWA and startup path agreement; R3 human-checked references; live configured database/functions/staging flow evidence; actual iPhone/Android camera, airplane-mode/reconnect, VoiceOver/TalkBack and200% font QA; Claude cross-review/human merge approval; operator/contact/provider/retention/legal/privacy confirmations; actual store screenshots/account declarations and privacy URL hosting. These requirements cannot be inferred from mocks, skipped fixtures, bundle exports or a green preview setup job.
+Ready for R1 integration review after #38 and required approvals/checks, with clean tested compatibility against #41 and #31. Not release-ready or whole-app complete. Outstanding: R5 unresolved-item consumer navigation/save acknowledgement; R1 target icon/splash/PWA and startup path agreement; R3 human-checked references; live configured database/functions/staging flow evidence; actual iPhone/Android camera, airplane-mode/reconnect, VoiceOver/TalkBack and 200% font QA; Claude cross-review/human merge approval; operator/contact/provider/retention/legal/privacy confirmations; actual store screenshots/account declarations and privacy URL hosting. These requirements cannot be inferred from mocks, skipped fixtures, bundle exports or a green preview setup job.
