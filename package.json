@@ -44,7 +44,7 @@
   },
   "scripts": {
     "dev": "pnpm --filter mobile start",
-    "test": "pnpm test:toolchain && pnpm test:sync-shared && pnpm test:app && pnpm test:web && pnpm -r test && pnpm test:scripts && pnpm test:local-gateway && pnpm test:local-ops",
+    "test": "pnpm test:metro && pnpm test:toolchain && pnpm test:sync-shared && pnpm test:app && pnpm test:web && pnpm -r test && pnpm test:scripts && pnpm test:local-gateway && pnpm test:local-ops",
     "lint": "eslint .",
     "typecheck": "pnpm typecheck:app && pnpm -r typecheck",
     "e2e": "echo \"set up in D6\" && exit 1",
@@ -77,7 +77,8 @@
     "verify:toolchain": "node scripts/verify-toolchain.mjs",
     "test:toolchain": "node --test scripts/verify-toolchain.test.mjs",
     "test:local-ops": "node --test supabase/tests/local-project.test.mjs",
-    "pnpm:devPreinstall": "node scripts/verify-toolchain.mjs"
+    "pnpm:devPreinstall": "node scripts/verify-toolchain.mjs",
+    "test:metro": "node --test scripts/metro-target.test.mjs"
   },
   "private": true,
   "packageManager": "pnpm@11.25.0",
