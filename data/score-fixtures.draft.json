@@ -1,0 +1,867 @@
+[
+  {
+    "name": "Roasted sunflower seeds",
+    "brand": "Dandar",
+    "code": "4840490000311",
+    "scoreKind": "fat",
+    "nutrients": {
+      "kcal": 596,
+      "fat": 50,
+      "sat": 5.2,
+      "sugar": 3,
+      "salt": 0,
+      "protein": 19,
+      "fiber": 10,
+      "fruitVegPct": null
+    },
+    "ingredientsText": "Sunflower seeds, roasted. Can bear traces of peanuts, other nuts and gluten.",
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840490000311?rev=19",
+      "rev": 19,
+      "lastModified": "2026-04-01",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": -10,
+      "letter": "A"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Mandorle",
+    "brand": "Amonatura",
+    "code": "4841900000143",
+    "scoreKind": "fat",
+    "nutrients": {
+      "kcal": 592,
+      "fat": 51,
+      "sat": 4.9,
+      "sugar": 2,
+      "salt": 0.01,
+      "protein": 25,
+      "fiber": 13,
+      "fruitVegPct": null
+    },
+    "ingredientsText": "Mandorle sgusciate.",
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4841900000143?rev=24",
+      "rev": 24,
+      "lastModified": "2026-03-31",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": -11,
+      "letter": "A"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Brânză granulată 4%",
+    "brand": "JLC",
+    "code": "4840053000505",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 110,
+      "fat": 4,
+      "sat": 2.5,
+      "sugar": 1.5,
+      "salt": 0.8,
+      "protein": 17,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "ingredientsText": "Lapte de vacă degresat pasteurizat, smântână dulce normalizată, sare de uz alimentar, enzime coagulante, culturi starter de microorganisme lactice mezofile. Conţine lactoză.",
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840053000505?rev=19",
+      "rev": 19,
+      "lastModified": "2026-04-25",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 0,
+      "letter": "A"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Pasta de tomate",
+    "brand": "ALFA-NISTRU&quot; S.A.",
+    "code": "4840019001881",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 68,
+      "fat": 0.2,
+      "sat": 0.07,
+      "sugar": 11.3,
+      "salt": 0.2,
+      "protein": 1.3,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "ingredientsText": "Tomato paste 36%, drinking water",
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840019001881?rev=19",
+      "rev": 19,
+      "lastModified": "2026-02-09",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": -2,
+      "letter": "A"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Yaw",
+    "brand": "Yaw",
+    "code": "4841900001034",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 365,
+      "fat": 11.4,
+      "sat": 0.5,
+      "sugar": 3.4,
+      "salt": 1.1,
+      "protein": 8.3,
+      "fiber": 7.5,
+      "fruitVegPct": null
+    },
+    "ingredientsText": null,
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4841900001034?rev=20",
+      "rev": 20,
+      "lastModified": "2022-10-04",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 0,
+      "letter": "A"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Izvorul Gura Căinarului",
+    "brand": "",
+    "code": "4840237001595",
+    "scoreKind": "water",
+    "nutrients": {
+      "kcal": null,
+      "fat": null,
+      "sat": null,
+      "sugar": null,
+      "salt": 0.10875,
+      "protein": null,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "ingredientsText": null,
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840237001595?rev=24",
+      "rev": 24,
+      "lastModified": "2026-03-08",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": null,
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Молоко пастеризованное",
+    "brand": "Lapmol",
+    "code": "4840331002023",
+    "scoreKind": "beverage",
+    "nutrients": {
+      "kcal": 52.5,
+      "fat": 2.5,
+      "sat": 1.7,
+      "sugar": 4.7,
+      "salt": 0.1,
+      "protein": 2.8,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "ingredientsText": null,
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840331002023?rev=14",
+      "rev": 14,
+      "lastModified": "2026-01-06",
+      "retrievedAt": "2026-11-05",
+      "unit": "ml"
+    },
+    "offReference": {
+      "points": 2,
+      "letter": "B"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Apă potabilă",
+    "brand": "OM",
+    "code": "4841257001275",
+    "scoreKind": "beverage",
+    "nutrients": {
+      "kcal": 0,
+      "fat": 0,
+      "sat": 0,
+      "sugar": 0,
+      "salt": 0,
+      "protein": 0,
+      "fiber": 0,
+      "fruitVegPct": null
+    },
+    "ingredientsText": "Apă potabilă",
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4841257001275?rev=21",
+      "rev": 21,
+      "lastModified": "2026-08-05",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 0,
+      "letter": "B"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Monastârschi",
+    "brand": "Milina",
+    "code": "4841031003259",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 246,
+      "fat": 0.9,
+      "sat": 0.16,
+      "sugar": 1.5,
+      "salt": 1,
+      "protein": 7.5,
+      "fiber": 4.6,
+      "fruitVegPct": null
+    },
+    "ingredientsText": null,
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4841031003259?rev=12",
+      "rev": 12,
+      "lastModified": "2026-07-15",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 2,
+      "letter": "B"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Suc juice",
+    "brand": "Vita",
+    "code": "4840022005241",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 45.833333333333,
+      "fat": 0,
+      "sat": 0,
+      "sugar": 10.833333333333,
+      "salt": 0,
+      "protein": 0.83333333333333,
+      "fiber": 0,
+      "fruitVegPct": null
+    },
+    "ingredientsText": "RECONSTITUTED ORANGE JUICE, STORE AT 0 °C...25 °C TEMPERATURE AND RELATIVE HUMIDITY UP TO 75%. REFRIGERATE",
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840022005241?rev=10",
+      "rev": 10,
+      "lastModified": "2026-07-22",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 2,
+      "letter": "B"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "LAPTE",
+    "brand": "Căsuța mea",
+    "code": "4840362001095",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 52.5,
+      "fat": 2.5,
+      "sat": 1.7,
+      "sugar": 4.7,
+      "salt": 0.1,
+      "protein": 2.8,
+      "fiber": 0,
+      "fruitVegPct": null
+    },
+    "ingredientsText": "Lapte de vacă normalitate",
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840362001095?rev=17",
+      "rev": 17,
+      "lastModified": "2025-07-17",
+      "retrievedAt": "2026-11-05",
+      "unit": "ml"
+    },
+    "offReference": {
+      "points": 1,
+      "letter": "B"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Fruit2go prune uscate",
+    "brand": "Belevini",
+    "code": "4840801000269",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 237,
+      "fat": 0.6,
+      "sat": 0.1,
+      "sugar": 36,
+      "salt": 0.0625,
+      "protein": 2.5,
+      "fiber": 9.6,
+      "fruitVegPct": null
+    },
+    "ingredientsText": "Pitted prunes, potassium sorbate.",
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840801000269?rev=20",
+      "rev": 20,
+      "lastModified": "2026-10-27",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 2,
+      "letter": "B"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Pâine De Sud",
+    "brand": "милина",
+    "code": "4841031000340",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 263,
+      "fat": 0.7,
+      "sat": 0.16,
+      "sugar": 1.4,
+      "salt": 0.895,
+      "protein": 8.2,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "ingredientsText": null,
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4841031000340?rev=7",
+      "rev": 7,
+      "lastModified": "2025-10-27",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 4,
+      "letter": "C"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Pâine Panmix Maia & Fibre",
+    "brand": "Franzeluța",
+    "code": "4840008040723",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 258.6,
+      "fat": 4,
+      "sat": 0.4,
+      "sugar": 1.3,
+      "salt": 1,
+      "protein": 8,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "ingredientsText": null,
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840008040723?rev=4",
+      "rev": 4,
+      "lastModified": "2026-07-15",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 4,
+      "letter": "C"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Biscottini",
+    "brand": "",
+    "code": "4841572000922",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 428.8,
+      "fat": 8,
+      "sat": 0.96,
+      "sugar": 6,
+      "salt": 1.3,
+      "protein": 8.2,
+      "fiber": 6.5,
+      "fruitVegPct": null
+    },
+    "ingredientsText": null,
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4841572000922?rev=6",
+      "rev": 6,
+      "lastModified": "2026-02-09",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 8,
+      "letter": "C"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Prune uscate fără sâmburi",
+    "brand": "Fruit2go MONICOL",
+    "code": "4840801000702",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 237,
+      "fat": 0.6,
+      "sat": 0.1,
+      "sugar": 36,
+      "salt": 0.02,
+      "protein": 2.5,
+      "fiber": 9.6,
+      "fruitVegPct": null
+    },
+    "ingredientsText": "prune uscate, \nsorbat de potasiu (E202)",
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840801000702?rev=24",
+      "rev": 24,
+      "lastModified": "2025-03-28",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 7,
+      "letter": "C"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Seminte de floaréa soarelui prajite",
+    "brand": "Banzai",
+    "code": "4840811002024",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 600,
+      "fat": 50,
+      "sat": 5.2,
+      "sugar": 2.7,
+      "salt": 0,
+      "protein": 19,
+      "fiber": 11,
+      "fruitVegPct": null
+    },
+    "ingredientsText": "SEMINTE DE FLOAREA-SOARELUI. PRODUSELE NOASTRE SUNT ATENT CURĂȚATE ŞI CONTROLATE, CU TOATE ACESTEA, PARTI MICI VEGETALE DE FLOAREA-SOARELUI SE POT GASI IN PUNGA. CONDIŢII DE PĂSTRARE: A SE PASTRA ÎN LOC USCAT ȘI RĂCOROS, FERIT DE RAZELE SOARELUI FABRICAT SI AMBALAT DE: SC TRANSTEST SRL, STR. LENIN 2A, OR. CEADIR-LUNGA, REPUBLICA MOLDOVA. TEL./FAX: (+373) 291-291-01. MOB.: (+373) 78-808-900. E-MAIL: INFO@TRANSTEST.MD IMPORTATOR ȘI DISTRIBUITOR ÎN ROMÂNIA: SNACK-TRADE SRL, STR. STUPINELOR, 3, COM. TOMESTI, JUD. IASI, ROMANIA. TEL: (+40) 757-575-789. E-MAIL: SNACK-TRADE@BANZAIROMANIA.RO IT",
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840811002024?rev=18",
+      "rev": 18,
+      "lastModified": "2026-03-26",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 7,
+      "letter": "C"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Напиток манго",
+    "brand": "Vis active",
+    "code": "4840019004592",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 50,
+      "fat": 0,
+      "sat": null,
+      "sugar": 12.35,
+      "salt": 0,
+      "protein": 1,
+      "fiber": 2,
+      "fruitVegPct": null
+    },
+    "ingredientsText": null,
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840019004592?rev=11",
+      "rev": 11,
+      "lastModified": "2025-04-28",
+      "retrievedAt": "2026-11-05",
+      "unit": "ml"
+    },
+    "offReference": {
+      "points": 3,
+      "letter": "C"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Latti Crema de branza cu usturoi",
+    "brand": "",
+    "code": "4841259002058",
+    "scoreKind": "cheese",
+    "nutrients": {
+      "kcal": 250,
+      "fat": 23,
+      "sat": 16,
+      "sugar": 3.8,
+      "salt": 0.7,
+      "protein": 5.8,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "ingredientsText": null,
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4841259002058?rev=17",
+      "rev": 17,
+      "lastModified": "2025-09-16",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 15,
+      "letter": "D"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Smântână 15%",
+    "brand": "Latti",
+    "code": "4841259004533",
+    "scoreKind": "fat",
+    "nutrients": {
+      "kcal": 159,
+      "fat": 15,
+      "sat": 9.5,
+      "sugar": 3,
+      "salt": 0.00025,
+      "protein": 3,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "ingredientsText": null,
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4841259004533?rev=5",
+      "rev": 5,
+      "lastModified": "2026-07-15",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 11,
+      "letter": "D"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Milk",
+    "brand": "Casuța Mea",
+    "code": "4840331002016",
+    "scoreKind": "beverage",
+    "nutrients": {
+      "kcal": 75,
+      "fat": 5,
+      "sat": 2.5,
+      "sugar": 4.7,
+      "salt": 0.25,
+      "protein": 2.8,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "ingredientsText": null,
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840331002016?rev=5",
+      "rev": 5,
+      "lastModified": "2026-07-15",
+      "retrievedAt": "2026-11-05",
+      "unit": "ml"
+    },
+    "offReference": {
+      "points": 7,
+      "letter": "D"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Petit beurre",
+    "brand": "Nefis",
+    "code": "4840266003829",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 432.142857142857,
+      "fat": 9.64285714285714,
+      "sat": 5,
+      "sugar": 21.4285714285714,
+      "salt": 0.535714285714286,
+      "protein": 8.57142857142857,
+      "fiber": 1.78571428571429,
+      "fruitVegPct": null
+    },
+    "ingredientsText": null,
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840266003829?rev=15",
+      "rev": 15,
+      "lastModified": "2026-03-23",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 17,
+      "letter": "D"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Covrigei Cu Mac",
+    "brand": "Galfim",
+    "code": "4840760000737",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 420,
+      "fat": 11.7,
+      "sat": 1.3,
+      "sugar": 9.8,
+      "salt": 1,
+      "protein": 9.3,
+      "fiber": 0.2,
+      "fruitVegPct": null
+    },
+    "ingredientsText": "wheat flour, refined deodorized sunflower oil, sugar, drinking water, poppy seeds, salt, baker's yeast",
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840760000737?rev=12",
+      "rev": 12,
+      "lastModified": "2026-08-23",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 12,
+      "letter": "D"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Naturalis Tropic",
+    "brand": "",
+    "code": "4840022009553",
+    "scoreKind": "beverage",
+    "nutrients": {
+      "kcal": 45.8,
+      "fat": 0,
+      "sat": 0,
+      "sugar": 11.6,
+      "salt": 0,
+      "protein": 0,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "ingredientsText": null,
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840022009553?rev=6",
+      "rev": 6,
+      "lastModified": "2026-02-10",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 13,
+      "letter": "E"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Apple Juice",
+    "brand": "",
+    "code": "4840022006705",
+    "scoreKind": "beverage",
+    "nutrients": {
+      "kcal": 112,
+      "fat": 0,
+      "sat": 0,
+      "sugar": 28,
+      "salt": 0,
+      "protein": 1,
+      "fiber": 0,
+      "fruitVegPct": null
+    },
+    "ingredientsText": null,
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840022006705?rev=6",
+      "rev": 6,
+      "lastModified": "2026-07-15",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 14,
+      "letter": "E"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Choco animal cookies",
+    "brand": "Nefis",
+    "code": "4840266000651",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 472,
+      "fat": 17,
+      "sat": 14,
+      "sugar": 30,
+      "salt": 0.255,
+      "protein": 7.1,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "ingredientsText": null,
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840266000651?rev=12",
+      "rev": 12,
+      "lastModified": "2026-08-30",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 24,
+      "letter": "E"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Salty Pretzel",
+    "brand": "Nefis",
+    "code": "4840266003737",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 411,
+      "fat": 7.9,
+      "sat": 3.3,
+      "sugar": 2.5,
+      "salt": 3.8,
+      "protein": 11,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "ingredientsText": null,
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840266003737?rev=8",
+      "rev": 8,
+      "lastModified": "2026-06-23",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 26,
+      "letter": "E"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  },
+  {
+    "name": "Butterfly Biscuits",
+    "brand": "",
+    "code": "4840008019521",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 466.66666666667,
+      "fat": 20,
+      "sat": 13.333333333333,
+      "sugar": 26.666666666667,
+      "salt": 0.65,
+      "protein": 6.6666666666667,
+      "fiber": 2,
+      "fruitVegPct": null
+    },
+    "ingredientsText": null,
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840008019521?rev=11",
+      "rev": 11,
+      "lastModified": "2024-02-09",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 25,
+      "letter": "E"
+    },
+    "expectedPoints": null,
+    "expectedLetter": null,
+    "checkedWith": null
+  }
+]
