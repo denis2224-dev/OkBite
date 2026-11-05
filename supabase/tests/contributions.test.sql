@@ -1,0 +1,12 @@
+begin;
+select plan(8);
+select has_function('public','reserve_usage',array['uuid','text']);
+select has_function('public','commit_product',array['jsonb','jsonb','bigint']);
+select has_function('public','commit_report',array['uuid','uuid','text','bigint']);
+select ok(not has_function_privilege('anon','public.reserve_usage(uuid,text)','EXECUTE'), 'anon cannot reserve quota');
+select ok(not has_function_privilege('authenticated','public.reserve_usage(uuid,text)','EXECUTE'), 'users cannot reserve quota');
+select ok(not has_function_privilege('anon','public.commit_product(jsonb,jsonb,bigint)','EXECUTE'), 'anon cannot write products by RPC');
+select ok(not has_function_privilege('authenticated','public.commit_report(uuid,uuid,text,bigint)','EXECUTE'), 'users cannot bypass report handler');
+select ok(has_function_privilege('service_role','public.commit_product(jsonb,jsonb,bigint)','EXECUTE'), 'service can commit products');
+select * from finish();
+rollback;

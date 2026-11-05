@@ -1,0 +1,7 @@
+{
+  "imports": { "@supabase/supabase-js": "npm:@supabase/supabase-js@2" },
+  "nodeModulesDir": "none",
+  "lock": false,
+  "compilerOptions": { "strict": true },
+  "fmt": { "singleQuote": true, "lineWidth": 100 }
+}
