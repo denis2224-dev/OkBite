@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { describe, it, expect, jest, beforeAll, beforeEach, afterEach } from '@jest/globals';
-import { render, fireEvent, screen, act } from '@testing-library/react-native';
+import { render, renderHook, fireEvent, screen, act } from '@testing-library/react-native';
 import {
   CategoryEntry,
   LookupResponse,
@@ -16,6 +16,7 @@ import { writeHistory } from '../history/db';
 import AddScreen from '../../../app/add/index';
 import ReviewRouteScreen from '../../../app/add/review';
 import { addProductRoute } from '../identify/routes';
+import { useAddFlow } from './useAddFlow';
 import {
   clearAddReviewDraft,
   getAddReviewDraft,
@@ -143,6 +144,20 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
 
   afterEach(() => {
     resetAvailableCategories();
+  });
+
+  it('does not open review or overwrite the draft after leaving label capture', async () => {
+    let finish!: (label: ReadLabelResponse) => void;
+    mockReadLabel.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+    const { result, unmount } = await renderHook(() => useAddFlow());
+    await act(async () => { await result.current.takePhoto({ takePictureAsync: mockTakePicture }); });
+    let running!: Promise<void>;
+    await act(async () => { running = result.current.submitSamePhoto(); });
+    expect(mockReadLabel).toHaveBeenCalledTimes(1);
+    await unmount();
+    await act(async () => { finish(VALID_LABEL_RESPONSE); await running; });
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(getAddReviewDraft()).toBeNull();
   });
 
   it('captures shot 1 (ingredients), advances to step 2, and supports "Sunt pe aceeași poză" (nutritionImage: null)', async () => {

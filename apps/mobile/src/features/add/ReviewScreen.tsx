@@ -16,8 +16,7 @@ import {
   setAddReviewDraftResult,
 } from './draftStore';
 import { ReviewForm } from './ReviewForm';
-import { resolveQueued } from '../offline/queue';
-import { setQueuedReview } from '../history/db';
+import { completeQueued } from '../offline/queue';
 import { saveToHistory } from '../history/store';
 
 export function ReviewScreen() {
@@ -32,11 +31,8 @@ export function ReviewScreen() {
     if (!committed || !activeDraft || finishing.current) return;
     finishing.current = true;
     try {
-      if (activeDraft.initial.queueId && typeof setQueuedReview === 'function') {
-        await setQueuedReview(activeDraft.initial.queueId, JSON.stringify({ status: 'completed', productId: committed.product.id }));
-      }
+      if (activeDraft.initial.queueId) await completeQueued(activeDraft.initial.queueId);
       await saveToHistory(committed);
-      if (activeDraft.initial.queueId) await resolveQueued(activeDraft.initial.queueId);
       const id = committed.product.id;
       clearAddReviewDraft();
       router.replace(productRoute(id));

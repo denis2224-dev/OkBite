@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { ReadLabelRequest, ReadLabelResponse } from '@okbite/shared';
@@ -38,6 +38,11 @@ export function useAddFlow() {
   const [state, setState] = useState<AddFlowState>(IDLE);
   const [canRetry, setCanRetry] = useState(false);
   const busy = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const ingredientsUriRef = useRef<string | null>(null);
   const lastAttemptRef = useRef<{ ingredientsUri: string; nutritionUri: string | null } | null>(null);
 
@@ -61,7 +66,9 @@ export function useAddFlow() {
         throw Object.assign(new Error('bad_request'), { code: 'bad_request' });
       }
 
+      if (!mounted.current) return;
       const rawResponse = await api.readLabel(parsedReq.data);
+      if (!mounted.current) return;
       const parsedRes = ReadLabelResponse.safeParse(rawResponse);
       if (
         !parsedRes.success ||
@@ -90,6 +97,7 @@ export function useAddFlow() {
       busy.current = true;
       try {
         const uri = await getUri();
+        if (!mounted.current) return;
         if (!uri) {
           setState(IDLE);
           return;
