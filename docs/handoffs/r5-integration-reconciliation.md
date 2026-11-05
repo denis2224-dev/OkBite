@@ -1,5 +1,29 @@
 # R5 integration handoff — 5 November 2026
 
+## Follow-up after Gemini `dc8944d`
+
+The follow-up keeps durable contribution recovery and draft/focus isolation,
+but corrects fresh receipts that claimed a barcode/UUID as a photo URI. New
+receipts own metadata only; upserts preserve existing queued-photo ownership.
+One completion ID stays on the initiating draft across retries and remounts.
+Confirmation acknowledges completion before cleanup, so a failed deletion cannot
+reopen review. Completed metadata IDs are not displayed as barcodes.
+
+Regressions failed first: five recovery cases plus the metadata presentation case.
+Final local mobile validation passes 437 tests / 49 suites, with real SQLite
+UI-to-receipt/restart coverage. Lint has 0 errors / 57 inherited warnings; all
+strict types and target web/PWA/iOS/Android exports pass. Prior replay-helper
+tests are helper evidence, not a live-provider or physical two-phone session.
+
+Expo CLI is logged out, repository staging/EAS settings are absent, and official
+Claude authentication is unavailable. The configured third-party review credential
+returned 401; automatic approval also rejected sending it to that destination.
+No Claude review, real-phone/staging acceptance, field collection or beta sessions
+are claimed. The user has both phones available for a guided acceptance session.
+
+The earlier run-specific evidence below is historical; final PR checks must match
+the latest published head.
+
 Review branch: `R5-integration-reconcile`. Target: `main`. No main merge or deployment is part of this delivery.
 
 ## Source history

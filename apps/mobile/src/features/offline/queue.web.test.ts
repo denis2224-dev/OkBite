@@ -28,8 +28,9 @@ it('keeps a saved review retryable when deleting its IndexedDB photo fails', asy
     const deletePhoto = jest.spyOn(IDBObjectStore.prototype, 'delete')
       .mockImplementationOnce(() => { throw new Error('IndexedDB deletion failed'); });
     try {
-      await expect(resolveQueued(item.id)).rejects.toThrow('IndexedDB deletion failed');
-      expect(await listNeedsReview()).toEqual([{ id: item.id, kind: item.kind, payload: item.payload, result }]);
+      await resolveQueued(item.id);
+      expect(await listNeedsReview()).toEqual([]);
+      expect((await listQueued())[0]?.status).toBe('completed');
       expect(await (await get<Blob>(item.payload, photos))?.text()).toBe('photo');
       await flushQueue();
       expect(api.identify).not.toHaveBeenCalled();

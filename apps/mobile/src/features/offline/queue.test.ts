@@ -351,8 +351,9 @@ it('keeps a photo review retryable when deleting the retained file fails', async
   const [item] = await listNeedsReview();
   jest.mocked(FileSystem.deleteAsync).mockRejectedValueOnce(new Error('file locked'));
 
-  await expect(resolveQueued(item!.id)).rejects.toThrow('file locked');
-  expect(await listNeedsReview()).toEqual([item]);
+  await resolveQueued(item!.id);
+  expect(await listNeedsReview()).toEqual([]);
+  expect((await listQueued())[0]?.status).toBe('completed');
   expect(await mockFs.readFile(item!.payload, 'utf8')).toBe('retained image');
   await flushQueue();
   expect(api.identify).toHaveBeenCalledTimes(1);
@@ -402,8 +403,9 @@ it('keeps a photo review retryable when deleting the retained file fails', async
   const [item] = await listNeedsReview();
   jest.mocked(FileSystem.deleteAsync).mockRejectedValueOnce(new Error('file locked'));
 
-  await expect(resolveQueued(item!.id)).rejects.toThrow('file locked');
-  expect(await listNeedsReview()).toEqual([item]);
+  await resolveQueued(item!.id);
+  expect(await listNeedsReview()).toEqual([]);
+  expect((await listQueued())[0]?.status).toBe('completed');
   expect(await mockFs.readFile(item!.payload, 'utf8')).toBe('retained image');
   await flushQueue();
   expect(api.identify).toHaveBeenCalledTimes(1);
@@ -501,9 +503,9 @@ it.each(['photo', 'row'])('keeps a %s cleanup failure retryable without reopenin
     ? jest.spyOn(FileSystem, 'deleteAsync').mockRejectedValueOnce(new Error('photo busy'))
     : jest.spyOn(queueDb, 'deleteQueued').mockRejectedValueOnce(new Error('row busy'));
   try {
-    await expect(resolveQueued(item.id)).rejects.toThrow();
-    expect((await listQueued())[0]?.status).toBe('needs_review');
-    expect(await listNeedsReview()).toHaveLength(1);
+    await resolveQueued(item.id);
+    expect((await listQueued())[0]?.status).toBe('completed');
+    expect(await listNeedsReview()).toHaveLength(0);
     await flushQueue();
     expect(api.identify).toHaveBeenCalledTimes(1);
     await resolveQueued(item.id);

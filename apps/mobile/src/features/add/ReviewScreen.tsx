@@ -37,10 +37,9 @@ export function ReviewScreen() {
     if (!committed || !targetDraft || finishing.current) return;
     finishing.current = true;
     try {
-      const queueId = targetDraft.initial.queueId ?? randomUUID();
-      if (typeof saveQueuedConfirmation === 'function') {
-        await saveQueuedConfirmation(queueId, JSON.stringify(committed), targetDraft.initial.code ?? queueId, targetDraft.label ? 'photo' : 'code');
-      }
+      const queueId = targetDraft.initial.queueId ?? (targetDraft.completionId ??= randomUUID());
+      // New receipts own metadata only; upserts preserve any existing queue photo.
+      await saveQueuedConfirmation(queueId, JSON.stringify(committed));
       await saveToHistory(committed);
       await completeQueued(queueId);
       const id = committed.product.id;

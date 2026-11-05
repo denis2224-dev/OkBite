@@ -639,7 +639,7 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurt` }));
     await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
 
-    expect(mockSaveQueuedConfirmation).toHaveBeenCalledWith('queue-receipt-1', JSON.stringify(SAVED_LOOKUP), '4840001000014', 'photo');
+    expect(mockSaveQueuedConfirmation).toHaveBeenCalledWith('queue-receipt-1', JSON.stringify(SAVED_LOOKUP), undefined, undefined);
     expect(jest.mocked(mockSaveQueuedConfirmation).mock.invocationCallOrder[0]).toBeLessThan(
       jest.mocked(saveToHistory).mock.invocationCallOrder[0]!,
     );

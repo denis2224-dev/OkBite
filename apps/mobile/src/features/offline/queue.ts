@@ -53,12 +53,7 @@ export async function listNeedsReview(): Promise<NeedsReviewItem[]> {
   return reviewed;
 }
 export async function resolveQueued(id: string): Promise<void> {
-  const items = await listQueued();
-  const item = items?.find ? items.find(row => row.id === id) : undefined;
-  if (!item) return;
-  if (item.kind === 'photo') await removePhoto(item.payload);
-  await deleteQueued(id);
-  notifyQueue();
+  await completeQueued(id);
 }
 export async function enqueue(item: { kind: 'photo'; uri: string } | { kind: 'code'; code: string }): Promise<void> {
   const payload = item.kind === 'photo' ? await keepPhoto(item.uri) : Code.parse(item.code);

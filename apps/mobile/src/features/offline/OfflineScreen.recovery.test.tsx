@@ -36,6 +36,14 @@ beforeEach(() => {
   jest.mocked(subscribeQueueResults).mockImplementation(listener => { receive = listener; return jest.fn(); });
 });
 afterEach(() => { cleanup(); });
+it('shows a completion action without exposing its internal receipt ID as a barcode', async () => {
+  const id = '0b6f3c1e-2d4a-4c8e-9f10-1a2b3c4d5e1f';
+  jest.mocked(listQueue).mockResolvedValue([{ id, kind: 'code', payload: id,
+    createdAt: '2026-11-05T10:00:00Z', status: 'completed' }]);
+  await render(<OfflineScreen />);
+  expect(screen.queryByText(id)).toBeNull();
+  expect(screen.getByText(ro.review.finishSave)).toBeTruthy();
+});
 it.each([identifyFound, identifyCandidates, identifyNotFound])('opens the selected $status destination without redirecting on queue entry', async (response) => {
   const item = { id: 'queued', kind: 'photo' as const, payload: 'saved.jpg', createdAt: '2026-11-05T10:00:00Z', status: 'needs_review' as const, outcome: identifyCandidates };
   jest.mocked(listQueue).mockResolvedValue([item as never]);

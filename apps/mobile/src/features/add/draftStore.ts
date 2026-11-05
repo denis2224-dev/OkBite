@@ -12,6 +12,7 @@ export interface AddReviewDraft {
   initial: AddInitialValues;
   label: ReadLabelResponseType;
   savedResult?: Extract<LookupResponse, { status: 'found' }> | null;
+  completionId?: string;
 }
 
 function parseUniqueCategories(entries: readonly unknown[]): readonly CategoryType[] {

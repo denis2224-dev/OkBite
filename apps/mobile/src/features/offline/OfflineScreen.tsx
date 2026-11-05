@@ -55,8 +55,8 @@ export function OfflineScreen() {
     {!!error && <><Body accessibilityLiveRegion="polite">{error}</Body><Button disabled={busy} onPress={() => { void refresh(); }}>{ro.offline.reload}</Button></>}
     {!loading && !rows.length && <Card><Body>{ro.offline.emptyQueue}</Body></Card>}
     {rows.map(item => <Card key={item.id}>
-      <Heading style={{ fontSize: 18 }}>{item.kind === 'photo' ? ro.offline.photo : ro.offline.code}</Heading>
-      {item.kind === 'code' && <Body>{item.payload}</Body>}
+      <Heading style={{ fontSize: 18 }}>{item.status === 'completed' ? ro.review.finishSave : item.kind === 'photo' ? ro.offline.photo : ro.offline.code}</Heading>
+      {item.kind === 'code' && item.status !== 'completed' && <Body>{item.payload}</Body>}
       {item.outcome && <Body>{ro.offline.needsReview}</Body>}
       {item.status === 'completed' && <Body>{ro.offline.cleanupPending}</Body>}
       {item.error && <Body>{item.error in ro.errors ? ro.errors[item.error as keyof typeof ro.errors] : ro.offline.queueError}</Body>}
