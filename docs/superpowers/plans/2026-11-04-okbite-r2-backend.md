@@ -316,3 +316,13 @@ Run: `deno test --allow-all supabase/functions/lookup/` (with `supabase start`) 
 - [ ] **Step 1:** Write `docs/ops/moderation.md`: daily routine (verify or hide every unverified product, close reports), what to check (photos match fields, allergens printed in bold on the label are listed), rota 8 Dec – 8 Jan.
 - [ ] **Step 2:** Backup and restore drill on staging (`supabase db dump`, restore into a fresh local DB, `supabase test db`); record the commands.
 - [ ] **Step 3: Commit** — `docs(ops): moderation routine and backup drill`
+
+
+### Review follow-up — 2026-11-05
+
+- [x] Evaluate current PR/source state and preserve independent stack merges.
+- [x] Fix configuration/discovery, local guards and recovery with regression checks.
+- [x] Run complete local checks and prepare the main-based PR/R1 handoff.
+- [ ] Windows/native/hosted acceptance and R3/C4 scoring remain pending.
+
+Evidence: `docs/ops/r2-review-reconciliation.md`. User review waiver is preserved.

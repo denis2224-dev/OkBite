@@ -15,6 +15,7 @@ async function runFixture(t, config, original = gateway) {
   await mkdir(join(root, 'tests'));
   const script = join(root, 'tests/local-cors.mjs');
   await cp(new URL('./local-cors.mjs', import.meta.url), script);
+  await cp(new URL('../local-project.mjs', import.meta.url), join(root, 'local-project.mjs'));
   await writeFile(join(root, 'config.toml'), config);
   const calls = [];
   const actual = childProcess.execFileSync;
@@ -30,7 +31,7 @@ async function runFixture(t, config, original = gateway) {
   return { calls, error };
 }
 
-for (const [project, newline] of [['okbite-c3-fixture', '\n'], ['okbite-c3-fixture', '\r\n'], ['okbite-c6', '\r\n']]) {
+for (const [project, newline] of [['okbite-c3-cd37', '\n'], ['okbite-c3-cd37', '\r\n'], ['okbite-c6', '\r\n'], ['okbite', '\n'], ['okbite-r2-review', '\n']]) {
   test(`configures only the dedicated gateway for ${project} with ${JSON.stringify(newline)} config`, async (t) => {
     const { calls, error } = await runFixture(t, `project_id = "${project}"${newline}`);
     assert.equal(error, undefined);
@@ -53,7 +54,7 @@ test('refuses unrelated project IDs before any Docker call', async (t) => {
 
 test('does not rewrite an already configured gateway', async (t) => {
   const configured = gateway.replace('\n      - name: cors\n', '\n');
-  const { calls, error } = await runFixture(t, 'project_id = "okbite-c3-fixture"\n', configured);
+  const { calls, error } = await runFixture(t, 'project_id = "okbite-c3-cd37"\n', configured);
   assert.equal(error, undefined);
   assert.equal(calls.length, 1);
 });
