@@ -14,7 +14,7 @@
     "sync-shared": "node scripts/sync-shared.mjs",
     "format": "prettier --write .",
     "test:sync-shared": "node --test scripts/sync-shared.test.mjs",
-    "test:scripts": "vitest run scripts",
+    "test:scripts": "vitest run scripts --exclude \"**/*.test.mjs\"",
     "data:check": "tsx scripts/check-data.ts"
   },
   "devDependencies": {
