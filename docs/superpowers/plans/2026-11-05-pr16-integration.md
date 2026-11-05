@@ -13,7 +13,7 @@
 - [x] Include incoming script/data validation in `npm run check`; run all app, browser, shared and scaffold checks plus web/iOS/Android exports.
 - [x] Update the handoff with the reconciled paths, validation results and remaining device/backend acceptance steps.
 - [x] Obtain independent code review and address integration findings; prepare the tested merge for commit.
-- [ ] Push the existing PR branch, update its description, mark it ready and verify GitHub mergeability. Leave main for human review.
+- [x] Push the existing PR branch, update its description, mark it ready and verify GitHub mergeability. Leave main for human review.
 
 ## Review focus
 
@@ -31,3 +31,4 @@
 - Ran the data checker through Node's tsx import hook, preserving its entry-point behavior without the CLI's sandbox-blocked IPC listener.
 - Frozen install, all 331 tests, configured type/lint checks, strict data-script type checking, data validation and all three platform exports passed.
 - Independent review found no blocking issues; corrected its README test-location wording finding.
+- Published integration commit `1eeeb2f`, updated PR #16, marked it ready and requested review from repository owner `denis2224-dev`. GitHub reports `MERGEABLE` / `CLEAN`; main is unchanged and human approval remains pending.
