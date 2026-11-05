@@ -56,6 +56,9 @@ export function scoreReasons(components: Record<string, number>, n: Nutrients, k
     const key = nutrientOf(c, kind);
     if (share(c) >= 0.5 && !used.has(key) && reasons.length < 2) add('bad', key, BAD[key] ?? NAME[key]);
   }
+  if ((components.sweeteners ?? 0) > 0 && reasons.length < 2) {
+    reasons.push({ tone: 'bad', title: 'Conține îndulcitori', detail: 'Îndulcitori fără calorii în ingrediente' });
+  }
   const good = POSITIVE.filter((c) => pts(c) >= 2).sort((x, y) => pts(y) - pts(x))[0];
   if (good) {
     const key = nutrientOf(good, kind);

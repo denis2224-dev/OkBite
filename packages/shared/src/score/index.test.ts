@@ -3,8 +3,8 @@ import { ScoreResult, type Nutrients, type ScoreKind } from '../contract';
 import { computeScore } from './index';
 
 const zero: Nutrients = { kcal: 0, fat: 0, sat: 0, sugar: 0, salt: 0, protein: 0, fiber: 0, fruitVegPct: 0 };
-const score = (over: Partial<Nutrients>, kind: ScoreKind = 'general') =>
-  ScoreResult.parse(computeScore({ ...zero, ...over }, kind));
+const score = (over: Partial<Nutrients>, kind: ScoreKind = 'general', ingredients = '') =>
+  ScoreResult.parse(computeScore({ ...zero, ...over }, kind, ingredients));
 
 it('missing sugar → unavailable, listing what is missing', () => {
   expect(score({ sugar: null })).toEqual({ score: null, letter: null, grade: 'unavailable', reasons: [], missing: ['sugar'] });
@@ -57,4 +57,13 @@ it('beverages say ml', () => {
 it('never more than 3 reasons', () => {
   const r = score({ kcal: 500, sugar: 40, sat: 12, salt: 3, fiber: 8, protein: 20, fruitVegPct: 90 }, 'cheese');
   expect(r.reasons.length).toBeLessThanOrEqual(3);
+});
+
+it('a beverage with a non-nutritive sweetener in its ingredients drops a letter and says why', () => {
+  const plain = score({}, 'beverage', 'apă, dioxid de carbon, acid citric');
+  const light = score({}, 'beverage', 'apă, dioxid de carbon, îndulcitori: aspartam, acesulfam K');
+  expect([plain.letter, light.letter]).toEqual(['B', 'C']);
+  expect(light.reasons).toContainEqual(
+    { tone: 'bad', title: 'Conține îndulcitori', detail: 'Îndulcitori fără calorii în ingrediente' });
+  expect(score({}, 'general', 'iaurt, aspartam').letter).toBe('A');
 });

@@ -28,6 +28,7 @@ it.each(Object.keys(POINTS_RANGE) as PointsKind[])('%s stays within 0–100 and 
   }
 });
 
-it('beverages start at B: their best points give 79', () => {
+it('beverages start at B: their best points give 79; their worst (with sweeteners, 54) give 0', () => {
   expect(score(-18, 'beverage')).toBe(79);
+  expect(score(54, 'beverage')).toBe(0);
 });

@@ -103,4 +103,11 @@ describe('beverages (2023 report, points allocation)', () => {
     expect([letter(0), letter(2.1), letter(3.6), letter(8.1), letter(11.1)]).toEqual(['B', 'B', 'C', 'D', 'E']);
     expect(nutriScorePoints(zero, 'water')).toEqual({ points: 0, letter: 'A', components: {} });
   });
+
+  it('non-nutritive sweeteners add 4 unfavourable points to beverages only (report §6.6.2)', () => {
+    expect(nutriScorePoints(zero, 'beverage', true)).toMatchObject({ points: 4, letter: 'C' });
+    expect(nutriScorePoints(zero, 'beverage', true).components.sweeteners).toBe(4);
+    expect(nutriScorePoints(zero, 'beverage').components.sweeteners).toBe(0);
+    expect(nutriScorePoints(zero, 'general', true)).toMatchObject({ points: 0, letter: 'A' });
+  });
 });
