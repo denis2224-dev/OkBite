@@ -22,8 +22,13 @@ export function createHandler(deps = { loadProduct, logEvent }) {
         const body = LookupResponse.parse(
           result ? { status: 'found', ...result } : { status: 'not_found' },
         );
-        if (!result) await deps.logEvent('not_found', device);
-        else if ('code' in parsed.data) await deps.logEvent('barcode', device, result.product.id);
+        try {
+          if (!result) await deps.logEvent('not_found', device);
+          else if ('code' in parsed.data) await deps.logEvent('barcode', device, result.product.id);
+        } catch {
+          // Analytics is optional; product availability must not depend on it.
+          console.warn('Lookup analytics unavailable');
+        }
         response = json(body);
       }
     } catch (error) {

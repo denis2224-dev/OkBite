@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { ErrorBody } from '../_shared/contract.ts';
+import { ErrorBody, LookupResponse } from '../_shared/contract.ts';
 import { createHandler } from './index.ts';
 
 const id = 'c2000000-0000-4000-8000-000000000001';
@@ -46,7 +46,7 @@ Deno.test('lookup rejects malformed, conflicting, duplicate and missing selector
   assert.equal(method.headers.get('allow'), 'GET, OPTIONS');
   assert.equal(calls, 0);
 });
-Deno.test('lookup validates responses and safely wraps upstream and telemetry failures', async () => {
+Deno.test('lookup validates responses and safely wraps product loading failures', async () => {
   for (
     const dependencies of [
       {
@@ -56,12 +56,6 @@ Deno.test('lookup validates responses and safely wraps upstream and telemetry fa
         logEvent: async () => {},
       },
       { loadProduct: async () => ({ product: {}, score: {} }) as never, logEvent: async () => {} },
-      {
-        loadProduct: async () => null,
-        logEvent: async () => {
-          throw new Error('secret');
-        },
-      },
     ]
   ) {
     const res = await createHandler(dependencies)(req());
@@ -70,5 +64,25 @@ Deno.test('lookup validates responses and safely wraps upstream and telemetry fa
     const error = ErrorBody.parse(await res.json());
     assert.equal(error.error, 'upstream_failed');
     assert.equal(error.message.includes('secret'), false);
+  }
+});
+
+Deno.test('optional analytics failures preserve found and not_found lookup responses', async () => {
+  // Reuse the existing prototype fixture, not a new nutrition/source contract.
+  const records = JSON.parse(await Deno.readTextFile(
+    new URL('../../../apps/mobile/src/test/preview-data.json', import.meta.url),
+  ));
+  const found = LookupResponse.parse({ status: 'found', ...records[0] });
+  if (found.status !== 'found') throw new Error('Expected found fixture');
+  for (const result of [null, { product: found.product, score: found.score }]) {
+    let logged = 0;
+    const res = await createHandler({
+      loadProduct: async () => result,
+      logEvent: async () => { logged++; throw new Error('analytics unavailable'); },
+    })(req());
+    assert.equal(res.status, 200);
+    assert.deepEqual(LookupResponse.parse(await res.json()), result ? found : { status: 'not_found' });
+    assert.equal(logged, 1);
+    assert.equal(res.headers.get('access-control-allow-origin'), 'https://okbite.md');
   }
 });
