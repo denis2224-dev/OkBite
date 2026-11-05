@@ -2,3 +2,5 @@
 export const APP_NAME = 'OkBite';
 export * from './contract.ts';
 export * from './score/index.ts';
+export * from './ean/index.ts';
+export * from './allergens/index.ts';
