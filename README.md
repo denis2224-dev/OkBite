@@ -1,3 +1,5 @@
+> R1 integration policy (2026-11-05): the app is `apps/mobile`; use Node 22 and the declared pnpm 11.25.0 via Corepack. Root start/dev/web/build commands select this app. Root preview sources and tests remain references. See [.github/SETUP.md](.github/SETUP.md).
+
 # okBite
 
 The Expo design preview lives at the repository root. It follows the supplied
@@ -66,20 +68,20 @@ Dependencies are installed. To open the browser development version:
 pnpm web
 ```
 
-Use `npm run dev` for the phone development server or `npm run web:awake` to
+Use `pnpm dev` for the phone development server or `pnpm web:awake` to
 keep the laptop active while the browser development server runs. Control-C
 stops the command and its temporary sleep prevention.
 
 For a fresh checkout, install the locked dependencies first:
 
 ```sh
-npx --yes pnpm@9.12.0 install --frozen-lockfile
+corepack pnpm install --frozen-lockfile
 ```
 
-Combined checks: `npm run check` (app, browser, shared, scaffold, scripts and data).
-Browser export: `npm run build:web`. All platform bundles: `npx expo export --platform all`.
+Combined checks: `pnpm check` (app, browser, shared, scaffold, scripts and data).
+Browser export: `pnpm build:web`. All platform bundles: `corepack pnpm --filter mobile exec expo export --platform all`.
 
-The root application stays in demonstration mode even when Supabase settings
+The preserved root preview stays in demonstration mode even when Supabase settings
 are present; it does not upload photos or invoke unfinished live routes. Saved
 examples restore from local history, while sample flags reset on each launch.
 The service-integration workspace remains at `apps/mobile` and starts with
@@ -109,7 +111,7 @@ The team's planning documents are preserved alongside the application:
 - [Planning graph](graphify-out/GRAPH_REPORT.md)
 
 
-The implemented frontend remains at the repository root. The team baseline
-in apps/mobile and the shared contract in packages/shared are also preserved.
+The target frontend is `apps/mobile`, using the authoritative shared contract
+in `packages/shared`. The root preview is retained as a design reference.
 Use npm run web for the implemented app; npm run dev:scaffold starts only the
 baseline scaffold. Run npm run check to verify the app and both workspaces.
