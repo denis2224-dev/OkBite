@@ -11,7 +11,9 @@ export type OffProduct = {
 // Open Food Facts search API v2; codes_tags "484xxxxxxxxxx" = EAN-13 codes with the Moldovan 484 prefix.
 const PAGE_SIZE = 100;
 const FIELDS = 'code,product_name,product_name_ro,brands,quantity,ingredients_text,ingredients_text_ro,lang,nutrition_data_per,nutriments';
-const SEARCH = `https://world.openfoodfacts.org/api/v2/search?codes_tags=484xxxxxxxxxx&fields=${FIELDS}&page_size=${PAGE_SIZE}`;
+const SEARCH = `https://world.openfoodfacts.org/api/v2/search?fields=${FIELDS}&page_size=${PAGE_SIZE}`;
+// OFF answers 401 past the first 1000 results of a search, so bigger code prefixes are split into ten.
+const MAX_RESULTS = 1000;
 const USER_AGENT = 'OkBite/0.1 (product import)'; // OFF asks every client to name itself
 const PAUSE_MS = 6500; // OFF allows 10 search requests a minute
 
@@ -62,22 +64,42 @@ export function toRow(p: AddProductRequest) {
 export async function importOff(pause = (ms: number) => new Promise((r) => setTimeout(r, ms))) {
   let mapped = 0;
   let inserted = 0;
-  for (let page = 1; ; page++) {
-    const get = () => fetch(`${SEARCH}&page=${page}`, { headers: { 'user-agent': USER_AGENT } });
-    let res = await get();
-    // OFF often answers 503/429 under load; wait longer each time, then give up (a re-run resumes safely).
-    for (let tries = 1; (res.status === 503 || res.status === 429) && tries < 4; tries++) {
-      await pause(PAUSE_MS * tries);
-      res = await get();
+  const prefixes = ['484'];
+  const failed: string[] = [];
+  let first = true;
+  while (prefixes.length) {
+    const prefix = prefixes.shift()!;
+    const tag = prefix.padEnd(13, 'x');
+    for (let page = 1; ; page++) {
+      if (!first) await pause(PAUSE_MS);
+      first = false;
+      const get = () => fetch(`${SEARCH}&codes_tags=${tag}&page=${page}`, { headers: { 'user-agent': USER_AGENT } });
+      let res = await get();
+      // OFF often answers 503/429 under load; wait longer each time, then give up (a re-run resumes safely).
+      for (let tries = 1; (res.status === 503 || res.status === 429) && tries < 4; tries++) {
+        await pause(PAUSE_MS * tries);
+        res = await get();
+      }
+      if (!res.ok) {
+        // Keep importing the other prefixes; this one is reported and picked up by a re-run.
+        failed.push(`${tag} page ${page}: HTTP ${res.status}`);
+        break;
+      }
+      const { products = [], count = 0 } = (await res.json()) as { products?: OffProduct[]; count?: number };
+      if (page === 1 && count > MAX_RESULTS && prefix.length < 12) {
+        prefixes.push(...Array.from({ length: 10 }, (_, d) => `${prefix}${d}`));
+        break;
+      }
+      const rows = products.flatMap((p) => { const m = mapOffProduct(p); return m ? [toRow(m)] : []; });
+      mapped += rows.length;
+      inserted += await upsert('products', rows, 'code', true);
+      if (products.length < PAGE_SIZE) break;
     }
-    if (!res.ok) throw new Error(`Open Food Facts page ${page}: HTTP ${res.status}`);
-    const { products = [] } = (await res.json()) as { products?: OffProduct[] };
-    const rows = products.flatMap((p) => { const m = mapOffProduct(p); return m ? [toRow(m)] : []; });
-    mapped += rows.length;
-    inserted += await upsert('products', rows, 'code', true);
-    if (products.length < PAGE_SIZE) return { mapped, inserted };
-    await pause(PAUSE_MS);
   }
+  if (failed.length) {
+    throw new Error(`Open Food Facts import incomplete (${mapped} usable, ${inserted} new; re-run to resume): ${failed.join(', ')}`);
+  }
+  return { mapped, inserted };
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
