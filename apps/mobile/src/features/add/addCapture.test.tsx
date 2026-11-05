@@ -51,6 +51,7 @@ const mockPermissionState: {
 jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace }),
   useLocalSearchParams: () => mockParams.value,
+  useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof React>('react').useEffect(callback, [callback]),
 }));
 
 jest.mock('expo-camera', () => {

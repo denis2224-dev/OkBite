@@ -44,6 +44,7 @@ const mockAddProduct = jest.fn<(req: AddProductRequestType) => Promise<LookupRes
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace }),
+  useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof React>('react').useEffect(callback, [callback]),
 }));
 
 jest.mock('../../lib/api', () => {
@@ -657,6 +658,16 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     expect(saveToHistory).toHaveBeenCalledTimes(2);
     expect(completeQueued).toHaveBeenCalledWith('queue-receipt-1');
     expect(mockReplace).toHaveBeenCalledWith(`/product/${SAVED_LOOKUP.product.id}`);
+  });
+
+  it('resets unsaved form edits when the mounted route switches to a new draft', async () => {
+    setAddReviewDraft({ initial: BASE_INITIAL, label: BASE_LABEL });
+    const view = await render(<ReviewRouteScreen />);
+    await fireEvent.changeText(screen.getByLabelText(ro.review.name), 'Edited draft A');
+    setAddReviewDraft({ initial: { ...BASE_INITIAL, name: 'Draft B' }, label: BASE_LABEL });
+    await view.rerender(<ReviewRouteScreen />);
+    expect(screen.getByDisplayValue('Draft B')).toBeTruthy();
+    expect(screen.queryByDisplayValue('Edited draft A')).toBeNull();
   });
 
   it('does not mark draft B as saved when response for draft A arrives after active draft switched', async () => {
