@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { describe, it, expect, jest, beforeAll, beforeEach } from '@jest/globals';
-import { render, fireEvent, screen } from '@testing-library/react-native';
+import { render, fireEvent, screen, act } from '@testing-library/react-native';
 import { IdentifyResponse } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { resolveQueued } from '../offline/queue';
@@ -29,6 +29,7 @@ function requireReplacedParams(callIndex = 0): Record<string, string | undefined
 jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace }),
   useLocalSearchParams: () => mockParams.value,
+  useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof React>('react').useEffect(callback, [callback]),
 }));
 
 const CAND_1 = {
@@ -268,6 +269,19 @@ describe('IdentifyScreen and B3 flow', () => {
 
     await fireEvent.press(screen.getByRole('button', { name: ro.capture.title }));
     expect(mockReplace).toHaveBeenCalledWith('/capture');
+  });
+
+  it.each(['unmount', 'reject'])('does not override the next destination after %s during confirmation', async mode => {
+    mockParams.value = { source: 'photo', queueId: 'pending-confirmation', payload: JSON.stringify({ status: 'candidates', candidates: [CAND_1], read: ORIGINAL_READ, photoPath: PHOTO_PATH }) };
+    let finish!: () => void;
+    jest.mocked(resolveQueued).mockReturnValueOnce(new Promise<void>(resolve => { finish = resolve; }));
+    const view = await render(<IdentifyScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.identify.confirmYes }));
+    if (mode === 'unmount') await view.unmount();
+    else await fireEvent.press(screen.getByRole('button', { name: ro.identify.confirmNo }));
+    const callsBeforeCompletion = mockReplace.mock.calls.length;
+    await act(() => finish());
+    expect(mockReplace).toHaveBeenCalledTimes(callsBeforeCompletion);
   });
 
   it('round-trips addProductRoute and parseAddParams cleanly for B7', () => {
