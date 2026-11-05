@@ -16,11 +16,16 @@ export async function writeHistory(id: string, json: string, savedAt: string): P
 export async function deleteHistory(): Promise<void> {
   await del('entries', history);
 }
-export async function putQueued(item: QueuedItem): Promise<void> {
-  await update<QueuedItem[]>('entries', rows => [...(rows ?? []), item], queue);
+export async function putQueued(item: Omit<QueuedItem, 'status' | 'result'>): Promise<void> {
+  await update<QueuedItem[]>('entries', rows => [...(rows ?? []), { ...item, status: 'pending', result: null }], queue);
 }
 export async function listQueued(): Promise<QueuedItem[]> {
-  return ((await get<QueuedItem[]>('entries', queue)) ?? []).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  return ((await get<QueuedItem[]>('entries', queue)) ?? [])
+    .map(row => ({ ...row, status: row.status ?? 'pending', result: row.result ?? null }))
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+export async function markNeedsReview(id: string, result: string): Promise<void> {
+  await update<QueuedItem[]>('entries', rows => (rows ?? []).map(row => row.id === id ? { ...row, status: 'needs_review', result } : row), queue);
 }
 export async function deleteQueued(id: string): Promise<void> {
   await update<QueuedItem[]>('entries', rows => (rows ?? []).filter(row => row.id !== id), queue);
