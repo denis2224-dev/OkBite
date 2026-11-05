@@ -24,13 +24,20 @@ import {
   getAvailableCategories,
   resetAvailableCategories,
   setAddReviewDraft,
+  setAddReviewDraftResult,
   setAvailableCategories,
 } from './draftStore';
 import { ReviewForm } from './ReviewForm';
 
 const mockReplace = jest.fn<(href: unknown) => void>();
+const mockSetQueuedReview = jest.fn<(id: string, res: string) => Promise<void>>(async () => {});
+const mockPutQueued = jest.fn<(item: unknown) => Promise<void>>(async () => {});
 jest.mock('../offline/queue', () => ({ resolveQueued: jest.fn() }));
 jest.mock('../history/store', () => ({ saveToHistory: jest.fn(async () => {}) }));
+jest.mock('../history/db', () => ({
+  putQueued: (item: unknown) => mockPutQueued(item),
+  setQueuedReview: (id: string, res: string) => mockSetQueuedReview(id, res),
+}));
 const mockAddProduct = jest.fn<(req: AddProductRequestType) => Promise<LookupResponse>>();
 
 jest.mock('expo-router', () => ({
@@ -630,7 +637,8 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurt` }));
     await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
 
-    expect(resolveQueued).toHaveBeenCalledWith('queue-receipt-1');
+    expect(mockSetQueuedReview).toHaveBeenCalledWith('queue-receipt-1', JSON.stringify({ status: 'completed', productId: SAVED_LOOKUP.product.id }));
+    expect(resolveQueued).not.toHaveBeenCalled();
     expect(screen.getByText(ro.review.savedPendingCleanup)).toBeTruthy();
 
     await view.unmount();
@@ -642,6 +650,30 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     await fireEvent.press(screen.getByRole('button', { name: ro.review.finishSave }));
     expect(mockAddProduct).toHaveBeenCalledTimes(1);
     expect(saveToHistory).toHaveBeenCalledTimes(2);
+    expect(resolveQueued).toHaveBeenCalledWith('queue-receipt-1');
     expect(mockReplace).toHaveBeenCalledWith(`/product/${SAVED_LOOKUP.product.id}`);
+  });
+
+  it('does not mark draft B as saved when response for draft A arrives after active draft switched', async () => {
+    if (SAVED_LOOKUP.status !== 'found') throw new Error('Expected found fixture');
+    const draftA = { initial: { ...BASE_INITIAL, queueId: 'draft-a' }, label: BASE_LABEL };
+    const draftB = { initial: { ...BASE_INITIAL, queueId: 'draft-b' }, label: BASE_LABEL };
+
+    setAddReviewDraft(draftA);
+    expect(getAddReviewDraft()?.savedResult).toBeUndefined();
+
+    // Active draft is switched to draft B while request for A is in flight
+    setAddReviewDraft(draftB);
+    expect(getAddReviewDraft()?.initial.queueId).toBe('draft-b');
+
+    // Response for A arrives with targetDraft = draftA
+    setAddReviewDraftResult(SAVED_LOOKUP, draftA);
+
+    // Draft B should NOT have savedResult set!
+    expect(getAddReviewDraft()?.savedResult).toBeUndefined();
+
+    // Response for B arrives with targetDraft = draftB
+    setAddReviewDraftResult(SAVED_LOOKUP, draftB);
+    expect(getAddReviewDraft()?.savedResult).toEqual(SAVED_LOOKUP);
   });
 });

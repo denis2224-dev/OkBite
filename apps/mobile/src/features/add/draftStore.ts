@@ -54,8 +54,13 @@ export function getAddReviewDraft(): AddReviewDraft | null {
   return isValidDraft(currentDraft) ? currentDraft : null;
 }
 
-export function setAddReviewDraftResult(result: Extract<LookupResponse, { status: 'found' }>): void {
-  if (currentDraft) currentDraft.savedResult = result;
+export function setAddReviewDraftResult(
+  result: Extract<LookupResponse, { status: 'found' }>,
+  targetDraft?: AddReviewDraft | null,
+): void {
+  if (currentDraft && (!targetDraft || currentDraft === targetDraft)) {
+    currentDraft.savedResult = result;
+  }
 }
 
 export function clearAddReviewDraft(): void {

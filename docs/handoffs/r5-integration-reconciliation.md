@@ -62,6 +62,12 @@ If a server save succeeds while all local persistent writes fail, the active rev
   5. *P2 — Themed scan UI contrast:* `ScanScreen.web.tsx` uses `<Heading>` and `<Body>` with `light.ink` themed text color for the scan header and status message.
   6. *P3 — Queue type compatibility:* Exported the `NeedsReviewItem` discriminated union and typed `listNeedsReview()` to preserve the 1:1 `kind` $\leftrightarrow$ `result` schema correspondence (`code` $\to$ `LookupResponse`, `photo` $\to$ `IdentifyResponse`).
 - Updated test suite: all 47 mobile test suites (416 tests), 113 shared tests, and 28 script tests pass with zero regressions; mobile web export generates valid precached service worker bundle.
+- PR #63 review findings on `8720d16` and reconciliation with main `a0e150f` (retryable photo cleanup):
+  1. *P1 — Cancellation during photo read prevents upload:* In `drain()` and `resumeQueuedItem()`, a fresh DB status check immediately follows `readPhoto(item.payload)`. If cancellation or completion committed while the photo was being read from disk/IndexedDB, `api.identify` is not invoked (0 identify requests).
+  2. *P2 — Direct resumption verify committed transition:* In `resumeQueuedItem()`, the row status is checked immediately after `markNeedsReview` commits. If cancellation won the race, it throws `not_found` and never returns `/identify`.
+  3. *P2 — History navigation in OfflineScreen:* Added `navigatedAway` ref so tapping "Istoric" preserves the user on the History screen even if an in-flight `Open` action subsequently resolves.
+  4. *P2 — Scoped draft results and persistent restart recovery:* `setAddReviewDraftResult` is bound to the initiating draft instance so concurrent or switched drafts cannot be erroneously marked saved. Contribution completions write a durable completed receipt to the queue DB prior to history persistence, ensuring completed results are preserved across process restarts even if `saveToHistory` fails.
+  5. *Reconciliation with main `a0e150f`:* Reconciled `resolveQueued` and `completeQueued` with main's retryable photo cleanup policy, including `queue.web.test.ts`. 48 mobile test suites (422 tests) pass cleanly.
 
 ## R1/R4 integration sequence
 

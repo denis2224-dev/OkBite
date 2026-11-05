@@ -52,7 +52,13 @@ export async function listNeedsReview(): Promise<NeedsReviewItem[]> {
   }
   return reviewed;
 }
-export async function resolveQueued(id: string): Promise<void> { await completeQueued(id); }
+export async function resolveQueued(id: string): Promise<void> {
+  const item = (await listQueued()).find(row => row.id === id);
+  if (!item) return;
+  if (item.kind === 'photo') await removePhoto(item.payload);
+  await deleteQueued(id);
+  notifyQueue();
+}
 export async function enqueue(item: { kind: 'photo'; uri: string } | { kind: 'code'; code: string }): Promise<void> {
   const payload = item.kind === 'photo' ? await keepPhoto(item.uri) : Code.parse(item.code);
   try { await putQueued({ id: randomUUID(), kind: item.kind, payload, createdAt: new Date().toISOString() }); }
@@ -72,10 +78,8 @@ export async function completeQueued(id: string): Promise<void> {
   if (!item) return;
   // Commit acknowledgement before cleanup; a cleanup failure must never reopen add/review.
   if (item.status !== 'completed') await markQueuedComplete(id);
-  try {
-    if (item.kind === 'photo') await removePhoto(item.payload);
-    await deleteQueued(id);
-  } catch { await saveQueuedError(id, 'storage').catch(() => {}); }
+  if (item.kind === 'photo') await removePhoto(item.payload);
+  await deleteQueued(id);
   notifyQueue();
 }
 export async function retryQueued(id: string) {
@@ -116,6 +120,8 @@ async function drain() {
         notifyQueue();
         continue;
       }
+      const preFlight = (await listQueued()).find(row => row.id === item.id);
+      if (!preFlight || preFlight.status !== 'pending') continue;
     }
     try {
       const result = photo === undefined ? await api.lookup({ code: item.payload }) : await api.identify(photo);
@@ -160,8 +166,14 @@ export async function resumeQueuedItem(input: Pick<QueuedItem, 'id' | 'kind' | '
     const item = (await listQueue()).find(row => row.id === input.id);
     if (!item) throw new ApiError('not_found');
     if (item.status === 'completed') throw new ApiError('bad_request');
+    let photo: string | undefined;
+    if (item.kind === 'photo' && !item.outcome) {
+      photo = await readPhoto(item.payload);
+      const preFlight = (await listQueued()).find(row => row.id === item.id);
+      if (!preFlight || preFlight.status === 'completed') throw new ApiError('not_found');
+    }
     const result = item.outcome ?? (item.kind === 'code'
-      ? await api.lookup({ code: item.payload }) : await api.identify(await readPhoto(item.payload)));
+      ? await api.lookup({ code: item.payload }) : await api.identify(photo!));
     const fresh = (await listQueued()).find(row => row.id === item.id);
     if (!fresh || fresh.status === 'completed') throw new ApiError('not_found');
     if (result.status === 'found') {
@@ -169,7 +181,12 @@ export async function resumeQueuedItem(input: Pick<QueuedItem, 'id' | 'kind' | '
       await completeQueued(item.id);
       return { kind: 'found', productId: result.product.id };
     }
-    if (!item.outcome) { await markNeedsReview(item.id, JSON.stringify(result)); notifyQueue(); }
+    if (!item.outcome) {
+      await markNeedsReview(item.id, JSON.stringify(result));
+      notifyQueue();
+      const committed = (await listQueued()).find(row => row.id === item.id);
+      if (!committed || committed.status !== 'needs_review') throw new ApiError('not_found');
+    }
     // Opening review is not a decision: retain the result/photo through app restart.
     return { kind: 'identify', pathname: '/identify', params: item.kind === 'code'
       ? { source: 'code', code: item.payload, queueId: item.id }
@@ -177,4 +194,3 @@ export async function resumeQueuedItem(input: Pick<QueuedItem, 'id' | 'kind' | '
   });
 }
 export async function listUnresolvedQueued(): Promise<QueuedItem[]> { return listQueued(); }
-

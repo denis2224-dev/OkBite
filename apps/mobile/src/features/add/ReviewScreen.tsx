@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { randomUUID } from 'expo-crypto';
 import {
   LookupResponse,
   type AddProductRequest,
@@ -17,6 +18,7 @@ import {
 } from './draftStore';
 import { ReviewForm } from './ReviewForm';
 import { resolveQueued } from '../offline/queue';
+import { putQueued, setQueuedReview } from '../history/db';
 import { saveToHistory } from '../history/store';
 
 export function ReviewScreen() {
@@ -31,8 +33,14 @@ export function ReviewScreen() {
     if (!committed || !activeDraft || finishing.current) return;
     finishing.current = true;
     try {
-      if (activeDraft.initial.queueId) await resolveQueued(activeDraft.initial.queueId);
+      if (!activeDraft.initial.queueId) {
+        const id = randomUUID();
+        activeDraft.initial.queueId = id;
+        await putQueued({ id, kind: 'code', payload: committed.product.code ?? id, createdAt: new Date().toISOString() });
+      }
+      await setQueuedReview(activeDraft.initial.queueId, JSON.stringify({ status: 'completed', productId: committed.product.id }));
       await saveToHistory(committed);
+      await resolveQueued(activeDraft.initial.queueId);
       const id = committed.product.id;
       clearAddReviewDraft();
       router.replace(productRoute(id));
@@ -68,7 +76,7 @@ export function ReviewScreen() {
       throw Object.assign(new Error('invalid_response'), { code: 'invalid_response' });
     }
     saved.current = parsed.data;
-    setAddReviewDraftResult(parsed.data);
+    setAddReviewDraftResult(parsed.data, activeDraft);
     try { await finishSaved(); }
     catch { setCleanupPending(true); }
   };

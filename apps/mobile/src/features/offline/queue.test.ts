@@ -36,7 +36,7 @@ jest.mock('expo-file-system/legacy', () => ({
   copyAsync: async ({ from, to }: { from: string; to: string }) => mockFs.copyFile(from, to),
   readAsStringAsync: async (path: string) => (await mockFs.readFile(path)).toString('base64'),
   getInfoAsync: async (path: string) => ({ exists: await mockFs.stat(path).then(() => true, () => false) }),
-  deleteAsync: async (path: string) => mockFs.rm(path, { force: true }),
+  deleteAsync: jest.fn(async (path: string) => mockFs.rm(path, { force: true })),
 }));
 jest.mock('../../lib/api', () => ({ ...jest.requireActual('../../lib/api'), api: { lookup: jest.fn(), identify: jest.fn() } }));
 beforeEach(async () => {
@@ -342,6 +342,26 @@ it('resolveQueued removes the row and the photo file', async () => {
   await expect(mockFs.stat(item!.payload)).rejects.toThrow();
 });
 
+it('keeps a photo review retryable when deleting the retained file fails', async () => {
+  const source = FileSystem.documentDirectory! + 'retry-cleanup.jpg';
+  await mockFs.writeFile(source, 'retained image');
+  await enqueue({ kind: 'photo', uri: source });
+  jest.mocked(api.identify).mockResolvedValue(identifyCandidates);
+  await flushQueue();
+  const [item] = await listNeedsReview();
+  jest.mocked(FileSystem.deleteAsync).mockRejectedValueOnce(new Error('file locked'));
+
+  await expect(resolveQueued(item!.id)).rejects.toThrow('file locked');
+  expect(await listNeedsReview()).toEqual([item]);
+  expect(await mockFs.readFile(item!.payload, 'utf8')).toBe('retained image');
+  await flushQueue();
+  expect(api.identify).toHaveBeenCalledTimes(1);
+
+  await resolveQueued(item!.id);
+  expect(await listQueued()).toEqual([]);
+  await expect(mockFs.stat(item!.payload)).rejects.toThrow();
+});
+
 it('keeps a not_found photo for review with read and photoPath intact', async () => {
   const source = FileSystem.documentDirectory! + 'not_found.jpg';
   await mockFs.writeFile(source, 'unrecognized image');
@@ -371,6 +391,26 @@ it('skips corrupt review items without throwing', async () => {
   });
   await setQueuedReview('corrupt', '{invalid json');
   expect(await listNeedsReview()).toEqual([]);
+});
+
+it('keeps a photo review retryable when deleting the retained file fails', async () => {
+  const source = FileSystem.documentDirectory! + 'retry-cleanup.jpg';
+  await mockFs.writeFile(source, 'retained image');
+  await enqueue({ kind: 'photo', uri: source });
+  jest.mocked(api.identify).mockResolvedValue(identifyCandidates);
+  await flushQueue();
+  const [item] = await listNeedsReview();
+  jest.mocked(FileSystem.deleteAsync).mockRejectedValueOnce(new Error('file locked'));
+
+  await expect(resolveQueued(item!.id)).rejects.toThrow('file locked');
+  expect(await listNeedsReview()).toEqual([item]);
+  expect(await mockFs.readFile(item!.payload, 'utf8')).toBe('retained image');
+  await flushQueue();
+  expect(api.identify).toHaveBeenCalledTimes(1);
+
+  await resolveQueued(item!.id);
+  expect(await listQueued()).toEqual([]);
+  await expect(mockFs.stat(item!.payload)).rejects.toThrow();
 });
 
 it('persists unresolved results and does not submit them automatically again', async () => {
@@ -564,5 +604,70 @@ it('restores NeedsReviewItem discriminated union type and preserves kind-result 
   expect(photoReview?.result.status).toBe('candidates');
   if (photoReview && photoReview.kind === 'photo' && photoReview.result.status === 'candidates') {
     expect(photoReview.result.candidates).toBeDefined();
+  }
+});
+
+it('prevents identify request if cancellation commits while readPhoto is in flight during drain', async () => {
+  const source = FileSystem.documentDirectory! + 'cancel-during-read-drain.jpg';
+  await mockFs.writeFile(source, 'photo content');
+  await enqueue({ kind: 'photo', uri: source });
+  const [item] = await listQueue();
+
+  const originalRead = FileSystem.readAsStringAsync;
+  const readSpy = jest.spyOn(FileSystem, 'readAsStringAsync').mockImplementationOnce(async (path, options) => {
+    // Cancellation commits while photo read is in flight
+    await completeQueued(item!.id);
+    return originalRead(path, options);
+  });
+
+  try {
+    await flushQueue();
+    expect(api.identify).not.toHaveBeenCalled();
+  } finally {
+    readSpy.mockRestore();
+  }
+});
+
+it('rejects with not_found and prevents identify request if cancellation commits while readPhoto is in flight during resume', async () => {
+  const source = FileSystem.documentDirectory! + 'cancel-during-read-resume.jpg';
+  await mockFs.writeFile(source, 'photo content');
+  await enqueue({ kind: 'photo', uri: source });
+  const [item] = await listQueue();
+
+  const originalRead = FileSystem.readAsStringAsync;
+  const readSpy = jest.spyOn(FileSystem, 'readAsStringAsync').mockImplementationOnce(async (path, options) => {
+    // Cancellation commits while photo read is in flight
+    await completeQueued(item!.id);
+    return originalRead(path, options);
+  });
+
+  try {
+    await expect(resumeQueuedItem(item!)).rejects.toThrow();
+    expect(api.identify).not.toHaveBeenCalled();
+  } finally {
+    readSpy.mockRestore();
+  }
+});
+
+it('direct resumption rejects when cancellation commits right before markNeedsReview commits', async () => {
+  const source = FileSystem.documentDirectory! + 'cancel-before-mark-review.jpg';
+  await mockFs.writeFile(source, 'photo content');
+  await enqueue({ kind: 'photo', uri: source });
+  const [item] = await listQueue();
+
+  jest.mocked(api.identify).mockResolvedValueOnce(identifyCandidates);
+
+  const originalMark = queueDb.markNeedsReview;
+  const markSpy = jest.spyOn(queueDb, 'markNeedsReview').mockImplementationOnce(async (id, res) => {
+    // Another client cancelled right before markNeedsReview commits
+    await queueDb.deleteQueued(id);
+    return originalMark(id, res);
+  });
+
+  try {
+    await expect(resumeQueuedItem(item!)).rejects.toThrow();
+    expect(await listNeedsReview()).toEqual([]);
+  } finally {
+    markSpy.mockRestore();
   }
 });

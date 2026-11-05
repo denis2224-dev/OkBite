@@ -37,6 +37,7 @@ it('does not navigate away from History when a background result arrives', async
   await act(() => { receive?.({ item: { id: 'q', kind: 'photo', payload: 'saved.jpg' }, result: identifyCandidates }); });
   expect(mockReplace).not.toHaveBeenCalled();
 });
+
 it('shows a retryable error when queue storage cannot be read', async () => {
   jest.mocked(listQueue).mockResolvedValue([{ id: 'q', kind: 'code', payload: '12345670', createdAt: '2026-11-05T10:00:00Z', status: 'pending' }]);
   await render(<OfflineScreen />);
@@ -64,6 +65,29 @@ it('does not override navigation if the shopper leaves for History before Open f
   await view.unmount();
 
   // Open finishes after shopper left
+  await act(async () => {
+    finishResume();
+  });
+
+  expect(mockReplace).not.toHaveBeenCalled();
+});
+
+it('does not override navigation if the shopper presses History before Open finishes without unmounting', async () => {
+  const item = { id: 'queued-2', kind: 'photo' as const, payload: 'saved.jpg', createdAt: '2026-11-05T10:00:00Z', status: 'needs_review' as const, outcome: identifyCandidates };
+  jest.mocked(listQueue).mockResolvedValue([item as never]);
+  let finishResume!: () => void;
+  jest.mocked(resumeQueuedItem).mockReturnValue(new Promise(resolve => {
+    finishResume = () => resolve({ kind: 'identify', pathname: '/identify', params: { source: 'photo', payload: JSON.stringify(identifyCandidates), queueId: item.id } });
+  }));
+
+  await render(<OfflineScreen />);
+  await fireEvent.press(await screen.findByRole('button', { name: ro.app.open }));
+  expect(resumeQueuedItem).toHaveBeenCalledWith(item);
+
+  // Shopper presses History (does not unmount OfflineScreen)
+  await fireEvent.press(screen.getByRole('button', { name: ro.offline.history }));
+
+  // Open finishes after History was pressed
   await act(async () => {
     finishResume();
   });
