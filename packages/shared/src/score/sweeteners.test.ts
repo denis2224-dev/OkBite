@@ -11,4 +11,5 @@ it.each([
 it.each([
   'zahăr, sirop de glucoză-fructoză', 'eritritol (E968)', 'sorbitol, E420', 'xilitol E967', 'maltitol',
   'E960b', 'E9500', 'zahar', '',
+  'apă, glicozide de steviol produse enzimatic (E960c)', 'rebaudiozidă M (E960b)', 'glicozide de steviol produse enzimatic',
 ])('%s → none', (text) => expect(hasNonNutritiveSweetener(text)).toBe(false));
