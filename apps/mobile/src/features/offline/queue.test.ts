@@ -41,10 +41,33 @@ jest.mock('expo-file-system/legacy', () => ({
 jest.mock('../../lib/api', () => ({ ...jest.requireActual('../../lib/api'), api: { lookup: jest.fn(), identify: jest.fn(), addProduct: jest.fn() } }));
 beforeEach(async () => {
   jest.clearAllMocks();
+  jest.mocked(FileSystem.deleteAsync).mockReset().mockImplementation(async path => mockFs.rm(path, { force: true }));
   jest.mocked(api.lookup).mockReset();
   jest.mocked(api.identify).mockReset();
   for (const item of await listQueued()) await deleteQueued(item.id);
   await clearHistory();
+});
+it.each(['legacy-receipt', '4840001000014'])('repairs legacy completed metadata falsely marked as a photo: %s', async payload => {
+  await queueDb.saveQueuedConfirmation('legacy-receipt', JSON.stringify(foundYogurt), payload, 'photo');
+  const originalDelete = jest.mocked(FileSystem.deleteAsync).getMockImplementation();
+  const deletion = jest.spyOn(FileSystem, 'deleteAsync').mockRejectedValue(new Error('not a file URI'));
+  try {
+    await flushQueue();
+    expect((await getFromHistory(foundYogurt.product.id))?.product.id).toBe(foundYogurt.product.id);
+    expect(await listQueued()).toEqual([]);
+    expect(deletion).not.toHaveBeenCalled();
+  } finally {
+    deletion.mockRestore();
+    if (originalDelete) jest.mocked(FileSystem.deleteAsync).mockImplementation(originalDelete);
+  }
+});
+it('recovers a completed local receipt before an older request that is still offline', async () => {
+  await putQueued({ id: 'older-offline', kind: 'code', payload: '12345670', createdAt: '2020-01-01T00:00:00Z' });
+  await queueDb.saveQueuedConfirmation('local-receipt', JSON.stringify(foundYogurt));
+  jest.mocked(api.lookup).mockRejectedValue(new ApiError('offline'));
+  await retryQueued('local-receipt');
+  expect((await getFromHistory(foundYogurt.product.id))?.product.id).toBe(foundYogurt.product.id);
+  expect((await listQueued()).map(row => row.id)).toEqual(['older-offline']);
 });
 afterAll(async () => { await mockFs.rm(FileSystem.documentDirectory!, { recursive: true, force: true }); });
 it('does not reopen a cancelled item when cleanup fails during an active lookup', async () => {
@@ -712,7 +735,7 @@ it('recovers queued contribution after restart with empty memory when history wr
   const [item] = await listNeedsReview();
   expect(item).toBeDefined();
 
-  // Contribution succeeds on server (addProduct called once)
+  // Seed an already returned server response; this helper test does not call addProduct.
   const addProductSpy = jest.spyOn(api, 'addProduct').mockResolvedValueOnce(foundYogurt);
 
   // Persist confirmation in queue DB
@@ -722,7 +745,7 @@ it('recovers queued contribution after restart with empty memory when history wr
   expect(await listNeedsReview()).toEqual([]);
 
   // Empty memory: no active in-flight draft
-  // History write failed initially, so item is not yet in history
+  // The local history has not been written yet.
   expect(await getFromHistory(foundYogurt.product.id)).toBeUndefined();
 
   // Recovery pass: flushQueue drains queue and processes completed receipt
@@ -734,7 +757,8 @@ it('recovers queued contribution after restart with empty memory when history wr
   expect(savedHistory?.score).toEqual(foundYogurt.score);
   // Queue item and photo are cleaned up
   expect(await listQueued()).toEqual([]);
-  // addProduct was called exactly once total!
+  await expect(mockFs.stat(item!.payload)).rejects.toThrow();
+  // Receipt replay never calls addProduct.
   expect(addProductSpy).toHaveBeenCalledTimes(0); // Not called again during recovery!
   expect(api.identify).toHaveBeenCalledTimes(1); // Identify was not called again!
   addProductSpy.mockRestore();
