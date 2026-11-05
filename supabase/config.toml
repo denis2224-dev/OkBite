@@ -20,3 +20,9 @@ enabled = false
 
 [functions.lookup]
 verify_jwt = false
+
+[functions.add-product]
+verify_jwt = false
+
+[functions.report]
+verify_jwt = false
