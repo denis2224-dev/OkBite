@@ -36,6 +36,11 @@ jobs:
           git diff --exit-code -- supabase/functions/_shared
           test -z "$(git ls-files --others --exclude-standard supabase/functions/_shared)"
       - run: pnpm --filter mobile web
+      - name: Test offline browser shell with local demo fixtures
+        run: |
+          pnpm exec playwright install --with-deps chromium webkit
+          pnpm e2e:web:build
+          pnpm e2e:web
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: web-export

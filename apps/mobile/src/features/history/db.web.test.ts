@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { serialize, deserialize } from 'node:v8';
-import { writeHistory, readHistory, deleteHistory, putQueued, listQueued, deleteQueued } from './db.web';
+import { writeHistory, readHistory, deleteHistory, putQueued, listQueued, deleteQueued, setQueuedReview } from './db.web';
 
 beforeAll(() => {
   if (!global.structuredClone) {
@@ -27,4 +27,11 @@ it('retains FIFO order for queue items saved in the same millisecond', async () 
   await deleteQueued('z');
   expect((await listQueued()).map(row => row.id)).toEqual(['a']);
   await deleteQueued('a');
+});
+it('treats a row without status as pending and stores a review result', async () => {
+  await putQueued({ id: 'r', kind: 'code', payload: '12345670', createdAt: '2026-11-05T00:00:00.000Z' });
+  expect((await listQueued())[0]).toMatchObject({ id: 'r', status: 'pending', result: null });
+  await setQueuedReview('r', '{"status":"not_found"}');
+  expect((await listQueued())[0]).toMatchObject({ status: 'needs_review', result: '{"status":"not_found"}' });
+  await deleteQueued('r');
 });

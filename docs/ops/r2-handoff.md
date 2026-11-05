@@ -1,3 +1,7 @@
+> Current completion evidence and dependency order: [R2 completion handoff](r2-completion-2026-11-05.md).
+> The run-specific text below is historical. #40 supersedes #30 reconciliation;
+> new R2 fixes are #59/#60/#61. Recorded waivers do not imply new approval.
+
 # Current R2 review follow-up
 
 The original R2 stack merged independently during validation. The remaining fixes

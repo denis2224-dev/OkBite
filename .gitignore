@@ -21,3 +21,6 @@ supabase/.temp/
 **/dist-native/
 .maestro/media/*
 !.maestro/media/README.md
+**/dist-e2e/
+test-results/
+playwright-report/
