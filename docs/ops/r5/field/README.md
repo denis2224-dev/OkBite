@@ -38,6 +38,8 @@ Intervalele sunt locuri rezervate, nu produse deja colectate.
 - 19–29 noiembrie: a doua ieșire utilizează fluxul foto al aplicației țintă
   `apps/mobile`; operatorul uman deschide și atribuie issue-uri cu eticheta `beta`.
   Refolosirea unui produs din prima ieșire nu crește totalul distinct.
+  Marcați issue-urile cu prefixul `A6` și redactați datele personale și fotografiile
+  private înainte de publicare.
 - Zilnic: R5 elimină duplicatele și urmărește lipsurile; R2 verifică produsele
   după etichete. Echipa nu modifică producția în cadrul acestei pregătiri.
 
@@ -80,13 +82,17 @@ Același cod normalizat ocupă un singur loc în total. Pentru un produs fără 
 R5/R2 compară marca, numele, cantitatea și fotografiile înainte să-l numere.
 O recaptură, o eroare de salvare sau o verificare repetată nu reprezintă produs nou.
 Produsele deja importate se păstrează în jurnalul testării, dar se înlocuiesc în
-lista contribuțiilor noi. Nu suprascrieți automat înregistrări verificate.
+lista contribuțiilor noi. Refolosiți același loc Fxxx pentru înlocuitor și
+păstrați candidatul respins în jurnalul testării. Nu suprascrieți automat
+înregistrări verificate.
 
 R2 furnizează zilnic un raport autorizat: mediu, moment, totaluri `verified`,
 `unverified`, `hidden`, duplicate și motive de respingere. Raportul milestone-ului
-de minimum 300 `verified` din plan va fi obținut de operator în mediul autorizat;
-un total pe staging nu dovedește același total în producție. Nimeni nu bifează A6
-doar pentru că există 300 de locuri sau 900 de fotografii.
+de minimum 300 `verified` din plan va fi obținut de operator în mediul autorizat.
+După aprobarea lansării, R1 coordonează publicarea. R2 stabilește procedura de
+transfer cu operatorul, verifică etichetele și confirmă separat totalul din
+producție. Dacă procedura sau aprobarea lipsește, marcați transferul blocat.
+Nimeni nu bifează A6 doar pentru că există 300 de locuri sau 900 de fotografii.
 
 ## Handoff încă necesar
 
