@@ -150,9 +150,9 @@
       "points": 0,
       "letter": "A"
     },
-    "expectedPoints": -1,
+    "expectedPoints": 0,
     "expectedLetter": "A",
-    "checkedWith": "Entered by Rusu Serghei, 2026-11-05 (-1, A). Not used as a fixture: the label gives 1300 kJ but 365 kcal (= 1527 kJ), so energy points depend on which one is right; the calculator gives 0, A with 1300 kJ."
+    "checkedWith": "Official Nutri-Score calculator (General foods, label kJ 1300) gives 0, A; written by Claude, checked by Rusu Serghei, 2026-11-05 (first entered as -1, A from the Cheese sheet). Not used as a fixture: the label gives 1300 kJ but 365 kcal (= 1527 kJ), and our engine, which reads kcal, gets 1, B."
   },
   {
     "name": "Izvorul Gura Căinarului",
