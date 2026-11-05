@@ -1,5 +1,4 @@
 import { randomUUID } from 'expo-crypto';
-import { z } from 'zod';
 import { Code, IdentifyResponse, LookupResponse } from '@okbite/shared';
 import { api, ApiError } from '../../lib/api';
 import { putQueued, listQueued, deleteQueued, setQueuedReview } from '../history/db';
@@ -44,12 +43,30 @@ async function drain(onResolved?: (id: string) => void) {
   }
   return { resolved };
 }
-const ReviewResult = z.union([LookupResponse, IdentifyResponse]);
-export async function listNeedsReview() {
-  return (await listQueued()).flatMap(({ id, kind, payload, status, result }) => {
-    const parsed = status === 'needs_review' && result ? ReviewResult.safeParse(JSON.parse(result)) : undefined;
-    return parsed?.success ? [{ id, kind, payload, result: parsed.data }] : [];
-  });
+export type NeedsReviewItem =
+  | { id: string; kind: 'code'; payload: string; result: LookupResponse }
+  | { id: string; kind: 'photo'; payload: string; result: IdentifyResponse };
+
+export async function listNeedsReview(): Promise<NeedsReviewItem[]> {
+  const items = await listQueued();
+  const reviewed: NeedsReviewItem[] = [];
+  for (const { id, kind, payload, status, result } of items) {
+    if (status !== 'needs_review' || !result) continue;
+    let raw: unknown;
+    try {
+      raw = JSON.parse(result);
+    } catch {
+      continue;
+    }
+    if (kind === 'photo') {
+      const parsed = IdentifyResponse.safeParse(raw);
+      if (parsed.success) reviewed.push({ id, kind: 'photo', payload, result: parsed.data });
+    } else {
+      const parsed = LookupResponse.safeParse(raw);
+      if (parsed.success) reviewed.push({ id, kind: 'code', payload, result: parsed.data });
+    }
+  }
+  return reviewed;
 }
 export async function resolveQueued(id: string): Promise<void> {
   const item = (await listQueued()).find(row => row.id === id);
