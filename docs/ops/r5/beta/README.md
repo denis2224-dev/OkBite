@@ -31,8 +31,8 @@ Folosiți [scenariile și fișa de dovadă](scenarios.md) și
 Echipa invită colegi, familie și, dacă există contact autorizat, o comunitate
 interesată de alergeni. Participarea nu cere divulgarea unui diagnostic.
 R5 atribuie T01–T25 participanților adulți din afara echipei R1–R5 și păstrează
-contactele separat, privat. Numărați o persoană o singură dată, după cel puțin
-un scenariu consemnat cu rezultatul și SHA-ul buildului.
+contactele separat, privat. Numărați o persoană o singură dată, după acordul
+consemnat și cel puțin un scenariu consemnat cu rezultatul și SHA-ul buildului.
 
 | Suprafață necesară | Dovadă cerută | Stare inițială |
 | --- | --- | --- |
@@ -92,12 +92,12 @@ buildul corectat. „Nu am mai văzut problema” fără aceiași pași nu este 
 
 ## Registru privat și criteriu de ieșire
 
-Registrul per tester: ID, data și canalul acordului pentru participare, data
-sesiunii, platformele, SHA, scenariile efectuate, rezultatele, formularul primit
-și issue-urile aferente. Nu păstrați în Git contacte sau răspunsuri care pot
+Registrul per tester: ID, confirmarea eligibilității (adult din afara echipei,
+fără data nașterii), data și canalul acordului, data sesiunii, platformele,
+SHA, scenariile efectuate, rezultatele, formularul primit și issue-urile aferente. Nu păstrați în Git contacte sau răspunsuri care pot
 identifica persoana.
-Raport zilnic: participanți adulți distincți din afara echipei, cu minimum un
-scenariu consemnat cu rezultat și SHA / 25; acoperirea celor patru suprafețe;
+Raport zilnic: participanți eligibili distincți, cu acord consemnat și minimum
+un scenariu cu rezultat și SHA / 25; acoperirea celor patru suprafețe;
 scenarii trecute/eșuate/blocate/neexecutate; P1/P2/P3 deschise.
 
 Gate-ul din 1 decembrie cere 25 de participanți eligibili conform raportului
