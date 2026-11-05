@@ -30,6 +30,9 @@ verify_jwt = false
 [functions.identify]
 verify_jwt = false
 
+[functions.read-label]
+verify_jwt = false
+
 # Auth and moderator membership are checked by the handler via Auth.getUser.
 [functions.moderate]
 verify_jwt = false
