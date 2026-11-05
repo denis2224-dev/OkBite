@@ -71,6 +71,6 @@ export async function listNeedsReview(): Promise<NeedsReviewItem[]> {
 export async function resolveQueued(id: string): Promise<void> {
   const item = (await listQueued()).find(row => row.id === id);
   if (!item) return;
+  if (item.kind === 'photo') await removePhoto(item.payload);
   await deleteQueued(id);
-  if (item.kind === 'photo') await removePhoto(item.payload).catch(() => {});
 }
