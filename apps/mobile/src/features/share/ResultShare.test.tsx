@@ -5,8 +5,15 @@ import { foundYogurt } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
 import { shareProduct } from './shareProduct';
 
+let mockIsPreview = false;
+jest.mock('../../lib/preview', () => ({ get isPreview() { return mockIsPreview; } }));
 jest.mock('./shareProduct', () => ({ shareProduct: jest.fn() }));
-afterEach(() => jest.resetAllMocks());
+afterEach(() => { mockIsPreview = false; jest.resetAllMocks(); });
+it('keeps demonstration results from being shared as real products', async () => {
+  mockIsPreview = true;
+  await render(<ResultView {...foundYogurt} />);
+  expect(screen.queryByRole('button', { name: ro.share.button })).toBeNull();
+});
 it('shares the displayed unavailable score when required nutrients are missing', async () => {
   jest.mocked(shareProduct).mockResolvedValue('cancelled');
   await render(<ResultView product={{ ...foundYogurt.product, nutrients: { ...foundYogurt.product.nutrients, salt: null } }} score={foundYogurt.score} />);
