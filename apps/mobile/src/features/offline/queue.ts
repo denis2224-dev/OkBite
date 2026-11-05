@@ -21,8 +21,14 @@ export function flushQueue(onResolved?: (id: string) => void): Promise<{ resolve
 async function drain(onResolved?: (id: string) => void) {
   let resolved = 0;
   for (const item of await listQueued()) {
+    let photo: string | undefined;
+    if (item.kind === 'photo') {
+      // A stored photo that can no longer be read will never resolve; drop it instead of retrying forever.
+      try { photo = await readPhoto(item.payload); }
+      catch { await deleteQueued(item.id).catch(() => {}); continue; }
+    }
     try {
-      const result = item.kind === 'code' ? await api.lookup({ code: item.payload }) : await api.identify(await readPhoto(item.payload));
+      const result = photo === undefined ? await api.lookup({ code: item.payload }) : await api.identify(photo);
       // R5 resumes confirmation/contribution for candidates and not_found; retain their capture until then.
       if (result.status !== 'found') continue;
       await saveToHistory(result);

@@ -76,3 +76,14 @@ it('rejects an invalid code before storing queue work', async () => {
   await expect(enqueue({ kind: 'code', code: 'invalid' })).rejects.toThrow();
   expect(await listQueued()).toEqual([]);
 });
+it('drops a queued photo whose stored file is gone and keeps processing later items', async () => {
+  const source = FileSystem.documentDirectory! + 'lost.jpg';
+  await mockFs.writeFile(source, 'lost image');
+  await enqueue({ kind: 'photo', uri: source });
+  await mockFs.rm((await listQueued())[0]!.payload);
+  await enqueue({ kind: 'code', code: '4840001000014' });
+  jest.mocked(api.lookup).mockResolvedValueOnce(foundYogurt);
+  expect(await flushQueue()).toEqual({ resolved: 1 });
+  expect(api.identify).not.toHaveBeenCalled();
+  expect(await listQueued()).toEqual([]);
+});
