@@ -1,0 +1,13 @@
+# Run known-by-code first, then disable the development device's network.
+appId: md.okbite.app
+---
+- launchApp:
+    clearState: false
+- openLink: okbite://history
+- assertVisible: Istoricul tău
+- assertVisible: Fără conexiune. Istoricul rămâne disponibil.
+- tapOn: Deschide Iaurt natural 2,5%
+- extendedWaitUntil:
+    visible: Iaurt natural 2,5%
+    timeout: 30000
+- assertVisible: Lapte

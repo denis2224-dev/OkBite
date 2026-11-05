@@ -1,0 +1,21 @@
+appId: md.okbite.app
+---
+- launchApp:
+    clearState: true
+    permissions:
+      all: deny
+- openLink: okbite://scan
+- tapOn:
+    text: Introdu codul manual
+    index: 1
+- inputText: "4840001000014"
+- hideKeyboard
+- tapOn: Caută
+- extendedWaitUntil:
+    visible: Iaurt natural 2,5%
+    timeout: 30000
+- assertVisible: Lapte
+- scrollUntilVisible:
+    element:
+      text: Calculat la 100 g; nu indică riscul unei boli.
+- assertVisible: Calculat la 100 g; nu indică riscul unei boli.
