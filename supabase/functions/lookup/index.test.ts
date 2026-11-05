@@ -86,3 +86,21 @@ Deno.test('optional analytics failures preserve found and not_found lookup respo
     assert.equal(res.headers.get('access-control-allow-origin'), 'https://okbite.md');
   }
 });
+
+Deno.test('lookup telemetry diagnostics exclude exception details and device identifiers', async () => {
+  const messages: unknown[][] = [];
+  const original = console.warn;
+  console.warn = (...args: unknown[]) => { messages.push(args); };
+  try {
+    const response = await createHandler({
+      loadProduct: async () => null,
+      logEvent: async () => { throw new Error(`private credential ${id}`); },
+    })(req());
+    assert.equal(response.status, 200);
+    assert.equal(messages.length, 1);
+    assert.ok(messages[0].length > 0);
+    assert.doesNotMatch(JSON.stringify(messages), /private credential|c2000000/);
+  } finally {
+    console.warn = original;
+  }
+});

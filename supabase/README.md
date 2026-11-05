@@ -1,3 +1,23 @@
+# Stable local configuration
+
+The checked-in team project is `okbite` (API 54321, DB 54322, shadow 54320,
+Studio 54323, inbox 54324). C1/#4 and D3/A2/B1 are merged; The original R2 stack is merged; this follow-up corrects local defaults.
+Review remains waived by the user; no AI review or human approval is claimed.
+
+For parallel tests, copy `supabase/` into a separate temporary project directory,
+set an explicit isolated project ID and free ports there, and pass its directory
+with `supabase --workdir <directory>`. Never overwrite the checked-in defaults or
+stop/reset existing `okbite-c2`, `okbite-c3-cd37` or `okbite-c6` services.
+The reconciliation uses only `okbite-r2-review` on ports 58430–58434.
+Photo recovery is also bound to the API port in that copied configuration; an
+allowlisted project name never authorizes another loopback stack. The database
+drill compares restored owners and grants as well as row counts before pgTAP.
+
+Current integration tests run with all three local SUPABASE_* variables; an extra
+opt-in flag is unnecessary. Partial/invalid configuration fails before I/O.
+The evidence below is historical and identifies earlier stacks and run-specific
+review instructions; the user preserved the review waiver for this follow-up.
+
 # C2 local database handoff
 
 Branch: `C2-database-schema`, based on cleaned `origin/C1-api-contract` at `33ff46a`.

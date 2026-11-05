@@ -3,7 +3,7 @@ import { strict as assert } from 'node:assert';
 import { createClient } from '@supabase/supabase-js';
 import { adminClient } from '../_lib/client.ts';
 import { loadProduct } from '../_lib/db.ts';
-import { handler } from './index.ts';
+import { authorize, createHandler, handler, moderate } from './index.ts';
 
 integrationTest('real Auth JWT and membership protect verify/hide/report actions and transactional rollback', async () => {
   const db = adminClient();
@@ -102,7 +102,22 @@ integrationTest('real Auth JWT and membership protect verify/hide/report actions
     assert.equal(await loadProduct({ id }), null);
     const hidden = await db.from('products').select('hidden_reason').eq('id', id).single();
     assert.equal(hidden.data!.hidden_reason, 'Etichetă neclară');
-    assert.equal((await db.from('moderators').delete().eq('user_id', actor)).error, null);
+    const revokedDuringRequest = createHandler({
+      authorize: async (req) => {
+        const authenticated = await authorize(req);
+        assert.equal(authenticated, actor);
+        assert.equal((await db.from('moderators').delete().eq('user_id', actor)).error, null);
+        return authenticated;
+      },
+      moderate,
+    });
+    const rejected = await revokedDuringRequest(new Request('http://local/moderate', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}` },
+      body: JSON.stringify(verify),
+    }));
+    assert.equal(rejected.status, 401);
+    assert.equal(await loadProduct({ id }), null);
     assert.equal((await post(verify)).status, 401);
   } finally {
     if (reportId) assert.equal((await db.from('reports').delete().eq('id', reportId)).error, null);

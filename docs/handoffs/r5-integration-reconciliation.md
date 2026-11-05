@@ -7,6 +7,7 @@ Review branch: `R5-integration-reconcile`. Target: `main`. No main merge or depl
 | Source | Exact head |
 | --- | --- |
 | Main at reconciliation start | `529bc4aa2539f70c59fbde02a114622ee1fc0db0` |
+| Main refreshed before final publication | `34839dca6dea30cffed6b634324039945d2adbea` |
 | R5 capture/identify/add #14 | `755a9ca07de566744fb55f8cfc02908a809a1943` |
 | Capture safety #33 | `edd15130ac4d226689633f74a90537534cc5b624` |
 | Replacement persistence #58 | `6ab01cc6f5a83187f1b3604d2f5e62d5c0ba7b35` |
@@ -15,6 +16,8 @@ Review branch: `R5-integration-reconcile`. Target: `main`. No main merge or depl
 | Local recovery snapshot | `71a7f18ae0e99b7eab181bc5fe4d48fdeee6e504` |
 
 Source branches are preserved. The full integration diff includes existing published features; review reconciliation commits separately to see decisions made here.
+
+Main advanced during initial validation, landing R1 #40/#41, R2 recovery/diagnostics, R4 detail screens and the PWA shell. The follow-up merge keeps those owner-approved changes intact. Its only textual conflict was the explanatory comment in the equivalent mobile Metro config. #58 is now also merged on main; its original source head remains included.
 
 ## Reconciled behavior
 
@@ -42,8 +45,10 @@ If a server save succeeds while all local persistent writes fail, the active rev
 
 ## Validation
 
-- Frozen pnpm 9.12.0 install and `pnpm run check` pass: lint has 0 errors / 55 inherited warnings; root/mobile/shared strict types and data validation pass.
-- 651 local tests pass: mobile 387 (42 suites), shared 112, scripts 28, sync generator 6, gateway 5, root preview 104 (24 suites), web preview 9 (2 suites).
+- Initial pnpm 9.12.0 snapshot: frozen install, `pnpm run check` and 651 local tests passed before the current-main refresh.
+- Current main's pinned pnpm 11.25.0: frozen install, toolchain verification, lint (0 errors / 57 inherited warnings), root/mobile/shared/e2e strict types and data validation pass.
+- Current-main local suites: 679 automated passes: mobile 405 (47 suites), shared 113, scripts 28, sync generator 6, gateway 7, local guards 3, Metro 1, toolchain 3, root preview 104 (24 suites), web preview 9 (2 suites).
+- `pnpm run check` stops at R1's fourth toolchain test on Windows: bare `spawnSync('corepack', …)` returns ENOENT because this host provides `corepack.cmd`. The unchanged test's real Corepack/pnpm 9 rejection and absent dependency-sentinel assertions pass when invoked through Corepack's Node entry point. Remaining suites were run explicitly. The original fourth test must pass in Linux CI; the R1-owned runner is unchanged.
 - Windows managed-worktree Jest globs initially skipped root tests. Both root suites were explicitly executed with relative `--testMatch` globs and `--passWithNoTests=false`; the counts above include those actual runs. No root runner configuration was changed.
 - Shared regeneration produced no tracked or untracked generated-code drift.
 - Expo exports pass for web, iOS and Android in both apps/mobile and the root preview. The mobile export was repeated after the four final-review fixes; root preview source was unchanged.
@@ -54,6 +59,6 @@ If a server save succeeds while all local persistent writes fail, the active rev
 
 1. Review the combined PR and its source table. #38/#49 are closed without individual merges; replace the old handoff ordering with this integration branch.
 2. R4 reviews queue/history/Toast compatibility; R1 reviews app lifecycle/Metro and the final merge/toolchain. R5 owns capture/scan/identify/add behavior.
-3. Obtain the required Claude cross-review and human approval. If R1 #40/#41 lands first, reconcile this branch with it and rerun exact-head checks under its toolchain. This branch uses currently declared pnpm 9.12.0 and preserves package-policy settings.
+3. Obtain the required Claude cross-review and human approval. R1 #40/#41 is now included from main. This branch preserves its declared pnpm 11.25.0, toolchain verification, package-policy settings and target-app entry commands.
 4. R1 merges the combined PR, then reconciles remaining source PRs/children without replaying included patches. Keep source branches until then.
 5. Hosted staging/provider, physical iPhone/Android and Safari/Chrome acceptance remain separate. No B2/B3/B7 acceptance box is ticked based solely on mocks or exports.
