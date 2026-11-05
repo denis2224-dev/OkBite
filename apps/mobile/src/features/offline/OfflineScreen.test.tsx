@@ -20,7 +20,7 @@ it.each([identifyFound, identifyCandidates, identifyNotFound])('opens the $statu
   await render(<OfflineScreen />);
   await act(() => { expect(receive({ item, result: response })).toBe(true); });
   const target = response.status === 'found' ? `/product/${PRODUCT_ID}`
-    : { pathname: '/identify', params: { source: 'photo', payload: JSON.stringify(response) } };
+    : { pathname: '/identify', params: { source: 'photo', payload: JSON.stringify(response), queueId: 'queued' } };
   expect(mockReplace).toHaveBeenCalledWith(target);
   await act(() => { expect(receive({ item, result: response })).toBe(false); });
   expect(mockReplace).toHaveBeenCalledTimes(1);

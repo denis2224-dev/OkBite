@@ -13,6 +13,7 @@ import {
 export type IdentifyPayload = Exclude<IdentifyResponse, { status: 'found' }>;
 
 export type AddRouteParams = {
+  queueId?: string;
   code?: string;
   brand?: string;
   name?: string;
@@ -21,6 +22,7 @@ export type AddRouteParams = {
 };
 
 export type AddInitialValues = {
+  queueId?: string;
   code: string | null;
   brand: string | null;
   name: string | null;
@@ -58,9 +60,11 @@ function cleanParam(val: string | string[] | undefined): string | null {
 export function addProductRoute({
   read,
   photoPath,
+  queueId,
 }: {
   read: FrontRead;
   photoPath: string | null;
+  queueId?: string;
 }): { pathname: '/add'; params: AddRouteParams } {
   const params: AddRouteParams = {};
   const code = read.code ? normalizeCode(read.code) : null;
@@ -74,6 +78,7 @@ export function addProductRoute({
   if (name) params.name = name;
   if (quantity) params.quantity = quantity;
   if (cleanPhoto) params.photoPath = cleanPhoto;
+  if (queueId) params.queueId = queueId;
   return { pathname: '/add', params };
 }
 
@@ -83,6 +88,7 @@ export function parseAddParams(
 ): AddInitialValues {
   const rawCode = cleanParam(raw.code);
   return {
+    ...(cleanParam(raw.queueId) ? { queueId: cleanParam(raw.queueId)! } : {}),
     code: rawCode ? normalizeCode(rawCode) : null,
     brand: cleanParam(raw.brand),
     name: cleanParam(raw.name),

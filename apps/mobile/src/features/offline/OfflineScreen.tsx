@@ -18,8 +18,9 @@ export default function OfflineScreen() {
     active.current = true;
     const unsubscribe = subscribeQueueResults(({ item, result }) => {
       if (!active.current) return false;
-      const route = result.status === 'found' ? productRoute(result.product.id)
+      const target = result.status === 'found' ? productRoute(result.product.id)
         : 'photoPath' in result ? identifyPhotoRoute(result) : identifyCodeRoute(item.payload);
+      const route = typeof target === 'string' ? target : { ...target, params: { ...target.params, queueId: item.id } };
       router.replace(route);
       active.current = false;
       return true;

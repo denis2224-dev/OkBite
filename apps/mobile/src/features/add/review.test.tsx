@@ -13,6 +13,7 @@ import {
 } from '@okbite/shared';
 import rawCategoriesJson from '../../../../../data/categories.json';
 import { ro } from '../../copy/ro';
+import { resolveQueued } from '../offline/queue';
 import { ApiError } from '../../lib/api';
 import { parseAddParams } from '../identify/routes';
 import ReviewRouteScreen from '../../../app/add/review';
@@ -27,6 +28,7 @@ import {
 import { ReviewForm } from './ReviewForm';
 
 const mockReplace = jest.fn<(href: unknown) => void>();
+jest.mock('../offline/queue', () => ({ resolveQueued: jest.fn() }));
 const mockAddProduct = jest.fn<(req: AddProductRequestType) => Promise<LookupResponse>>();
 
 jest.mock('expo-router', () => ({
@@ -524,9 +526,10 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     }
 
     setAddReviewDraft({
-      initial: BASE_INITIAL,
+      initial: { ...BASE_INITIAL, queueId: 'queued-add' },
       label: BASE_LABEL,
     });
+    jest.mocked(resolveQueued).mockResolvedValue();
     mockAddProduct.mockResolvedValueOnce(SAVED_LOOKUP);
 
     await render(<ReviewRouteScreen />);
@@ -538,6 +541,7 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     expect(mockAddProduct).toHaveBeenCalledTimes(1);
     expect(mockReplace).toHaveBeenCalledWith(`/product/${SAVED_LOOKUP.product.id}`);
     expect(getAddReviewDraft()).toBeNull();
+    expect(resolveQueued).toHaveBeenCalledWith('queued-add');
   });
 
   it('preserves availableCategories after saving product A so starting product B still has the category catalog', async () => {

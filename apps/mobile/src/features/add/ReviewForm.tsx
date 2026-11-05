@@ -92,6 +92,7 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
       name: name.trim() || null,
       quantity: quantity.trim() || null,
       photoPath: initial.photoPath ? initial.photoPath.trim() || null : null,
+      ...(initial.queueId ? { queueId: initial.queueId } : {}),
     });
   };
 

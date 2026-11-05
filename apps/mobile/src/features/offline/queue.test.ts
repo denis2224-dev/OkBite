@@ -32,6 +32,7 @@ jest.mock('expo-file-system/legacy', () => ({
   makeDirectoryAsync: async (path: string) => mockFs.mkdir(path, { recursive: true }),
   copyAsync: async ({ from, to }: { from: string; to: string }) => mockFs.copyFile(from, to),
   readAsStringAsync: async (path: string) => (await mockFs.readFile(path)).toString('base64'),
+  getInfoAsync: async (path: string) => ({ exists: await mockFs.stat(path).then(() => true, () => false) }),
   deleteAsync: async (path: string) => mockFs.rm(path, { force: true }),
 }));
 jest.mock('../../lib/api', () => ({ ...jest.requireActual('../../lib/api'), api: { lookup: jest.fn(), identify: jest.fn() } }));
@@ -138,7 +139,7 @@ it.each(['{', '{"status":"found"}'])('does not expose invalid saved API results:
   expect(await listNeedsReview()).toEqual([]);
   expect(await listQueued()).toHaveLength(1);
 });
-it.each([identifyCandidates, identifyNotFound])('retains $status until an active screen accepts the handoff', async (response) => {
+it.each([identifyCandidates, identifyNotFound])('retains $status through interrupted review until an explicit decision', async (response) => {
   const source = FileSystem.documentDirectory! + 'unknown.jpg';
   await mockFs.writeFile(source, 'unknown photo');
   await enqueue({ kind: 'photo', uri: source });
@@ -152,6 +153,9 @@ it.each([identifyCandidates, identifyNotFound])('retains $status until an active
     await flushQueue();
     expect(handled).toHaveBeenCalledWith({ item: kept, result: response });
     expect(api.identify).toHaveBeenCalledTimes(1);
+    expect(await listQueued()).toHaveLength(1);
+    expect(await mockFs.readFile(kept.payload, 'utf8')).toBe('unknown photo');
+    await resolveQueued(kept.id);
     expect(await listQueued()).toEqual([]);
     await expect(mockFs.stat(kept.payload)).rejects.toThrow();
   } finally { unsubscribe(); }
@@ -165,4 +169,41 @@ it('retains an unknown code after listeners unsubscribe', async () => {
   await flushQueue();
   expect(handled).not.toHaveBeenCalled();
   expect(await listQueued()).toHaveLength(1);
+});
+it('processes every pending product after the first screen handoff', async () => {
+  await enqueue({ kind: 'code', code: '12345670' });
+  await enqueue({ kind: 'code', code: '4840001000014' });
+  jest.mocked(api.lookup).mockResolvedValue(foundYogurt);
+  const stop = subscribeQueueResults(() => true);
+  try {
+    expect(await flushQueue()).toEqual({ resolved: 2 });
+    expect(await listQueued()).toEqual([]);
+  } finally { stop(); }
+});
+it('replays a saved review before an older pending request fails offline', async () => {
+  await enqueue({ kind: 'code', code: '12345670' });
+  await enqueue({ kind: 'code', code: '4840001000014' });
+  const saved = (await listQueued())[1]!;
+  await markNeedsReview(saved.id, JSON.stringify({ status: 'not_found' }));
+  const order: string[] = [];
+  jest.mocked(api.lookup).mockImplementation(async () => { order.push('request'); throw new ApiError('offline'); });
+  const stop = subscribeQueueResults(({ item }) => { order.push(item.id); return true; });
+  try {
+    await flushQueue();
+    expect(order).toEqual([saved.id, 'request']);
+    expect(await listNeedsReview()).toHaveLength(1);
+  } finally { stop(); }
+});
+it('retains a valid photo after a transient read failure and resolves it on retry', async () => {
+  const source = FileSystem.documentDirectory! + 'busy.jpg';
+  await mockFs.writeFile(source, 'valid photo');
+  await enqueue({ kind: 'photo', uri: source });
+  const read = jest.spyOn(FileSystem, 'readAsStringAsync').mockRejectedValueOnce(new Error('temporarily busy'));
+  try {
+    await flushQueue();
+    expect(await listQueued()).toHaveLength(1);
+    jest.mocked(api.identify).mockResolvedValue(identifyCandidates);
+    await flushQueue();
+    expect(await listNeedsReview()).toHaveLength(1);
+  } finally { read.mockRestore(); }
 });

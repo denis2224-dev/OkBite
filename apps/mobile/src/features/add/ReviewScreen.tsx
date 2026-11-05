@@ -15,6 +15,7 @@ import {
   getAvailableCategories,
 } from './draftStore';
 import { ReviewForm } from './ReviewForm';
+import { resolveQueued } from '../offline/queue';
 
 export function ReviewScreen() {
   const router = useRouter();
@@ -42,6 +43,7 @@ export function ReviewScreen() {
     if (!parsed.success || parsed.data.status !== 'found') {
       throw Object.assign(new Error('invalid_response'), { code: 'invalid_response' });
     }
+    if (activeDraft.initial.queueId) await resolveQueued(activeDraft.initial.queueId).catch(() => {});
     clearAddReviewDraft();
     router.replace(productRoute(parsed.data.product.id));
   };
@@ -57,6 +59,7 @@ export function ReviewScreen() {
           quantity: currentIdentity.quantity,
         },
         photoPath: currentIdentity.photoPath,
+        queueId: currentIdentity.queueId,
       }),
     );
   };

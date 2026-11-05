@@ -7,19 +7,25 @@ import { CandidateList } from './CandidateList';
 import { ConfirmMatch } from './ConfirmMatch';
 import { NotFound } from './NotFound';
 import { addProductRoute, parseIdentifyParams, productRoute } from './routes';
+import { resolveQueued } from '../offline/queue';
 
 export default function IdentifyScreen() {
   const router = useRouter();
   const rawParams = useLocalSearchParams();
   const state = parseIdentifyParams(rawParams);
+  const queueId = typeof rawParams.queueId === 'string' ? rawParams.queueId : undefined;
+  const confirm = (id: string) => {
+    router.replace(productRoute(id));
+    if (queueId) void resolveQueued(queueId).catch(() => {});
+  };
 
   if (state.kind === 'confirm') {
     return (
       <ConfirmMatch
         candidate={state.candidate}
-        onConfirm={(id) => router.replace(productRoute(id))}
+        onConfirm={confirm}
         onReject={() =>
-          router.replace(addProductRoute({ read: state.read, photoPath: state.photoPath }))
+          router.replace(addProductRoute({ read: state.read, photoPath: state.photoPath, queueId }))
         }
       />
     );
@@ -28,9 +34,9 @@ export default function IdentifyScreen() {
     return (
       <CandidateList
         candidates={state.candidates}
-        onSelect={(id) => router.replace(productRoute(id))}
+        onSelect={confirm}
         onNone={() =>
-          router.replace(addProductRoute({ read: state.read, photoPath: state.photoPath }))
+          router.replace(addProductRoute({ read: state.read, photoPath: state.photoPath, queueId }))
         }
       />
     );
@@ -40,7 +46,7 @@ export default function IdentifyScreen() {
       <NotFound
         code={state.read.code}
         onAdd={() =>
-          router.replace(addProductRoute({ read: state.read, photoPath: state.photoPath }))
+          router.replace(addProductRoute({ read: state.read, photoPath: state.photoPath, queueId }))
         }
         onCheckCodeAgain={state.fromCode ? () => router.replace('/scan') : undefined}
       />

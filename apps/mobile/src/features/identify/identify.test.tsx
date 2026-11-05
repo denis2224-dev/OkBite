@@ -4,6 +4,7 @@ import { describe, it, expect, jest, beforeAll, beforeEach } from '@jest/globals
 import { render, fireEvent, screen } from '@testing-library/react-native';
 import { IdentifyResponse } from '@okbite/shared';
 import { ro } from '../../copy/ro';
+import { resolveQueued } from '../offline/queue';
 import IdentifyScreen from '../../../app/identify';
 import {
   addProductRoute,
@@ -53,6 +54,7 @@ const ORIGINAL_READ = {
   code: null,
 };
 const PHOTO_PATH = 'uploads/dev-1/front-1.jpg';
+jest.mock('../offline/queue', () => ({ resolveQueued: jest.fn() }));
 
 describe('IdentifyScreen and B3 flow', () => {
   beforeAll(() => {
@@ -62,6 +64,18 @@ describe('IdentifyScreen and B3 flow', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     mockParams.value = {};
+  });
+  it('keeps queued work until a shopper confirms a candidate', async () => {
+    const response = IdentifyResponse.parse({ status: 'candidates', photoPath: PHOTO_PATH, read: ORIGINAL_READ, candidates: [CAND_1] });
+    if (response.status === 'found') throw new Error('unexpected');
+    mockParams.value = { ...identifyPhotoRoute(response).params, queueId: 'queued-id' };
+    jest.mocked(resolveQueued).mockResolvedValue();
+    const first = await render(<IdentifyScreen />);
+    expect(resolveQueued).not.toHaveBeenCalled();
+    await first.unmount();
+    await render(<IdentifyScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.identify.confirmYes }));
+    expect(resolveQueued).toHaveBeenCalledWith('queued-id');
   });
 
   it('shows ConfirmMatch when there is 1 candidate with similarity >= 0.6 and navigates to product on confirm', async () => {
