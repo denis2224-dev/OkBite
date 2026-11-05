@@ -10,6 +10,23 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-03-okbite-design.md`
 
+## Current implementation ledger — 2026-11-05
+
+See [completion evidence](../../ops/r2-completion-2026-11-05.md). Original task
+acceptance boxes below remain separate from this implementation/local-test ledger.
+
+- [x] C1 contract and shared schema coverage implemented.
+- [x] C2 schema/RLS/search/seed implemented; 87 local database assertions pass.
+- [x] C3 generator/helpers/lookup implemented and validated without credentials.
+- [x] C6 contributions/report recovery and atomic quotas implemented; #59.
+- [x] C7 moderation/admin implemented; local Auth/revocation and UI tests pass.
+- [x] C8 routine and isolated DB/photo recovery implemented and verified; #60.
+- [x] R2/R3 real-score integration tested without changing score rules; #61.
+- [x] R1/D7 diagnostics backend request implemented with atomic quota/shared schemas; #62.
+- [ ] R3 human score/source fixtures and AI compensation findings resolved.
+- [ ] Claude cross-review, human approval and R1 merge.
+- [ ] Staging recovery/moderation, physical iPhone/Android and named human rota.
+
 ## Global Constraints
 
 See the overall plan. Role-specific: the graph shows C1 (contract) and C2 (schema) are the two most connected tasks in the project — 23 and 20 links. Merge them by 6 Nov; every other role waits on them. You are the only role that changes `contract.ts` and `supabase/migrations/`; announce each change in the team chat and run `pnpm sync-shared`.
@@ -316,3 +333,13 @@ Run: `deno test --allow-all supabase/functions/lookup/` (with `supabase start`) 
 - [ ] **Step 1:** Write `docs/ops/moderation.md`: daily routine (verify or hide every unverified product, close reports), what to check (photos match fields, allergens printed in bold on the label are listed), rota 8 Dec – 8 Jan.
 - [ ] **Step 2:** Backup and restore drill on staging (`supabase db dump`, restore into a fresh local DB, `supabase test db`); record the commands.
 - [ ] **Step 3: Commit** — `docs(ops): moderation routine and backup drill`
+
+
+### Review follow-up — 2026-11-05
+
+- [x] Evaluate current PR/source state and preserve independent stack merges.
+- [x] Fix configuration/discovery, local guards and recovery with regression checks.
+- [x] Run complete local checks and prepare the main-based PR/R1 handoff.
+- [ ] Windows/native/hosted acceptance and R3/C4 scoring remain pending.
+
+Evidence: `docs/ops/r2-review-reconciliation.md`. User review waiver is preserved.
