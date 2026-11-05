@@ -1,8 +1,9 @@
+import { integrationTest } from '../_lib/integration.ts';
 import { strict as assert } from 'node:assert';
 import { ErrorBody, LookupResponse } from '../_shared/contract.ts';
 import { adminClient } from '../_lib/http.ts';
 
-Deno.test('local gateway serves shopper lookup and CORS without a login JWT or API key', async () => {
+integrationTest('local gateway serves shopper lookup and CORS without a login JWT or API key', async () => {
   const device = crypto.randomUUID();
   const url = `${Deno.env.get('SUPABASE_URL')}/functions/v1/lookup`;
   const headers = { 'x-device-id': device, origin: 'https://okbite.md' };

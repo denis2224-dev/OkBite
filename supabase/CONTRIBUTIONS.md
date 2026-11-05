@@ -14,7 +14,7 @@ pnpm sync-shared
 supabase start
 supabase test db --local
 supabase db lint --local --schema public --fail-on warning
-deno test -A --env-file=supabase/.env.c6-tests supabase/functions/add-product/ supabase/functions/report/
+OKBITE_RUN_INTEGRATION=1 deno test --config supabase/functions/deno.json -A --env-file=supabase/.env.c6-tests supabase/functions/add-product/ supabase/functions/report/
 pnpm lint && pnpm typecheck && pnpm test
 ```
 
@@ -44,3 +44,5 @@ placeholder returns `unavailable`. C6 backend plumbing is implemented and tested
 but its real-score acceptance remains pending C4 plus human-checked A3 fixtures.
 No real product, ingredient or score provenance has been invented. No hosted
 Supabase project, deployment, phone verification or merge is claimed.
+
+Integration refresh (2026-11-05): current reviews are required; historical waiver statements do not authorize merge in this coordination run. CI uses a fresh runner-local stack. No staging or physical-phone verification is claimed.

@@ -1,3 +1,4 @@
+import { integrationTest } from '../_lib/integration.ts';
 import { strict as assert } from 'node:assert';
 import { createClient } from '@supabase/supabase-js';
 import { LookupResponse } from '../_shared/contract.ts';
@@ -6,7 +7,7 @@ import { loadProduct } from '../_lib/db.ts';
 import { handler } from './index.ts';
 
 const seedId = 'c2000000-0000-4000-8000-000000000001';
-Deno.test('lookup resolves seeded code/id, label order, nulls and usage events', async () => {
+integrationTest('lookup resolves seeded code/id, label order, nulls and usage events', async () => {
   const db = adminClient();
   const device = crypto.randomUUID();
   const lookup = async (query: string) => {
@@ -49,7 +50,7 @@ Deno.test('lookup resolves seeded code/id, label order, nulls and usage events',
     assert.equal((await db.from('usage_events').delete().eq('device_id', device)).error, null);
   }
 });
-Deno.test('public loader respects column grants, unverified visibility, unknown ingredients and hidden exclusion', async () => {
+integrationTest('public loader respects column grants, unverified visibility, unknown ingredients and hidden exclusion', async () => {
   const db = adminClient();
   const id = crypto.randomUUID();
   const seed = await db.from('products').select(

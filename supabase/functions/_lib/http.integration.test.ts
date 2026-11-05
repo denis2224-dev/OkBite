@@ -1,7 +1,8 @@
+import { integrationTest } from './integration.ts';
 import { strict as assert } from 'node:assert';
 import { adminClient, checkRateLimit, logEvent } from './http.ts';
 
-Deno.test('usage counts are per device/kind over rolling 24h and do not reserve', async () => {
+integrationTest('usage counts are per device/kind over rolling 24h and do not reserve', async () => {
   const db = adminClient();
   const id = crypto.randomUUID();
   try {
@@ -28,7 +29,7 @@ Deno.test('usage counts are per device/kind over rolling 24h and do not reserve'
     assert.equal(error, null);
   }
 });
-Deno.test('usage storage errors propagate and never silently admit a request', async () => {
+integrationTest('usage storage errors propagate and never silently admit a request', async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = () => Promise.resolve(new Response('{"message":"offline"}', { status: 503 }));
   try {
