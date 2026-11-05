@@ -48,3 +48,39 @@ for (const failure of ['storage', 'quota'] as const) {
     assert.equal((await response.json()).error, 'upstream_failed');
   });
 }
+
+Deno.test('read-label cleans up a photo pair too large for the provider before calling it', async () => {
+  const requests: string[] = [];
+  const db = createClient('http://127.0.0.1:1', 'test-key', {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: {
+      fetch: async (url, init) => {
+        const path = new URL(String(url)).pathname;
+        const method = init?.method ?? 'GET';
+        requests.push(method);
+        if (path.endsWith('/reserve_usage')) return Response.json(42);
+        if (method === 'GET') return new Response(new Uint8Array(1_500_000));
+        return Response.json([]);
+      },
+    },
+  });
+  let providerCalls = 0;
+  const handler = createHandler(createService({
+    adminClient: () => db,
+    saveJpeg: async (_photo, device, suffix) => `${device}/stored-${suffix}.jpg`,
+    askClaude: async () => {
+      providerCalls++;
+      throw new Error('Photo pair exceeds provider limits');
+    },
+  }));
+  const response = await handler(
+    new Request('http://local/read-label', {
+      method: 'POST',
+      headers: { 'x-device-id': crypto.randomUUID() },
+      body: JSON.stringify({ ingredientsImage: 'first', nutritionImage: 'second' }),
+    }),
+  );
+  assert.equal(response.status, 502);
+  assert.equal(providerCalls, 0);
+  assert.deepEqual(requests, ['POST', 'GET', 'GET', 'DELETE', 'DELETE']);
+});
