@@ -76,7 +76,10 @@ export async function completeQueued(id: string): Promise<void> {
   // Commit acknowledgement before cleanup; a cleanup failure must never reopen add/review.
   if (item.status !== 'completed') await markQueuedComplete(id);
   try {
-    if (item.kind === 'photo') await removePhoto(item.payload);
+    // Earlier contribution receipts mislabeled an ID/barcode as an owned photo.
+    const legacyMetadata = item.status === 'completed' &&
+      (item.payload === item.id || Code.safeParse(item.payload).success);
+    if (item.kind === 'photo' && !legacyMetadata) await removePhoto(item.payload);
     await deleteQueued(id);
   } catch { await saveQueuedError(id, 'storage').catch(() => {}); }
   notifyQueue();
@@ -100,7 +103,8 @@ export function flushQueue(onResolved?: (id: string) => void): Promise<{ resolve
 }
 async function drain() {
   let resolved = 0;
-  const items = await listQueue();
+  // Local completions must remain recoverable while older network work is offline.
+  const items = (await listQueue()).sort((a, b) => Number(b.status === 'completed') - Number(a.status === 'completed'));
   const stored = new Map((await listQueued()).map(item => [item.id, item]));
   // Cached review results must remain accessible when older network work fails.
   for (const item of items) if (item.outcome && stored.get(item.id)?.status === 'needs_review') handoff({ item: stored.get(item.id)!, result: item.outcome });
