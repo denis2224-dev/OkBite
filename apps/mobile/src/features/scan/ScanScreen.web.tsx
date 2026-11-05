@@ -1,6 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Body, Heading } from '../../ui';
 import { ro } from '../../copy/ro';
 import { StatusPanel, errorMessage } from '../capture/StatusPanel';
 import { ManualCode } from './ManualCode';
@@ -17,7 +18,7 @@ export default function ScanScreenWeb() {
 
   return (
     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <Text accessibilityRole="header" style={styles.title}>{ro.scan.title}</Text>
+      <Heading style={styles.title}>{ro.scan.title}</Heading>
       {liveStatus === 'starting' || liveStatus === 'live' ? (
         <View style={styles.preview}>
           <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -32,7 +33,7 @@ export default function ScanScreenWeb() {
           ]}
         />
       )}
-      {working ? <View style={styles.status}><ActivityIndicator /><Text>{ro.capture.working}</Text></View> : null}
+      {working ? <View style={styles.status}><ActivityIndicator /><Body>{ro.capture.working}</Body></View> : null}
       {state.status === 'error' || state.status === 'offline' ? (
         <StatusPanel
           title={state.status === 'offline' ? ro.offline.title : undefined}

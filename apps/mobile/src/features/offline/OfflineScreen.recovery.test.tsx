@@ -47,3 +47,26 @@ it('shows a retryable error when queue storage cannot be read', async () => {
   await fireEvent.press(screen.getByRole('button', { name: ro.offline.retry }));
   expect(screen.queryByText(ro.offline.queueError)).toBeNull();
 });
+
+it('does not override navigation if the shopper leaves for History before Open finishes', async () => {
+  const item = { id: 'queued-1', kind: 'photo' as const, payload: 'saved.jpg', createdAt: '2026-11-05T10:00:00Z', status: 'needs_review' as const, outcome: identifyCandidates };
+  jest.mocked(listQueue).mockResolvedValue([item as never]);
+  let finishResume!: () => void;
+  jest.mocked(resumeQueuedItem).mockReturnValue(new Promise(resolve => {
+    finishResume = () => resolve({ kind: 'identify', pathname: '/identify', params: { source: 'photo', payload: JSON.stringify(identifyCandidates), queueId: item.id } });
+  }));
+
+  const view = await render(<OfflineScreen />);
+  await fireEvent.press(await screen.findByRole('button', { name: ro.app.open }));
+  expect(resumeQueuedItem).toHaveBeenCalledWith(item);
+
+  // Shopper navigates away (component unmounts)
+  await view.unmount();
+
+  // Open finishes after shopper left
+  await act(async () => {
+    finishResume();
+  });
+
+  expect(mockReplace).not.toHaveBeenCalled();
+});

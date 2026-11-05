@@ -54,6 +54,14 @@ If a server save succeeds while all local persistent writes fail, the active rev
 - Expo exports pass for web, iOS and Android in both apps/mobile and the root preview. The mobile export was repeated after the four final-review fixes; root preview source was unchanged.
 - Browser smoke check of the final mobile export: `/offline` loads its empty queue, opens `/history`, and returns through Căutări salvate; no captured browser warnings/errors. Persisted-data failure modes are covered by the SQLite/IndexedDB and UI regressions, not a live provider claim.
 - One fresh-context branch review was completed, and all four actionable findings were addressed with failing-then-passing regressions and the full suite. Claude cross-review, human approval and physical-device acceptance remain pending.
+- PR #63 review findings on `9478790` were addressed across 6 targeted areas:
+  1. *P1 — Cancellation avoids unstarted uploads:* In `queue.ts`, `drain()` queries fresh item status before initiating any network upload. When an unstarted photo is cancelled while a prior item is in flight (even if photo cleanup fails), it makes 0 identify requests. Direct resumption of an item cancelled during its network request cleanly throws without producing a review or product handoff.
+  2. *P2 — Contribution completion persists independently of history:* In `ReviewScreen.tsx`, queue resolution (`resolveQueued`) is invoked and `savedResult` is preserved in the draft store prior to history persistence. If a history write fails, the item does not become eligible for duplicate `addProduct` submission on remount, and completion retry remains available.
+  3. *P2 — Reconnect and late enqueue handling:* `enqueue()` now emits an `'enqueued'` event so items committed immediately after a reconnect pass are processed without requiring another network transition or manual action. Reconnects arriving during an in-flight drain that fails offline are coalesced to retry once without looping indefinitely.
+  4. *P2 — Independent outcome playback:* Saved/persisted review items open immediately without waiting on concurrent pending lookups. In `OfflineScreen.tsx`, navigating away or unmounting before an Open action completes prevents overriding the user's destination.
+  5. *P2 — Themed scan UI contrast:* `ScanScreen.web.tsx` uses `<Heading>` and `<Body>` with `light.ink` themed text color for the scan header and status message.
+  6. *P3 — Queue type compatibility:* Exported the `NeedsReviewItem` discriminated union and typed `listNeedsReview()` to preserve the 1:1 `kind` $\leftrightarrow$ `result` schema correspondence (`code` $\to$ `LookupResponse`, `photo` $\to$ `IdentifyResponse`).
+- Updated test suite: all 47 mobile test suites (416 tests), 113 shared tests, and 28 script tests pass with zero regressions; mobile web export generates valid precached service worker bundle.
 
 ## R1/R4 integration sequence
 

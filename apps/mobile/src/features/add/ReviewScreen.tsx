@@ -13,6 +13,7 @@ import {
   clearAddReviewDraft,
   getAddReviewDraft,
   getAvailableCategories,
+  setAddReviewDraftResult,
 } from './draftStore';
 import { ReviewForm } from './ReviewForm';
 import { resolveQueued } from '../offline/queue';
@@ -21,17 +22,18 @@ import { saveToHistory } from '../history/store';
 export function ReviewScreen() {
   const router = useRouter();
   const activeDraft = getAddReviewDraft();
-  const saved = useRef<Extract<LookupResponse, { status: 'found' }> | null>(null);
+  const saved = useRef<Extract<LookupResponse, { status: 'found' }> | null>(activeDraft?.savedResult ?? null);
   const finishing = useRef(false);
-  const [cleanupPending, setCleanupPending] = useState(false);
+  const [cleanupPending, setCleanupPending] = useState(Boolean(activeDraft?.savedResult));
 
   const finishSaved = async () => {
-    if (!saved.current || !activeDraft || finishing.current) return;
+    const committed = saved.current ?? activeDraft?.savedResult;
+    if (!committed || !activeDraft || finishing.current) return;
     finishing.current = true;
     try {
-      await saveToHistory(saved.current);
       if (activeDraft.initial.queueId) await resolveQueued(activeDraft.initial.queueId);
-      const id = saved.current.product.id;
+      await saveToHistory(committed);
+      const id = committed.product.id;
       clearAddReviewDraft();
       router.replace(productRoute(id));
     } finally { finishing.current = false; }
@@ -39,7 +41,7 @@ export function ReviewScreen() {
 
   if (cleanupPending) {
     return <View style={styles.emptyRoot}><StatusPanel message={ro.review.savedPendingCleanup} actions={[
-      { label: ro.review.finishSave, onPress: () => { void finishSaved().catch(() => {}); } },
+      { label: ro.review.finishSave, onPress: () => { void finishSaved().catch(() => { setCleanupPending(true); }); } },
     ]} /></View>;
   }
 
@@ -66,6 +68,7 @@ export function ReviewScreen() {
       throw Object.assign(new Error('invalid_response'), { code: 'invalid_response' });
     }
     saved.current = parsed.data;
+    setAddReviewDraftResult(parsed.data);
     try { await finishSaved(); }
     catch { setCleanupPending(true); }
   };

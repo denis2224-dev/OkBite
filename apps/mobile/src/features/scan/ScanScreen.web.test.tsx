@@ -3,8 +3,10 @@ import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { render, fireEvent, screen } from '@testing-library/react-native';
 import { api } from '../../lib/api';
 import { ro } from '../../copy/ro';
+import { light } from '../../theme/tokens';
 import ScanScreenWeb from './ScanScreen.web';
 import { CODE, lookupNotFound } from '../capture/__fixtures__/responses';
+import * as useScanLookupModule from './useScanLookup';
 
 const mockReplace = jest.fn();
 const mockPush = jest.fn();
@@ -54,5 +56,22 @@ describe('ScanScreen (web)', () => {
     await fireEvent.changeText(screen.getByLabelText(ro.scan.manualTitle), CODE);
     await fireEvent.press(screen.getByRole('button', { name: ro.scan.search }));
     expect(mockReplace).toHaveBeenCalledWith({ pathname: '/identify', params: { source: 'code', code: CODE } });
+  });
+
+  it('uses themed text for the scan heading and working status message', async () => {
+    jest.spyOn(useScanLookupModule, 'useScanLookup').mockReturnValue({
+      state: { status: 'working' },
+      onCameraCode: jest.fn(async () => undefined),
+      onManualCode: jest.fn(async () => undefined),
+      retry: jest.fn(async () => undefined),
+      dismiss: jest.fn(),
+    });
+
+    await render(<ScanScreenWeb />);
+    const heading = screen.getByRole('header', { name: ro.scan.title });
+    const working = screen.getByText(ro.capture.working);
+
+    expect(heading.props.style).toEqual(expect.arrayContaining([expect.objectContaining({ color: light.ink })]));
+    expect(working.props.style).toEqual(expect.arrayContaining([expect.objectContaining({ color: light.ink })]));
   });
 });

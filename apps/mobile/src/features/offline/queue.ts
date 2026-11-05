@@ -34,10 +34,23 @@ export async function listQueue(): Promise<QueueEntry[]> {
     } catch { return { ...item, error: 'invalid_response' }; }
   });
 }
+export type NeedsReviewItem =
+  | { id: string; kind: 'code'; payload: string; result: LookupResponse }
+  | { id: string; kind: 'photo'; payload: string; result: IdentifyResponse };
+
 // Retain R5's published consumer interface and persisted status/result representation.
-export async function listNeedsReview(): Promise<{ id: string; kind: 'photo' | 'code'; payload: string; result: LookupResponse | IdentifyResponse }[]> {
-  return (await listQueue()).flatMap(item => item.outcome
-    ? [{ id: item.id, kind: item.kind, payload: item.payload, result: item.outcome }] : []);
+export async function listNeedsReview(): Promise<NeedsReviewItem[]> {
+  const items = await listQueue();
+  const reviewed: NeedsReviewItem[] = [];
+  for (const item of items) {
+    if (!item.outcome) continue;
+    if (item.kind === 'photo') {
+      reviewed.push({ id: item.id, kind: 'photo', payload: item.payload, result: item.outcome as IdentifyResponse });
+    } else {
+      reviewed.push({ id: item.id, kind: 'code', payload: item.payload, result: item.outcome as LookupResponse });
+    }
+  }
+  return reviewed;
 }
 export async function resolveQueued(id: string): Promise<void> { await completeQueued(id); }
 export async function enqueue(item: { kind: 'photo'; uri: string } | { kind: 'code'; code: string }): Promise<void> {
@@ -47,7 +60,7 @@ export async function enqueue(item: { kind: 'photo'; uri: string } | { kind: 'co
     if (item.kind === 'photo') await removePhoto(payload).catch(() => {});
     throw error;
   }
-  notifyQueue();
+  notifyQueue('enqueued');
 }
 export async function openQueuedPhoto(id: string) {
   const item = (await listQueue()).find(row => row.id === id);
@@ -87,11 +100,13 @@ async function drain() {
   const items = await listQueue();
   const stored = new Map((await listQueued()).map(item => [item.id, item]));
   // Cached review results must remain accessible when older network work fails.
-  for (const item of items) if (item.outcome && stored.has(item.id)) handoff({ item: stored.get(item.id)!, result: item.outcome });
+  for (const item of items) if (item.outcome && stored.get(item.id)?.status === 'needs_review') handoff({ item: stored.get(item.id)!, result: item.outcome });
   for (const item of items) {
-    if (item.status === 'completed') { await completeQueued(item.id); continue; }
+    const current = (await listQueued()).find(row => row.id === item.id);
+    if (!current) continue;
+    if (current.status === 'completed') { await completeQueued(item.id); continue; }
     // Human-review outcomes and failed work stay durable until explicit retry/acknowledgement.
-    if (item.status !== 'pending' || (item.error && item.error !== 'offline')) continue;
+    if (current.status !== 'pending' || (current.error && current.error !== 'offline')) continue;
     let photo: string | undefined;
     if (item.kind === 'photo') {
       try { photo = await readPhoto(item.payload); }
@@ -133,6 +148,13 @@ export type ResumeResult =
   | { kind: 'found'; productId: string }
   | { kind: 'identify'; pathname: string; params: Record<string, string> };
 export async function resumeQueuedItem(input: Pick<QueuedItem, 'id' | 'kind' | 'payload'>): Promise<ResumeResult> {
+  const existing = (await listQueue()).find(row => row.id === input.id);
+  if (existing?.status === 'completed') throw new ApiError('bad_request');
+  if (existing?.outcome) {
+    return { kind: 'identify', pathname: '/identify', params: existing.kind === 'code'
+      ? { source: 'code', code: existing.payload, queueId: existing.id }
+      : { source: 'photo', payload: JSON.stringify(existing.outcome), queueId: existing.id } };
+  }
   if (running) await running;
   return withQueueLock(async (): Promise<ResumeResult> => {
     const item = (await listQueue()).find(row => row.id === input.id);
@@ -140,7 +162,8 @@ export async function resumeQueuedItem(input: Pick<QueuedItem, 'id' | 'kind' | '
     if (item.status === 'completed') throw new ApiError('bad_request');
     const result = item.outcome ?? (item.kind === 'code'
       ? await api.lookup({ code: item.payload }) : await api.identify(await readPhoto(item.payload)));
-    if (!(await listQueued()).some(row => row.id === item.id)) throw new ApiError('not_found');
+    const fresh = (await listQueued()).find(row => row.id === item.id);
+    if (!fresh || fresh.status === 'completed') throw new ApiError('not_found');
     if (result.status === 'found') {
       await saveToHistory(result);
       await completeQueued(item.id);

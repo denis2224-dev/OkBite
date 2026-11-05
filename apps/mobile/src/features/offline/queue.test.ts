@@ -1,4 +1,5 @@
-import { identifyCandidates, identifyNotFound } from '../capture/__fixtures__/responses';
+import { identifyCandidates, identifyNotFound, lookupNotFound } from '../capture/__fixtures__/responses';
+import { LookupResponse, IdentifyResponse } from '@okbite/shared';
 import { DatabaseSync as mockDatabaseSync } from 'node:sqlite';
 import { randomUUID as mockRandomUUID } from 'node:crypto';
 import * as mockFs from 'node:fs/promises';
@@ -6,7 +7,7 @@ import { mkdtempSync as mockMkdtempSync } from 'node:fs';
 import { tmpdir as mockTmpdir } from 'node:os';
 import { join as mockJoin } from 'node:path';
 import * as FileSystem from 'expo-file-system/legacy';
-import { enqueue, flushQueue, listNeedsReview, resolveQueued, subscribeQueueResults, resumeQueuedItem, listUnresolvedQueued, listQueue, retryQueued, completeQueued, openQueuedPhoto } from './queue';
+import { enqueue, flushQueue, listNeedsReview, resolveQueued, subscribeQueueResults, resumeQueuedItem, listUnresolvedQueued, listQueue, retryQueued, completeQueued, openQueuedPhoto, type NeedsReviewItem } from './queue';
 import { listQueued, deleteQueued, markNeedsReview, putQueued, setQueuedReview } from '../history/db';
 import { getFromHistory, clearHistory } from '../history/store';
 import { api, ApiError } from '../../lib/api';
@@ -467,4 +468,101 @@ it.each(['photo', 'row'])('records completion before a %s cleanup failure withou
     expect(await listQueued()).toEqual([]);
     expect(api.identify).toHaveBeenCalledTimes(1);
   } finally { failed.mockRestore(); }
+});
+
+it('prevents upload of an unstarted photo cancelled while an earlier item was in flight', async () => {
+  const sourceB = FileSystem.documentDirectory! + 'photo-cancelled-while-in-flight.jpg';
+  await mockFs.writeFile(sourceB, 'capture b');
+  await enqueue({ kind: 'code', code: '12345670' });
+  await enqueue({ kind: 'photo', uri: sourceB });
+  const [, itemB] = await listQueue();
+
+  let finishLookup!: () => void;
+  const lookupPromise = new Promise<LookupResponse>(resolve => { finishLookup = () => resolve(foundYogurt); });
+  jest.mocked(api.lookup).mockReturnValueOnce(lookupPromise);
+
+  const flushing = flushQueue();
+
+  const deleteSpy = jest.spyOn(FileSystem, 'deleteAsync').mockRejectedValueOnce(new Error('photo delete failed'));
+  try {
+    await completeQueued(itemB!.id);
+    expect((await listQueued()).find(row => row.id === itemB!.id)?.status).toBe('completed');
+
+    finishLookup();
+    await flushing;
+
+    expect(api.identify).not.toHaveBeenCalled();
+  } finally {
+    deleteSpy.mockRestore();
+  }
+});
+
+it('discards late direct resumption when another tab commits cancellation during the request', async () => {
+  const source = FileSystem.documentDirectory! + 'photo-resume-cancel.jpg';
+  await mockFs.writeFile(source, 'capture cancel');
+  await enqueue({ kind: 'photo', uri: source });
+  const [item] = await listQueue();
+
+  let finishIdentify!: () => void;
+  const identifyPromise = new Promise<IdentifyResponse>(resolve => {
+    finishIdentify = () => resolve(identifyCandidates);
+  });
+  jest.mocked(api.identify).mockReturnValueOnce(identifyPromise);
+
+  const resuming = resumeQueuedItem(item!);
+
+  const deleteSpy = jest.spyOn(FileSystem, 'deleteAsync').mockRejectedValueOnce(new Error('delete failed'));
+  try {
+    await completeQueued(item!.id);
+    expect((await listQueued()).find(row => row.id === item!.id)?.status).toBe('completed');
+
+    finishIdentify();
+    await expect(resuming).rejects.toThrow();
+
+    expect(await listNeedsReview()).toEqual([]);
+  } finally {
+    deleteSpy.mockRestore();
+  }
+});
+
+it('opens a persisted outcome while an unrelated lookup is still pending', async () => {
+  await enqueue({ kind: 'code', code: '12345670' });
+  const source = FileSystem.documentDirectory! + 'saved-review.jpg';
+  await mockFs.writeFile(source, 'saved review');
+  await enqueue({ kind: 'photo', uri: source });
+
+  const items = await listQueue();
+  const photoItem = items.find(i => i.kind === 'photo')!;
+  await queueDb.markNeedsReview(photoItem.id, JSON.stringify(identifyCandidates));
+
+  jest.mocked(api.lookup).mockReturnValueOnce(new Promise(() => {})); // Never resolves (pending lookup)
+
+  void flushQueue();
+
+  const resumed = await resumeQueuedItem(photoItem);
+  expect(resumed.kind).toBe('identify');
+});
+
+it('restores NeedsReviewItem discriminated union type and preserves kind-result relationship', async () => {
+  await enqueue({ kind: 'code', code: '12345670' });
+  const [codeItem] = await listQueue();
+  await queueDb.markNeedsReview(codeItem!.id, JSON.stringify(lookupNotFound));
+
+  const source = FileSystem.documentDirectory! + 'discriminated-photo.jpg';
+  await mockFs.writeFile(source, 'photo');
+  await enqueue({ kind: 'photo', uri: source });
+  const photoItem = (await listQueue()).find(i => i.kind === 'photo')!;
+  await queueDb.markNeedsReview(photoItem.id, JSON.stringify(identifyCandidates));
+
+  const items: NeedsReviewItem[] = await listNeedsReview();
+  expect(items).toHaveLength(2);
+
+  const codeReview = items.find(i => i.kind === 'code');
+  const photoReview = items.find(i => i.kind === 'photo');
+
+  expect(codeReview?.result.status).toBe('not_found');
+  expect(photoReview?.result.status).toBe('candidates');
+  if (photoReview && photoReview.kind === 'photo' && photoReview.result.status === 'candidates') {
+    expect(photoReview.result.candidates).toBeDefined();
+  }
 });

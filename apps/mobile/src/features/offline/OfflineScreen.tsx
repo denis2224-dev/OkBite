@@ -50,6 +50,7 @@ export function OfflineScreen() {
       <Button disabled={busy} onPress={() => { void run(async () => {
         if (!item.outcome) return retryQueued(item.id);
         const resumed = await resumeQueuedItem(item);
+        if (!mounted.current) return;
         router.replace(resumed.kind === 'found' ? productRoute(resumed.productId) : { pathname: '/identify', params: resumed.params });
       }); }}>{item.outcome ? ro.app.open : ro.app.retry}</Button>
       <Button variant="ghost" disabled={busy} onPress={() => setConfirm(item.id)}>{ro.offline.cancel}</Button>

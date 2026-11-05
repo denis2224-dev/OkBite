@@ -1,6 +1,7 @@
 import rawCategories from '../../../../../data/categories.json';
 import {
   CategoryEntry,
+  LookupResponse,
   ReadLabelResponse,
   type Category as CategoryType,
   type ReadLabelResponse as ReadLabelResponseType,
@@ -10,6 +11,7 @@ import type { AddInitialValues } from '../identify/routes';
 export interface AddReviewDraft {
   initial: AddInitialValues;
   label: ReadLabelResponseType;
+  savedResult?: Extract<LookupResponse, { status: 'found' }> | null;
 }
 
 function parseUniqueCategories(entries: readonly unknown[]): readonly CategoryType[] {
@@ -50,6 +52,10 @@ export function setAddReviewDraft(draft: AddReviewDraft): void {
 
 export function getAddReviewDraft(): AddReviewDraft | null {
   return isValidDraft(currentDraft) ? currentDraft : null;
+}
+
+export function setAddReviewDraftResult(result: Extract<LookupResponse, { status: 'found' }>): void {
+  if (currentDraft) currentDraft.savedResult = result;
 }
 
 export function clearAddReviewDraft(): void {

@@ -620,4 +620,28 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     expect(saveToHistory).toHaveBeenCalledWith(SAVED_LOOKUP);
     expect(mockReplace).toHaveBeenCalledWith(`/product/${SAVED_LOOKUP.product.id}`);
   });
+  it('persists contribution completion independently of history and prevents re-submitting after remount', async () => {
+    if (SAVED_LOOKUP.status !== 'found') throw new Error('Expected found fixture');
+    setAddReviewDraft({ initial: { ...BASE_INITIAL, queueId: 'queue-receipt-1' }, label: BASE_LABEL });
+    mockAddProduct.mockResolvedValueOnce(SAVED_LOOKUP);
+    jest.mocked(saveToHistory).mockRejectedValueOnce(new Error('sqlite error')).mockResolvedValueOnce();
+
+    const view = await render(<ReviewRouteScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurt` }));
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
+
+    expect(resolveQueued).toHaveBeenCalledWith('queue-receipt-1');
+    expect(screen.getByText(ro.review.savedPendingCleanup)).toBeTruthy();
+
+    await view.unmount();
+    await render(<ReviewRouteScreen />);
+
+    expect(screen.queryByRole('button', { name: ro.review.save })).toBeNull();
+    expect(screen.getByText(ro.review.savedPendingCleanup)).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.finishSave }));
+    expect(mockAddProduct).toHaveBeenCalledTimes(1);
+    expect(saveToHistory).toHaveBeenCalledTimes(2);
+    expect(mockReplace).toHaveBeenCalledWith(`/product/${SAVED_LOOKUP.product.id}`);
+  });
 });

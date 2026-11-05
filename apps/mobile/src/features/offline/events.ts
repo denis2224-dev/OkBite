@@ -1,4 +1,4 @@
-export type QueueEvent = 'changed' | 'missing_photo';
+export type QueueEvent = 'changed' | 'missing_photo' | 'enqueued';
 const listeners = new Set<(event: QueueEvent) => void>();
 export function subscribeQueue(listener: (event: QueueEvent) => void) {
   listeners.add(listener);
