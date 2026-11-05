@@ -41,9 +41,17 @@ jobs:
           path: apps/mobile/dist
           retention-days: 7
       - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
-        if: hashFiles('supabase/functions/**/*.test.ts') != ''
+        if: hashFiles('supabase/functions/**/*.test.ts', 'supabase/functions/_shared/index.ts') != ''
         with:
           deno-version: v2.x
+      - name: Check generated Deno modules
+        if: hashFiles('supabase/functions/_shared/index.ts') != ''
+        run: |
+          config=(--no-config)
+          if [ -f supabase/functions/deno.json ]; then
+            config=(--config supabase/functions/deno.json)
+          fi
+          deno check "${config[@]}" --no-lock --node-modules-dir=none supabase/functions/_shared/index.ts
       - name: Test Edge Functions
         if: hashFiles('supabase/functions/**/*.test.ts') != ''
         run: |
@@ -69,14 +77,16 @@ jobs:
           export SUPABASE_ANON_KEY="$ANON_KEY"
           export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
           export OKBITE_RUN_INTEGRATION=1
-          npx --yes supabase@2.65.5 functions serve > "$RUNNER_TEMP/edge-functions.log" 2>&1 &
-          ready=false
-          for attempt in {1..60}; do
-            status=$(curl --silent --output /dev/null --write-out '%{http_code}' "$API_URL/functions/v1/lookup" || true)
-            if [ "$status" = 400 ]; then ready=true; break; fi
-            sleep 1
-          done
-          if [ "$ready" != true ]; then echo 'Local lookup gateway did not become ready'; exit 1; fi
+          if [ -f supabase/functions/lookup/index.ts ]; then
+            npx --yes supabase@2.65.5 functions serve > "$RUNNER_TEMP/edge-functions.log" 2>&1 &
+            ready=false
+            for attempt in {1..60}; do
+              status=$(curl --silent --output /dev/null --write-out '%{http_code}' "$API_URL/functions/v1/lookup" || true)
+              if [ "$status" = 400 ]; then ready=true; break; fi
+              sleep 1
+            done
+            if [ "$ready" != true ]; then echo 'Local lookup gateway did not become ready'; exit 1; fi
+          fi
           deno test --config supabase/functions/deno.json --allow-all --ignore=supabase/functions/_shared supabase/functions/
       - name: Stop isolated local services
         if: always() && hashFiles('supabase/migrations/*.sql') != ''
