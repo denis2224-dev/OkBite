@@ -38,10 +38,10 @@ export const LETTER_CUTOFFS: Record<PointsKind, [number, number, number, number]
   fat: [-6, 2, 10, 18], beverage: [-Infinity, 2, 6, 9],
 };
 
-// Lowest and highest points each kind can reach (all favourable maxima, all unfavourable maxima).
-// shortcut: beverages ignore the 4 sweetener points (the contract has no sweetener field); add them when it does.
+// Lowest and highest points each kind can reach (all favourable maxima, all unfavourable maxima;
+// beverages include the 4 non-nutritive sweetener points).
 export const POINTS_RANGE: Record<PointsKind, [number, number]> = {
-  general: [-17, 55], cheese: [-17, 55], red_meat: [-12, 55], fat: [-17, 55], beverage: [-18, 50],
+  general: [-17, 55], cheese: [-17, 55], red_meat: [-12, 55], fat: [-17, 55], beverage: [-18, 54],
 };
 
 const LETTERS: Letter[] = ['A', 'B', 'C', 'D'];
@@ -51,8 +51,11 @@ export function letterFor(points: number, kind: PointsKind): Letter {
   return LETTERS[i] ?? 'E';
 }
 
-/** Missing favourable values count as 0; computeScore rejects missing kcal, sugar, sat and salt first. */
-export function nutriScorePoints(n: Nutrients, kind: ScoreKind): {
+/**
+ * Missing favourable values count as 0; computeScore rejects missing kcal, sugar, sat and salt first.
+ * `sweeteners`: the beverage contains a non-nutritive sweetener (beverages report §6.6.2, 4 A points).
+ */
+export function nutriScorePoints(n: Nutrients, kind: ScoreKind, sweeteners = false): {
   points: number; letter: Letter; components: Record<string, number>;
 } {
   if (kind === 'water') return { points: 0, letter: 'A', components: {} };
@@ -69,6 +72,7 @@ export function nutriScorePoints(n: Nutrients, kind: ScoreKind): {
       sugar: above(n.sugar, beverage ? BEV_SUGAR : SUGAR),
       sat: above(n.sat, SAT),
       salt: above(n.salt, SALT),
+      ...(beverage ? { sweeteners: sweeteners ? 4 : 0 } : {}),
     };
   const a = Object.values(negative).reduce((s, v) => s + v, 0);
   const protein = above(n.protein, beverage ? BEV_PROTEIN : PROTEIN);
