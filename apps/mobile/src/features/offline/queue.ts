@@ -53,7 +53,8 @@ export async function listNeedsReview(): Promise<NeedsReviewItem[]> {
   return reviewed;
 }
 export async function resolveQueued(id: string): Promise<void> {
-  const item = (await listQueued()).find(row => row.id === id);
+  const items = await listQueued();
+  const item = items?.find ? items.find(row => row.id === id) : undefined;
   if (!item) return;
   if (item.kind === 'photo') await removePhoto(item.payload);
   await deleteQueued(id);
@@ -74,7 +75,8 @@ export async function openQueuedPhoto(id: string) {
   return openPhoto(item.payload);
 }
 export async function completeQueued(id: string): Promise<void> {
-  const item = (await listQueued()).find(row => row.id === id);
+  const items = await listQueued();
+  const item = items?.find ? items.find(row => row.id === id) : undefined;
   if (!item) return;
   // Commit acknowledgement before cleanup; a cleanup failure must never reopen add/review.
   if (item.status !== 'completed') await markQueuedComplete(id);
@@ -110,7 +112,26 @@ async function drain() {
   for (const item of items) {
     const current = (await listQueued()).find(row => row.id === item.id);
     if (!current) continue;
-    if (current.status === 'completed') { await completeQueued(item.id); continue; }
+    if (current.status === 'completed') {
+      if (current.result) {
+        try {
+          const parsed = LookupResponse.safeParse(JSON.parse(current.result));
+          if (parsed.success && parsed.data.status === 'found') {
+            await saveToHistory(parsed.data);
+            resolved++;
+          }
+        } catch {
+          await saveQueuedError(item.id, 'storage').catch(() => {});
+          continue;
+        }
+      }
+      try {
+        await completeQueued(item.id);
+      } catch {
+        await saveQueuedError(item.id, 'storage').catch(() => {});
+      }
+      continue;
+    }
     // Human-review outcomes and failed work stay durable until explicit retry/acknowledgement.
     if (current.status !== 'pending' || (current.error && current.error !== 'offline')) continue;
     let photo: string | undefined;
@@ -157,7 +178,24 @@ export type ResumeResult =
   | { kind: 'identify'; pathname: string; params: Record<string, string> };
 export async function resumeQueuedItem(input: Pick<QueuedItem, 'id' | 'kind' | 'payload'>): Promise<ResumeResult> {
   const existing = (await listQueue()).find(row => row.id === input.id);
-  if (existing?.status === 'completed') throw new ApiError('bad_request');
+  if (existing?.status === 'completed') {
+    const raw = (await listQueued()).find(row => row.id === input.id);
+    if (raw?.result) {
+      try {
+        const parsed = LookupResponse.safeParse(JSON.parse(raw.result));
+        if (parsed.success && parsed.data.status === 'found') {
+          await saveToHistory(parsed.data);
+          await completeQueued(raw.id);
+          return { kind: 'found', productId: parsed.data.product.id };
+        }
+      } catch {
+        const parsedJson = JSON.parse(raw.result);
+        const productId = parsedJson?.product?.id ?? parsedJson?.productId;
+        if (productId) return { kind: 'found', productId };
+      }
+    }
+    throw new ApiError('bad_request');
+  }
   if (existing?.outcome) {
     return { kind: 'identify', pathname: '/identify', params: existing.kind === 'code'
       ? { source: 'code', code: existing.payload, queueId: existing.id }

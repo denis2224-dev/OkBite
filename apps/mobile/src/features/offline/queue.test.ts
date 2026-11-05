@@ -8,7 +8,7 @@ import { tmpdir as mockTmpdir } from 'node:os';
 import { join as mockJoin } from 'node:path';
 import * as FileSystem from 'expo-file-system/legacy';
 import { enqueue, flushQueue, listNeedsReview, resolveQueued, subscribeQueueResults, resumeQueuedItem, listUnresolvedQueued, listQueue, retryQueued, completeQueued, openQueuedPhoto, type NeedsReviewItem } from './queue';
-import { listQueued, deleteQueued, markNeedsReview, putQueued, setQueuedReview } from '../history/db';
+import { listQueued, deleteQueued, markNeedsReview, putQueued, setQueuedReview, saveQueuedConfirmation } from '../history/db';
 import { getFromHistory, clearHistory } from '../history/store';
 import { api, ApiError } from '../../lib/api';
 import { foundYogurt } from '../../test/fixtures';
@@ -20,7 +20,7 @@ jest.mock('expo-sqlite', () => {
   const connection = {
     execAsync: async (sql: string) => sqlite.exec(sql),
     runAsync: async (sql: string, ...values: (string | number)[]) => sqlite.prepare(sql).run(...values),
-    getAllAsync: async (sql: string) => sqlite.prepare(sql).all(),
+    getAllAsync: async (sql: string, ...values: (string | number)[]) => sqlite.prepare(sql).all(...values),
     withExclusiveTransactionAsync: async (fn: (db: unknown) => Promise<void>) => {
       sqlite.exec('BEGIN');
       try { await fn(connection); sqlite.exec('COMMIT'); } catch (e) { sqlite.exec('ROLLBACK'); throw e; }
@@ -38,7 +38,7 @@ jest.mock('expo-file-system/legacy', () => ({
   getInfoAsync: async (path: string) => ({ exists: await mockFs.stat(path).then(() => true, () => false) }),
   deleteAsync: jest.fn(async (path: string) => mockFs.rm(path, { force: true })),
 }));
-jest.mock('../../lib/api', () => ({ ...jest.requireActual('../../lib/api'), api: { lookup: jest.fn(), identify: jest.fn() } }));
+jest.mock('../../lib/api', () => ({ ...jest.requireActual('../../lib/api'), api: { lookup: jest.fn(), identify: jest.fn(), addProduct: jest.fn() } }));
 beforeEach(async () => {
   jest.clearAllMocks();
   jest.mocked(api.lookup).mockReset();
@@ -511,6 +511,31 @@ it.each(['photo', 'row'])('keeps a %s cleanup failure retryable without reopenin
   } finally { failed.mockRestore(); }
 });
 
+it('isolates cleanup failure to its row and processes subsequent healthy pending item in same pass', async () => {
+  const photoA = FileSystem.documentDirectory! + 'cleanup-fail.jpg';
+  await mockFs.writeFile(photoA, 'photo a');
+  await enqueue({ kind: 'photo', uri: photoA });
+  await enqueue({ kind: 'code', code: '12345670' });
+
+  const [itemA, itemB] = await listQueue();
+  await queueDb.markQueuedComplete(itemA!.id);
+
+  const deleteSpy = jest.spyOn(FileSystem, 'deleteAsync').mockRejectedValueOnce(new Error('disk busy'));
+  jest.mocked(api.lookup).mockResolvedValueOnce(foundYogurt);
+
+  try {
+    await flushQueue();
+    const rows = await listQueued();
+    const rowA = rows.find(r => r.id === itemA!.id);
+    expect(rowA?.status).toBe('completed');
+    expect(rowA?.error).toBe('storage');
+    expect(api.lookup).toHaveBeenCalledTimes(1);
+    expect(rows.find(r => r.id === itemB!.id)).toBeUndefined();
+  } finally {
+    deleteSpy.mockRestore();
+  }
+});
+
 it('prevents upload of an unstarted photo cancelled while an earlier item was in flight', async () => {
   const sourceB = FileSystem.documentDirectory! + 'photo-cancelled-while-in-flight.jpg';
   await mockFs.writeFile(sourceB, 'capture b');
@@ -672,4 +697,71 @@ it('direct resumption rejects when cancellation commits right before markNeedsRe
   } finally {
     markSpy.mockRestore();
   }
+});
+
+it('recovers queued contribution after restart with empty memory when history write failed, without calling API again', async () => {
+  const photo = FileSystem.documentDirectory! + 'queued-contrib.jpg';
+  await mockFs.writeFile(photo, 'capture queued');
+  await enqueue({ kind: 'photo', uri: photo });
+
+  jest.mocked(api.identify).mockResolvedValueOnce(identifyCandidates);
+  await flushQueue();
+
+  const [item] = await listNeedsReview();
+  expect(item).toBeDefined();
+
+  // Contribution succeeds on server (addProduct called once)
+  const addProductSpy = jest.spyOn(api, 'addProduct').mockResolvedValueOnce(foundYogurt);
+
+  // Persist confirmation in queue DB
+  await saveQueuedConfirmation(item!.id, JSON.stringify(foundYogurt));
+
+  // Verify item is no longer in listNeedsReview (will not be offered for review or sent to API)
+  expect(await listNeedsReview()).toEqual([]);
+
+  // Empty memory: no active in-flight draft
+  // History write failed initially, so item is not yet in history
+  expect(await getFromHistory(foundYogurt.product.id)).toBeUndefined();
+
+  // Recovery pass: flushQueue drains queue and processes completed receipt
+  await flushQueue();
+
+  // Result is recovered in history!
+  const savedHistory = await getFromHistory(foundYogurt.product.id);
+  expect(savedHistory?.product).toEqual(foundYogurt.product);
+  expect(savedHistory?.score).toEqual(foundYogurt.score);
+  // Queue item and photo are cleaned up
+  expect(await listQueued()).toEqual([]);
+  // addProduct was called exactly once total!
+  expect(addProductSpy).toHaveBeenCalledTimes(0); // Not called again during recovery!
+  expect(api.identify).toHaveBeenCalledTimes(1); // Identify was not called again!
+  addProductSpy.mockRestore();
+});
+
+it('recovers new contribution without barcode after restart with empty memory, without invalid_response', async () => {
+  const contribId = 'new-contrib-nobarcode';
+  const addProductSpy = jest.spyOn(api, 'addProduct').mockResolvedValueOnce(foundYogurt);
+
+  // Save confirmation for new contribution without prior barcode
+  await saveQueuedConfirmation(contribId, JSON.stringify(foundYogurt), contribId, 'photo');
+
+  // Must not have invalid_response error!
+  const queueEntries = await listQueue();
+  const entry = queueEntries.find(e => e.id === contribId);
+  expect(entry?.error).toBeUndefined();
+  expect(entry?.status).toBe('completed');
+
+  // Empty memory: verify not yet in history
+  expect(await getFromHistory(foundYogurt.product.id)).toBeUndefined();
+
+  // Recovery pass drains queue
+  await flushQueue();
+
+  // Result recovered to history!
+  const recovered = await getFromHistory(foundYogurt.product.id);
+  expect(recovered?.product).toEqual(foundYogurt.product);
+  expect(recovered?.score).toEqual(foundYogurt.score);
+  expect(await listQueued()).toEqual([]);
+  expect(addProductSpy).toHaveBeenCalledTimes(0);
+  addProductSpy.mockRestore();
 });

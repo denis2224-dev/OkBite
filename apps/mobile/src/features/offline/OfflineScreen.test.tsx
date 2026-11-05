@@ -2,6 +2,15 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react-nativ
 import { OfflineScreen } from './OfflineScreen';
 import { listQueue, retryQueued, completeQueued, flushQueue } from './queue';
 import { ro } from '../../copy/ro';
+jest.mock('expo-router', () => ({
+  router: { push: jest.fn(), replace: jest.fn() },
+  useFocusEffect: (cb: () => void | (() => void)) => {
+    jest.requireActual<typeof import('react')>('react').useEffect(() => {
+      const cleanup = cb();
+      return () => { cleanup?.(); };
+    }, [cb]);
+  },
+}));
 jest.mock('./queue', () => ({ listQueue: jest.fn(), retryQueued: jest.fn(), completeQueued: jest.fn(), flushQueue: jest.fn(), subscribeQueue: () => jest.fn(), subscribeQueueResults: () => jest.fn() }));
 const queued = { id: 'queued', kind: 'code', payload: '4840001000014', createdAt: '2026-11-05T00:00:00.000Z', error: 'rate_limited' };
 beforeEach(() => { jest.resetAllMocks(); jest.mocked(listQueue).mockResolvedValue([queued as never]); jest.mocked(flushQueue).mockResolvedValue({ resolved: 0 }); });

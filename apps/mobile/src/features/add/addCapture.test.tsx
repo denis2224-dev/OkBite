@@ -25,7 +25,12 @@ import {
 
 const mockParams: { value: Record<string, string | string[] | undefined> } = { value: {} };
 const mockReplace = jest.fn<(href: unknown) => void>();
-jest.mock('../history/db', () => ({ writeHistory: jest.fn(async () => {}) }));
+jest.mock('../history/db', () => ({
+  writeHistory: jest.fn(async () => {}),
+  listQueued: jest.fn(async () => []),
+  deleteQueued: jest.fn(async () => {}),
+  saveQueuedConfirmation: jest.fn(async () => {}),
+}));
 const mockReadLabel = jest.fn<(req: ReadLabelRequestType) => Promise<ReadLabelResponse>>();
 const mockAddProduct = jest.fn<(req: AddProductRequestType) => Promise<LookupResponse>>();
 const mockCompressPhoto = jest.fn<

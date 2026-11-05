@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { randomUUID } from 'expo-crypto';
 import {
   LookupResponse,
   type AddProductRequest,
@@ -14,10 +15,11 @@ import {
   getAddReviewDraft,
   getAvailableCategories,
   setAddReviewDraftResult,
+  type AddReviewDraft,
 } from './draftStore';
 import { ReviewForm } from './ReviewForm';
 import { resolveQueued } from '../offline/queue';
-import { setQueuedReview } from '../history/db';
+import { saveQueuedConfirmation } from '../history/db';
 import { saveToHistory } from '../history/store';
 
 export function ReviewScreen() {
@@ -27,19 +29,25 @@ export function ReviewScreen() {
   const finishing = useRef(false);
   const [cleanupPending, setCleanupPending] = useState(Boolean(activeDraft?.savedResult));
 
-  const finishSaved = async () => {
-    const committed = saved.current ?? activeDraft?.savedResult;
-    if (!committed || !activeDraft || finishing.current) return;
+  const finishSaved = async (
+    targetDraft: AddReviewDraft = activeDraft!,
+    committedData?: Extract<LookupResponse, { status: 'found' }>,
+  ) => {
+    const committed = committedData ?? saved.current ?? targetDraft?.savedResult;
+    if (!committed || !targetDraft || finishing.current) return;
     finishing.current = true;
     try {
-      if (activeDraft.initial.queueId && typeof setQueuedReview === 'function') {
-        await setQueuedReview(activeDraft.initial.queueId, JSON.stringify({ status: 'completed', productId: committed.product.id }));
+      const queueId = targetDraft.initial.queueId ?? randomUUID();
+      if (typeof saveQueuedConfirmation === 'function') {
+        await saveQueuedConfirmation(queueId, JSON.stringify(committed), targetDraft.initial.code ?? queueId, targetDraft.label ? 'photo' : 'code');
       }
       await saveToHistory(committed);
-      if (activeDraft.initial.queueId) await resolveQueued(activeDraft.initial.queueId);
+      await resolveQueued(queueId);
       const id = committed.product.id;
-      clearAddReviewDraft();
-      router.replace(productRoute(id));
+      if (getAddReviewDraft() === targetDraft) {
+        clearAddReviewDraft();
+        router.replace(productRoute(id));
+      }
     } finally { finishing.current = false; }
   };
 
@@ -66,15 +74,21 @@ export function ReviewScreen() {
   const categories = getAvailableCategories();
 
   const handleSubmit = async (req: AddProductRequest) => {
+    const initiatingDraft = activeDraft;
+    if (!initiatingDraft) return;
     const rawResult = await api.addProduct(req);
     const parsed = LookupResponse.safeParse(rawResult);
     if (!parsed.success || parsed.data.status !== 'found') {
       throw Object.assign(new Error('invalid_response'), { code: 'invalid_response' });
     }
     saved.current = parsed.data;
-    setAddReviewDraftResult(parsed.data, activeDraft);
-    try { await finishSaved(); }
-    catch { setCleanupPending(true); }
+    setAddReviewDraftResult(parsed.data, initiatingDraft);
+    try { await finishSaved(initiatingDraft, parsed.data); }
+    catch {
+      if (getAddReviewDraft() === initiatingDraft) {
+        setCleanupPending(true);
+      }
+    }
   };
 
   const handleRetake = (currentIdentity: AddInitialValues) => {

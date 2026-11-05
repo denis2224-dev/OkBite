@@ -31,12 +31,14 @@ import { ReviewForm } from './ReviewForm';
 
 const mockReplace = jest.fn<(href: unknown) => void>();
 const mockSetQueuedReview = jest.fn<(id: string, res: string) => Promise<void>>(async () => {});
+const mockSaveQueuedConfirmation = jest.fn<(id: string, res: string, payload?: string, kind?: string) => Promise<void>>(async () => {});
 const mockPutQueued = jest.fn<(item: unknown) => Promise<void>>(async () => {});
 jest.mock('../offline/queue', () => ({ resolveQueued: jest.fn() }));
 jest.mock('../history/store', () => ({ saveToHistory: jest.fn(async () => {}) }));
 jest.mock('../history/db', () => ({
   putQueued: (item: unknown) => mockPutQueued(item),
   setQueuedReview: (id: string, res: string) => mockSetQueuedReview(id, res),
+  saveQueuedConfirmation: (id: string, res: string, payload?: string, kind?: string) => mockSaveQueuedConfirmation(id, res, payload, kind),
 }));
 const mockAddProduct = jest.fn<(req: AddProductRequestType) => Promise<LookupResponse>>();
 
@@ -637,7 +639,7 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurt` }));
     await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
 
-    expect(mockSetQueuedReview).toHaveBeenCalledWith('queue-receipt-1', JSON.stringify({ status: 'completed', productId: SAVED_LOOKUP.product.id }));
+    expect(mockSaveQueuedConfirmation).toHaveBeenCalledWith('queue-receipt-1', JSON.stringify(SAVED_LOOKUP), '4840001000014', 'photo');
     expect(resolveQueued).not.toHaveBeenCalled();
     expect(screen.getByText(ro.review.savedPendingCleanup)).toBeTruthy();
 
@@ -675,5 +677,38 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     // Response for B arrives with targetDraft = draftB
     setAddReviewDraftResult(SAVED_LOOKUP, draftB);
     expect(getAddReviewDraft()?.savedResult).toEqual(SAVED_LOOKUP);
+  });
+
+  it('binds entire completion to the initiating draft: preserves draft B and does not navigate when A completes late', async () => {
+    if (SAVED_LOOKUP.status !== 'found') throw new Error('Expected found fixture');
+    const draftA = { initial: { ...BASE_INITIAL, queueId: 'draft-a' }, label: BASE_LABEL };
+    const draftB = { initial: { ...BASE_INITIAL, queueId: 'draft-b', name: 'Produs B' }, label: BASE_LABEL };
+
+    let finishAddA!: (res: LookupResponse) => void;
+    const addPromiseA = new Promise<LookupResponse>(resolve => { finishAddA = resolve; });
+    mockAddProduct.mockReturnValueOnce(addPromiseA);
+
+    setAddReviewDraft(draftA);
+    await render(<ReviewRouteScreen />);
+
+    // Shopper submits draft A
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurt` }));
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
+    expect(mockAddProduct).toHaveBeenCalledTimes(1);
+
+    // While save for A is in flight, draft B becomes active
+    setAddReviewDraft(draftB);
+    expect(getAddReviewDraft()?.initial.queueId).toBe('draft-b');
+
+    // A finishes successfully
+    await act(async () => {
+      finishAddA(SAVED_LOOKUP);
+    });
+
+    // Local finalization for A must preserve draft B and leave user on current screen
+    expect(getAddReviewDraft()?.initial.queueId).toBe('draft-b');
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(saveToHistory).toHaveBeenCalledWith(SAVED_LOOKUP);
+    expect(resolveQueued).toHaveBeenCalledWith('draft-a');
   });
 });

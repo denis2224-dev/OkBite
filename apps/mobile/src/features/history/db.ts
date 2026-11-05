@@ -53,4 +53,10 @@ export async function resetQueued(id: string, corruptResult?: string | null): Pr
 export async function markQueuedComplete(id: string): Promise<void> {
   await (await getDatabase()).runAsync("UPDATE queue SET status='completed',result=NULL,error=NULL WHERE id=?", id);
 }
+export async function saveQueuedConfirmation(id: string, result: string, payload = id, kind: 'code' | 'photo' = 'code'): Promise<void> {
+  await (await getDatabase()).runAsync(
+    "INSERT INTO queue (id,kind,payload,created_at,status,result) VALUES (?,?,?,?,'completed',?) ON CONFLICT(id) DO UPDATE SET status='completed',result=excluded.result,error=NULL",
+    id, kind, payload, new Date().toISOString(), result,
+  );
+}
 export const setQueuedReview = markNeedsReview;

@@ -43,4 +43,14 @@ export async function markQueuedComplete(id: string): Promise<void> {
   await update<QueuedItem[]>('entries', rows => (rows ?? []).map(row => row.id === id
     ? { ...row, status: 'completed', result: null, error: undefined } : row), queue);
 }
+export async function saveQueuedConfirmation(id: string, result: string, payload = id, kind: 'code' | 'photo' = 'code'): Promise<void> {
+  await update<QueuedItem[]>('entries', rows => {
+    const list = rows ?? [];
+    const index = list.findIndex(r => r.id === id);
+    if (index >= 0) {
+      return list.map((r, i) => i === index ? { ...r, status: 'completed', result, error: undefined } : r);
+    }
+    return [...list, { id, kind, payload, createdAt: new Date().toISOString(), status: 'completed', result }];
+  }, queue);
+}
 export const setQueuedReview = markNeedsReview;

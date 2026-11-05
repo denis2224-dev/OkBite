@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Body, Button, Card, Heading, Screen } from '../../ui';
 import { ro } from '../../copy/ro';
 import { listQueue, retryQueued, completeQueued, subscribeQueue, resumeQueuedItem, type QueueEntry } from './queue';
@@ -13,7 +13,19 @@ export function OfflineScreen() {
   const [confirm, setConfirm] = useState<string>();
   const revision = useRef(0);
   const mounted = useRef(true);
-  const navigatedAway = useRef(false);
+  const focusRev = useRef(0);
+  const isFocused = useRef(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      isFocused.current = true;
+      focusRev.current++;
+      return () => {
+        isFocused.current = false;
+        focusRev.current++;
+      };
+    }, [])
+  );
   const invalidate = useCallback(() => { revision.current++; }, []);
   const refresh = useCallback(() => {
     if (!mounted.current) return Promise.resolve();
@@ -50,8 +62,9 @@ export function OfflineScreen() {
       {item.error && <Body>{item.error in ro.errors ? ro.errors[item.error as keyof typeof ro.errors] : ro.offline.queueError}</Body>}
       <Button disabled={busy} onPress={() => { void run(async () => {
         if (!item.outcome) return retryQueued(item.id);
+        const actionRev = focusRev.current;
         const resumed = await resumeQueuedItem(item);
-        if (!mounted.current || navigatedAway.current) return;
+        if (!mounted.current || !isFocused.current || focusRev.current !== actionRev) return;
         router.replace(resumed.kind === 'found' ? productRoute(resumed.productId) : { pathname: '/identify', params: resumed.params });
       }); }}>{item.outcome ? ro.app.open : ro.app.retry}</Button>
       <Button variant="ghost" disabled={busy} onPress={() => setConfirm(item.id)}>{ro.offline.cancel}</Button>
@@ -62,6 +75,6 @@ export function OfflineScreen() {
       </>}
     </Card>)}
     {busy && <Body accessibilityLiveRegion="polite">{ro.offline.processing}</Body>}
-    <Button variant="secondary" onPress={() => { navigatedAway.current = true; router.push('/history'); }}>{ro.offline.history}</Button>
+    <Button variant="secondary" onPress={() => { isFocused.current = false; focusRev.current++; router.push('/history'); }}>{ro.offline.history}</Button>
   </Screen>;
 }
