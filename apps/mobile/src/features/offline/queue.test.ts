@@ -490,7 +490,7 @@ it('continues with a healthy code after retaining an unreadable photo', async ()
     expect((await listQueue()).map(row => row.kind)).toEqual(['photo']);
   } finally { read.mockRestore(); }
 });
-it.each(['photo', 'row'])('records completion before a %s cleanup failure without reopening review', async boundary => {
+it.each(['photo', 'row'])('keeps a %s cleanup failure retryable without reopening review', async boundary => {
   const source = FileSystem.documentDirectory! + `cleanup-${boundary}.jpg`;
   await mockFs.writeFile(source, 'completed capture');
   await enqueue({ kind: 'photo', uri: source });
@@ -501,12 +501,13 @@ it.each(['photo', 'row'])('records completion before a %s cleanup failure withou
     ? jest.spyOn(FileSystem, 'deleteAsync').mockRejectedValueOnce(new Error('photo busy'))
     : jest.spyOn(queueDb, 'deleteQueued').mockRejectedValueOnce(new Error('row busy'));
   try {
-    await expect(resolveQueued(item.id)).resolves.toBeUndefined();
-    expect((await listQueued())[0]?.status).toBe('completed');
-    expect(await listNeedsReview()).toEqual([]);
+    await expect(resolveQueued(item.id)).rejects.toThrow();
+    expect((await listQueued())[0]?.status).toBe('needs_review');
+    expect(await listNeedsReview()).toHaveLength(1);
     await flushQueue();
-    expect(await listQueued()).toEqual([]);
     expect(api.identify).toHaveBeenCalledTimes(1);
+    await resolveQueued(item.id);
+    expect(await listQueued()).toEqual([]);
   } finally { failed.mockRestore(); }
 });
 
@@ -575,12 +576,17 @@ it('opens a persisted outcome while an unrelated lookup is still pending', async
   const photoItem = items.find(i => i.kind === 'photo')!;
   await queueDb.markNeedsReview(photoItem.id, JSON.stringify(identifyCandidates));
 
-  jest.mocked(api.lookup).mockReturnValueOnce(new Promise(() => {})); // Never resolves (pending lookup)
+  let finishLookup!: (val: LookupResponse) => void;
+  const lookupPromise = new Promise<LookupResponse>(resolve => { finishLookup = resolve; });
+  jest.mocked(api.lookup).mockReturnValueOnce(lookupPromise);
 
-  void flushQueue();
+  const flushing = flushQueue();
 
   const resumed = await resumeQueuedItem(photoItem);
   expect(resumed.kind).toBe('identify');
+
+  finishLookup(foundYogurt);
+  await flushing;
 });
 
 it('restores NeedsReviewItem discriminated union type and preserves kind-result relationship', async () => {
@@ -613,11 +619,10 @@ it('prevents identify request if cancellation commits while readPhoto is in flig
   await enqueue({ kind: 'photo', uri: source });
   const [item] = await listQueue();
 
-  const originalRead = FileSystem.readAsStringAsync;
-  const readSpy = jest.spyOn(FileSystem, 'readAsStringAsync').mockImplementationOnce(async (path, options) => {
-    // Cancellation commits while photo read is in flight
-    await completeQueued(item!.id);
-    return originalRead(path, options);
+  const readSpy = jest.spyOn(FileSystem, 'readAsStringAsync').mockImplementationOnce(async (path: string) => {
+    // Cancellation commits in database while photo read is in flight
+    await queueDb.deleteQueued(item!.id);
+    return (await mockFs.readFile(path)).toString('base64');
   });
 
   try {
@@ -634,11 +639,10 @@ it('rejects with not_found and prevents identify request if cancellation commits
   await enqueue({ kind: 'photo', uri: source });
   const [item] = await listQueue();
 
-  const originalRead = FileSystem.readAsStringAsync;
-  const readSpy = jest.spyOn(FileSystem, 'readAsStringAsync').mockImplementationOnce(async (path, options) => {
-    // Cancellation commits while photo read is in flight
-    await completeQueued(item!.id);
-    return originalRead(path, options);
+  const readSpy = jest.spyOn(FileSystem, 'readAsStringAsync').mockImplementationOnce(async (path: string) => {
+    // Cancellation commits in database while photo read is in flight
+    await queueDb.deleteQueued(item!.id);
+    return (await mockFs.readFile(path)).toString('base64');
   });
 
   try {
@@ -657,11 +661,9 @@ it('direct resumption rejects when cancellation commits right before markNeedsRe
 
   jest.mocked(api.identify).mockResolvedValueOnce(identifyCandidates);
 
-  const originalMark = queueDb.markNeedsReview;
-  const markSpy = jest.spyOn(queueDb, 'markNeedsReview').mockImplementationOnce(async (id, res) => {
+  const markSpy = jest.spyOn(queueDb, 'markNeedsReview').mockImplementationOnce(async (id: string) => {
     // Another client cancelled right before markNeedsReview commits
     await queueDb.deleteQueued(id);
-    return originalMark(id, res);
   });
 
   try {

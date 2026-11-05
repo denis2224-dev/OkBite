@@ -78,8 +78,10 @@ export async function completeQueued(id: string): Promise<void> {
   if (!item) return;
   // Commit acknowledgement before cleanup; a cleanup failure must never reopen add/review.
   if (item.status !== 'completed') await markQueuedComplete(id);
-  if (item.kind === 'photo') await removePhoto(item.payload);
-  await deleteQueued(id);
+  try {
+    if (item.kind === 'photo') await removePhoto(item.payload);
+    await deleteQueued(id);
+  } catch { await saveQueuedError(id, 'storage').catch(() => {}); }
   notifyQueue();
 }
 export async function retryQueued(id: string) {
