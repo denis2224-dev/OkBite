@@ -1,11 +1,11 @@
 import { randomUUID } from 'expo-crypto';
-import { Code, type IdentifyResponse, type LookupResponse } from '@okbite/shared';
+import { Code, IdentifyResponse, LookupResponse } from '@okbite/shared';
 import { api, ApiError } from '../../lib/api';
-import { putQueued, listQueued, deleteQueued, type QueuedItem } from '../history/db';
+import { putQueued, listQueued, deleteQueued, markNeedsReview, type QueuedItem } from '../history/db';
 import { saveToHistory } from '../history/store';
 import { keepPhoto, readPhoto, removePhoto } from './photos';
 
-export type QueueResult = { item: QueuedItem; result: LookupResponse | IdentifyResponse };
+export type QueueResult = { item: Pick<QueuedItem, 'id' | 'kind' | 'payload'>; result: LookupResponse | IdentifyResponse };
 const listeners = new Set<(event: QueueResult) => boolean>();
 export function subscribeQueueResults(listener: (event: QueueResult) => boolean): () => void {
   listeners.add(listener);
@@ -14,6 +14,12 @@ export function subscribeQueueResults(listener: (event: QueueResult) => boolean)
 function handoff(event: QueueResult): boolean {
   for (const listener of listeners) if (listener(event)) return true;
   return false;
+}
+function reviewResult(item: QueuedItem): LookupResponse | IdentifyResponse | undefined {
+  if (item.status !== 'needs_review' || item.result === null) return;
+  try {
+    return (item.kind === 'code' ? LookupResponse : IdentifyResponse).parse(JSON.parse(item.result));
+  } catch { return; }
 }
 
 export async function enqueue(item: { kind: 'photo'; uri: string } | { kind: 'code'; code: string }): Promise<void> {
@@ -24,6 +30,18 @@ export async function enqueue(item: { kind: 'photo'; uri: string } | { kind: 'co
     throw error;
   }
 }
+export async function listNeedsReview(): Promise<{ id: string; kind: 'photo' | 'code'; payload: string; result: LookupResponse | IdentifyResponse }[]> {
+  return (await listQueued()).flatMap(item => {
+    const result = reviewResult(item);
+    return result ? [{ id: item.id, kind: item.kind, payload: item.payload, result }] : [];
+  });
+}
+export async function resolveQueued(id: string): Promise<void> {
+  const item = (await listQueued()).find(row => row.id === id);
+  if (!item) return;
+  await deleteQueued(id);
+  if (item.kind === 'photo') await removePhoto(item.payload).catch(() => {});
+}
 let running: Promise<{ resolved: number }> | undefined;
 export function flushQueue(onResolved?: (id: string) => void): Promise<{ resolved: number }> {
   running ??= drain(onResolved).finally(() => { running = undefined; });
@@ -32,6 +50,11 @@ export function flushQueue(onResolved?: (id: string) => void): Promise<{ resolve
 async function drain(onResolved?: (id: string) => void) {
   let resolved = 0;
   for (const item of await listQueued()) {
+    if (item.status !== 'pending') {
+      const result = reviewResult(item);
+      if (result && handoff({ item, result })) { await resolveQueued(item.id); break; }
+      continue;
+    }
     let photo: string | undefined;
     if (item.kind === 'photo') {
       // A stored photo that can no longer be read will never resolve; drop it instead of retrying forever.
@@ -40,10 +63,13 @@ async function drain(onResolved?: (id: string) => void) {
     }
     try {
       const result = photo === undefined ? await api.lookup({ code: item.payload }) : await api.identify(photo);
-      // Unknown products stay durable until a visible screen accepts their complete response.
-      const accepted = result.status !== 'found' && handoff({ item, result });
-      if (result.status !== 'found' && !accepted) continue;
-      if (result.status === 'found') await saveToHistory(result);
+      // Keep the capture and result for confirmation/contribution without repeating the API call.
+      if (result.status !== 'found') {
+        await markNeedsReview(item.id, JSON.stringify(result));
+        if (handoff({ item, result })) { await resolveQueued(item.id); break; }
+        continue;
+      }
+      await saveToHistory(result);
       await deleteQueued(item.id);
       if (item.kind === 'photo') await removePhoto(item.payload).catch(() => {});
       resolved++;
@@ -51,7 +77,6 @@ async function drain(onResolved?: (id: string) => void) {
         onResolved?.(result.product.id);
         if (handoff({ item, result })) break;
       }
-      if (accepted) break;
     } catch (error) {
       if (error instanceof ApiError && (error.code === 'offline' || error.code === 'rate_limited' || error.code === 'configuration')) break;
     }

@@ -1,3 +1,4 @@
+import { identifyCandidates, identifyNotFound } from '../capture/__fixtures__/responses';
 import { DatabaseSync as mockDatabaseSync } from 'node:sqlite';
 import { randomUUID as mockRandomUUID } from 'node:crypto';
 import * as mockFs from 'node:fs/promises';
@@ -5,9 +6,8 @@ import { mkdtempSync as mockMkdtempSync } from 'node:fs';
 import { tmpdir as mockTmpdir } from 'node:os';
 import { join as mockJoin } from 'node:path';
 import * as FileSystem from 'expo-file-system/legacy';
-import { enqueue, flushQueue, subscribeQueueResults } from './queue';
-import { identifyCandidates, identifyNotFound } from '../capture/__fixtures__/responses';
-import { listQueued, deleteQueued } from '../history/db';
+import { enqueue, flushQueue, listNeedsReview, resolveQueued, subscribeQueueResults } from './queue';
+import { listQueued, deleteQueued, markNeedsReview } from '../history/db';
 import { getFromHistory, clearHistory } from '../history/store';
 import { api, ApiError } from '../../lib/api';
 import { foundYogurt } from '../../test/fixtures';
@@ -88,6 +88,56 @@ it('drops a queued photo whose stored file is gone and keeps processing later it
   expect(api.identify).not.toHaveBeenCalled();
   expect(await listQueued()).toEqual([]);
 });
+
+it('does not retry a not_found code and exposes its saved result for review', async () => {
+  await enqueue({ kind: 'code', code: '12345670' });
+  const item = (await listQueued())[0]!;
+  jest.mocked(api.lookup).mockResolvedValue({ status: 'not_found' });
+  expect(await flushQueue()).toEqual({ resolved: 0 });
+  expect(await flushQueue()).toEqual({ resolved: 0 });
+  expect(api.lookup).toHaveBeenCalledTimes(1);
+  expect(await listNeedsReview()).toEqual([{ id: item.id, kind: 'code', payload: item.payload, result: { status: 'not_found' } }]);
+  await resolveQueued(item.id);
+  expect(await listQueued()).toEqual([]);
+});
+
+it('retains candidate photos until review finishes, without another identify call', async () => {
+  const source = FileSystem.documentDirectory! + 'review.jpg';
+  await mockFs.writeFile(source, 'review image');
+  await enqueue({ kind: 'photo', uri: source });
+  const item = (await listQueued())[0]!;
+  const result = {
+    status: 'candidates' as const, photoPath: 'test/front.jpg',
+    read: { brand: null, name: null, quantity: null, code: null },
+    candidates: [{ id: foundYogurt.product.id, name: foundYogurt.product.name, brand: foundYogurt.product.brand, quantity: '400 g', imageUrl: null, similarity: 0.7 }],
+  };
+  jest.mocked(api.identify).mockResolvedValue(result);
+  await flushQueue();
+  await flushQueue();
+  expect(api.identify).toHaveBeenCalledTimes(1);
+  expect(await mockFs.readFile(item.payload, 'utf8')).toBe('review image');
+  expect(await listNeedsReview()).toEqual([{ id: item.id, kind: 'photo', payload: item.payload, result }]);
+  await resolveQueued(item.id);
+  expect(await listQueued()).toEqual([]);
+  await expect(mockFs.stat(item.payload)).rejects.toThrow();
+});
+
+it.each(['offline', 'rate_limited', 'configuration'] as const)('stops at %s without marking work as reviewed', async code => {
+  await enqueue({ kind: 'code', code: '12345670' });
+  await enqueue({ kind: 'code', code: '4840001000014' });
+  jest.mocked(api.lookup).mockRejectedValueOnce(new ApiError(code));
+  await flushQueue();
+  expect(api.lookup).toHaveBeenCalledTimes(1);
+  expect(await listNeedsReview()).toEqual([]);
+  expect(await listQueued()).toHaveLength(2);
+});
+
+it.each(['{', '{"status":"found"}'])('does not expose invalid saved API results: %s', async result => {
+  await enqueue({ kind: 'code', code: '12345670' });
+  await markNeedsReview((await listQueued())[0]!.id, result);
+  expect(await listNeedsReview()).toEqual([]);
+  expect(await listQueued()).toHaveLength(1);
+});
 it.each([identifyCandidates, identifyNotFound])('retains $status until an active screen accepts the handoff', async (response) => {
   const source = FileSystem.documentDirectory! + 'unknown.jpg';
   await mockFs.writeFile(source, 'unknown photo');
@@ -101,6 +151,7 @@ it.each([identifyCandidates, identifyNotFound])('retains $status until an active
   try {
     await flushQueue();
     expect(handled).toHaveBeenCalledWith({ item: kept, result: response });
+    expect(api.identify).toHaveBeenCalledTimes(1);
     expect(await listQueued()).toEqual([]);
     await expect(mockFs.stat(kept.payload)).rejects.toThrow();
   } finally { unsubscribe(); }

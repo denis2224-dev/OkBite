@@ -18,7 +18,7 @@ jest.mock('../../ui/Screen', () => ({ Screen: ({ children }: { children: React.R
 it('opens saved results and offers a path back to pending photos', async () => {
   if (lookupFound.status !== 'found') throw new Error('Expected a complete found fixture');
   jest.mocked(listHistory).mockResolvedValue([{ ...lookupFound, savedAt: '2026-11-05T10:00:00.000Z' }]);
-  jest.mocked(listQueued).mockResolvedValue([{ id: 'a', kind: 'photo', payload: 'saved.jpg', createdAt: '2026-11-05T10:00:00.000Z' }]);
+  jest.mocked(listQueued).mockResolvedValue([{ id: 'a', kind: 'photo', payload: 'saved.jpg', createdAt: '2026-11-05T10:00:00.000Z', status: 'pending', result: null }]);
   await render(<History />);
   const product = await screen.findByRole('button', { name: ro.history.open(lookupFound.product.name) });
   await fireEvent.press(product);

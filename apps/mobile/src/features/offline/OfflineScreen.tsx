@@ -24,6 +24,8 @@ export default function OfflineScreen() {
       active.current = false;
       return true;
     });
+    // Replay persisted needs_review responses without another identify request.
+    void flushQueue().catch(() => { if (active.current) setFailed(true); });
     return () => { active.current = false; unsubscribe(); };
   }, [router]);
   const retry = async () => {
