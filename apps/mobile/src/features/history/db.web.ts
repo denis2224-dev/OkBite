@@ -30,3 +30,5 @@ export async function markNeedsReview(id: string, result: string): Promise<void>
 export async function deleteQueued(id: string): Promise<void> {
   await update<QueuedItem[]>('entries', rows => (rows ?? []).filter(row => row.id !== id), queue);
 }
+
+export const setQueuedReview = markNeedsReview;

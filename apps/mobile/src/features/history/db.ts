@@ -41,3 +41,5 @@ export async function markNeedsReview(id: string, result: string): Promise<void>
 export async function deleteQueued(id: string): Promise<void> {
   await (await getDatabase()).runAsync('DELETE FROM queue WHERE id=?', id);
 }
+
+export const setQueuedReview = markNeedsReview;

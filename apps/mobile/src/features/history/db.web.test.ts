@@ -3,7 +3,7 @@ import { serialize, deserialize } from 'node:v8';
 import { Blob as mockBlob } from 'node:buffer';
 import { randomUUID as mockRandomUUID } from 'node:crypto';
 import { createStore, get, set } from 'idb-keyval';
-import { writeHistory, readHistory, deleteHistory, putQueued, listQueued, deleteQueued, markNeedsReview } from './db.web';
+import { writeHistory, readHistory, deleteHistory, putQueued, listQueued, deleteQueued, markNeedsReview, setQueuedReview } from './db.web';
 import { enqueue, flushQueue, listNeedsReview, resolveQueued } from '../offline/queue';
 import { api } from '../../lib/api';
 import { foundYogurt } from '../../test/fixtures';
@@ -96,3 +96,11 @@ it.each(['{', '{"status":"found"}'])('validates saved browser results against th
   expect(await listNeedsReview()).toEqual([]);
   expect(await listQueued()).toHaveLength(1);
 });
+it('treats a row without status as pending and stores a review result', async () => {
+  await putQueued({ id: 'r', kind: 'code', payload: '12345670', createdAt: '2026-11-05T00:00:00.000Z' });
+  expect((await listQueued())[0]).toMatchObject({ id: 'r', status: 'pending', result: null });
+  await setQueuedReview('r', '{"status":"not_found"}');
+  expect((await listQueued())[0]).toMatchObject({ status: 'needs_review', result: '{"status":"not_found"}' });
+  await deleteQueued('r');
+});
+
