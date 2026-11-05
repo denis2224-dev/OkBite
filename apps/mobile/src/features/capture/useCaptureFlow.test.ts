@@ -164,6 +164,20 @@ describe('useCaptureFlow', () => {
     expect(mockReplace).toHaveBeenCalledWith('/offline');
   });
 
+  it('retries the photo after a known barcode miss even if barcode lookup is now offline', async () => {
+    scan.mockResolvedValue([{ data: CODE }]);
+    lookup.mockResolvedValueOnce(lookupNotFound).mockRejectedValue(offline);
+    identify.mockRejectedValue(offline);
+    mockEnqueue.mockRejectedValueOnce(new Error('storage full'));
+    const { result } = await capture();
+    await act(async () => { await result.current.retry(); });
+    expect(lookup).toHaveBeenCalledTimes(1);
+    expect(mockEnqueue.mock.calls).toEqual([
+      [{ kind: 'photo', uri: 'file:///c.jpg' }],
+      [{ kind: 'photo', uri: 'file:///c.jpg' }],
+    ]);
+  });
+
   it('retries failed photo storage and enqueues the prepared photo only once after success', async () => {
     identify.mockRejectedValue(offline);
     const saveAsync = jest.fn<() => Promise<{ uri: string; base64: string }>>()

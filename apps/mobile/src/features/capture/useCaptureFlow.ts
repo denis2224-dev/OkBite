@@ -25,7 +25,7 @@ export function useCaptureFlow() {
   const [canRetry, setCanRetry] = useState(false);
   const busy = useRef(false);
   const lastUri = useRef<string | null>(null);
-  const prepared = useRef<Awaited<ReturnType<typeof compressPhoto>> | null>(null);
+  const prepared = useRef<{ photo: Awaited<ReturnType<typeof compressPhoto>>; barcodeMiss: boolean } | null>(null);
   const enqueuedPayload = useRef<string | null>(null);
 
   // One request at a time: camera, gallery and retry all go through here.
@@ -45,9 +45,10 @@ export function useCaptureFlow() {
         }
         lastUri.current = uri;
         setCanRetry(true);
-        const photo = prepared.current ??= await compressPhoto(uri, IDENTIFY_PHOTO_MAX_BYTES);
+        const capture = prepared.current ??= { photo: await compressPhoto(uri, IDENTIFY_PHOTO_MAX_BYTES), barcodeMiss: false };
+        const { photo } = capture;
         currentPhotoUri = photo.uri;
-        const code = await findBarcode(photo.uri);
+        const code = capture.barcodeMiss ? null : await findBarcode(photo.uri);
         if (code) {
           currentCode = code;
           const hit = await api.lookup({ code });
@@ -55,6 +56,7 @@ export function useCaptureFlow() {
             setState(IDLE);
             return router.replace(productRoute(hit.product.id));
           }
+          capture.barcodeMiss = true;
           currentCode = null;
         }
         // No readable barcode, or an unknown one: the photo itself decides.
