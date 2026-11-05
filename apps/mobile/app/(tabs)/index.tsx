@@ -22,6 +22,7 @@ export default function Home(){
  <Pressable accessibilityRole="button" accessibilityLabel={ro.home.compare} onPress={()=>router.push('/compare')}><Card style={{flexDirection:'row',alignItems:'center',gap:14}}><Icon name="compare" size={28} color={colors.primary}/><View style={{flex:1}}><Heading style={{fontSize:18,lineHeight:24}}>{ro.home.compare}</Heading><Body style={{fontSize:12,color:colors.muted}}>{ro.home.compareHint}</Body></View><Icon name="arrow" size={18} color={colors.muted}/></Card></Pressable>
  <View style={{gap:14,paddingTop:4}}><Heading style={{fontSize:20}}>{ro.home.legend}</Heading>{(['good','medium','low'] as const).map(grade=><View key={grade} style={{flexDirection:'row',alignItems:'center',gap:12}}><View style={{minWidth:78,padding:8,borderRadius:10,backgroundColor:colors[`${grade}Bg`]}}><Body style={{color:colors[grade],fontFamily:fonts.bold,textAlign:'center',fontSize:13}}>{grade==='good'?ro.home.legendGood:grade==='medium'?ro.home.legendMedium:ro.home.legendLow}</Body></View><Body style={{flex:1,fontSize:13}}>{ro.home[grade]}</Body></View>)}<Body style={{fontSize:12,lineHeight:18,color:colors.muted}}>{ro.score.disclaimer}</Body></View>
  {isPreview&&<Body style={{fontSize:12,color:colors.muted}}>{ro.app.demoNote}</Body>}
+ <Button variant="ghost" onPress={()=>router.push('/offline' as never)}>{ro.offline.queueTitle}</Button>
  <View style={{gap:4}}>{(['about','method','privacy','terms'] as const).map(route=><Button key={route} variant="ghost" onPress={()=>router.push(`/${route}`)}>{ro.nav[route]}</Button>)}</View>
  </Screen>;
 }

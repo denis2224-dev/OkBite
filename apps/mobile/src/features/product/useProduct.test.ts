@@ -36,3 +36,18 @@ it('prevents a slow old request replacing the newly selected product', async () 
   await act(async () => resolveOld(foundYogurt));
   expect(result.current.data?.product.id).toBe('00000000-0000-4000-8000-000000000002');
 });
+it('opens an explicitly selected saved result without calling the backend', async () => {
+  jest.mocked(getFromHistory).mockResolvedValue({ ...foundYogurt, savedAt: '2026-11-05T00:00:00.000Z' });
+  const { result } = await renderHook(() => useProduct(foundYogurt.product.id, true));
+  await waitFor(() => expect(result.current.data?.product.id).toBe(foundYogurt.product.id));
+  expect(result.current.cached).toBe(true);
+  expect(api.lookup).not.toHaveBeenCalled();
+});
+it('retries a failed lookup for the same product without changing the route', async () => {
+  jest.mocked(api.lookup).mockRejectedValueOnce(new ApiError('offline')).mockResolvedValueOnce(foundYogurt);
+  const { result } = await renderHook(() => useProduct(foundYogurt.product.id));
+  await waitFor(() => expect(result.current.error?.code).toBe('offline'));
+  await act(() => result.current.retry());
+  await waitFor(() => expect(result.current.data?.product.id).toBe(foundYogurt.product.id));
+  expect(api.lookup).toHaveBeenCalledTimes(2);
+});
