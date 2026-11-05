@@ -86,6 +86,8 @@ let created = false;
 try {
   const before = snapshot('postgres');
   const accessBefore = accessSnapshot('postgres');
+  const databaseOwner = sql('postgres', 'select pg_get_userbyid(datdba) from pg_database where datname=current_database();').trim();
+  if (!/^[a-z_][a-z0-9_]*$/.test(databaseOwner)) throw new Error('Unsupported local database owner');
   const grants = supplementalGrants();
   writeFileSync(join(directory, 'supplemental-grants.sql'), grants, { mode: 0o600 });
   docker('pg_dump -U supabase_admin -d postgres --format=custom --schema=public --schema=auth --schema=storage --schema=extensions', { stdoutFile: archive });
@@ -93,7 +95,10 @@ try {
     from pg_extension e join pg_namespace n on n.oid=e.extnamespace
     where n.nspname in ('public','extensions') order by e.extname;`);
   writeFileSync(join(directory, 'extensions.sql'), extensions, { mode: 0o600 });
-  docker(`createdb -U supabase_admin --template=template0 ${target}`); created = true;
+  docker(`createdb -U supabase_admin --owner=${databaseOwner} --template=template0 ${target}`); created = true;
+  if (sql(target, 'select pg_get_userbyid(datdba) from pg_database where datname=current_database();').trim() !== databaseOwner) {
+    throw new Error('Restored database owner differs');
+  }
   sql(target, 'drop schema public;');
   docker(`pg_restore -U supabase_admin -d ${target} --exit-on-error --section=pre-data`, { stdinFile: archive });
   sql(target, extensions);
@@ -109,7 +114,7 @@ try {
     { env: { ...process.env, PGSSLMODE: 'disable' } });
   process.stdout.write(tests);
   const report = { date: new Date().toISOString(), scope: 'Local application/Auth/Storage schemas; not hosted recovery',
-    project, restoredDatabase: target, counts: JSON.parse(before), archive,
+    project, databaseOwner, restoredDatabase: target, counts: JSON.parse(before), archive,
     archiveSha256: createHash('sha256').update(readFileSync(archive)).digest('hex'),
     pgTap: 'passed', ownersAndGrants: 'matched source schemas, relations, columns, routines and defaults', storageFiles: 'Separate binary round-trip required; SQL does not contain photo bytes',
     staging: 'pending: no hosted project configured' };
