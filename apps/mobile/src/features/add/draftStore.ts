@@ -31,6 +31,8 @@ function parseUniqueCategories(entries: readonly unknown[]): readonly CategoryTy
 }
 
 let currentDraft: AddReviewDraft | null = null;
+const draftKeys = new WeakMap<AddReviewDraft, number>();
+let nextDraftKey = 0;
 let availableCategories: readonly CategoryType[] = [];
 
 function isValidDraft(draft: AddReviewDraft | null): draft is AddReviewDraft {
@@ -49,6 +51,11 @@ function isValidDraft(draft: AddReviewDraft | null): draft is AddReviewDraft {
 
 export function setAddReviewDraft(draft: AddReviewDraft): void {
   currentDraft = isValidDraft(draft) ? draft : null;
+  if (currentDraft && !draftKeys.has(currentDraft)) draftKeys.set(currentDraft, ++nextDraftKey);
+}
+
+export function getAddReviewDraftKey(draft: AddReviewDraft): number | undefined {
+  return draftKeys.get(draft);
 }
 
 export function getAddReviewDraft(): AddReviewDraft | null {
