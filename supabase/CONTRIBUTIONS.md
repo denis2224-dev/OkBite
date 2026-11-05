@@ -48,8 +48,7 @@ Same-code retries return the existing visible product without another `added` ev
 No-code submissions are independent; exactly-once retries would need an agreed
 idempotency field/header. A random device ID is a quota key, not shopper authentication.
 
-R3/D3 is integrated from current main. R3/C4 remains absent: the approved C3 score
-placeholder returns `unavailable`. C6 backend plumbing is implemented and tested,
-but its real-score acceptance remains pending C4 plus human-checked A3 fixtures.
+R3/D3 and R3/C4 (Nutri-Score 2023 engine) are integrated from main. C6 backend plumbing
+is implemented and tested; real-score acceptance still needs the human-checked A3 fixtures.
 No real product, ingredient or score provenance has been invented. No hosted
 Supabase project, deployment, phone verification or merge is claimed.

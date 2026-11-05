@@ -85,7 +85,7 @@ The C3 worktree uses **only** `okbite-c3-cd37`, API 56431, DB 56432,
 shadow 56430, Studio 56433, inbox 56434. The running C2 stack stays untouched.
 `lookup` disables gateway JWT verification because shoppers have no accounts;
 its handler validates the random device UUID, which is telemetry, not authentication.
-R3/C4 is absent here: the temporary `computeScore` always returns unavailable.
+R3/C4 supplies the real `computeScore`; products missing kcal, sugar, sat or salt still return unavailable.
 C6 still requires the real C4 engine and D3 allergen matcher.
 
 ### C3 reproduction and evidence (2026-11-04)
