@@ -53,7 +53,7 @@ export function createService(deps = { adminClient, loadProduct, saveJpeg, askCl
       photoPath = await deps.saveJpeg(photo, device, 'front');
     } catch (error) {
       // Nothing was sent to Claude, so the attempt does not count against the quota.
-      await releaseUsage(db, event).catch(() => console.warn('Quota release failed'));
+      await releaseUsage(db, event);
       throw error;
     }
     // Claude gets the stored copy, which saveJpeg re-encoded without EXIF/GPS metadata.

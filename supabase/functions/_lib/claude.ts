@@ -8,7 +8,8 @@ const RETRYABLE = new Set([408, 429, 500, 502, 503, 504, 529]);
 const ATTEMPTS = 3;
 const TIMEOUT_MS = 20_000;
 const MAX_IMAGES = 2;
-const MAX_IMAGE_BASE64 = 1_900_000; // two photos stay under TokenHarbor's 4 MB request cap
+const MAX_SINGLE_IMAGE_BASE64 = 2_000_000; // 1.5 MB stored JPEG after base64 encoding
+const MAX_PAIRED_IMAGE_BASE64 = 1_900_000; // leave room for JSON within the 4 MB request cap
 
 /** Claude could not give a usable answer. The message never contains the key or the provider's body. */
 export class UpstreamError extends Error {}
@@ -28,9 +29,10 @@ export async function askClaude(
 ): Promise<string> {
   const key = deps.apiKey ?? Deno.env.get('AI_API_KEY');
   if (!key) throw new UpstreamError('Claude is not configured');
+  const imageLimit = images.length === 1 ? MAX_SINGLE_IMAGE_BASE64 : MAX_PAIRED_IMAGE_BASE64;
   if (
     !images.length || images.length > MAX_IMAGES ||
-    images.some((i) => !i || i.length > MAX_IMAGE_BASE64)
+    images.some((i) => !i || i.length > imageLimit)
   ) throw new UpstreamError('Invalid images for Claude');
   const doFetch = deps.fetch ?? fetch;
   const sleep = deps.sleep ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)));

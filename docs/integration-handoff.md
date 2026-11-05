@@ -1,3 +1,15 @@
+# R1 target and toolchain policy — 2026-11-05
+
+The target application is `apps/mobile`. Root dev/start/web/native commands
+and CI exports now select it. Preserve the merged root preview source, assets
+and tests as references when porting the approved design; the historical
+default-preview instructions below are superseded.
+
+The reproducible package manager is pnpm 11.25.0, with a 24-hour minimum
+release age and only the two existing build approvals. This explicitly revises
+the initial pnpm 9.12.0 plan. See `.github/SETUP.md` for installation and CI.
+No hosted, physical-device, human-data or merge approval is implied.
+
 # Current PR #16 review integration
 
 This review integrates main `b4ba501`, preserving all merged backend/admin code,

@@ -1,20 +1,20 @@
-# Dedicated R2 stack for this worktree; never reset another task stack. CLI: 2.65.5.
-project_id = "okbite-c6"
+# Stable team defaults. Use a separate configuration for parallel local stacks.
+project_id = "okbite"
 [api]
-port = 57431
+port = 54321
 schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 [db]
-port = 57432
-shadow_port = 57430
+port = 54322
+shadow_port = 54320
 major_version = 15
 [db.seed]
 enabled = true
 sql_paths = ["./seed.sql"]
 [studio]
-port = 57433
+port = 54323
 [inbucket]
-port = 57434
+port = 54324
 [analytics]
 enabled = false
 
@@ -28,6 +28,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.identify]
+verify_jwt = false
+
+[functions.client-error]
 verify_jwt = false
 
 # Auth and moderator membership are checked by the handler via Auth.getUser.
