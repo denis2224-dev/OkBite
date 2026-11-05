@@ -1,0 +1,19 @@
+# Local C2 stack, isolated from other task worktrees. CLI: 2.65.5.
+project_id = "okbite-c2"
+[api]
+port = 55431
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+[db]
+port = 55432
+shadow_port = 55430
+major_version = 15
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+[studio]
+port = 55433
+[inbucket]
+port = 55434
+[analytics]
+enabled = false

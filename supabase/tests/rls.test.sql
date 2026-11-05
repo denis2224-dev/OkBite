@@ -1,0 +1,78 @@
+begin;
+select plan(53);
+select has_table('public', 'products','products table exists');
+-- Test-only states and identities; every file rolls back.
+insert into auth.users (id) values ('00000000-0000-4000-8000-000000000001'), ('00000000-0000-4000-8000-000000000002');
+insert into moderators values ('00000000-0000-4000-8000-000000000002');
+insert into products (id,status,name,brand,quantity,category_slug,unit,ingredients_text,source,added_by_device)
+values ('00000000-0000-4000-8000-000000000010','hidden','Ascuns','Test','','iaurt','g','secret','test','private'),
+       ('00000000-0000-4000-8000-000000000011','unverified','Nou','Test','','iaurt','g','lapte','test','private');
+insert into product_ingredients values ('00000000-0000-4000-8000-000000000010',0,'secret',null);
+insert into reports (product_id,message,device_id) values ('00000000-0000-4000-8000-000000000010','test','private');
+insert into usage_events (kind,device_id) values ('photo','private'),('barcode','private'),('identified','private'),('not_found','private'),('read_label','private'),('added','private');
+insert into client_errors (device_id,message) values ('private','test');
+select ok((select bool_and(relrowsecurity) from pg_class where oid in
+  ('categories'::regclass,'ingredients'::regclass,'products'::regclass,'product_ingredients'::regclass,
+   'reports'::regclass,'moderators'::regclass,'usage_events'::regclass,'client_errors'::regclass)), 'RLS on all eight tables');
+select results_eq($$select id, public from storage.buckets order by id$$, $$values ('products'::text,true),('uploads',false)$$, 'bucket visibility');
+set local role anon;
+select is((select count(*) from products where status='verified'),6::bigint,'anon sees six verified fixtures');
+select is((select count(*) from products where status='unverified'),1::bigint,'anon sees unverified');
+select is((select count(*) from products where status='hidden'),0::bigint,'anon cannot see hidden');
+select is((select count(*) from product_ingredients where raw_name='secret'),0::bigint,'hidden ingredient links excluded');
+select is((select count(*) from categories),3::bigint,'public categories');
+select ok((select count(*) > 0 from ingredients),'public ingredients');
+select ok((select count(*) > 0 from product_ingredients),'public visible ingredient links');
+select throws_ok('select added_by_device from products','42501',null,'device identifiers are private');
+select throws_ok('select * from reports','42501',null,'reports private');
+select throws_ok('select * from moderators','42501',null,'moderator membership private');
+select throws_ok('select * from usage_events','42501',null,'usage private');
+select throws_ok('select * from client_errors','42501',null,'errors private');
+select throws_ok('select * from daily_stats','42501',null,'stats private');
+select throws_ok($$insert into categories values ('test','Test','general')$$,'42501',null,'anon category insert denied');
+select throws_ok($$insert into ingredients (slug,name,grp,role,explanation,source) values ('test','Test','base','','','')$$,'42501',null,'anon ingredient insert denied');
+select throws_ok($$insert into products (name,brand,quantity,category_slug,unit,ingredients_text,source) values ('Test','','','iaurt','g','','')$$,'42501',null,'anon product insert denied');
+select throws_ok($$insert into product_ingredients values ('00000000-0000-4000-8000-000000000011',0,'test',null)$$,'42501',null,'anon link insert denied');
+select throws_ok($$insert into reports (product_id,message,device_id) values ('00000000-0000-4000-8000-000000000011','test','test')$$,'42501',null,'anon report insert denied');
+select throws_ok($$insert into moderators values ('00000000-0000-4000-8000-000000000001')$$,'42501',null,'anon membership insert denied');
+select throws_ok($$insert into usage_events (kind,device_id) values ('photo','test')$$,'42501',null,'anon usage insert denied');
+select throws_ok($$insert into client_errors (device_id,message) values ('test','test')$$,'42501',null,'anon error insert denied');
+select throws_ok($$update products set name='tampered'$$,'42501',null,'anon update denied');
+select throws_ok('delete from products','42501',null,'anon delete denied');
+reset role;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',true);
+select throws_ok('select added_by_device from products','42501',null,'ordinary user cannot read device IDs');
+select is((select count(*) from product_ingredients where raw_name='secret'),0::bigint,'ordinary user cannot read hidden links');
+select is(is_moderator(),false,'ordinary user is not moderator');
+select is((select count(*) from products where status='hidden'),0::bigint,'ordinary user cannot read hidden');
+select is((select count(*) from reports),0::bigint,'ordinary user cannot read reports');
+with changed as (update products set name='tampered' returning id)
+select is((select count(*) from changed),0::bigint,'ordinary user cannot update');
+select throws_ok($$insert into products (name,brand,quantity,category_slug,unit,ingredients_text,source) values ('Test','','','iaurt','g','','')$$,'42501',null,'ordinary user cannot insert');
+select throws_ok($$insert into moderators values ('00000000-0000-4000-8000-000000000001')$$,'42501',null,'cannot self-enroll as moderator');
+select throws_ok('select * from daily_stats','42501',null,'ordinary user cannot read stats');
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000002',true);
+select is(is_moderator(),true,'moderator identity');
+select is((select count(*) from products where status='hidden'),1::bigint,'moderator sees hidden');
+select is((select count(*) from reports),1::bigint,'moderator sees reports');
+select lives_ok($$update products set hidden_reason='test' where status='hidden'$$,'moderator updates products');
+select lives_ok($$insert into product_ingredients values ('00000000-0000-4000-8000-000000000011',0,'test',null)$$,'moderator inserts ingredient link');
+select lives_ok($$delete from product_ingredients where raw_name='test'$$,'moderator deletes link');
+select lives_ok($$update reports set status='closed'$$,'moderator closes report');
+select lives_ok($$insert into products (name,brand,quantity,category_slug,unit,ingredients_text,source) values ('Moderator','','','iaurt','g','','test')$$,'moderator inserts product');
+select lives_ok($$delete from products where name='Moderator'$$,'moderator deletes product');
+select lives_ok($$insert into reports (product_id,message,device_id) values ('00000000-0000-4000-8000-000000000011','test','test')$$,'moderator inserts report');
+select lives_ok($$delete from reports where device_id='test'$$,'moderator deletes report');
+select throws_ok('select * from client_errors','42501',null,'moderator has no log access');
+reset role;
+set local role service_role;
+select is((select count(*) from products),8::bigint,'service sees all products');
+select lives_ok($$insert into client_errors (device_id,message) values ('test','service')$$,'service can write');
+select is((select count(*) from moderators),1::bigint,'service sees membership');
+select results_eq($$select photos,barcodes,identified,not_found,read_labels,added from daily_stats$$,
+ $$values (1::bigint,1::bigint,1::bigint,1::bigint,1::bigint,1::bigint)$$,'service daily counts');
+select lives_ok('select added_by_device from products','service can read private product fields');
+select lives_ok($$insert into usage_events (kind,device_id) values ('report','test')$$,'service writes usage');
+select * from finish();
+rollback;
