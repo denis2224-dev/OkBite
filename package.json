@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "pnpm --filter mobile start",
-    "test": "pnpm test:sync-shared && pnpm -r test && pnpm test:scripts",
+    "test": "pnpm test:sync-shared && pnpm -r test && pnpm test:scripts && pnpm test:local-gateway",
     "lint": "eslint .",
     "typecheck": "pnpm -r typecheck",
     "e2e": "echo \"set up in D6\" && exit 1",
@@ -15,7 +15,8 @@
     "format": "prettier --write .",
     "test:scripts": "vitest run scripts --exclude \"**/*.test.mjs\"",
     "data:check": "tsx scripts/check-data.ts",
-    "test:sync-shared": "node --test scripts/sync-shared.test.mjs"
+    "test:sync-shared": "node --test scripts/sync-shared.test.mjs",
+    "test:local-gateway": "node --test supabase/tests/local-cors.test.mjs"
   },
   "devDependencies": {
     "eslint": "^9.39.1",
