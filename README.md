@@ -39,7 +39,8 @@ PWA_Moldova/
 │       └── state/               Shared application flags
 ├── test/                        Unit, component, persistence and workflow tests
 ├── public/                      Browser favicon
-├── server/                      Reserved Supabase backend workspace
+├── supabase/                    Team database migrations, demo seed and tests
+├── server/                      Backend location documentation
 ├── scripts/                     Development helpers
 ├── docs/                        Plans and integration notes
 ├── app.json                     Expo application configuration
@@ -53,7 +54,8 @@ PWA_Moldova/
 Expo requires route entry files in `src/app`. These delegate to screens in
 `src/features`, preserving both the requested separation and working navigation.
 No Dart files, Flutter dependencies or empty controller abstractions are added.
-All tests are in `test`. Fonts are bundled locally without runtime font downloads.
+Root application tests are in `test`; workspace and data-script tests remain
+beside their respective source files. Fonts are bundled locally without runtime font downloads.
 
 ## Run from this folder
 
@@ -74,7 +76,7 @@ For a fresh checkout, install the locked dependencies first:
 npx --yes pnpm@9.12.0 install --frozen-lockfile
 ```
 
-Checks: `npm test`, `npm run typecheck`, `npm run lint`.
+Combined checks: `npm run check` (app, browser, shared, scaffold, scripts and data).
 Browser export: `npm run build:web`. All platform bundles: `npx expo export --platform all`.
 
 Copy `.env.example` to `.env.local` for local settings. Without service settings,
@@ -83,7 +85,7 @@ capture and backend integration remain pending. Operator details and final revie
 are still required for the draft policy pages.
 
 Earlier implementations are preserved on their existing branches and in the
-previous worktree. Current branch: `refactor/expo-feature-layout`.
+previous worktree. Current review branch: `r4/ready-for-review`.
 
 See [integration notes](docs/r4-progress.md), [design reference](design/README.md),
 [backend responsibilities](server/supabase/README.md) and

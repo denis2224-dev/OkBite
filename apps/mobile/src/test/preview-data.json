@@ -1,0 +1,650 @@
+[
+  {
+    "product": {
+      "id": "0b6f3c1e-2d4a-4c8e-9f10-1a2b3c4d5e1f",
+      "code": "4840001000014",
+      "status": "verified",
+      "name": "Iaurt natural 2,5%",
+      "brand": "Livada Verde",
+      "quantity": "400 g",
+      "category": {
+        "slug": "iaurt",
+        "name": "Iaurturi",
+        "scoreKind": "general"
+      },
+      "unit": "g",
+      "portion": {
+        "amount": 150,
+        "label": "1 pahar · 150 g"
+      },
+      "nutrients": {
+        "kcal": 63,
+        "fat": 2.5,
+        "sat": 1.6,
+        "sugar": 4.1,
+        "salt": 0.1,
+        "protein": 3.6,
+        "fiber": 0,
+        "fruitVegPct": null
+      },
+      "ingredientsText": "lapte normalizat (2,5% grăsime), culturi lactice vii.",
+      "ingredients": [
+        {
+          "slug": null,
+          "name": "Lapte normalizat",
+          "group": "base",
+          "role": "Ingredient de bază",
+          "explanation": null,
+          "source": null,
+          "allergen": "Lapte"
+        },
+        {
+          "slug": null,
+          "name": "Culturi lactice vii",
+          "group": "cult",
+          "role": "Fermentare",
+          "explanation": null,
+          "source": null,
+          "allergen": null
+        }
+      ],
+      "allergens": [
+        "Lapte"
+      ],
+      "mayContain": [],
+      "imageUrl": null,
+      "labelImageUrl": null,
+      "source": "Exemplu demonstrativ din prototip",
+      "addedAt": "2026-11-03",
+      "verifiedAt": "2026-11-03"
+    },
+    "score": {
+      "score": 78,
+      "letter": null,
+      "grade": "good",
+      "reasons": [
+        {
+          "tone": "good",
+          "title": "Fără zahăr adăugat",
+          "detail": "Cele 4,1 g de zahăr la 100 g sunt lactoză, prezentă natural în lapte."
+        },
+        {
+          "tone": "good",
+          "title": "Doar 2 ingrediente",
+          "detail": "Lapte și culturi lactice — fără aditivi, arome sau îndulcitori."
+        },
+        {
+          "tone": "neutral",
+          "title": "Grăsimi saturate: nivel mediu",
+          "detail": "1,6 g la 100 g; un pahar de 150 g acoperă 12% din referința zilnică."
+        }
+      ],
+      "missing": []
+    }
+  },
+  {
+    "product": {
+      "id": "0b6f3c1e-2d4a-4c8e-9f10-1a2b3c4d5e2f",
+      "code": "4840001000024",
+      "status": "verified",
+      "name": "Iaurt cu căpșuni 2%",
+      "brand": "Zorel",
+      "quantity": "400 g",
+      "category": {
+        "slug": "iaurt",
+        "name": "Iaurturi",
+        "scoreKind": "general"
+      },
+      "unit": "g",
+      "portion": {
+        "amount": 150,
+        "label": "1 pahar · 150 g"
+      },
+      "nutrients": {
+        "kcal": 98,
+        "fat": 2,
+        "sat": 1.3,
+        "sugar": 13.2,
+        "salt": 0.12,
+        "protein": 2.9,
+        "fiber": 0.2,
+        "fruitVegPct": null
+      },
+      "ingredientsText": "lapte normalizat, preparat de căpșuni 12% (căpșuni, zahăr, amidon modificat, gelifiant: pectină, colorant: carmin), zahăr, aromă naturală, culturi lactice vii.",
+      "ingredients": [
+        {
+          "slug": null,
+          "name": "Lapte normalizat",
+          "group": "base",
+          "role": "Ingredient de bază",
+          "explanation": null,
+          "source": null,
+          "allergen": "Lapte"
+        },
+        {
+          "slug": null,
+          "name": "Preparat de căpșuni (12%)",
+          "group": "taste",
+          "role": "Fructe",
+          "explanation": null,
+          "source": null,
+          "allergen": null
+        },
+        {
+          "slug": null,
+          "name": "Zahăr",
+          "group": "taste",
+          "role": "Îndulcitor",
+          "explanation": null,
+          "source": null,
+          "allergen": null
+        },
+        {
+          "slug": null,
+          "name": "Amidon modificat",
+          "group": "add",
+          "role": "Îngroșător",
+          "explanation": null,
+          "source": null,
+          "allergen": null
+        },
+        {
+          "slug": null,
+          "name": "Pectină (E440)",
+          "group": "add",
+          "role": "Gelifiant",
+          "explanation": null,
+          "source": null,
+          "allergen": null
+        },
+        {
+          "slug": null,
+          "name": "Carmin (E120)",
+          "group": "add",
+          "role": "Colorant",
+          "explanation": null,
+          "source": null,
+          "allergen": null
+        },
+        {
+          "slug": null,
+          "name": "Aromă naturală",
+          "group": "taste",
+          "role": "Aromă",
+          "explanation": null,
+          "source": null,
+          "allergen": null
+        },
+        {
+          "slug": null,
+          "name": "Culturi lactice vii",
+          "group": "cult",
+          "role": "Fermentare",
+          "explanation": null,
+          "source": null,
+          "allergen": null
+        }
+      ],
+      "allergens": [
+        "Lapte"
+      ],
+      "mayContain": [
+        "Fructe cu coajă lemnoasă"
+      ],
+      "imageUrl": null,
+      "labelImageUrl": null,
+      "source": "Exemplu demonstrativ din prototip",
+      "addedAt": "2026-11-03",
+      "verifiedAt": "2026-11-03"
+    },
+    "score": {
+      "score": 44,
+      "letter": null,
+      "grade": "medium",
+      "reasons": [
+        {
+          "tone": "bad",
+          "title": "Zahăr adăugat",
+          "detail": "13,2 g la 100 g. Un pahar de 150 g are ≈ 20 g de zahăr, cam 5 lingurițe."
+        },
+        {
+          "tone": "bad",
+          "title": "3 aditivi și o aromă",
+          "detail": "Amidon modificat, pectină și colorant carmin, plus aromă naturală."
+        },
+        {
+          "tone": "neutral",
+          "title": "Proteine moderate",
+          "detail": "2,9 g la 100 g, puțin sub un iaurt natural (3,6 g)."
+        }
+      ],
+      "missing": []
+    }
+  },
+  {
+    "product": {
+      "id": "0b6f3c1e-2d4a-4c8e-9f10-1a2b3c4d5e3f",
+      "code": "4840001000031",
+      "status": "verified",
+      "name": "Iaurt grecesc 10%",
+      "brand": "Stâna Mică",
+      "quantity": "300 g",
+      "category": {
+        "slug": "iaurt",
+        "name": "Iaurturi",
+        "scoreKind": "general"
+      },
+      "unit": "g",
+      "portion": {
+        "amount": 150,
+        "label": "1 porție · 150 g"
+      },
+      "nutrients": {
+        "kcal": 133,
+        "fat": 10,
+        "sat": 6.6,
+        "sugar": 3.5,
+        "salt": 0.1,
+        "protein": 5.2,
+        "fiber": 0,
+        "fruitVegPct": null
+      },
+      "ingredientsText": "lapte integral, smântână, culturi lactice vii.",
+      "ingredients": [
+        {
+          "slug": null,
+          "name": "Lapte integral",
+          "group": "base",
+          "role": "Ingredient de bază",
+          "explanation": null,
+          "source": null,
+          "allergen": "Lapte"
+        },
+        {
+          "slug": null,
+          "name": "Smântână",
+          "group": "fat",
+          "role": "Grăsime și cremozitate",
+          "explanation": null,
+          "source": null,
+          "allergen": "Lapte"
+        },
+        {
+          "slug": null,
+          "name": "Culturi lactice vii",
+          "group": "cult",
+          "role": "Fermentare",
+          "explanation": null,
+          "source": null,
+          "allergen": null
+        }
+      ],
+      "allergens": [
+        "Lapte"
+      ],
+      "mayContain": [],
+      "imageUrl": null,
+      "labelImageUrl": null,
+      "source": "Exemplu demonstrativ din prototip",
+      "addedAt": "2026-11-03",
+      "verifiedAt": "2026-11-03"
+    },
+    "score": {
+      "score": 64,
+      "letter": null,
+      "grade": "good",
+      "reasons": [
+        {
+          "tone": "good",
+          "title": "Fără zahăr adăugat",
+          "detail": "3,5 g de zahăr la 100 g, natural din lapte."
+        },
+        {
+          "tone": "good",
+          "title": "Bogat în proteine",
+          "detail": "5,2 g la 100 g — sățios pentru o gustare."
+        },
+        {
+          "tone": "bad",
+          "title": "Multe grăsimi saturate",
+          "detail": "6,6 g la 100 g, peste pragul de 5 g considerat ridicat. O porție acoperă aproape 50% din referința zilnică."
+        }
+      ],
+      "missing": []
+    }
+  },
+  {
+    "product": {
+      "id": "0b6f3c1e-2d4a-4c8e-9f10-1a2b3c4d5e4f",
+      "code": "4840001000048",
+      "status": "verified",
+      "name": "Biscuiți de ovăz cu ciocolată",
+      "brand": "Ovăzel",
+      "quantity": "180 g",
+      "category": {
+        "slug": "biscuiti",
+        "name": "Biscuiți",
+        "scoreKind": "general"
+      },
+      "unit": "g",
+      "portion": {
+        "amount": 30,
+        "label": "3 biscuiți · 30 g"
+      },
+      "nutrients": {
+        "kcal": 478,
+        "fat": 21,
+        "sat": 9.8,
+        "sugar": 26,
+        "salt": 0.7,
+        "protein": 7,
+        "fiber": 5.1,
+        "fruitVegPct": null
+      },
+      "ingredientsText": "fulgi de ovăz 32%, făină de grâu, zahăr, ulei de palmier, ciocolată 15% (zahăr, masă de cacao, unt de cacao, lapte praf, emulsifiant: lecitină din soia), agent de afânare: bicarbonat de sodiu, sare.",
+      "ingredients": [
+        {
+          "slug": null,
+          "name": "Fulgi de ovăz (32%)",
+          "group": "base",
+          "role": "Cereale",
+          "explanation": null,
+          "source": null,
+          "allergen": "Gluten"
+        },
+        {
+          "slug": null,
+          "name": "Făină de grâu",
+          "group": "base",
+          "role": "Cereale",
+          "explanation": null,
+          "source": null,
+          "allergen": "Gluten"
+        },
+        {
+          "slug": null,
+          "name": "Zahăr",
+          "group": "taste",
+          "role": "Îndulcitor",
+          "explanation": null,
+          "source": null,
+          "allergen": null
+        },
+        {
+          "slug": null,
+          "name": "Ulei de palmier",
+          "group": "fat",
+          "role": "Grăsime",
+          "explanation": null,
+          "source": null,
+          "allergen": null
+        },
+        {
+          "slug": null,
+          "name": "Ciocolată (15%)",
+          "group": "taste",
+          "role": "Gust",
+          "explanation": null,
+          "source": null,
+          "allergen": "Gluten"
+        },
+        {
+          "slug": null,
+          "name": "Lecitină din soia (E322)",
+          "group": "add",
+          "role": "Emulsifiant",
+          "explanation": null,
+          "source": null,
+          "allergen": "Gluten"
+        },
+        {
+          "slug": null,
+          "name": "Bicarbonat de sodiu (E500)",
+          "group": "add",
+          "role": "Agent de afânare",
+          "explanation": null,
+          "source": null,
+          "allergen": null
+        },
+        {
+          "slug": null,
+          "name": "Sare",
+          "group": "taste",
+          "role": "Gust",
+          "explanation": null,
+          "source": null,
+          "allergen": null
+        }
+      ],
+      "allergens": [
+        "Gluten",
+        "Lapte",
+        "Soia"
+      ],
+      "mayContain": [
+        "Ouă",
+        "Arahide"
+      ],
+      "imageUrl": null,
+      "labelImageUrl": null,
+      "source": "Exemplu demonstrativ din prototip",
+      "addedAt": "2026-11-03",
+      "verifiedAt": "2026-11-03"
+    },
+    "score": {
+      "score": 31,
+      "letter": null,
+      "grade": "low",
+      "reasons": [
+        {
+          "tone": "bad",
+          "title": "Mult zahăr",
+          "detail": "26 g la 100 g. Trei biscuiți (30 g) au ≈ 7,8 g, aproape 2 lingurițe."
+        },
+        {
+          "tone": "bad",
+          "title": "Grăsimi saturate ridicate",
+          "detail": "9,8 g la 100 g, mai ales din uleiul de palmier."
+        },
+        {
+          "tone": "good",
+          "title": "Sursă de fibre",
+          "detail": "5,1 g la 100 g din ovăz — peste pragul de 3 g pentru „sursă de fibre”."
+        }
+      ],
+      "missing": []
+    }
+  },
+  {
+    "product": {
+      "id": "0b6f3c1e-2d4a-4c8e-9f10-1a2b3c4d5e5f",
+      "code": "4840001000062",
+      "status": "verified",
+      "name": "Biscuiți integrali cu ovăz",
+      "brand": "Morărița",
+      "quantity": "200 g",
+      "category": {
+        "slug": "biscuiti",
+        "name": "Biscuiți",
+        "scoreKind": "general"
+      },
+      "unit": "g",
+      "portion": {
+        "amount": 30,
+        "label": "3 biscuiți · 30 g"
+      },
+      "nutrients": {
+        "kcal": 445,
+        "fat": 15,
+        "sat": 2.1,
+        "sugar": 14,
+        "salt": 0.5,
+        "protein": 8.5,
+        "fiber": 7.8,
+        "fruitVegPct": null
+      },
+      "ingredientsText": "făină integrală de grâu 45%, fulgi de ovăz 20%, zahăr, ulei de floarea-soarelui, agent de afânare: bicarbonat de sodiu, sare.",
+      "ingredients": [
+        {
+          "slug": null,
+          "name": "Făină integrală de grâu (45%)",
+          "group": "base",
+          "role": "Cereale",
+          "explanation": null,
+          "source": null,
+          "allergen": "Gluten"
+        },
+        {
+          "slug": null,
+          "name": "Fulgi de ovăz (20%)",
+          "group": "base",
+          "role": "Cereale",
+          "explanation": null,
+          "source": null,
+          "allergen": "Gluten"
+        },
+        {
+          "slug": null,
+          "name": "Zahăr",
+          "group": "taste",
+          "role": "Îndulcitor",
+          "explanation": null,
+          "source": null,
+          "allergen": null
+        },
+        {
+          "slug": null,
+          "name": "Ulei de floarea-soarelui",
+          "group": "fat",
+          "role": "Grăsime",
+          "explanation": null,
+          "source": null,
+          "allergen": null
+        },
+        {
+          "slug": null,
+          "name": "Bicarbonat de sodiu (E500)",
+          "group": "add",
+          "role": "Agent de afânare",
+          "explanation": null,
+          "source": null,
+          "allergen": null
+        },
+        {
+          "slug": null,
+          "name": "Sare",
+          "group": "taste",
+          "role": "Gust",
+          "explanation": null,
+          "source": null,
+          "allergen": null
+        }
+      ],
+      "allergens": [
+        "Gluten"
+      ],
+      "mayContain": [
+        "Lapte",
+        "Susan"
+      ],
+      "imageUrl": null,
+      "labelImageUrl": null,
+      "source": "Exemplu demonstrativ din prototip",
+      "addedAt": "2026-11-03",
+      "verifiedAt": "2026-11-03"
+    },
+    "score": {
+      "score": 52,
+      "letter": null,
+      "grade": "medium",
+      "reasons": [
+        {
+          "tone": "good",
+          "title": "Bogat în fibre",
+          "detail": "7,8 g la 100 g, din făină integrală și ovăz."
+        },
+        {
+          "tone": "neutral",
+          "title": "Zahăr: nivel mediu",
+          "detail": "14 g la 100 g. Trei biscuiți (30 g) au ≈ 4,2 g, cam o linguriță."
+        },
+        {
+          "tone": "good",
+          "title": "Puține grăsimi saturate",
+          "detail": "2,1 g la 100 g, datorită uleiului de floarea-soarelui."
+        }
+      ],
+      "missing": []
+    }
+  },
+  {
+    "product": {
+      "id": "0b6f3c1e-2d4a-4c8e-9f10-1a2b3c4d5e6f",
+      "code": "4840001000055",
+      "status": "verified",
+      "name": "Suc de mere 100%",
+      "brand": "Grădina Sudului",
+      "quantity": "1 L",
+      "category": {
+        "slug": "suc",
+        "name": "Sucuri",
+        "scoreKind": "beverage"
+      },
+      "unit": "ml",
+      "portion": {
+        "amount": 250,
+        "label": "1 pahar · 250 ml"
+      },
+      "nutrients": {
+        "kcal": 46,
+        "fat": 0.1,
+        "sat": null,
+        "sugar": null,
+        "salt": null,
+        "protein": 0.1,
+        "fiber": null,
+        "fruitVegPct": null
+      },
+      "ingredientsText": "suc de mere din concentrat, antioxidant: acid ascorbic.",
+      "ingredients": [
+        {
+          "slug": null,
+          "name": "Suc de mere din concentrat",
+          "group": "base",
+          "role": "Ingredient de bază",
+          "explanation": null,
+          "source": null,
+          "allergen": null
+        },
+        {
+          "slug": null,
+          "name": "Acid ascorbic (E300)",
+          "group": "add",
+          "role": "Antioxidant",
+          "explanation": null,
+          "source": null,
+          "allergen": null
+        }
+      ],
+      "allergens": [],
+      "mayContain": [],
+      "imageUrl": null,
+      "labelImageUrl": null,
+      "source": "Exemplu demonstrativ din prototip",
+      "addedAt": "2026-11-03",
+      "verifiedAt": "2026-11-03"
+    },
+    "score": {
+      "score": null,
+      "letter": null,
+      "grade": "unavailable",
+      "reasons": [],
+      "missing": [
+        "sat",
+        "sugar",
+        "salt",
+        "fiber"
+      ]
+    }
+  }
+]
