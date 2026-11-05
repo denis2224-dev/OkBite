@@ -80,6 +80,19 @@ describe('importOff and loadData against stubbed services', () => {
     expect([n, pauses.length]).toEqual([2, 1]);
   });
 
+  it('stops at page 10 when a prefix has exactly 1000 results', async () => {
+    const pages: number[] = [];
+    vi.stubGlobal('fetch', async (url: string) => {
+      if (!url.includes('openfoodfacts')) return Response.json([]);
+      const page = Number(new URL(url).searchParams.get('page'));
+      pages.push(page);
+      if (page > 10) return new Response(null, { status: 401 });
+      return Response.json({ count: 1000, products: Array.from({ length: 100 }, () => off) });
+    });
+    expect(await importOff(async () => {})).toEqual({ mapped: 1000, inserted: 0 });
+    expect(pages).toEqual(Array.from({ length: 10 }, (_, page) => page + 1));
+  });
+
   it('splits a code prefix with more than 1000 results, because OFF refuses deeper pages', async () => {
     const asked: string[] = [];
     vi.stubGlobal('fetch', async (url: string) => {

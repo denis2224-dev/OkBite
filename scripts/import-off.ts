@@ -93,7 +93,7 @@ export async function importOff(pause = (ms: number) => new Promise((r) => setTi
       const rows = products.flatMap((p) => { const m = mapOffProduct(p); return m ? [toRow(m)] : []; });
       mapped += rows.length;
       inserted += await upsert('products', rows, 'code', true);
-      if (products.length < PAGE_SIZE) break;
+      if (products.length < PAGE_SIZE || (count > 0 && page * PAGE_SIZE >= count)) break;
     }
   }
   if (failed.length) {
