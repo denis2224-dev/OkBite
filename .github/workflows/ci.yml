@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - name: Check generated shared code
+        if: hashFiles('scripts/sync-shared.mjs') != ''
+        run: |
+          pnpm sync-shared
+          git diff --exit-code -- supabase/functions/_shared
+          test -z "$(git ls-files --others --exclude-standard supabase/functions/_shared)"
+      - run: pnpm --filter mobile web
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: web-export
+          path: apps/mobile/dist
+          retention-days: 7
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        if: hashFiles('supabase/functions/**/*.test.ts', 'supabase/functions/_shared/index.ts') != ''
+        with:
+          deno-version: v2.x
+      - name: Check generated Deno modules
+        if: hashFiles('supabase/functions/_shared/index.ts') != ''
+        run: |
+          config=(--no-config)
+          if [ -f supabase/functions/deno.json ]; then
+            config=(--config supabase/functions/deno.json)
+          fi
+          deno check "${config[@]}" --no-lock --node-modules-dir=none supabase/functions/_shared/index.ts
+      - name: Test Edge Functions
+        if: hashFiles('supabase/functions/**/*.test.ts') != ''
+        run: |
+          config=()
+          if [ -f supabase/functions/deno.json ]; then
+            config=(--config supabase/functions/deno.json)
+          fi
+          deno test "${config[@]}" --allow-all --permit-no-files --ignore=supabase/functions/_shared,'supabase/functions/**/*.integration.test.ts' supabase/functions/
+      - name: Verify isolated local database
+        if: hashFiles('supabase/migrations/*.sql') != ''
+        run: |
+          npx --yes supabase@2.65.5 start
+          npx --yes supabase@2.65.5 test db --local
+          npx --yes supabase@2.65.5 db lint --local --schema public --fail-on warning
+      - name: Test Edge Functions against local services
+        if: hashFiles('supabase/functions/**/*.integration.test.ts') != ''
+        run: |
+          npx --yes supabase@2.65.5 status -o env > "$RUNNER_TEMP/supabase.env"
+          set -a
+          source "$RUNNER_TEMP/supabase.env"
+          set +a
+          export SUPABASE_URL="$API_URL"
+          export SUPABASE_ANON_KEY="$ANON_KEY"
+          export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
+          export OKBITE_RUN_INTEGRATION=1
+          if [ -f supabase/tests/local-cors.mjs ]; then
+            node supabase/tests/local-cors.mjs
+          fi
+          if [ -f supabase/functions/lookup/index.ts ]; then
+            npx --yes supabase@2.65.5 functions serve > "$RUNNER_TEMP/edge-functions.log" 2>&1 &
+            ready=false
+            for attempt in {1..60}; do
+              status=$(curl --silent --output /dev/null --write-out '%{http_code}' "$API_URL/functions/v1/lookup" || true)
+              if [ "$status" = 400 ]; then ready=true; break; fi
+              sleep 1
+            done
+            if [ "$ready" != true ]; then echo 'Local lookup gateway did not become ready'; exit 1; fi
+          fi
+          deno test --config supabase/functions/deno.json --allow-all --ignore=supabase/functions/_shared supabase/functions/
+      - name: Stop isolated local services
+        if: always() && hashFiles('supabase/migrations/*.sql') != ''
+        run: npx --yes supabase@2.65.5 stop --no-backup
