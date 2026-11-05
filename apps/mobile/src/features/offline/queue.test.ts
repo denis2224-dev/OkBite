@@ -6,11 +6,12 @@ import { mkdtempSync as mockMkdtempSync } from 'node:fs';
 import { tmpdir as mockTmpdir } from 'node:os';
 import { join as mockJoin } from 'node:path';
 import * as FileSystem from 'expo-file-system/legacy';
-import { enqueue, flushQueue, listNeedsReview, resolveQueued, subscribeQueueResults, resumeQueuedItem, listUnresolvedQueued } from './queue';
+import { enqueue, flushQueue, listNeedsReview, resolveQueued, subscribeQueueResults, resumeQueuedItem, listUnresolvedQueued, listQueue, retryQueued, completeQueued, openQueuedPhoto } from './queue';
 import { listQueued, deleteQueued, markNeedsReview, putQueued, setQueuedReview } from '../history/db';
 import { getFromHistory, clearHistory } from '../history/store';
 import { api, ApiError } from '../../lib/api';
 import { foundYogurt } from '../../test/fixtures';
+import * as queueLocks from './queueLock';
 
 jest.mock('expo-sqlite', () => {
   const sqlite = new mockDatabaseSync(':memory:');
@@ -38,6 +39,8 @@ jest.mock('expo-file-system/legacy', () => ({
 jest.mock('../../lib/api', () => ({ ...jest.requireActual('../../lib/api'), api: { lookup: jest.fn(), identify: jest.fn() } }));
 beforeEach(async () => {
   jest.clearAllMocks();
+  jest.mocked(api.lookup).mockReset();
+  jest.mocked(api.identify).mockReset();
   for (const item of await listQueued()) await deleteQueued(item.id);
   await clearHistory();
 });
@@ -203,7 +206,7 @@ it('retains a valid photo after a transient read failure and resolves it on retr
     await flushQueue();
     expect(await listQueued()).toHaveLength(1);
     jest.mocked(api.identify).mockResolvedValue(identifyCandidates);
-    await flushQueue();
+    await retryQueued((await listQueued())[0]!.id);
     expect(await listNeedsReview()).toHaveLength(1);
   } finally { read.mockRestore(); }
 });
@@ -225,8 +228,10 @@ it('resumes an unresolved code item when it is not_found and routes to identify'
   expect(res).toEqual({
     kind: 'identify',
     pathname: '/identify',
-    params: { source: 'code', code: '12345670' },
+    params: { source: 'code', code: '12345670', queueId: item.id },
   });
+  expect(await listNeedsReview()).toHaveLength(1);
+  await resolveQueued(item.id);
   expect(await listQueued()).toEqual([]);
 });
 
@@ -250,15 +255,31 @@ it('resumes an unresolved photo item when it has candidates and routes to identi
     read: { brand: 'Danone', name: 'Yogurt', quantity: '150g', code: null },
     photoPath: 'stored/path.jpg',
   };
-  jest.mocked(api.identify).mockResolvedValueOnce(candidatesResponse);
+  jest.mocked(api.identify).mockResolvedValue(candidatesResponse);
   const res = await resumeQueuedItem(item);
   expect(res).toEqual({
     kind: 'identify',
     pathname: '/identify',
-    params: { source: 'photo', payload: JSON.stringify(candidatesResponse) },
+    params: { source: 'photo', payload: JSON.stringify(candidatesResponse), queueId: item.id },
   });
+  expect(await listNeedsReview()).toHaveLength(1);
+  expect(await mockFs.readFile(item.payload, 'utf8')).toBe('photo content');
+  const reopened = await resumeQueuedItem(item);
+  if (reopened.kind !== 'identify') throw new Error('Expected a persisted review');
+  expect(JSON.parse(reopened.params.payload!)).toEqual(candidatesResponse);
+  expect(api.identify).toHaveBeenCalledTimes(1);
+  await resolveQueued(item.id);
   expect(await listQueued()).toEqual([]);
   expect(await listUnresolvedQueued()).toEqual([]);
+});
+it('enters the shared platform lock before draining persisted work', async () => {
+  const lock = jest.spyOn(queueLocks, 'withQueueLock');
+  try {
+    await enqueue({ kind: 'code', code: '12345670' });
+    jest.mocked(api.lookup).mockResolvedValueOnce(foundYogurt);
+    expect(await flushQueue()).toEqual({ resolved: 1 });
+    expect(lock).toHaveBeenCalledWith(expect.any(Function));
+  } finally { lock.mockRestore(); }
 });
 it('sends a not_found code once, then keeps it for review with its result', async () => {
   await enqueue({ kind: 'code', code: '12345670' });
@@ -323,3 +344,51 @@ it('skips corrupt review items without throwing', async () => {
   expect(await listNeedsReview()).toEqual([]);
 });
 
+it('persists unresolved results and does not submit them automatically again', async () => {
+  await enqueue({ kind: 'code', code: '12345670' });
+  jest.mocked(api.lookup).mockResolvedValue({ status: 'not_found' });
+  await flushQueue();
+  expect((await listQueue())[0]?.outcome).toEqual({ status: 'not_found' });
+  await flushQueue();
+  expect(api.lookup).toHaveBeenCalledTimes(1);
+});
+it('allows an explicit retry and exposes service failures instead of silently retrying forever', async () => {
+  await enqueue({ kind: 'code', code: '4840001000014' });
+  jest.mocked(api.lookup).mockRejectedValueOnce(new ApiError('rate_limited'));
+  await flushQueue();
+  const pending = (await listQueue())[0]!;
+  expect(pending.error).toBe('rate_limited');
+  jest.mocked(api.lookup).mockResolvedValueOnce(foundYogurt);
+  expect(await retryQueued(pending.id)).toEqual({ resolved: 1 });
+  expect(await listQueue()).toEqual([]);
+});
+it('keeps review photo ownership until acknowledged by its consumer', async () => {
+  const source = FileSystem.documentDirectory! + 'review.jpg';
+  await mockFs.writeFile(source, 'review image');
+  await enqueue({ kind: 'photo', uri: source });
+  const read = { brand: null, name: null, quantity: null, code: null };
+  jest.mocked(api.identify).mockResolvedValueOnce({ status: 'not_found', read, photoPath: 'device/review.jpg' });
+  await flushQueue();
+  const item = (await listQueue())[0]!;
+  const owned = await openQueuedPhoto(item.id);
+  expect(await mockFs.readFile(owned.uri, 'utf8')).toBe('review image');
+  owned.release();
+  expect(await mockFs.stat(owned.uri)).toBeDefined();
+  await completeQueued(item.id);
+  await expect(mockFs.stat(owned.uri)).rejects.toThrow();
+  expect(await listQueue()).toEqual([]);
+});
+it('retains a readable capture when a transient storage read fails', async () => {
+  const source = FileSystem.documentDirectory! + 'busy.jpg';
+  await mockFs.writeFile(source, 'retained image');
+  await enqueue({ kind: 'photo', uri: source });
+  const read = jest.spyOn(FileSystem, 'readAsStringAsync').mockRejectedValueOnce(new Error('storage busy'));
+  await flushQueue();
+  const item = (await listQueue())[0]!;
+  expect(item.error).toBe('storage');
+  expect(await mockFs.readFile(item.payload, 'utf8')).toBe('retained image');
+  read.mockRestore();
+  jest.mocked(api.identify).mockResolvedValueOnce({ ...foundYogurt, photoPath: 'test/restored.jpg' });
+  expect(await retryQueued(item.id)).toEqual({ resolved: 1 });
+  expect(await listQueue()).toEqual([]);
+});

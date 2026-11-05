@@ -39,6 +39,7 @@ jest.mock('expo-file-system/legacy', () => ({
   makeDirectoryAsync: async (path: string) => mockFs.mkdir(path, { recursive: true }),
   copyAsync: async ({ from, to }: { from: string; to: string }) => mockFs.copyFile(from, to),
   readAsStringAsync: async (path: string) => (await mockFs.readFile(path)).toString('base64'),
+  getInfoAsync: async (path: string) => ({ exists: await mockFs.stat(path).then(() => true, () => false) }),
   deleteAsync: async (path: string) => mockFs.rm(path, { force: true }),
 }));
 jest.mock('../../lib/api', () => ({ ...jest.requireActual('../../lib/api'), api: { lookup: jest.fn(), identify: jest.fn() } }));

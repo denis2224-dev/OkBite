@@ -1,54 +1,77 @@
-import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { router } from 'expo-router';
+import { Body, Button, Card, Heading, Screen } from '../../ui';
 import { ro } from '../../copy/ro';
-import { Button } from '../../ui/Button';
-import { Body } from '../../ui/Typography';
-import { Screen } from '../../ui/Screen';
-import { listQueued } from '../history/db';
+import { listQueue, retryQueued, completeQueued, subscribeQueue, subscribeQueueResults, resumeQueuedItem, flushQueue, type QueueEntry } from './queue';
 import { identifyCodeRoute, identifyPhotoRoute, productRoute } from '../identify/routes';
-import { flushQueue, subscribeQueueResults } from './queue';
 
-export default function OfflineScreen() {
-  const router = useRouter();
-  const [working, setWorking] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const busy = useRef(false);
-  const active = useRef(true);
+export function OfflineScreen() {
+  const [rows, setRows] = useState<QueueEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [confirm, setConfirm] = useState<string>();
+  const revision = useRef(0);
+  const mounted = useRef(true);
+  const navigating = useRef(false);
+  const invalidate = useCallback(() => { revision.current++; }, []);
+  const refresh = useCallback(() => {
+    if (!mounted.current) return Promise.resolve();
+    const current = ++revision.current;
+    return listQueue().then(entries => {
+      if (current === revision.current) { setRows(entries); setError(''); }
+    }, () => {
+      if (current === revision.current) setError(ro.offline.queueError);
+    }).finally(() => { if (current === revision.current) setLoading(false); });
+  }, []);
   useEffect(() => {
-    active.current = true;
-    const unsubscribe = subscribeQueueResults(({ item, result }) => {
-      if (!active.current) return false;
+    mounted.current = true;
+    void refresh();
+    const unsubscribe = subscribeQueue(() => { void refresh(); });
+    return () => { mounted.current = false; invalidate(); unsubscribe(); };
+  }, [refresh, invalidate]);
+  useEffect(() => {
+    const stop = subscribeQueueResults(({ item, result }) => {
+      if (!mounted.current || navigating.current) return false;
       const target = result.status === 'found' ? productRoute(result.product.id)
         : 'photoPath' in result ? identifyPhotoRoute(result) : identifyCodeRoute(item.payload);
-      const route = typeof target === 'string' ? target : { ...target, params: { ...target.params, queueId: item.id } };
-      router.replace(route);
-      active.current = false;
+      router.replace(typeof target === 'string' ? target : { ...target, params: { ...target.params, queueId: item.id } });
+      navigating.current = true;
       return true;
     });
-    // Replay persisted needs_review responses without another identify request.
-    void flushQueue().catch(() => { if (active.current) setFailed(true); });
-    return () => { active.current = false; unsubscribe(); };
-  }, [router]);
-  const retry = async () => {
-    if (busy.current) return;
-    busy.current = true;
-    setWorking(true);
-    setFailed(false);
-    try {
-      await flushQueue();
-      const pending = await listQueued();
-      if (active.current) setFailed(pending.length > 0);
-    } catch { if (active.current) setFailed(true); }
-    finally {
-      busy.current = false;
-      if (active.current) setWorking(false);
-    }
-  };
-  return <Screen title={ro.offline.title}>
+    void flushQueue().catch(() => { if (mounted.current) setError(ro.offline.queueError); });
+    return stop;
+  }, []);
+  async function run(action: () => Promise<unknown>) {
+    if (busy) return;
+    setBusy(true); setError('');
+    try { await action(); if (mounted.current) { setConfirm(undefined); await refresh(); } }
+    catch { if (mounted.current) setError(ro.offline.queueError); }
+    finally { if (mounted.current) setBusy(false); }
+  }
+  return <Screen title={ro.offline.queueTitle} back>
     <Body>{ro.offline.description}</Body>
-    {failed ? <Body accessibilityRole="alert">{ro.offline.queueError}</Body> : null}
-    <Button disabled={working} onPress={() => { void retry(); }}>{working ? ro.capture.working : ro.offline.retry}</Button>
-    <Button variant="secondary" onPress={() => router.replace('/history')}>{ro.offline.history}</Button>
-    <Button variant="ghost" onPress={() => router.replace('/')}>{ro.nav.home}</Button>
+    {loading ? <Body accessibilityLiveRegion="polite">{ro.app.loading}</Body> : <Body>{ro.offline.pendingCount(rows.length)}</Body>}
+    {!!error && <><Body accessibilityLiveRegion="polite">{error}</Body><Button disabled={busy} onPress={() => { void refresh(); }}>{ro.offline.reload}</Button></>}
+    {!loading && !rows.length && <Card><Body>{ro.offline.emptyQueue}</Body></Card>}
+    {rows.map(item => <Card key={item.id}>
+      <Heading style={{ fontSize: 18 }}>{item.kind === 'photo' ? ro.offline.photo : ro.offline.code}</Heading>
+      {item.kind === 'code' && <Body>{item.payload}</Body>}
+      {item.outcome && <Body>{ro.offline.needsReview}</Body>}
+      {item.error && <Body>{item.error in ro.errors ? ro.errors[item.error as keyof typeof ro.errors] : ro.offline.queueError}</Body>}
+      <Button disabled={busy} onPress={() => { void run(async () => {
+        if (!item.outcome) return retryQueued(item.id);
+        const resumed = await resumeQueuedItem(item);
+        router.replace(resumed.kind === 'found' ? productRoute(resumed.productId) : { pathname: '/identify', params: resumed.params });
+      }); }}>{item.outcome ? ro.app.open : ro.app.retry}</Button>
+      <Button variant="ghost" disabled={busy} onPress={() => setConfirm(item.id)}>{ro.offline.cancel}</Button>
+      {confirm === item.id && <>
+        <Body accessibilityLiveRegion="polite">{ro.offline.removeTitle}</Body>
+        <Button disabled={busy} onPress={() => { void run(() => completeQueued(item.id)); }}>{ro.offline.removeConfirm}</Button>
+        <Button variant="ghost" disabled={busy} onPress={() => setConfirm(undefined)}>{ro.app.cancel}</Button>
+      </>}
+    </Card>)}
+    {busy && <Body accessibilityLiveRegion="polite">{ro.offline.processing}</Body>}
+    <Button variant="secondary" onPress={() => router.push('/history')}>{ro.offline.history}</Button>
   </Screen>;
 }

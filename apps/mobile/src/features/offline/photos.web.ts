@@ -1,6 +1,6 @@
+import { MissingPhotoError } from './photo_errors';
 import { createStore, get, set, del } from 'idb-keyval';
 import { ro } from '../../copy/ro';
-import { MissingPhotoError } from './photoErrors';
 
 const photos = createStore('okbite-photos', 'photos');
 export async function keepPhoto(uri: string): Promise<string> {
@@ -21,3 +21,10 @@ export async function readPhoto(id: string): Promise<string> {
   });
 }
 export async function removePhoto(id: string): Promise<void> { await del(id, photos); }
+
+export async function openPhoto(id: string) {
+  const blob = await get<Blob>(id, photos);
+  if (!blob) throw new MissingPhotoError();
+  const uri = URL.createObjectURL(blob);
+  return { uri, release() { URL.revokeObjectURL(uri); } };
+}

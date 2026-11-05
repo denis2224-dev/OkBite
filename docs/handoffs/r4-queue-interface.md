@@ -1,0 +1,21 @@
+# R4 → R5 durable queue interface
+
+Current reconciliation: `R5-integration-reconcile` combines R5 #14/#33/#58, local recovery commit `71a7f18`, and R4 #50/#51. #38 and #49 are closed without merging individually; do not use their old PR merge sequence. Their applicable commits are preserved as source ancestry. R5's status/result storage and listNeedsReview/resolveQueued API are retained. Import only `src/features/offline/queue` from capture consumers.
+
+- `enqueue({kind:'photo',uri}|{kind:'code',code}): Promise<void>` is unchanged. Photo enqueue copies to app-owned native storage or an IndexedDB Blob before resolving. R5 may then dispose the temporary capture URI.
+- `flushQueue(onResolved?): Promise<{resolved:number}>` preserves FIFO and coalesces concurrent drains. Found responses save validated history before removing queue/photo ownership. All attached success callbacks are notified; callback errors cannot interrupt queue work.
+- `listQueue(): Promise<QueueEntry[]>` lists stable IDs in FIFO order. `outcome` contains the validated candidates/not_found response, including remote photoPath/read fields. These outcomes survive restarts and are not automatically resubmitted.
+- `openQueuedPhoto(id): Promise<{uri:string;release():void}>` exposes the retained capture. Native returns its durable URI. Web creates a temporary Blob URL; call release on view disposal. release does not delete queue ownership.
+- `listNeedsReview()` remains the R5-facing validated result list. `resolveQueued(id)` remains its acknowledgement operation.
+- `completeQueued(id): Promise<void>` (also used by resolveQueued) acknowledges successful consumer completion or explicit user cancellation. Call only after confirmation/contribution succeeds or the shopper explicitly cancels. It removes the durable photo and row. Failed contribution must retain both.
+- `retryQueued(id)` explicitly clears retained outcome/error and retries pending work in FIFO order. Offline transport failures also retry on the next reconnect flush; quota/configuration/storage failures require explicit action.
+- `subscribeQueue(listener)` reports changed or missing_photo events; unsubscribe when disposing a view. Consumers should reload listQueue after changed. A permanently missing capture is dropped and reported, never retried forever.
+- `subscribeQueueResults(listener)` preserves local capture's foreground response handoff. It transfers the validated response and queue ID without deleting unresolved work; one screen may accept navigation while the drain continues with later rows.
+- `resumeQueuedItem(item)` uses a persisted validated outcome when present, includes `queueId` in the identify route, and retains the result/photo until the shopper confirms or successfully contributes. `listUnresolvedQueued()` remains compatible with R5's published consumer API.
+- Browser `flushQueue` and direct resumption share an origin-wide Web Lock. Without Web Locks, work is retained and the caller receives a recoverable error.
+
+R5 wiring request: continue using listNeedsReview/resolveQueued; openQueuedPhoto makes the browser Blob key usable safely.  render persisted candidate/not_found outcomes using the existing identification/add flows, pass the queue ID through those screens, and acknowledge only after successful confirmation/contribution. Do not interpret outcome rows as resolved or delete the capture on a failed save. R4 does not change R5-owned capture/identify/add files.
+
+R1 integration: review the combined branch against current main and its reconciliation commits separately from the published source histories. Merge the combined PR only after the required owner/Claude/human checks, then reconcile or close source PRs whose changes are included. Do not merge #38/#49 separately or replay their patches over this result. Preserve the source branches until their descendants are reconciled. R1's #40/#41 toolchain/main-entry work remains separate; rerun under the selected final toolchain if that lands first. No shared backend API contract, Supabase migration or generated Edge code changed.
+
+Real browser/photo/provider/device acceptance remains separate from local SQLite/IndexedDB regression tests. These tests do not certify staging.

@@ -1,3 +1,1 @@
-export class MissingPhotoError extends Error {
-  constructor() { super('Queued photo is missing'); this.name = 'MissingPhotoError'; }
-}
+export { MissingPhotoError } from './photo_errors';

@@ -1,1 +1,1 @@
-export { default } from '../src/features/offline/OfflineScreen';
+export { OfflineScreen as default } from '../src/features/offline/OfflineScreen';

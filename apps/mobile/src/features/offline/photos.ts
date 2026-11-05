@@ -1,7 +1,7 @@
+import { MissingPhotoError } from './photo_errors';
 import * as FileSystem from 'expo-file-system/legacy';
 import { randomUUID } from 'expo-crypto';
 import { ro } from '../../copy/ro';
-import { MissingPhotoError } from './photoErrors';
 
 export async function keepPhoto(uri: string): Promise<string> {
   if (!FileSystem.documentDirectory) throw new Error(ro.offline.queueError);
@@ -13,12 +13,16 @@ export async function keepPhoto(uri: string): Promise<string> {
   return path;
 }
 export async function readPhoto(uri: string): Promise<string> {
-  try { return await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 }); }
-  catch (error) {
-    if (!(await FileSystem.getInfoAsync(uri)).exists) throw new MissingPhotoError();
-    throw error;
-  }
+  const info = await FileSystem.getInfoAsync(uri);
+  if (!info.exists) throw new MissingPhotoError();
+  return FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
 }
 export async function removePhoto(uri: string): Promise<void> {
   await FileSystem.deleteAsync(uri, { idempotent: true });
+}
+
+export async function openPhoto(uri: string) {
+  const info = await FileSystem.getInfoAsync(uri);
+  if (!info.exists) throw new MissingPhotoError();
+  return { uri, release() {} };
 }

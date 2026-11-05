@@ -1,29 +1,112 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
-import History from '../../../app/(tabs)/history';
-import { listHistory } from './store';
-import { listQueued } from './db';
-import { subscribeQueueResults } from '../offline/queue';
-import { lookupFound, PRODUCT_ID } from '../capture/__fixtures__/responses';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { router } from 'expo-router';
+import { HistoryScreen } from './HistoryScreen';
+import { clearHistory, listHistory, type HistoryEntry } from './store';
+import { foundYogurt } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
 
-const mockReplace = jest.fn();
+let mockFocus: () => () => void;
+let mockBlur: () => void;
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ replace: mockReplace }),
-  useFocusEffect: (effect: () => void) => jest.requireActual<typeof import('react')>('react').useEffect(effect, [effect]),
+  router: { push: jest.fn() },
+  useFocusEffect: (effect: () => () => void) => {
+    jest.requireActual<typeof import('react')>('react').useEffect(() => {
+      mockFocus = effect;
+      mockBlur = effect();
+      return () => mockBlur();
+    }, [effect]);
+  },
 }));
-jest.mock('./store', () => ({ listHistory: jest.fn() }));
-jest.mock('./db', () => ({ listQueued: jest.fn() }));
-jest.mock('../offline/queue', () => ({ subscribeQueueResults: jest.fn(() => jest.fn()) }));
-jest.mock('../../ui/Screen', () => ({ Screen: ({ children }: { children: React.ReactNode }) => children }));
-it('opens saved results and offers a path back to pending photos', async () => {
-  if (lookupFound.status !== 'found') throw new Error('Expected a complete found fixture');
-  jest.mocked(listHistory).mockResolvedValue([{ ...lookupFound, savedAt: '2026-11-05T10:00:00.000Z' }]);
-  jest.mocked(listQueued).mockResolvedValue([{ id: 'a', kind: 'photo', payload: 'saved.jpg', createdAt: '2026-11-05T10:00:00.000Z', status: 'pending', result: null }]);
-  await render(<History />);
-  const product = await screen.findByRole('button', { name: ro.history.open(lookupFound.product.name) });
-  await fireEvent.press(product);
-  expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
-  await fireEvent.press(screen.getByRole('button', { name: ro.offline.retry }));
-  expect(mockReplace).toHaveBeenCalledWith('/offline');
-  expect(subscribeQueueResults).toHaveBeenCalled();
+jest.mock('./store', () => ({ listHistory: jest.fn(), clearHistory: jest.fn() }));
+jest.mock('../offline/queue', () => ({ subscribeQueue: () => jest.fn() }));
+const entry: HistoryEntry = { ...foundYogurt, savedAt: '2026-11-05T09:00:00.000Z' };
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>(done => { resolve = done; });
+  return { promise, resolve };
+}
+async function refocus() {
+  await act(() => { mockBlur(); mockBlur = mockFocus(); });
+}
+beforeEach(() => {
+  jest.clearAllMocks();
+  jest.mocked(listHistory).mockResolvedValue([entry]);
+  jest.mocked(clearHistory).mockResolvedValue();
+});
+it('shows loading before an empty saved history', async () => {
+  const pending = deferred<HistoryEntry[]>();
+  jest.mocked(listHistory).mockReturnValue(pending.promise);
+  await render(<HistoryScreen />);
+  expect(screen.getByText(ro.app.loading)).toBeTruthy();
+  expect(screen.queryByText(ro.history.emptyTitle)).toBeNull();
+  await act(() => pending.resolve([]));
+  expect(screen.getByText(ro.history.emptyTitle)).toBeTruthy();
+});
+it('retries storage failures and opens the saved record through the cached route', async () => {
+  jest.mocked(listHistory).mockRejectedValueOnce(new Error('disk')).mockResolvedValueOnce([entry]);
+  await render(<HistoryScreen />);
+  await waitFor(() => expect(screen.getByText(ro.history.loadError)).toBeTruthy());
+  expect(screen.queryByText(ro.history.emptyTitle)).toBeNull();
+  await fireEvent.press(screen.getByRole('button', { name: ro.app.retry }));
+  await waitFor(() => expect(screen.getByText(entry.product.name)).toBeTruthy());
+  await fireEvent.press(screen.getByRole('button', { name: ro.history.open(entry.product.name) }));
+  expect(router.push).toHaveBeenCalledWith({ pathname: '/product/[id]', params: { id: entry.product.id, cached: '1' } });
+});
+it('shows source dates and an unavailable score without inventing zero', async () => {
+  jest.mocked(listHistory).mockResolvedValue([{ ...entry, score: { ...entry.score, score: null, grade: 'unavailable' } }]);
+  await render(<HistoryScreen />);
+  await waitFor(() => expect(screen.getByText(entry.product.source)).toBeTruthy());
+  expect(screen.getByText(`${ro.result.added}: ${entry.product.addedAt.split('-').reverse().join('.')}`)).toBeTruthy();
+  expect(screen.getByText(ro.result.scoreUnavailable)).toBeTruthy();
+  expect(screen.queryByText('0 din 100')).toBeNull();
+});
+it('keeps the list when deletion is canceled or fails, and clears only on confirmed success', async () => {
+  jest.mocked(clearHistory).mockRejectedValueOnce(new Error('disk')).mockResolvedValueOnce();
+  await render(<HistoryScreen />);
+  await waitFor(() => expect(screen.getByText(entry.product.name)).toBeTruthy());
+  await fireEvent.press(screen.getByRole('button', { name: ro.history.clear }));
+  await fireEvent.press(screen.getByRole('button', { name: ro.app.cancel }));
+  expect(clearHistory).not.toHaveBeenCalled();
+  expect(screen.getByText(entry.product.name)).toBeTruthy();
+  await fireEvent.press(screen.getByRole('button', { name: ro.history.clear }));
+  await fireEvent.press(screen.getByRole('button', { name: ro.history.clearConfirm }));
+  await waitFor(() => expect(screen.getByText(ro.history.clearError)).toBeTruthy());
+  expect(screen.getByText(entry.product.name)).toBeTruthy();
+  await fireEvent.press(screen.getByRole('button', { name: ro.history.clearConfirm }));
+  await waitFor(() => expect(screen.getByText(ro.history.emptyTitle)).toBeTruthy());
+  expect(screen.queryByText(entry.product.name)).toBeNull();
+});
+it('refreshes on focus and ignores older reads', async () => {
+  const oldRead = deferred<HistoryEntry[]>();
+  const newRead = deferred<HistoryEntry[]>();
+  const updated = { ...entry, product: { ...entry.product, name: 'Etichetă actualizată' } };
+  await render(<HistoryScreen />);
+  await waitFor(() => expect(screen.getByText(entry.product.name)).toBeTruthy());
+  jest.mocked(listHistory).mockReturnValueOnce(oldRead.promise).mockReturnValueOnce(newRead.promise);
+  await refocus();
+  await refocus();
+  await act(() => newRead.resolve([updated]));
+  await act(() => oldRead.resolve([]));
+  expect(screen.getByText(updated.product.name)).toBeTruthy();
+  expect(screen.queryByText(ro.history.emptyTitle)).toBeNull();
+});
+it('retains saved rows when a focus refresh fails', async () => {
+  await render(<HistoryScreen />);
+  await waitFor(() => expect(screen.getByText(entry.product.name)).toBeTruthy());
+  jest.mocked(listHistory).mockRejectedValueOnce(new Error('disk'));
+  await refocus();
+  await waitFor(() => expect(screen.getByText(ro.history.loadError)).toBeTruthy());
+  expect(screen.getByText(entry.product.name)).toBeTruthy();
+});
+it('does not restore deleted rows when an earlier read finishes after clear', async () => {
+  const pending = deferred<HistoryEntry[]>();
+  await render(<HistoryScreen />);
+  await waitFor(() => expect(screen.getByText(entry.product.name)).toBeTruthy());
+  jest.mocked(listHistory).mockReturnValueOnce(pending.promise);
+  await refocus();
+  await fireEvent.press(screen.getByRole('button', { name: ro.history.clear }));
+  await fireEvent.press(screen.getByRole('button', { name: ro.history.clearConfirm }));
+  await waitFor(() => expect(screen.getByText(ro.history.emptyTitle)).toBeTruthy());
+  await act(() => pending.resolve([entry]));
+  expect(screen.queryByText(entry.product.name)).toBeNull();
 });

@@ -4,8 +4,8 @@ import { Blob as mockBlob } from 'node:buffer';
 import { randomUUID as mockRandomUUID } from 'node:crypto';
 import { createStore, get, set } from 'idb-keyval';
 import { writeHistory, readHistory, deleteHistory, putQueued, listQueued, deleteQueued, markNeedsReview, setQueuedReview } from './db.web';
-import { enqueue, flushQueue, listNeedsReview, resolveQueued } from '../offline/queue';
-import { api } from '../../lib/api';
+import { enqueue, flushQueue, listNeedsReview, resolveQueued, listQueue, retryQueued } from '../offline/queue';
+import { api, ApiError } from '../../lib/api';
 import { foundYogurt } from '../../test/fixtures';
 
 jest.mock('./db', () => jest.requireActual('./db.web'));
@@ -102,5 +102,19 @@ it('treats a row without status as pending and stores a review result', async ()
   await setQueuedReview('r', '{"status":"not_found"}');
   expect((await listQueued())[0]).toMatchObject({ status: 'needs_review', result: '{"status":"not_found"}' });
   await deleteQueued('r');
+});
+
+it('persists browser service errors and resolves them only after explicit retry', async () => {
+  await enqueue({ kind: 'code', code: '4840001000014' });
+  jest.mocked(api.lookup).mockRejectedValueOnce(new ApiError('rate_limited'));
+  await flushQueue();
+  const entry = (await listQueue())[0]!;
+  expect(entry.error).toBe('rate_limited');
+  expect((await listQueued())[0]!.status).toBe('pending');
+  await flushQueue();
+  expect(api.lookup).toHaveBeenCalledTimes(1);
+  jest.mocked(api.lookup).mockResolvedValueOnce(foundYogurt);
+  expect(await retryQueued(entry.id)).toEqual({ resolved: 1 });
+  expect(await listQueue()).toEqual([]);
 });
 

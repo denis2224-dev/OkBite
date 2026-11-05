@@ -1,29 +1,45 @@
 import { randomUUID } from 'expo-crypto';
 import { Code, IdentifyResponse, LookupResponse } from '@okbite/shared';
 import { api, ApiError } from '../../lib/api';
-import { putQueued, listQueued, deleteQueued, markNeedsReview, type QueuedItem } from '../history/db';
+import { putQueued, listQueued, deleteQueued, markNeedsReview, saveQueuedError, resetQueued, type QueuedItem } from '../history/db';
 import { saveToHistory } from '../history/store';
-import { keepPhoto, readPhoto, removePhoto } from './photos';
-import { MissingPhotoError } from './photoErrors';
+import { keepPhoto, readPhoto, removePhoto, openPhoto } from './photos';
+import { MissingPhotoError } from './photo_errors';
+import { notifyQueue } from './events';
 import { withQueueLock } from './queueLock';
+export { subscribeQueue } from './events';
 
 export type QueueResult = { item: Pick<QueuedItem, 'id' | 'kind' | 'payload'>; result: LookupResponse | IdentifyResponse };
-const listeners = new Set<(event: QueueResult) => boolean>();
+const resultListeners = new Set<(event: QueueResult) => boolean>();
 export function subscribeQueueResults(listener: (event: QueueResult) => boolean): () => void {
-  listeners.add(listener);
-  return () => { listeners.delete(listener); };
+  resultListeners.add(listener);
+  return () => { resultListeners.delete(listener); };
 }
-function handoff(event: QueueResult): boolean {
-  for (const listener of listeners) if (listener(event)) return true;
-  return false;
-}
-function reviewResult(item: QueuedItem): LookupResponse | IdentifyResponse | undefined {
-  if (item.status !== 'needs_review' || item.result === null) return;
-  try {
-    return (item.kind === 'code' ? LookupResponse : IdentifyResponse).parse(JSON.parse(item.result));
-  } catch { return; }
+function handoff(event: QueueResult): void {
+  for (const listener of resultListeners) {
+    try { if (listener(event)) return; } catch { /* Views cannot abandon durable work. */ }
+  }
 }
 
+type Review = Exclude<IdentifyResponse | LookupResponse, { status: 'found' }>;
+export type QueueEntry = Omit<QueuedItem, 'result'> & { outcome?: Review };
+export async function listQueue(): Promise<QueueEntry[]> {
+  return (await listQueued()).map(({ result, ...item }) => {
+    if (item.status !== 'needs_review') return item;
+    try {
+      const schema = item.kind === 'photo' ? IdentifyResponse : LookupResponse;
+      const outcome = schema.parse(JSON.parse(result ?? 'null'));
+      if (outcome.status === 'found') return { ...item, error: 'invalid_response' };
+      return { ...item, outcome };
+    } catch { return { ...item, error: 'invalid_response' }; }
+  });
+}
+// Retain R5's published consumer interface and persisted status/result representation.
+export async function listNeedsReview(): Promise<{ id: string; kind: 'photo' | 'code'; payload: string; result: LookupResponse | IdentifyResponse }[]> {
+  return (await listQueue()).flatMap(item => item.outcome
+    ? [{ id: item.id, kind: item.kind, payload: item.payload, result: item.outcome }] : []);
+}
+export async function resolveQueued(id: string): Promise<void> { await completeQueued(id); }
 export async function enqueue(item: { kind: 'photo'; uri: string } | { kind: 'code'; code: string }): Promise<void> {
   const payload = item.kind === 'photo' ? await keepPhoto(item.uri) : Code.parse(item.code);
   try { await putQueued({ id: randomUUID(), kind: item.kind, payload, createdAt: new Date().toISOString() }); }
@@ -31,62 +47,73 @@ export async function enqueue(item: { kind: 'photo'; uri: string } | { kind: 'co
     if (item.kind === 'photo') await removePhoto(payload).catch(() => {});
     throw error;
   }
+  notifyQueue();
 }
-export async function listNeedsReview(): Promise<{ id: string; kind: 'photo' | 'code'; payload: string; result: LookupResponse | IdentifyResponse }[]> {
-  return (await listQueued()).flatMap(item => {
-    const result = reviewResult(item);
-    return result ? [{ id: item.id, kind: item.kind, payload: item.payload, result }] : [];
-  });
+export async function openQueuedPhoto(id: string) {
+  const item = (await listQueue()).find(row => row.id === id);
+  if (!item || item.kind !== 'photo') throw new ApiError('bad_request');
+  return openPhoto(item.payload);
 }
-export async function resolveQueued(id: string): Promise<void> {
+export async function completeQueued(id: string): Promise<void> {
   const item = (await listQueued()).find(row => row.id === id);
   if (!item) return;
+  if (item.kind === 'photo') await removePhoto(item.payload);
   await deleteQueued(id);
-  if (item.kind === 'photo') await removePhoto(item.payload).catch(() => {});
+  notifyQueue();
+}
+export async function retryQueued(id: string) {
+  if (running) await running;
+  await resetQueued(id);
+  notifyQueue();
+  return flushQueue();
 }
 let running: Promise<{ resolved: number }> | undefined;
+const resolvedListeners = new Set<(id: string) => void>();
 export function flushQueue(onResolved?: (id: string) => void): Promise<{ resolved: number }> {
-  running ??= withQueueLock(() => drain(onResolved)).finally(() => { running = undefined; });
+  if (onResolved) resolvedListeners.add(onResolved);
+  running ??= withQueueLock(drain).finally(() => { running = undefined; resolvedListeners.clear(); notifyQueue(); });
   return running;
 }
-async function drain(onResolved?: (id: string) => void) {
+async function drain() {
   let resolved = 0;
-  const items = await listQueued();
-  // Saved decisions remain accessible even when earlier network work cannot run.
+  const items = await listQueue();
+  const stored = new Map((await listQueued()).map(item => [item.id, item]));
+  // Cached review results must remain accessible when older network work fails.
+  for (const item of items) if (item.outcome && stored.has(item.id)) handoff({ item: stored.get(item.id)!, result: item.outcome });
   for (const item of items) {
-    const result = reviewResult(item);
-    if (result) handoff({ item, result });
-  }
-  for (const item of items) {
-    if (item.status !== 'pending') continue;
+    // Human-review outcomes and failed work stay durable until explicit retry/acknowledgement.
+    if (item.status !== 'pending' || (item.error && item.error !== 'offline')) continue;
     let photo: string | undefined;
     if (item.kind === 'photo') {
-      // A stored photo that can no longer be read will never resolve; drop it instead of retrying forever.
       try { photo = await readPhoto(item.payload); }
       catch (error) {
-        if (!(error instanceof MissingPhotoError)) break;
-        await deleteQueued(item.id).catch(() => {});
-        continue;
+        if (error instanceof MissingPhotoError) { await deleteQueued(item.id); notifyQueue('missing_photo'); continue; }
+        await saveQueuedError(item.id, 'storage');
+        notifyQueue();
+        break;
       }
     }
     try {
       const result = photo === undefined ? await api.lookup({ code: item.payload }) : await api.identify(photo);
-      // Keep the capture and result for confirmation/contribution without repeating the API call.
+      if (!(await listQueued()).some(row => row.id === item.id)) continue;
       if (result.status !== 'found') {
         await markNeedsReview(item.id, JSON.stringify(result));
+        notifyQueue();
         handoff({ item, result });
         continue;
       }
       await saveToHistory(result);
-      await deleteQueued(item.id);
-      if (item.kind === 'photo') await removePhoto(item.payload).catch(() => {});
+      await completeQueued(item.id);
       resolved++;
-      if (result.status === 'found') {
-        onResolved?.(result.product.id);
-        handoff({ item, result });
+      handoff({ item, result });
+      for (const listener of resolvedListeners) {
+        try { listener(result.product.id); } catch { /* Resolution must not depend on navigation. */ }
       }
     } catch (error) {
-      if (error instanceof ApiError && (error.code === 'offline' || error.code === 'rate_limited' || error.code === 'configuration')) break;
+      const code = error instanceof ApiError ? error.code : 'storage';
+      await saveQueuedError(item.id, code);
+      notifyQueue();
+      if (code === 'offline' || code === 'rate_limited' || code === 'configuration' || code === 'storage') break;
     }
   }
   return { resolved };
@@ -95,49 +122,25 @@ async function drain(onResolved?: (id: string) => void) {
 export type ResumeResult =
   | { kind: 'found'; productId: string }
   | { kind: 'identify'; pathname: string; params: Record<string, string> };
-
-/**
- * Resumes confirmation or contribution for an unresolved queued item.
- * - If product is found on retry, saves to history, cleans up queue/photo, returns found productId.
- * - If candidates or not_found, removes from queue (preventing duplicate queue runs) and returns navigation route.
- */
-export async function resumeQueuedItem(item: { id: string; kind: 'photo' | 'code'; payload: string }): Promise<ResumeResult> {
-  if (item.kind === 'code') {
-    const result = await api.lookup({ code: item.payload });
-    await deleteQueued(item.id);
+export async function resumeQueuedItem(input: Pick<QueuedItem, 'id' | 'kind' | 'payload'>): Promise<ResumeResult> {
+  if (running) await running;
+  return withQueueLock(async (): Promise<ResumeResult> => {
+    const item = (await listQueue()).find(row => row.id === input.id);
+    if (!item) throw new ApiError('not_found');
+    const result = item.outcome ?? (item.kind === 'code'
+      ? await api.lookup({ code: item.payload }) : await api.identify(await readPhoto(item.payload)));
+    if (!(await listQueued()).some(row => row.id === item.id)) throw new ApiError('not_found');
     if (result.status === 'found') {
       await saveToHistory(result);
+      await completeQueued(item.id);
       return { kind: 'found', productId: result.product.id };
     }
-    return {
-      kind: 'identify',
-      pathname: '/identify',
-      params: { source: 'code', code: item.payload },
-    };
-  } else {
-    let photoBase64: string;
-    try {
-      photoBase64 = await readPhoto(item.payload);
-    } catch {
-      await deleteQueued(item.id).catch(() => {});
-      throw new Error('Photo not available');
-    }
-    const result = await api.identify(photoBase64);
-    await deleteQueued(item.id);
-    if (result.status === 'found') {
-      await saveToHistory(result);
-      await removePhoto(item.payload).catch(() => {});
-      return { kind: 'found', productId: result.product.id };
-    }
-    return {
-      kind: 'identify',
-      pathname: '/identify',
-      params: { source: 'photo', payload: JSON.stringify(result) },
-    };
-  }
+    if (!item.outcome) { await markNeedsReview(item.id, JSON.stringify(result)); notifyQueue(); }
+    // Opening review is not a decision: retain the result/photo through app restart.
+    return { kind: 'identify', pathname: '/identify', params: item.kind === 'code'
+      ? { source: 'code', code: item.payload, queueId: item.id }
+      : { source: 'photo', payload: JSON.stringify(result), queueId: item.id } };
+  });
 }
-
-export async function listUnresolvedQueued() {
-  return listQueued();
-}
+export async function listUnresolvedQueued(): Promise<QueuedItem[]> { return listQueued(); }
 

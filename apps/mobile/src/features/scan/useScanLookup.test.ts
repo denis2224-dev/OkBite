@@ -91,4 +91,22 @@ describe('useScanLookup', () => {
     await act(async () => { await result.current.onManualCode(CODE); });
     expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
   });
+  it('retries a failed durable write, then avoids duplicate queued codes on later retries', async () => {
+    lookup.mockRejectedValue(offline);
+    mockEnqueue.mockRejectedValueOnce(new Error('storage full')).mockResolvedValue(undefined);
+    const { result } = await renderHook(() => useScanLookup());
+    await act(async () => { await result.current.onManualCode(CODE); });
+    await act(async () => { await result.current.retry(); });
+    expect(mockEnqueue).toHaveBeenCalledTimes(2);
+    await act(async () => { await result.current.retry(); });
+    expect(mockEnqueue).toHaveBeenCalledTimes(2);
+  });
+  it.each([null, undefined])('recovers when lookup rejects with %s', async error => {
+    lookup.mockRejectedValueOnce(error).mockResolvedValueOnce(lookupFound);
+    const { result } = await renderHook(() => useScanLookup());
+    await act(async () => { await result.current.onManualCode(CODE); });
+    expect(result.current.state).toEqual({ status: 'error', code: undefined });
+    await act(async () => { await result.current.retry(); });
+    expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+  });
 });
