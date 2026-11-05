@@ -4,10 +4,11 @@ import { readFileSync, writeFileSync, mkdirSync, chmodSync, openSync, closeSync,
 import { resolve, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
+import { localProject } from '../local-project.mjs';
 
 // Local Docker only. Never accepts a hosted URL, source database or container override.
 const config = readFileSync(new URL('../config.toml', import.meta.url), 'utf8');
-const project = config.match(/^project_id\s*=\s*"(okbite-[a-z0-9-]+)"/m)?.[1];
+const project = localProject(config);
 const port = config.match(/\[db\]\s*\nport\s*=\s*(\d+)/)?.[1];
 if (!project || !port) throw new Error('Expected an explicit OkBite local project and DB port');
 const container = `supabase_db_${project}`;
@@ -19,12 +20,12 @@ const actual = realpathSync(directory);
 if (actual === repository || actual.startsWith(repository + sep)) throw new Error('Backups must stay outside the repository');
 chmodSync(directory, 0o700);
 const archive = join(directory, 'application.dump');
-function run(command, args, { input, stdinFile, stdoutFile } = {}) {
+function run(command, args, { input, stdinFile, stdoutFile, env } = {}) {
   const source = stdinFile ? openSync(stdinFile, 'r') : null;
   const destination = stdoutFile ? openSync(stdoutFile, 'w', 0o600) : null;
   try {
     if (destination !== null) fchmodSync(destination, 0o600);
-    const result = spawnSync(command, args, { input, maxBuffer: 16 * 1024 * 1024,
+    const result = spawnSync(command, args, { input, env, maxBuffer: 16 * 1024 * 1024,
       stdio: [source ?? 'pipe', destination ?? 'pipe', 'pipe'] });
     if (result.status !== 0) throw new Error(result.stderr?.toString() || result.error?.message || 'Command failed');
     return result.stdout?.toString() ?? '';
@@ -54,7 +55,10 @@ try {
   docker(`pg_restore -U supabase_admin -d ${target} --exit-on-error --section=post-data`, { stdinFile: archive });
   if (snapshot(target) !== before) throw new Error('Restored application/Auth/Storage counts differ');
   const tests = run(process.env.SUPABASE_CLI_BIN ?? 'supabase', ['test', 'db', '--db-url',
-    `postgresql://postgres:postgres@127.0.0.1:${port}/${target}`]);
+    `postgresql://postgres:postgres@127.0.0.1:${port}/${target}?sslmode=disable`],
+    // CLI 2.65.5 drops URL sslmode while rebuilding connection options.
+    // This subprocess always targets the guarded local disposable database.
+    { env: { ...process.env, PGSSLMODE: 'disable' } });
   process.stdout.write(tests);
   const report = { date: new Date().toISOString(), scope: 'Local application/Auth/Storage schemas; not hosted recovery',
     project, restoredDatabase: target, counts: JSON.parse(before), archive,

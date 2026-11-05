@@ -44,7 +44,7 @@
   },
   "scripts": {
     "dev": "expo start",
-    "test": "pnpm test:sync-shared && pnpm test:app && pnpm test:web && pnpm -r test && pnpm test:scripts && pnpm test:local-gateway",
+    "test": "pnpm test:sync-shared && pnpm test:app && pnpm test:web && pnpm -r test && pnpm test:scripts && pnpm test:local-gateway && pnpm test:local-ops",
     "lint": "eslint .",
     "typecheck": "pnpm typecheck:app && pnpm -r typecheck",
     "e2e": "echo \"set up in D6\" && exit 1",
@@ -72,7 +72,8 @@
     "test:app": "jest --runInBand",
     "typecheck:app": "tsc --noEmit",
     "data:load": "tsx scripts/load-data.ts",
-    "data:off": "tsx scripts/import-off.ts"
+    "data:off": "tsx scripts/import-off.ts",
+    "test:local-ops": "node --test supabase/tests/local-project.test.mjs"
   },
   "private": true,
   "packageManager": "pnpm@9.12.0",

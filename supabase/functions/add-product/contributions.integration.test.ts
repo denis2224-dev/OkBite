@@ -9,7 +9,6 @@ import { loadProduct } from '../_lib/db.ts';
 import { publishPhoto, saveJpeg } from '../_lib/storage.ts';
 import { LookupResponse } from '../_shared/contract.ts';
 
-const db = adminClient();
 const seed = 'c2000000-0000-4000-8000-000000000001';
 const post = (handler: (req: Request) => Promise<Response>, body: unknown, device: string) =>
   handler(
@@ -42,18 +41,19 @@ integrationTest('lost transaction response preserves the committed product, phot
     const photo = await fetch(result.product.labelImageUrl!);
     assert.equal(photo.status, 200);
     await photo.body?.cancel();
-    assert.equal(await count('usage_events', 'device_id', f.device), 1);
+    assert.equal(await count(f.db, 'usage_events', 'device_id', f.device), 1);
   } finally {
     globalThis.fetch = originalFetch;
     await f.cleanup();
   }
 });
-const count = async (table: string, column: string, value: string) => {
+const count = async (db: ReturnType<typeof adminClient>, table: string, column: string, value: string) => {
   const r = await db.from(table).select('*', { count: 'exact', head: true }).eq(column, value);
   assert.equal(r.error, null);
   return r.count;
 };
 async function fixture() {
+  const db = adminClient();
   const device = crypto.randomUUID();
   const encoded =
     jpeg.encode({ width: 1, height: 1, data: new Uint8Array([255, 0, 0, 255]) }, 80).data;
@@ -82,6 +82,7 @@ async function fixture() {
   };
   const ids: string[] = [];
   return {
+    db,
     device,
     photo,
     input,
@@ -127,15 +128,15 @@ integrationTest('add-product is immediately visible, derives allergens, publishe
     assert.ok(
       result.product.labelImageUrl?.includes(`/products/${result.product.id}/ingredients.jpg`),
     );
-    assert.equal(await count('products', 'code', '96385074'), 1);
-    assert.equal(await count('usage_events', 'device_id', f.device), 1);
+    assert.equal(await count(f.db, 'products', 'code', '96385074'), 1);
+    assert.equal(await count(f.db, 'usage_events', 'device_id', f.device), 1);
     const photo = await fetch(result.product.labelImageUrl!);
     assert.equal(photo.status, 200);
     await photo.body?.cancel();
     assert.equal((await post(addHandler, { ...f.input, code: '96385074' }, f.device)).status, 200);
-    assert.equal(await count('usage_events', 'device_id', f.device), 1);
+    assert.equal(await count(f.db, 'usage_events', 'device_id', f.device), 1);
     assert.equal(
-      (await db.from('products').update({ status: 'hidden' }).eq('id', result.product.id)).error,
+      (await f.db.from('products').update({ status: 'hidden' }).eq('id', result.product.id)).error,
       null,
     );
     assert.equal((await post(addHandler, { ...f.input, code: '96385074' }, f.device)).status, 409);
@@ -151,7 +152,7 @@ integrationTest('foreign uploads, failed copies and rejected transactions leave 
       (await post(addHandler, { ...f.input, ingredientsPhotoPath: foreign }, f.device)).status,
       400,
     );
-    assert.equal(await count('usage_events', 'device_id', f.device), 0);
+    assert.equal(await count(f.db, 'usage_events', 'device_id', f.device), 0);
     for (
       const bad of [
         {
@@ -172,9 +173,9 @@ integrationTest('foreign uploads, failed copies and rejected transactions leave 
         response.status,
         'categorySlug' in bad && bad.categorySlug === 'unknown-c6-category' ? 400 : 502,
       );
-      assert.equal(await count('products', 'id', id), 0);
-      assert.equal(await count('usage_events', 'device_id', f.device), 0);
-      const files = await db.storage.from('products').list(id);
+      assert.equal(await count(f.db, 'products', 'id', id), 0);
+      assert.equal(await count(f.db, 'usage_events', 'device_id', f.device), 0);
+      const files = await f.db.storage.from('products').list(id);
       assert.equal(files.error, null);
       assert.deepEqual(files.data, []);
     }
@@ -188,7 +189,7 @@ integrationTest('quota admission is atomic under concurrency; 11th add and 21st 
     const reservations = await Promise.all(
       Array.from(
         { length: 15 },
-        () => db.rpc('reserve_usage', { p_device: f.device, p_kind: 'added' }),
+        () => f.db.rpc('reserve_usage', { p_device: f.device, p_kind: 'added' }),
       ),
     );
     for (const r of reservations) assert.equal(r.error, null);
@@ -207,8 +208,8 @@ integrationTest('quota admission is atomic under concurrency; 11th add and 21st 
     assert.equal(reports.filter((r) => r.status === 200).length, 20);
     assert.equal(reports.filter((r) => r.status === 429).length, 5);
     for (const r of reports) await r.body?.cancel();
-    assert.equal(await count('reports', 'device_id', f.device), 20);
-    assert.equal((await db.from('reports').delete().eq('device_id', f.device)).error, null);
+    assert.equal(await count(f.db, 'reports', 'device_id', f.device), 20);
+    assert.equal((await f.db.from('reports').delete().eq('device_id', f.device)).error, null);
   } finally {
     await f.cleanup();
   }
