@@ -27,6 +27,11 @@ real-phone verification are claimed. There is no hosted Supabase project yet.
 The C7 screen lives at `/admin`; long-press the version in About to open it.
 The minimal About entry is a necessary C7 integration change. When R4/A4 replaces
 that shell, retain `AdminEntry`; the existing R4/B1 foundation is a dependency.
+Local browser evidence: OTP mail was captured only by the local mail catcher;
+moderator sign-in, router fragment cleanup, report closure, empty-name validation,
+product verification and access gating after reload all passed using disposable
+records. The test account/product/report/photos were removed afterward.
+
 Admin sessions are in memory, public builds hold no privileged credentials, and
 web callback tokens are removed from the address fragment after consumption.
 

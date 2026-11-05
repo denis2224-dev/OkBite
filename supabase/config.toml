@@ -30,3 +30,8 @@ verify_jwt = false
 # Auth and moderator membership are checked by the handler via Auth.getUser.
 [functions.moderate]
 verify_jwt = false
+
+# Local C7 browser callback. Hosted allowlists are configured separately.
+[auth]
+site_url = "http://localhost:8081"
+additional_redirect_urls = ["http://localhost:8081/admin", "okbite://admin"]
