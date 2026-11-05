@@ -9,13 +9,13 @@ import { useCaptureFlow } from './useCaptureFlow';
 import { CODE, PRODUCT_ID, identifyCandidates, identifyFound, identifyNotFound, lookupFound, lookupNotFound } from './__fixtures__/responses';
 
 const mockReplace = jest.fn();
-const mockEnqueue = jest.fn(async () => {});
+const mockEnqueue = jest.fn<(...args: unknown[]) => Promise<unknown>>(async () => {});
 jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }) }));
 jest.mock('expo-image-manipulator', () => ({ SaveFormat: { JPEG: 'jpeg' }, ImageManipulator: { manipulate: jest.fn() } }));
 jest.mock('expo-camera', () => ({ scanFromURLAsync: jest.fn() }));
 jest.mock('expo-image-picker', () => ({ launchImageLibraryAsync: jest.fn() }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
-jest.mock('../offline/queue', () => ({ enqueue: (...args: unknown[]) => mockEnqueue(...args) }));
+jest.mock('../offline/queue', () => ({ enqueue: (arg: unknown) => mockEnqueue(arg) }));
 
 type AsyncMock = jest.Mock<(...a: unknown[]) => Promise<unknown>>;
 const scan = scanFromURLAsync as unknown as AsyncMock;

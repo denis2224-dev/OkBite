@@ -1,17 +1,13 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import {
-  AddProductRequest,
   CategoryEntry,
-  ErrorCode,
-  IdentifyResponse,
   LookupResponse,
-  ModerateRequest,
   ReadLabelResponse,
   type AddProductRequest as AddProductRequestType,
   type ProductInput as ProductInputType,
 } from '@okbite/shared';
 import rawCategoriesJson from '../../../../../data/categories.json';
-import { api, ApiError } from '../../lib/api';
+import { api } from '../../lib/api';
 import { sendModeration } from '../admin/client';
 import { foundYogurt } from '../../test/fixtures';
 
@@ -20,8 +16,8 @@ jest.mock('../../lib/device', () => ({
   getDeviceId: async () => mockCurrentDeviceId,
 }));
 
-const mockFetch = jest.fn();
-const mockFunctionsInvoke = jest.fn();
+const mockFetch = jest.fn<typeof fetch>();
+const mockFunctionsInvoke = jest.fn<(...args: unknown[]) => Promise<unknown>>();
 
 jest.mock('@supabase/supabase-js', () => ({
   createClient: () => ({
@@ -41,11 +37,12 @@ describe('Connected E2E Path: Lookup, Add, Second Client, and Moderator Verifica
     mockFunctionsInvoke.mockReset();
   });
 
-  const jsonResponse = (body: unknown, status = 200) => ({
-    ok: status < 400,
-    status,
-    json: async () => body,
-  });
+  const jsonResponse = (body: unknown, status = 200) =>
+    ({
+      ok: status < 400,
+      status,
+      json: async () => body,
+    }) as unknown as Response;
 
   it('runs complete sequence: known barcode -> unknown add -> second client discovery -> moderator verification', async () => {
     // -------------------------------------------------------------------------
@@ -268,7 +265,7 @@ describe('Connected E2E Path: Lookup, Add, Second Client, and Moderator Verifica
       ok: true,
       status: 200,
       json: async () => { throw new Error('invalid json'); },
-    });
+    } as unknown as Response);
     await expect(api.lookup({ code: '4840001000014' })).rejects.toMatchObject({ code: 'invalid_response' });
 
     // 4. Duplicate code on addProduct

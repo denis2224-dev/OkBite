@@ -5,10 +5,10 @@ import { useScanLookup } from './useScanLookup';
 import { CODE, PRODUCT_ID, lookupFound, lookupNotFound } from '../capture/__fixtures__/responses';
 
 const mockReplace = jest.fn();
-const mockEnqueue = jest.fn(async () => {});
+const mockEnqueue = jest.fn<(...args: unknown[]) => Promise<unknown>>(async () => {});
 jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }) }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
-jest.mock('../offline/queue', () => ({ enqueue: (...args: unknown[]) => mockEnqueue(...args) }));
+jest.mock('../offline/queue', () => ({ enqueue: (arg: unknown) => mockEnqueue(arg) }));
 
 const lookup = api.lookup as unknown as jest.Mock<(...a: unknown[]) => Promise<unknown>>;
 const offline = Object.assign(new Error('offline'), { code: 'offline' });

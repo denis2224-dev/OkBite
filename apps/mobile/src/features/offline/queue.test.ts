@@ -118,7 +118,16 @@ it('resumes an unresolved photo item when it has candidates and routes to identi
   const item = (await listQueued())[0]!;
   const candidatesResponse = {
     status: 'candidates' as const,
-    candidates: [{ product: foundYogurt.product, similarity: 0.8 }],
+    candidates: [
+      {
+        id: foundYogurt.product.id,
+        name: foundYogurt.product.name,
+        brand: foundYogurt.product.brand,
+        quantity: foundYogurt.product.quantity,
+        imageUrl: null,
+        similarity: 0.8,
+      },
+    ],
     read: { brand: 'Danone', name: 'Yogurt', quantity: '150g', code: null },
     photoPath: 'stored/path.jpg',
   };
