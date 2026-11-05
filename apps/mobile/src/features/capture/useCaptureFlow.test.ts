@@ -123,6 +123,18 @@ describe('useCaptureFlow', () => {
     expect(identify).toHaveBeenCalledTimes(1);
   });
 
+  it('does not navigate when a photo match arrives after leaving capture', async () => {
+    const pending = deferred<unknown>();
+    identify.mockReturnValue(pending.promise);
+    const { result, unmount } = await renderHook(() => useCaptureFlow());
+    let running!: Promise<void>;
+    await act(async () => { running = result.current.takePhoto(photo); });
+    expect(identify).toHaveBeenCalledTimes(1);
+    await unmount();
+    await act(async () => { pending.resolve(identifyFound); await running; });
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
   it('reports working while the request runs', async () => {
     const pending = deferred<unknown>();
     identify.mockReturnValue(pending.promise);

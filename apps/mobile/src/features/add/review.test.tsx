@@ -13,7 +13,7 @@ import {
 } from '@okbite/shared';
 import rawCategoriesJson from '../../../../../data/categories.json';
 import { ro } from '../../copy/ro';
-import { resolveQueued } from '../offline/queue';
+import { completeQueued } from '../offline/queue';
 import { saveToHistory } from '../history/store';
 import { ApiError } from '../../lib/api';
 import { parseAddParams } from '../identify/routes';
@@ -33,7 +33,7 @@ const mockReplace = jest.fn<(href: unknown) => void>();
 const mockSetQueuedReview = jest.fn<(id: string, res: string) => Promise<void>>(async () => {});
 const mockSaveQueuedConfirmation = jest.fn<(id: string, res: string, payload?: string, kind?: string) => Promise<void>>(async () => {});
 const mockPutQueued = jest.fn<(item: unknown) => Promise<void>>(async () => {});
-jest.mock('../offline/queue', () => ({ resolveQueued: jest.fn() }));
+jest.mock('../offline/queue', () => ({ completeQueued: jest.fn() }));
 jest.mock('../history/store', () => ({ saveToHistory: jest.fn(async () => {}) }));
 jest.mock('../history/db', () => ({
   putQueued: (item: unknown) => mockPutQueued(item),
@@ -540,7 +540,7 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
       initial: { ...BASE_INITIAL, queueId: 'queued-add' },
       label: BASE_LABEL,
     });
-    jest.mocked(resolveQueued).mockResolvedValue();
+    jest.mocked(completeQueued).mockResolvedValue();
     mockAddProduct.mockResolvedValueOnce(SAVED_LOOKUP);
 
     await render(<ReviewRouteScreen />);
@@ -552,7 +552,7 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     expect(mockAddProduct).toHaveBeenCalledTimes(1);
     expect(mockReplace).toHaveBeenCalledWith(`/product/${SAVED_LOOKUP.product.id}`);
     expect(getAddReviewDraft()).toBeNull();
-    expect(resolveQueued).toHaveBeenCalledWith('queued-add');
+    expect(completeQueued).toHaveBeenCalledWith('queued-add');
   });
 
   it('preserves availableCategories after saving product A so starting product B still has the category catalog', async () => {
@@ -617,7 +617,7 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     if (SAVED_LOOKUP.status !== 'found') throw new Error('Expected found fixture');
     setAddReviewDraft({ initial: { ...BASE_INITIAL, queueId: 'ack-failed' }, label: BASE_LABEL });
     mockAddProduct.mockResolvedValueOnce(SAVED_LOOKUP);
-    jest.mocked(resolveQueued).mockRejectedValueOnce(new Error('database busy')).mockResolvedValueOnce();
+    jest.mocked(completeQueued).mockRejectedValueOnce(new Error('database busy')).mockResolvedValueOnce();
     await render(<ReviewRouteScreen />);
     await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurt` }));
     await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
@@ -625,7 +625,7 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     expect(getAddReviewDraft()).not.toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: ro.review.finishSave }));
     expect(mockAddProduct).toHaveBeenCalledTimes(1);
-    expect(resolveQueued).toHaveBeenCalledTimes(2);
+    expect(completeQueued).toHaveBeenCalledTimes(2);
     expect(saveToHistory).toHaveBeenCalledWith(SAVED_LOOKUP);
     expect(mockReplace).toHaveBeenCalledWith(`/product/${SAVED_LOOKUP.product.id}`);
   });
@@ -640,7 +640,10 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
 
     expect(mockSaveQueuedConfirmation).toHaveBeenCalledWith('queue-receipt-1', JSON.stringify(SAVED_LOOKUP), '4840001000014', 'photo');
-    expect(resolveQueued).not.toHaveBeenCalled();
+    expect(jest.mocked(mockSaveQueuedConfirmation).mock.invocationCallOrder[0]).toBeLessThan(
+      jest.mocked(saveToHistory).mock.invocationCallOrder[0]!,
+    );
+    expect(completeQueued).not.toHaveBeenCalled();
     expect(screen.getByText(ro.review.savedPendingCleanup)).toBeTruthy();
 
     await view.unmount();
@@ -652,7 +655,7 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     await fireEvent.press(screen.getByRole('button', { name: ro.review.finishSave }));
     expect(mockAddProduct).toHaveBeenCalledTimes(1);
     expect(saveToHistory).toHaveBeenCalledTimes(2);
-    expect(resolveQueued).toHaveBeenCalledWith('queue-receipt-1');
+    expect(completeQueued).toHaveBeenCalledWith('queue-receipt-1');
     expect(mockReplace).toHaveBeenCalledWith(`/product/${SAVED_LOOKUP.product.id}`);
   });
 
@@ -709,6 +712,6 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     expect(getAddReviewDraft()?.initial.queueId).toBe('draft-b');
     expect(mockReplace).not.toHaveBeenCalled();
     expect(saveToHistory).toHaveBeenCalledWith(SAVED_LOOKUP);
-    expect(resolveQueued).toHaveBeenCalledWith('draft-a');
+    expect(completeQueued).toHaveBeenCalledWith('draft-a');
   });
 });

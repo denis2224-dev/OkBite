@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { api } from '../../lib/api';
@@ -24,6 +24,11 @@ export function useCaptureFlow() {
   const [state, setState] = useState<CaptureState>(IDLE);
   const [canRetry, setCanRetry] = useState(false);
   const busy = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const lastUri = useRef<string | null>(null);
 
   // One request at a time: camera, gallery and retry all go through here.
@@ -35,14 +40,17 @@ export function useCaptureFlow() {
       let compressedUri: string | undefined;
       try {
         const uri = await getUri();
+        if (!mounted.current) return;
         if (!uri) return setState(IDLE);
         lastUri.current = uri;
         setCanRetry(true);
         const photo = await compressPhoto(uri, IDENTIFY_PHOTO_MAX_BYTES);
         compressedUri = photo.uri;
         const code = await findBarcode(photo.uri);
+        if (!mounted.current) return;
         if (code) {
           const hit = await api.lookup({ code });
+          if (!mounted.current) return;
           if (hit.status === 'found') {
             setState(IDLE);
             return router.replace(productRoute(hit.product.id));
@@ -50,6 +58,7 @@ export function useCaptureFlow() {
         }
         // No readable barcode, or an unknown one: the photo itself decides.
         const result = await api.identify(photo.base64);
+        if (!mounted.current) return;
         setState(IDLE);
         router.replace(result.status === 'found' ? productRoute(result.product.id) : identifyPhotoRoute(result));
       } catch (err) {
@@ -57,6 +66,7 @@ export function useCaptureFlow() {
         if (code === 'offline' && compressedUri) {
           try {
             await enqueue({ kind: 'photo', uri: compressedUri });
+            if (!mounted.current) return;
             lastUri.current = null;
             setCanRetry(false);
             setState(IDLE);
@@ -64,7 +74,7 @@ export function useCaptureFlow() {
             return;
           } catch { /* Keep the original photo available for retry if durable storage fails. */ }
         }
-        setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
+        if (mounted.current) setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
       } finally {
         busy.current = false;
       }

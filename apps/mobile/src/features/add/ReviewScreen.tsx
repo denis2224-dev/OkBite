@@ -18,7 +18,7 @@ import {
   type AddReviewDraft,
 } from './draftStore';
 import { ReviewForm } from './ReviewForm';
-import { resolveQueued } from '../offline/queue';
+import { completeQueued } from '../offline/queue';
 import { saveQueuedConfirmation } from '../history/db';
 import { saveToHistory } from '../history/store';
 
@@ -42,7 +42,7 @@ export function ReviewScreen() {
         await saveQueuedConfirmation(queueId, JSON.stringify(committed), targetDraft.initial.code ?? queueId, targetDraft.label ? 'photo' : 'code');
       }
       await saveToHistory(committed);
-      await resolveQueued(queueId);
+      await completeQueued(queueId);
       const id = committed.product.id;
       if (getAddReviewDraft() === targetDraft) {
         clearAddReviewDraft();
