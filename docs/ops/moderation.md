@@ -94,7 +94,8 @@ local configuration and an allowlisted local project. It refuses hosted URLs, ot
 credentials, paths, queries and fragments before creating fixtures.
 
 The database script dumps `public`, `auth`, `storage` and `extensions`, retaining
-owners and grants. It creates a fresh disposable database in the local cluster,
+owners and grants. It creates a fresh disposable database with the same owner in
+the local cluster (preserving pg_database_owner semantics),
 restores pre-data, recreates the installed extensions from the captured list,
 then restores data and post-data. It replays source schema and extension-member
 grants, which a schema-scoped dump omits when extensions are recreated. It compares

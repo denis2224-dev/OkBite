@@ -22,6 +22,7 @@ acceptance boxes below remain separate from this implementation/local-test ledge
 - [x] C7 moderation/admin implemented; local Auth/revocation and UI tests pass.
 - [x] C8 routine and isolated DB/photo recovery implemented and verified; #60.
 - [x] R2/R3 real-score integration tested without changing score rules; #61.
+- [x] R1/D7 diagnostics backend request implemented with atomic quota/shared schemas; #62.
 - [ ] R3 human score/source fixtures and AI compensation findings resolved.
 - [ ] Claude cross-review, human approval and R1 merge.
 - [ ] Staging recovery/moderation, physical iPhone/Android and named human rota.
