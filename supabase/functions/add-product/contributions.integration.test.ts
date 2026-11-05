@@ -47,6 +47,38 @@ integrationTest('lost transaction response preserves the committed product, phot
     await f.cleanup();
   }
 });
+integrationTest(
+  'lost report response recovers the committed report and keeps exactly one usage event',
+  async () => {
+    const f = await fixture();
+    const originalFetch = globalThis.fetch;
+    let injected = false;
+    try {
+      globalThis.fetch = async (...args: Parameters<typeof fetch>) => {
+        const response = await originalFetch(...args);
+        if (String(args[0]).includes('/rpc/commit_report') && !injected) {
+          injected = true;
+          await response.body?.cancel();
+          throw new Error('Simulated lost report response after commit');
+        }
+        return response;
+      };
+      const response = await post(
+        reportHandler,
+        { productId: seed, message: 'Raport de test C6' },
+        f.device,
+      );
+      assert.equal(response.status, 200, await response.clone().text());
+      assert.deepEqual(await response.json(), { status: 'ok' });
+      assert.equal(injected, true);
+      assert.equal(await count(f.db, 'reports', 'device_id', f.device), 1);
+      assert.equal(await count(f.db, 'usage_events', 'device_id', f.device), 1);
+    } finally {
+      globalThis.fetch = originalFetch;
+      await f.cleanup();
+    }
+  },
+);
 const count = async (db: ReturnType<typeof adminClient>, table: string, column: string, value: string) => {
   const r = await db.from(table).select('*', { count: 'exact', head: true }).eq(column, value);
   assert.equal(r.error, null);
