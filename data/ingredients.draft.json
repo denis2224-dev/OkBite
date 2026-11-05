@@ -166,7 +166,7 @@
     "group": "base",
     "role": "Agent de îngroșare",
     "explanation": "Amidon extras din porumb; îngroașă și leagă.",
-    "source": "Reg. (UE) nr. 1169/2011, Anexa VII Partea B (denumirea „amidon”) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa VII Partea B pct. 4 (denumirea „amidon”) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
     "allergen": null
   },
   {
@@ -176,7 +176,7 @@
     "group": "base",
     "role": "Agent de îngroșare",
     "explanation": "Amidon extras din cartofi; îngroașă și leagă.",
-    "source": "Reg. (UE) nr. 1169/2011, Anexa VII Partea B (denumirea „amidon”) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa VII Partea B pct. 4 (denumirea „amidon”) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
     "allergen": null
   },
   {
@@ -216,7 +216,7 @@
     "group": "base",
     "role": "Ingredient de bază",
     "explanation": "Boabe de cacao măcinate după ce s-a scos o parte din grăsime.",
-    "source": "Directiva 2000/36/CE privind produsele din cacao și ciocolată, Anexa I — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32000L0036",
+    "source": "Directiva 2000/36/CE privind produsele din cacao și ciocolată, Anexa I pct. A.2 (pudră de cacao) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32000L0036",
     "allergen": null
   },
   {
@@ -226,7 +226,7 @@
     "group": "base",
     "role": "Ingredient de bază",
     "explanation": "Boabe de cacao măcinate fin; baza ciocolatei.",
-    "source": "Directiva 2000/36/CE privind produsele din cacao și ciocolată, Anexa I — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32000L0036",
+    "source": "Directiva 2000/36/CE privind produsele din cacao și ciocolată, Anexa I pct. A.3 (ciocolata din produse de cacao) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32000L0036",
     "allergen": null
   },
   {
@@ -556,7 +556,7 @@
     "group": "fat",
     "role": "Grăsime",
     "explanation": "Amestec de uleiuri din plante; tipul exact ar trebui scris în paranteză.",
-    "source": "Reg. (UE) nr. 1169/2011, Anexa VII Partea A pct. 8 (uleiuri și grăsimi vegetale: originea specifică) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa VII Partea A pct. 8–9 (uleiuri și grăsimi vegetale: originea specifică) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
     "allergen": null
   },
   {
@@ -570,7 +570,7 @@
     "group": "fat",
     "role": "Grăsime",
     "explanation": "Ulei întărit industrial; poate conține grăsimi trans, limitate prin lege în UE.",
-    "source": "Reg. (UE) 2019/649 (limita grăsimilor trans: 2 g/100 g grăsime) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32019R0649; Reg. (UE) nr. 1169/2011, Anexa VII Partea A pct. 8",
+    "source": "Reg. (UE) 2019/649 (limita grăsimilor trans: 2 g/100 g grăsime) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32019R0649; Reg. (UE) nr. 1169/2011, Anexa VII Partea A pct. 8–9 („parțial hidrogenat”)",
     "allergen": null
   },
   {
@@ -600,7 +600,7 @@
     "group": "fat",
     "role": "Grăsime",
     "explanation": "Grăsimea din boabele de cacao; nu conține lapte, în ciuda numelui.",
-    "source": "Directiva 2000/36/CE privind produsele din cacao și ciocolată, Anexa I — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32000L0036",
+    "source": "Directiva 2000/36/CE privind produsele din cacao și ciocolată, Anexa I pct. A.1 (unt de cacao) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32000L0036",
     "allergen": null
   },
   {
@@ -640,7 +640,7 @@
     "group": "taste",
     "role": "Îndulcitor",
     "explanation": "Sirop din amidon de porumb sau grâu, bogat în fructoză.",
-    "source": "Reg. (UE) nr. 1308/2013, Anexa II Partea III (izoglucoză) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32013R1308",
+    "source": "Reg. (UE) nr. 1308/2013, Anexa II Partea II Secțiunea A (izoglucoză) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32013R1308",
     "allergen": null
   },
   {
