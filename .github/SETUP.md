@@ -103,3 +103,13 @@ The repository owner must configure protection/rules for `main`:
 - [ ] Cloudflare PR browser preview works in Safari and Chrome.
 - [ ] Main protection and final role handles configured by the repository admin.
 - [ ] Claude review, human approval, and role-plan completion boxes after merge.
+
+## Database and Edge verification in CI
+
+When migrations exist, `ci` starts a disposable Supabase 2.65.5 stack on the
+fresh GitHub runner, runs pgTAP and strict database lint, and stops only that
+runner's stack. It never links to a hosted project or resets a developer database.
+Edge unit tests run without service credentials. `*.integration.test.ts` files
+are excluded from that step, then run explicitly with local CLI-generated keys
+and `OKBITE_RUN_INTEGRATION=1` after the local gateway is ready. Shared generation
+is checked for tracked changes and newly generated untracked files.
