@@ -1,3 +1,4 @@
+import { integrationTest } from '../_lib/integration.ts';
 import { strict as assert } from 'node:assert';
 import jpeg from 'npm:jpeg-js@0.4.4';
 import { createHandler, handler as addHandler } from './index.ts';
@@ -19,7 +20,7 @@ const post = (handler: (req: Request) => Promise<Response>, body: unknown, devic
     }),
   );
 
-Deno.test('lost transaction response preserves the committed product, photos and usage event', async () => {
+integrationTest('lost transaction response preserves the committed product, photos and usage event', async () => {
   const f = await fixture();
   const originalFetch = globalThis.fetch;
   let injected = false;
@@ -105,7 +106,7 @@ async function fixture() {
     },
   };
 }
-Deno.test('add-product is immediately visible, derives allergens, publishes photos and resolves concurrent duplicate codes', async () => {
+integrationTest('add-product is immediately visible, derives allergens, publishes photos and resolves concurrent duplicate codes', async () => {
   const f = await fixture();
   try {
     const responses = await Promise.all([
@@ -142,7 +143,7 @@ Deno.test('add-product is immediately visible, derives allergens, publishes phot
     await f.cleanup();
   }
 });
-Deno.test('foreign uploads, failed copies and rejected transactions leave no products, public photos or quota events', async () => {
+integrationTest('foreign uploads, failed copies and rejected transactions leave no products, public photos or quota events', async () => {
   const f = await fixture();
   try {
     const foreign = f.photo.replace(f.device, crypto.randomUUID());
@@ -181,7 +182,7 @@ Deno.test('foreign uploads, failed copies and rejected transactions leave no pro
     await f.cleanup();
   }
 });
-Deno.test('quota admission is atomic under concurrency; 11th add and 21st report are rejected', async () => {
+integrationTest('quota admission is atomic under concurrency; 11th add and 21st report are rejected', async () => {
   const f = await fixture();
   try {
     const reservations = await Promise.all(
