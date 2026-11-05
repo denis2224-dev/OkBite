@@ -1,3 +1,4 @@
+import { MissingPhotoError } from './photo_errors';
 import { createStore, get, set, del } from 'idb-keyval';
 import { ro } from '../../copy/ro';
 
@@ -11,7 +12,7 @@ export async function keepPhoto(uri: string): Promise<string> {
 }
 export async function readPhoto(id: string): Promise<string> {
   const blob = await get<Blob>(id, photos);
-  if (!blob) throw new Error(ro.offline.queueError);
+  if (!blob) throw new MissingPhotoError();
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
@@ -20,3 +21,10 @@ export async function readPhoto(id: string): Promise<string> {
   });
 }
 export async function removePhoto(id: string): Promise<void> { await del(id, photos); }
+
+export async function openPhoto(id: string) {
+  const blob = await get<Blob>(id, photos);
+  if (!blob) throw new MissingPhotoError();
+  const uri = URL.createObjectURL(blob);
+  return { uri, release() { URL.revokeObjectURL(uri); } };
+}
