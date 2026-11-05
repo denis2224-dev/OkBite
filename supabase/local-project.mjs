@@ -14,3 +14,18 @@ export function localProject(config) {
   }
   return project;
 }
+
+// Bind recovery credentials to this copied configuration, never another local stack.
+export function localApiUrl(config, endpoint) {
+  localProject(config);
+  const api = config.match(/^\[api\]\s*\r?\n([\s\S]*?)(?=^\[|$(?![\s\S]))/m)?.[1];
+  const port = api?.match(/^port\s*=\s*(\d+)\s*$/m)?.[1];
+  let url;
+  try { url = new URL(endpoint); } catch { /* fail below without exposing endpoint */ }
+  if (!port || !url || url.protocol !== 'http:' ||
+      !['127.0.0.1', 'localhost'].includes(url.hostname) || url.port !== port ||
+      url.username || url.password || url.pathname !== '/' || url.search || url.hash) {
+    throw new Error('Photo recovery requires the configured local project API');
+  }
+  return url;
+}
