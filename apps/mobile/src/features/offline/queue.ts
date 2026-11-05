@@ -91,3 +91,53 @@ async function drain(onResolved?: (id: string) => void) {
   }
   return { resolved };
 }
+
+export type ResumeResult =
+  | { kind: 'found'; productId: string }
+  | { kind: 'identify'; pathname: string; params: Record<string, string> };
+
+/**
+ * Resumes confirmation or contribution for an unresolved queued item.
+ * - If product is found on retry, saves to history, cleans up queue/photo, returns found productId.
+ * - If candidates or not_found, removes from queue (preventing duplicate queue runs) and returns navigation route.
+ */
+export async function resumeQueuedItem(item: { id: string; kind: 'photo' | 'code'; payload: string }): Promise<ResumeResult> {
+  if (item.kind === 'code') {
+    const result = await api.lookup({ code: item.payload });
+    await deleteQueued(item.id);
+    if (result.status === 'found') {
+      await saveToHistory(result);
+      return { kind: 'found', productId: result.product.id };
+    }
+    return {
+      kind: 'identify',
+      pathname: '/identify',
+      params: { source: 'code', code: item.payload },
+    };
+  } else {
+    let photoBase64: string;
+    try {
+      photoBase64 = await readPhoto(item.payload);
+    } catch {
+      await deleteQueued(item.id).catch(() => {});
+      throw new Error('Photo not available');
+    }
+    const result = await api.identify(photoBase64);
+    await deleteQueued(item.id);
+    if (result.status === 'found') {
+      await saveToHistory(result);
+      await removePhoto(item.payload).catch(() => {});
+      return { kind: 'found', productId: result.product.id };
+    }
+    return {
+      kind: 'identify',
+      pathname: '/identify',
+      params: { source: 'photo', payload: JSON.stringify(result) },
+    };
+  }
+}
+
+export async function listUnresolvedQueued() {
+  return listQueued();
+}
+

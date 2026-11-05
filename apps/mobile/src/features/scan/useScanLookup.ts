@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { normalizeCode } from '@okbite/shared';
 import { api } from '../../lib/api';
+import { enqueue } from '../offline/queue';
 import { identifyCodeRoute, productRoute } from '../identify/routes';
 
 export type ScanState =
@@ -19,11 +20,15 @@ export function useScanLookup(onCameraAccept?: () => void) {
   const busy = useRef(false);
   const failed = useRef(false);
   const lastCode = useRef<string | null>(null);
+  const enqueuedCode = useRef<string | null>(null);
 
   const lookup = useCallback(
     async (code: string) => {
       busy.current = true;
       failed.current = false;
+      if (code !== lastCode.current) {
+        enqueuedCode.current = null;
+      }
       lastCode.current = code;
       setState({ status: 'working' });
       try {
@@ -33,7 +38,15 @@ export function useScanLookup(onCameraAccept?: () => void) {
       } catch (err) {
         failed.current = true;
         const errorCode = (err as { code?: string }).code;
-        setState(errorCode === 'offline' ? { status: 'offline' } : { status: 'error', code: errorCode });
+        if (errorCode === 'offline') {
+          if (enqueuedCode.current !== code) {
+            enqueuedCode.current = code;
+            await Promise.resolve(enqueue({ kind: 'code', code })).catch(() => {});
+          }
+          setState({ status: 'offline' });
+        } else {
+          setState({ status: 'error', code: errorCode });
+        }
       } finally {
         busy.current = false;
       }
