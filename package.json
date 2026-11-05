@@ -7,19 +7,23 @@
   },
   "scripts": {
     "dev": "pnpm --filter mobile start",
-    "test": "pnpm test:sync-shared && pnpm -r test",
+    "test": "pnpm test:sync-shared && pnpm -r test && pnpm test:scripts",
     "lint": "eslint .",
     "typecheck": "pnpm -r typecheck",
     "e2e": "echo \"set up in D6\" && exit 1",
     "sync-shared": "node scripts/sync-shared.mjs",
     "format": "prettier --write .",
-    "test:sync-shared": "node --test scripts/sync-shared.test.mjs"
+    "test:sync-shared": "node --test scripts/sync-shared.test.mjs",
+    "test:scripts": "vitest run scripts",
+    "data:check": "tsx scripts/check-data.ts"
   },
   "devDependencies": {
     "eslint": "^9.39.1",
     "eslint-config-expo": "~58.0.0",
     "prettier": "^3.6.2",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.3",
-    "typescript-eslint": "^8.46.3"
+    "typescript-eslint": "^8.46.3",
+    "vitest": "^4.0.0"
   }
 }
