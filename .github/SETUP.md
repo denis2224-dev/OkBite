@@ -142,3 +142,11 @@ Edge unit tests run without service credentials. `*.integration.test.ts` files
 are excluded from that step, then run explicitly with local CLI-generated keys
 and `OKBITE_RUN_INTEGRATION=1` after the local gateway is ready. Shared generation
 is checked for tracked changes and newly generated untracked files.
+
+## Mobile Metro context
+
+The target workspace has its own Metro config. Inheriting the root preview
+config set projectRoot to the repository root and exported an app that failed
+with "No routes found". `pnpm test:metro` loads the real config and checks its
+project root before the normal suites run. Bundle export alone is not runtime
+route acceptance.
