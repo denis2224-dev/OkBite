@@ -1,11 +1,15 @@
 import type { ExpoConfig } from 'expo/config';
 
+const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
+
 const config: ExpoConfig = {
   name: 'OkBite',
   slug: 'okbite',
   scheme: 'okbite',
   version: '1.0.0',
   userInterfaceStyle: 'automatic',
+  runtimeVersion: { policy: 'fingerprint' },
+  ...(projectId ? { updates: { url: `https://u.expo.dev/${projectId}` } } : {}),
   icon: './assets/icon.png',
   ios: { bundleIdentifier: 'md.okbite.app', supportsTablet: false },
   android: {
@@ -14,6 +18,7 @@ const config: ExpoConfig = {
   },
   plugins: [
     'expo-router',
+    'expo-dev-client',
     [
       'expo-camera',
       {
@@ -39,6 +44,7 @@ const config: ExpoConfig = {
   ],
   web: { bundler: 'metro', output: 'single', favicon: './assets/favicon.png' },
   extra: {
+    ...(projectId ? { eas: { projectId } } : {}),
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
   },
