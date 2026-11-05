@@ -70,7 +70,9 @@
     "test:sync-shared": "node --test scripts/sync-shared.test.mjs",
     "test:local-gateway": "node --test supabase/tests/local-cors.test.mjs",
     "test:app": "jest --runInBand",
-    "typecheck:app": "tsc --noEmit"
+    "typecheck:app": "tsc --noEmit",
+    "data:load": "tsx scripts/load-data.ts",
+    "data:off": "tsx scripts/import-off.ts"
   },
   "private": true,
   "packageManager": "pnpm@9.12.0",

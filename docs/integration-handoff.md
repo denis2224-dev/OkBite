@@ -1,6 +1,6 @@
 # Current PR #16 review integration
 
-This review integrates main `3914c88`, preserving all merged backend/admin code,
+This review integrates main `b4ba501`, preserving all merged backend/admin code,
 function settings, shared exports, generator and gateway checks. Root commands
 now validate both the design preview and every workspace suite exactly once.
 `pnpm sync-shared` runs the real generator; CI exports the root preview as well
@@ -11,6 +11,15 @@ Saved preview examples hydrate on Home and History after restart, and the demo
 sheet scrolls within the viewport for enlarged text. Existing project rules are
 preserved in AGENTS.md alongside the scoped preview guidance. Native devices,
 live service/model integration and operator policy review remain separate work.
+
+The final main reconciliation also preserves C5 data-loader scripts and tests.
+Local validation passes all 368 tests, lint (0 errors, 55 warnings), root/workspace
+TypeScript and data checks. The earlier 353-test CI run passed database and live
+function integration; CI is rerun for the final main reconciliation.
+
+The user explicitly approved merging this design preview with an exception for
+the missing Claude cross-review and physical iPhone/Android acceptance. This
+exception does not mark those acceptance steps complete.
 
 Earlier integration notes and evidence below refer to their recorded revisions.
 
