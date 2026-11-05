@@ -45,7 +45,16 @@ export function OfflineScreen() {
       {item.kind === 'code' && <Body>{item.payload}</Body>}
       {item.outcome && <Body>{ro.offline.needsReview}</Body>}
       {item.error && <Body>{item.error in ro.errors ? ro.errors[item.error as keyof typeof ro.errors] : ro.offline.queueError}</Body>}
-      <Button disabled={busy} onPress={() => { void run(() => retryQueued(item.id)); }}>{ro.app.retry}</Button>
+      {item.outcome ? (
+        <Button disabled={busy} onPress={() => router.push({ pathname: '/identify', params: { queuedId: item.id } })}>{ro.app.open}</Button>
+      ) : item.completedProductId ? (
+        <Button disabled={busy} onPress={() => { void run(async () => {
+          await completeQueued(item.id);
+          router.push(`/product/${item.completedProductId}`);
+        }); }}>{ro.app.open}</Button>
+      ) : (
+        <Button disabled={busy} onPress={() => { void run(() => retryQueued(item.id)); }}>{ro.app.retry}</Button>
+      )}
       <Button variant="ghost" disabled={busy} onPress={() => setConfirm(item.id)}>{ro.offline.cancel}</Button>
       {confirm === item.id && <>
         <Body accessibilityLiveRegion="polite">{ro.offline.removeTitle}</Body>

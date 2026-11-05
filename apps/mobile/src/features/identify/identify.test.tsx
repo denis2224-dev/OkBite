@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { describe, it, expect, jest, beforeAll, beforeEach } from '@jest/globals';
 import { render, fireEvent, screen } from '@testing-library/react-native';
 import { IdentifyResponse } from '@okbite/shared';
@@ -164,8 +164,8 @@ describe('IdentifyScreen and B3 flow', () => {
       status: 'candidates', candidates: [CAND_1], read: ORIGINAL_READ, photoPath: PHOTO_PATH,
     }) };
     await render(<ThemeProvider><DarkIdentify /></ThemeProvider>);
-    expect(screen.getByText(CAND_1.name)).toHaveStyle({ color: dark.ink });
-    expect(screen.getByText(ro.identify.confirmHint)).toHaveStyle({ color: dark.muted });
+    expect(StyleSheet.flatten(screen.getByText(CAND_1.name).props.style).color).toBe(dark.ink);
+    expect(StyleSheet.flatten(screen.getByText(ro.identify.confirmHint).props.style).color).toBe(dark.muted);
   });
 
   it('shows CandidateList when a single candidate has similarity < 0.6', async () => {
