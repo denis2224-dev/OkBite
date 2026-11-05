@@ -118,3 +118,20 @@ mapping to `addedAt` remains unchanged. No contract or migration changes were ne
 Count-only quotas are not atomic reservations; C6/D4/D5 must coordinate admission.
 C6 must bind upload prefixes to the caller, handle copy/DB compensation and wait for
 C4/D3. Graph navigation was refreshed locally; derived graph output is excluded.
+
+### Integration coordinator refresh (2026-11-05)
+
+CI now invokes the existing local-CORS helper before live gateway tests. The
+helper's already-published dedicated-C6 support is moved forward from C7d so the
+whole dependency stack can use the same strict assertions. Five Node regressions
+cover LF/CRLF, C3/C6, rejection of unrelated projects, service isolation and
+idempotence. The C6 case failed before this integration; CRLF already worked.
+Kong's default permissive CORS is delegated to the stricter function handlers on
+these disposable local stacks only. Hosted configuration is untouched.
+
+Run live tests with `OKBITE_RUN_INTEGRATION=1` and the three local Supabase values;
+without the explicit flag they are ignored while ordinary unit tests still run.
+Analytics rejection no longer turns a valid found/not-found lookup into a 502;
+product loading and response-schema errors remain 502. R1 CI/root-script changes
+and R2 gateway/function changes are authorized integration fixes requiring review.
+Historical review-waiver text does not waive this run's cross-review/human gates.

@@ -1,11 +1,11 @@
 // Supabase CLI 2.65.5's local Kong cors plugin replaces Edge Function CORS.
-// Let the handler answer preflights and response headers on this C3 stack only.
+// Let the handler answer preflights and response headers on this worktree's dedicated local stack only.
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 const config = readFileSync(new URL('../config.toml', import.meta.url), 'utf8');
-const project = config.match(/^project_id = "(okbite-c3-[a-z0-9-]+)"$/m)?.[1];
-if (!project) throw new Error('Refusing to modify a non-C3 gateway');
+const project = config.match(/^project_id = "(okbite-c(?:3-[a-z0-9-]+|6))"$/m)?.[1];
+if (!project) throw new Error('Refusing to modify a unrecognized local gateway');
 const container = `supabase_kong_${project}`;
 const command = (...args) => execFileSync('docker', args, { encoding: 'utf8' });
 const original = command('exec', container, 'cat', '/home/kong/kong.yml');
