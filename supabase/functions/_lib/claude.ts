@@ -8,8 +8,8 @@ const RETRYABLE = new Set([408, 429, 500, 502, 503, 504, 529]);
 const ATTEMPTS = 3;
 const TIMEOUT_MS = 20_000;
 const MAX_IMAGES = 2;
-const MAX_SINGLE_IMAGE_BASE64 = 2_000_000; // 1.5 MB stored JPEG after base64 encoding
-const MAX_PAIRED_IMAGE_BASE64 = 1_900_000; // leave room for JSON within the 4 MB request cap
+const MAX_IMAGE_BASE64 = 2_000_000; // 1.5 MB stored JPEG after base64 encoding
+const MAX_TOTAL_IMAGE_BASE64 = 3_800_000; // leave room for JSON within the 4 MB request cap
 
 /** Claude could not give a usable answer. The message never contains the key or the provider's body. */
 export class UpstreamError extends Error {}
@@ -21,6 +21,14 @@ export type ClaudeDeps = {
   model?: string;
 };
 
+export function validateProviderImages(images: string[]): void {
+  if (
+    !images.length || images.length > MAX_IMAGES ||
+    images.some((image) => !image || image.length > MAX_IMAGE_BASE64) ||
+    images.reduce((total, image) => total + image.length, 0) > MAX_TOTAL_IMAGE_BASE64
+  ) throw new UpstreamError('Invalid images for Claude');
+}
+
 /** Sends JPEG images (base64, no data: prefix) and a prompt; returns Claude's text answer. */
 export async function askClaude(
   images: string[],
@@ -29,11 +37,7 @@ export async function askClaude(
 ): Promise<string> {
   const key = deps.apiKey ?? Deno.env.get('AI_API_KEY');
   if (!key) throw new UpstreamError('Claude is not configured');
-  const imageLimit = images.length === 1 ? MAX_SINGLE_IMAGE_BASE64 : MAX_PAIRED_IMAGE_BASE64;
-  if (
-    !images.length || images.length > MAX_IMAGES ||
-    images.some((i) => !i || i.length > imageLimit)
-  ) throw new UpstreamError('Invalid images for Claude');
+  validateProviderImages(images);
   const doFetch = deps.fetch ?? fetch;
   const sleep = deps.sleep ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)));
   const body = JSON.stringify({
