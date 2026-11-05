@@ -60,9 +60,13 @@ jobs:
             config=(--config supabase/functions/deno.json)
           fi
           deno test "${config[@]}" --allow-all --permit-no-files --ignore=supabase/functions/_shared,'supabase/functions/**/*.integration.test.ts' supabase/functions/
+      - name: Test CI service isolation
+        if: hashFiles('.github/tests/isolate-supabase.test.mjs') != ''
+        run: node --test .github/tests/isolate-supabase.test.mjs
       - name: Verify isolated local database
         if: hashFiles('supabase/migrations/*.sql') != ''
         run: |
+          node .github/scripts/isolate-supabase.mjs
           npx --yes supabase@2.65.5 start
           npx --yes supabase@2.65.5 test db --local
           npx --yes supabase@2.65.5 db lint --local --schema public --fail-on warning

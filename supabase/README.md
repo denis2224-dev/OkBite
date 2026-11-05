@@ -135,3 +135,9 @@ Analytics rejection no longer turns a valid found/not-found lookup into a 502;
 product loading and response-schema errors remain 502. R1 CI/root-script changes
 and R2 gateway/function changes are authorized integration fixes requiring review.
 Historical review-waiver text does not waive this run's cross-review/human gates.
+
+CI additionally assigns a unique project ID per workflow run/attempt and five
+currently available local ports in the runner checkout before starting Supabase.
+This addresses the observed host-port collision on main without resetting an
+existing stack. Original committed development ports remain unchanged. Container
+cleanup reads the same temporary configuration and stops only that run's project.
