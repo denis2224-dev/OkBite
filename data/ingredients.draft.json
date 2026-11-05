@@ -1,0 +1,1755 @@
+[
+  {
+    "slug": "lapte",
+    "name": "Lapte",
+    "aliases": ["lapte normalizat", "lapte integral", "lapte de vacă"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Lapte de vacă; aduce proteine, calciu și lactoză.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Lapte"
+  },
+  {
+    "slug": "lapte-praf",
+    "name": "Lapte praf",
+    "aliases": ["lapte praf degresat", "lapte praf integral", "lapte praf smântânit"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Lapte uscat până devine pulbere; folosit pentru gust și textură.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Lapte"
+  },
+  {
+    "slug": "zer",
+    "name": "Zer",
+    "aliases": ["zer praf", "zer din lapte", "proteine din zer"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Lichidul rămas după facerea brânzei, adesea uscat; conține proteine din lapte și lactoză.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Lapte"
+  },
+  {
+    "slug": "smantana",
+    "name": "Smântână",
+    "aliases": ["smântână", "frișcă", "cremă din lapte"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Partea grasă a laptelui; dă cremozitate.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Lapte"
+  },
+  {
+    "slug": "branza",
+    "name": "Brânză",
+    "aliases": ["brânză", "brânză topită", "cașcaval"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Produs din lapte închegat; aduce proteine, grăsimi și sare.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Lapte"
+  },
+  {
+    "slug": "proteine-lapte",
+    "name": "Proteine din lapte",
+    "aliases": ["proteine din lapte", "cazeină", "cazeinat de sodiu"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Proteine extrase din lapte, adăugate pentru textură sau conținut de proteine.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Lapte"
+  },
+  {
+    "slug": "oua",
+    "name": "Ouă",
+    "aliases": ["ouă", "ouă întregi", "melanj de ouă"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Ouă de găină; leagă aluatul și aduc proteine.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Ouă"
+  },
+  {
+    "slug": "praf-oua",
+    "name": "Praf de ouă",
+    "aliases": ["praf de ouă", "ou praf", "albuș praf", "gălbenuș praf"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Ouă uscate până la pulbere, mai ușor de păstrat.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Ouă"
+  },
+  {
+    "slug": "faina-grau",
+    "name": "Făină de grâu",
+    "aliases": ["făină de grâu", "făină albă", "făină de grâu tip 000", "făină de grâu integrală"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Grâu măcinat; baza pâinii și a biscuiților. Conține gluten.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Gluten"
+  },
+  {
+    "slug": "faina-secara",
+    "name": "Făină de secară",
+    "aliases": ["făină de secară"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Secară măcinată; dă pâine mai densă. Conține gluten.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Gluten"
+  },
+  {
+    "slug": "ovaz",
+    "name": "Ovăz",
+    "aliases": ["fulgi de ovăz", "ovăz", "tărâțe de ovăz"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Cereală bogată în fibre; legea UE o listează printre cerealele cu gluten.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Gluten"
+  },
+  {
+    "slug": "gluten-grau",
+    "name": "Gluten din grâu",
+    "aliases": ["gluten din grâu", "gluten"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Proteina din grâu care face aluatul elastic.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Gluten"
+  },
+  {
+    "slug": "malt-orz",
+    "name": "Malț de orz",
+    "aliases": ["malț de orz", "extract de malț", "extract de malț de orz", "făină de malț"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Orz încolțit și uscat; dă gust și culoare. Conține gluten.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Gluten"
+  },
+  {
+    "slug": "gris",
+    "name": "Griș",
+    "aliases": ["griș", "griș de grâu"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Grâu măcinat grosier. Conține gluten.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Gluten"
+  },
+  {
+    "slug": "orez",
+    "name": "Orez",
+    "aliases": ["orez", "făină de orez"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Cereală fără gluten, folosită întreagă sau ca făină.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "porumb",
+    "name": "Porumb",
+    "aliases": ["porumb", "făină de porumb", "mălai", "griș de porumb"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Cereală fără gluten, folosită ca făină sau boabe.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "amidon-porumb",
+    "name": "Amidon de porumb",
+    "aliases": ["amidon de porumb", "amidon din porumb"],
+    "group": "base",
+    "role": "Agent de îngroșare",
+    "explanation": "Amidon extras din porumb; îngroașă și leagă.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "amidon-cartofi",
+    "name": "Amidon din cartofi",
+    "aliases": ["amidon din cartofi", "amidon de cartofi", "fecule de cartofi"],
+    "group": "base",
+    "role": "Agent de îngroșare",
+    "explanation": "Amidon extras din cartofi; îngroașă și leagă.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "amidon-grau",
+    "name": "Amidon din grâu",
+    "aliases": ["amidon din grâu", "amidon de grâu"],
+    "group": "base",
+    "role": "Agent de îngroșare",
+    "explanation": "Amidon extras din grâu; poate conține urme de gluten.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Gluten"
+  },
+  {
+    "slug": "soia",
+    "name": "Soia",
+    "aliases": ["boabe de soia", "făină de soia"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Leguminoasă bogată în proteine.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Soia"
+  },
+  {
+    "slug": "proteina-soia",
+    "name": "Proteină din soia",
+    "aliases": ["proteină din soia", "proteine din soia", "izolat proteic din soia"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Proteine extrase din soia, folosite pentru textură sau ca înlocuitor de carne.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Soia"
+  },
+  {
+    "slug": "cacao-pudra",
+    "name": "Cacao pudră",
+    "aliases": ["cacao pudră", "cacao degresată", "pudră de cacao"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Boabe de cacao măcinate după ce s-a scos o parte din grăsime.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "masa-cacao",
+    "name": "Masă de cacao",
+    "aliases": ["masă de cacao", "pastă de cacao"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Boabe de cacao măcinate fin; baza ciocolatei.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "arahide",
+    "name": "Arahide",
+    "aliases": ["arahide", "alune de pământ", "pastă de arahide"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Leguminoase numite și alune de pământ; alergen frecvent.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Arahide"
+  },
+  {
+    "slug": "alune-padure",
+    "name": "Alune de pădure",
+    "aliases": ["alune de pădure", "alune", "pastă de alune"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Fruct cu coajă lemnoasă; alergen.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Fructe cu coajă lemnoasă"
+  },
+  {
+    "slug": "migdale",
+    "name": "Migdale",
+    "aliases": ["migdale", "făină de migdale"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Fruct cu coajă lemnoasă; alergen.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Fructe cu coajă lemnoasă"
+  },
+  {
+    "slug": "nuci",
+    "name": "Nuci",
+    "aliases": ["nuci", "miez de nucă"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Fruct cu coajă lemnoasă; alergen.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Fructe cu coajă lemnoasă"
+  },
+  {
+    "slug": "susan",
+    "name": "Susan",
+    "aliases": ["semințe de susan", "susan", "tahini"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Semințe mici bogate în grăsimi; alergen.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Susan"
+  },
+  {
+    "slug": "seminte-floarea-soarelui",
+    "name": "Semințe de floarea-soarelui",
+    "aliases": ["semințe de floarea-soarelui"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Semințe bogate în grăsimi nesaturate.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "carne-porc",
+    "name": "Carne de porc",
+    "aliases": ["carne de porc", "carne de porc tocată"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Carne roșie; ingredientul principal al multor mezeluri.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "carne-vita",
+    "name": "Carne de vită",
+    "aliases": ["carne de vită"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Carne roșie, bogată în proteine și fier.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "carne-pui",
+    "name": "Carne de pui",
+    "aliases": ["carne de pui", "piept de pui", "carne de pasăre"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Carne albă, bogată în proteine.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "carne-separata-mecanic",
+    "name": "Carne separată mecanic",
+    "aliases": ["carne separată mecanic", "carne de pasăre separată mecanic"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Carne recuperată de pe oase cu utilaje; textură fină, folosită în crenvurști și parizer.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "slanina",
+    "name": "Slănină",
+    "aliases": ["slănină"],
+    "group": "fat",
+    "role": "Grăsime",
+    "explanation": "Țesut gras de porc; bogat în grăsimi saturate.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "untura",
+    "name": "Untură",
+    "aliases": ["untură", "grăsime de porc", "untură de porc"],
+    "group": "fat",
+    "role": "Grăsime",
+    "explanation": "Grăsime de porc topită; bogată în grăsimi saturate.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "amidon-modificat",
+    "name": "Amidon modificat",
+    "aliases": ["amidon modificat", "amidon alimentar modificat"],
+    "group": "add",
+    "role": "Agent de îngroșare",
+    "explanation": "Amidon tratat ca să reziste la fierbere sau congelare; numărul E exact (E1404–E1452) ar trebui scris pe etichetă.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "piure-fructe",
+    "name": "Piure de fructe",
+    "aliases": ["piure de fructe", "pulpă de fructe"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Fructe zdrobite; aduc gust, fibre și zaharuri naturale.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "suc-concentrat",
+    "name": "Suc concentrat",
+    "aliases": ["suc concentrat", "concentrat de suc", "suc din concentrat"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Suc de fructe din care s-a scos apa; apa se adaugă înapoi la îmbuteliere.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "capsuni",
+    "name": "Căpșuni",
+    "aliases": ["căpșuni", "bucăți de căpșuni"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Fructe adăugate pentru gust; cantitatea apare adesea în procente.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "pasta-tomate",
+    "name": "Pastă de tomate",
+    "aliases": ["pastă de tomate", "bulion", "concentrat de roșii"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Roșii fierte și concentrate.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "ceapa",
+    "name": "Ceapă",
+    "aliases": ["ceapă", "ceapă deshidratată", "praf de ceapă"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Legumă folosită pentru gust.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "usturoi",
+    "name": "Usturoi",
+    "aliases": ["usturoi", "usturoi deshidratat", "praf de usturoi"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Legumă folosită pentru gust.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "cartofi",
+    "name": "Cartofi",
+    "aliases": ["cartofi", "fulgi de cartofi", "piure de cartofi deshidratat"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Legumă bogată în amidon; baza chipsurilor.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "apa",
+    "name": "Apă",
+    "aliases": ["apă", "apă potabilă"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Apă potabilă; pe etichetă apare când e peste 5% din produs.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "drojdie",
+    "name": "Drojdie",
+    "aliases": ["drojdie", "drojdie de panificație"],
+    "group": "base",
+    "role": "Agent de afânare",
+    "explanation": "Ciuperci microscopice care fac aluatul să crească.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "extract-drojdie",
+    "name": "Extract de drojdie",
+    "aliases": ["extract de drojdie"],
+    "group": "taste",
+    "role": "Potențiator de gust",
+    "explanation": "Drojdie descompusă; dă gust sărat-savuros, asemănător glutamatului.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "mustar",
+    "name": "Muștar",
+    "aliases": ["muștar", "semințe de muștar", "făină de muștar"],
+    "group": "taste",
+    "role": "Condiment",
+    "explanation": "Sos sau semințe de muștar; alergen.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Muștar"
+  },
+  {
+    "slug": "telina",
+    "name": "Țelină",
+    "aliases": ["țelină", "rădăcină de țelină"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Legumă folosită în supe și condimente; alergen.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Țelină"
+  },
+  {
+    "slug": "peste",
+    "name": "Pește",
+    "aliases": ["pește", "file de pește", "carne de pește"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Carne de pește; alergen.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Pește"
+  },
+  {
+    "slug": "creveti",
+    "name": "Creveți",
+    "aliases": ["creveți"],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Crustacee; alergen.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Crustacee"
+  },
+  {
+    "slug": "ulei-floarea-soarelui",
+    "name": "Ulei de floarea-soarelui",
+    "aliases": ["ulei de floarea-soarelui", "ulei vegetal de floarea-soarelui"],
+    "group": "fat",
+    "role": "Grăsime",
+    "explanation": "Ulei vegetal bogat în grăsimi nesaturate.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "ulei-palmier",
+    "name": "Ulei de palmier",
+    "aliases": ["ulei de palmier", "grăsime de palmier", "ulei de palmier rafinat", "palmist"],
+    "group": "fat",
+    "role": "Grăsime",
+    "explanation": "Grăsime vegetală solidă la temperatura camerei; bogată în grăsimi saturate.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "ulei-rapita",
+    "name": "Ulei de rapiță",
+    "aliases": ["ulei de rapiță"],
+    "group": "fat",
+    "role": "Grăsime",
+    "explanation": "Ulei vegetal cu puține grăsimi saturate.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "ulei-masline",
+    "name": "Ulei de măsline",
+    "aliases": ["ulei de măsline", "ulei de măsline extravirgin"],
+    "group": "fat",
+    "role": "Grăsime",
+    "explanation": "Ulei din măsline, bogat în grăsimi mononesaturate.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "ulei-cocos",
+    "name": "Ulei de cocos",
+    "aliases": ["ulei de cocos", "grăsime de cocos"],
+    "group": "fat",
+    "role": "Grăsime",
+    "explanation": "Grăsime vegetală foarte bogată în grăsimi saturate.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "grasime-vegetala",
+    "name": "Grăsime vegetală",
+    "aliases": ["grăsime vegetală", "grăsimi vegetale", "ulei vegetal", "uleiuri vegetale"],
+    "group": "fat",
+    "role": "Grăsime",
+    "explanation": "Amestec de uleiuri din plante; tipul exact ar trebui scris în paranteză.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "grasime-hidrogenata",
+    "name": "Grăsime parțial hidrogenată",
+    "aliases": [
+      "grăsime parțial hidrogenată",
+      "ulei parțial hidrogenat",
+      "grăsimi vegetale parțial hidrogenate"
+    ],
+    "group": "fat",
+    "role": "Grăsime",
+    "explanation": "Ulei întărit industrial; poate conține grăsimi trans, limitate prin lege în UE.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "unt",
+    "name": "Unt",
+    "aliases": ["unt", "unt 82%", "grăsime din lapte", "unt clarifiat"],
+    "group": "fat",
+    "role": "Grăsime",
+    "explanation": "Grăsimea din smântână; bogată în grăsimi saturate.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Lapte"
+  },
+  {
+    "slug": "margarina",
+    "name": "Margarină",
+    "aliases": ["margarină"],
+    "group": "fat",
+    "role": "Grăsime",
+    "explanation": "Grăsime tartinabilă din uleiuri vegetale.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "unt-cacao",
+    "name": "Unt de cacao",
+    "aliases": ["unt de cacao"],
+    "group": "fat",
+    "role": "Grăsime",
+    "explanation": "Grăsimea din boabele de cacao; nu conține lapte, în ciuda numelui.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "zahar",
+    "name": "Zahăr",
+    "aliases": ["zahăr", "zahăr alb", "zaharoză"],
+    "group": "taste",
+    "role": "Îndulcitor",
+    "explanation": "Zahăr din sfeclă sau trestie; aduce calorii fără alte substanțe nutritive.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "zahar-brun",
+    "name": "Zahăr brun",
+    "aliases": ["zahăr brun", "zahăr din trestie"],
+    "group": "taste",
+    "role": "Îndulcitor",
+    "explanation": "Zahăr cu urme de melasă; nutritiv, aproape la fel ca zahărul alb.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "sirop-glucoza",
+    "name": "Sirop de glucoză",
+    "aliases": ["sirop de glucoză", "sirop de glucoză din porumb", "sirop de glucoză din grâu"],
+    "group": "taste",
+    "role": "Îndulcitor",
+    "explanation": "Sirop din amidon descompus; îndulcește și păstrează produsul moale.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "sirop-glucoza-fructoza",
+    "name": "Sirop de glucoză-fructoză",
+    "aliases": ["sirop de glucoză-fructoză", "sirop de fructoză-glucoză", "izoglucoză"],
+    "group": "taste",
+    "role": "Îndulcitor",
+    "explanation": "Sirop din amidon de porumb sau grâu, bogat în fructoză.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "fructoza",
+    "name": "Fructoză",
+    "aliases": ["fructoză"],
+    "group": "taste",
+    "role": "Îndulcitor",
+    "explanation": "Zahărul din fructe, adăugat ca îndulcitor.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "dextroza",
+    "name": "Dextroză",
+    "aliases": ["dextroză", "glucoză"],
+    "group": "taste",
+    "role": "Îndulcitor",
+    "explanation": "Glucoză obținută din amidon; un zahăr.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "maltodextrina",
+    "name": "Maltodextrină",
+    "aliases": ["maltodextrină"],
+    "group": "taste",
+    "role": "Agent de umplutură",
+    "explanation": "Amidon parțial descompus; dă corp produsului și se digeră ca zahărul.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "lactoza",
+    "name": "Lactoză",
+    "aliases": ["lactoză"],
+    "group": "taste",
+    "role": "Îndulcitor",
+    "explanation": "Zahărul din lapte.",
+    "source": "Reg. (UE) nr. 1169/2011, Anexa II (alergeni) — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Lapte"
+  },
+  {
+    "slug": "zahar-invertit",
+    "name": "Zahăr invertit",
+    "aliases": ["zahăr invertit", "sirop de zahăr invertit"],
+    "group": "taste",
+    "role": "Îndulcitor",
+    "explanation": "Zahăr descompus în glucoză și fructoză; ține produsul moale.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "miere",
+    "name": "Miere",
+    "aliases": ["miere", "miere de albine"],
+    "group": "taste",
+    "role": "Îndulcitor",
+    "explanation": "Produs al albinelor, format în mare parte din zaharuri.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "sare",
+    "name": "Sare",
+    "aliases": ["sare", "sare de masă", "clorură de sodiu"],
+    "group": "taste",
+    "role": "Condiment",
+    "explanation": "Clorură de sodiu; prea multă sare crește tensiunea arterială.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "sare-iodata",
+    "name": "Sare iodată",
+    "aliases": ["sare iodată", "sare iodată cu iodat de potasiu"],
+    "group": "taste",
+    "role": "Condiment",
+    "explanation": "Sare cu iod adăugat, pentru prevenirea lipsei de iod.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "condimente",
+    "name": "Condimente",
+    "aliases": ["condimente", "amestec de condimente", "mirodenii"],
+    "group": "taste",
+    "role": "Condiment",
+    "explanation": "Plante uscate pentru gust; lista exactă nu e mereu dată.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "piper",
+    "name": "Piper",
+    "aliases": ["piper", "piper negru"],
+    "group": "taste",
+    "role": "Condiment",
+    "explanation": "Condiment iute din boabe de piper.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "boia",
+    "name": "Boia",
+    "aliases": ["boia", "boia de ardei", "paprika"],
+    "group": "taste",
+    "role": "Condiment",
+    "explanation": "Ardei roșu uscat și măcinat.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "arome",
+    "name": "Arome",
+    "aliases": ["arome", "aromă", "aromatizant"],
+    "group": "taste",
+    "role": "Aromă",
+    "explanation": "Substanțe care dau miros și gust; nu trebuie numite una câte una.",
+    "source": "Reg. (CE) nr. 1334/2008 privind aromele — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1334",
+    "allergen": null
+  },
+  {
+    "slug": "arome-naturale",
+    "name": "Arome naturale",
+    "aliases": ["arome naturale", "aromă naturală"],
+    "group": "taste",
+    "role": "Aromă",
+    "explanation": "Arome obținute din materii vegetale sau animale prin procese fizice sau biologice.",
+    "source": "Reg. (CE) nr. 1334/2008 privind aromele — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1334",
+    "allergen": null
+  },
+  {
+    "slug": "vanilina",
+    "name": "Vanilină",
+    "aliases": ["vanilină", "aromă de vanilie", "aromă vanilie"],
+    "group": "taste",
+    "role": "Aromă",
+    "explanation": "Substanța care dă gustul de vanilie, de obicei produsă industrial.",
+    "source": "Reg. (CE) nr. 1334/2008 privind aromele — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1334",
+    "allergen": null
+  },
+  {
+    "slug": "extract-vanilie",
+    "name": "Extract de vanilie",
+    "aliases": ["extract de vanilie", "vanilie", "boabe de vanilie"],
+    "group": "taste",
+    "role": "Aromă",
+    "explanation": "Extract din păstăi de vanilie.",
+    "source": "Reg. (CE) nr. 1334/2008 privind aromele — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1334",
+    "allergen": null
+  },
+  {
+    "slug": "otet",
+    "name": "Oțet",
+    "aliases": ["oțet", "oțet de vin", "oțet de mere"],
+    "group": "taste",
+    "role": "Condiment",
+    "explanation": "Lichid acru din fermentare; dă gust și ajută la conservare.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "suc-lamaie",
+    "name": "Suc de lămâie",
+    "aliases": ["suc de lămâie", "suc concentrat de lămâie"],
+    "group": "taste",
+    "role": "Acidifiant",
+    "explanation": "Dă gust acrișor și ajută la păstrarea culorii.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "culturi-lactice",
+    "name": "Culturi lactice",
+    "aliases": ["culturi lactice", "culturi lactice vii", "culturi starter", "fermenți lactici"],
+    "group": "cult",
+    "role": "Fermentare",
+    "explanation": "Bacterii care transformă laptele în iaurt sau brânză.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "bifidobacterii",
+    "name": "Bifidobacterii",
+    "aliases": ["bifidobacterii", "bifidobacterium", "bifidobacterium lactis"],
+    "group": "cult",
+    "role": "Fermentare",
+    "explanation": "Bacterii vii adăugate în unele iaurturi.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "lactobacillus-acidophilus",
+    "name": "Lactobacillus acidophilus",
+    "aliases": ["lactobacillus acidophilus", "l. acidophilus"],
+    "group": "cult",
+    "role": "Fermentare",
+    "explanation": "Bacterie lactică folosită în produse fermentate din lapte.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "lactobacillus-bulgaricus",
+    "name": "Lactobacillus bulgaricus",
+    "aliases": [
+      "lactobacillus bulgaricus",
+      "lactobacillus delbrueckii subsp. bulgaricus",
+      "l. bulgaricus"
+    ],
+    "group": "cult",
+    "role": "Fermentare",
+    "explanation": "Una din cele două bacterii clasice ale iaurtului.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "streptococcus-thermophilus",
+    "name": "Streptococcus thermophilus",
+    "aliases": ["streptococcus thermophilus", "s. thermophilus"],
+    "group": "cult",
+    "role": "Fermentare",
+    "explanation": "Una din cele două bacterii clasice ale iaurtului.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "cheag",
+    "name": "Cheag",
+    "aliases": ["cheag", "cheag microbian", "enzimă de coagulare"],
+    "group": "cult",
+    "role": "Coagulant",
+    "explanation": "Enzimă care închegă laptele pentru brânză.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "enzime",
+    "name": "Enzime",
+    "aliases": ["enzime", "enzimă"],
+    "group": "cult",
+    "role": "Ajutor de procesare",
+    "explanation": "Proteine care grăbesc o transformare, de exemplu în aluat.",
+    "source": "DE COMPLETAT: sursa deschisă de evaluator",
+    "allergen": null
+  },
+  {
+    "slug": "curcumina",
+    "name": "Curcumină",
+    "aliases": ["E100", "E 100", "curcumină", "curcumin"],
+    "group": "add",
+    "role": "Colorant",
+    "explanation": "Colorant galben din rădăcina de turmeric.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "carmin",
+    "name": "Carmin",
+    "aliases": ["E120", "E 120", "carmin", "acid carminic", "cârmâz"],
+    "group": "add",
+    "role": "Colorant",
+    "explanation": "Colorant roșu obținut din insecte (coșenilă).",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "caramel-simplu",
+    "name": "Caramel simplu",
+    "aliases": ["E150a", "E 150a", "caramel simplu"],
+    "group": "add",
+    "role": "Colorant",
+    "explanation": "Colorant maro din zahăr încălzit.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "caramel-amoniacal",
+    "name": "Caramel amoniacal",
+    "aliases": ["E150c", "E 150c", "caramel amoniacal"],
+    "group": "add",
+    "role": "Colorant",
+    "explanation": "Colorant maro din zahăr încălzit cu compuși de amoniu.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "caramel-sulfit-amoniacal",
+    "name": "Caramel sulfit-amoniacal",
+    "aliases": ["E150d", "E 150d", "caramel sulfit-amoniacal"],
+    "group": "add",
+    "role": "Colorant",
+    "explanation": "Colorant maro închis, folosit în băuturi tip cola.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "caroteni",
+    "name": "Caroteni",
+    "aliases": ["E160a", "E 160a", "caroteni", "beta-caroten", "betacaroten"],
+    "group": "add",
+    "role": "Colorant",
+    "explanation": "Colorant galben-portocaliu, prezent natural în morcovi.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "extract-paprika",
+    "name": "Extract de paprika",
+    "aliases": ["E160c", "E 160c", "extract de paprika", "capsantină", "capsorubină"],
+    "group": "add",
+    "role": "Colorant",
+    "explanation": "Colorant roșu-portocaliu din ardei.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "rosu-sfecla",
+    "name": "Roșu de sfeclă",
+    "aliases": ["E162", "E 162", "roșu de sfeclă", "betanină"],
+    "group": "add",
+    "role": "Colorant",
+    "explanation": "Colorant roșu din sfeclă roșie.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "carbonat-calciu",
+    "name": "Carbonat de calciu",
+    "aliases": ["E170", "E 170", "carbonat de calciu"],
+    "group": "add",
+    "role": "Colorant / corector de aciditate",
+    "explanation": "Sare de calciu; albește sau reglează aciditatea.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "acid-sorbic",
+    "name": "Acid sorbic",
+    "aliases": ["E200", "E 200", "acid sorbic"],
+    "group": "add",
+    "role": "Conservant",
+    "explanation": "Oprește creșterea mucegaiurilor și drojdiilor.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "sorbat-potasiu",
+    "name": "Sorbat de potasiu",
+    "aliases": ["E202", "E 202", "sorbat de potasiu"],
+    "group": "add",
+    "role": "Conservant",
+    "explanation": "Forma ușor solubilă a acidului sorbic; oprește mucegaiul.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "benzoat-sodiu",
+    "name": "Benzoat de sodiu",
+    "aliases": ["E211", "E 211", "benzoat de sodiu"],
+    "group": "add",
+    "role": "Conservant",
+    "explanation": "Conservant pentru produse acide, ca sucuri și sosuri.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "dioxid-sulf",
+    "name": "Dioxid de sulf",
+    "aliases": ["E220", "E 220", "dioxid de sulf", "anhidridă sulfuroasă"],
+    "group": "add",
+    "role": "Conservant",
+    "explanation": "Conservant și antioxidant, mai ales în vin și fructe uscate; alergen.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": "Dioxid de sulf și sulfiți"
+  },
+  {
+    "slug": "metabisulfit-sodiu",
+    "name": "Metabisulfit de sodiu",
+    "aliases": ["E223", "E 223", "metabisulfit de sodiu", "disulfit de sodiu"],
+    "group": "add",
+    "role": "Conservant",
+    "explanation": "Sursă de dioxid de sulf; conservant; alergen.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": "Dioxid de sulf și sulfiți"
+  },
+  {
+    "slug": "metabisulfit-potasiu",
+    "name": "Metabisulfit de potasiu",
+    "aliases": ["E224", "E 224", "metabisulfit de potasiu", "disulfit de potasiu"],
+    "group": "add",
+    "role": "Conservant",
+    "explanation": "Sursă de dioxid de sulf, folosit mai ales în vin; alergen.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": "Dioxid de sulf și sulfiți"
+  },
+  {
+    "slug": "nitrit-sodiu",
+    "name": "Nitrit de sodiu",
+    "aliases": ["E250", "E 250", "nitrit de sodiu", "azotit de sodiu", "sare nitrită"],
+    "group": "add",
+    "role": "Conservant",
+    "explanation": "Păstrează culoarea roz a mezelurilor și oprește bacteria botulismului.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "nitrat-potasiu",
+    "name": "Nitrat de potasiu",
+    "aliases": ["E252", "E 252", "nitrat de potasiu", "azotat de potasiu"],
+    "group": "add",
+    "role": "Conservant",
+    "explanation": "Conservant pentru carne maturată.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "acid-acetic",
+    "name": "Acid acetic",
+    "aliases": ["E260", "E 260", "acid acetic"],
+    "group": "add",
+    "role": "Acidifiant",
+    "explanation": "Acidul din oțet.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "acid-lactic",
+    "name": "Acid lactic",
+    "aliases": ["E270", "E 270", "acid lactic"],
+    "group": "add",
+    "role": "Acidifiant",
+    "explanation": "Acid format natural la fermentare; dă gust acrișor.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "propionat-calciu",
+    "name": "Propionat de calciu",
+    "aliases": ["E282", "E 282", "propionat de calciu"],
+    "group": "add",
+    "role": "Conservant",
+    "explanation": "Oprește mucegaiul în pâine.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "dioxid-carbon",
+    "name": "Dioxid de carbon",
+    "aliases": ["E290", "E 290", "dioxid de carbon"],
+    "group": "add",
+    "role": "Gaz",
+    "explanation": "Gazul care face băuturile carbogazoase.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "acid-malic",
+    "name": "Acid malic",
+    "aliases": ["E296", "E 296", "acid malic"],
+    "group": "add",
+    "role": "Acidifiant",
+    "explanation": "Acid prezent natural în mere; dă gust acrișor.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "acid-ascorbic",
+    "name": "Acid ascorbic",
+    "aliases": ["E300", "E 300", "acid ascorbic", "vitamina c"],
+    "group": "add",
+    "role": "Antioxidant",
+    "explanation": "Vitamina C; împiedică oxidarea și închiderea la culoare.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "ascorbat-sodiu",
+    "name": "Ascorbat de sodiu",
+    "aliases": ["E301", "E 301", "ascorbat de sodiu"],
+    "group": "add",
+    "role": "Antioxidant",
+    "explanation": "Sare a vitaminei C; folosită mai ales în mezeluri.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "tocoferoli",
+    "name": "Extract bogat în tocoferoli",
+    "aliases": ["E306", "E 306", "extract bogat în tocoferoli", "tocoferoli", "vitamina e"],
+    "group": "add",
+    "role": "Antioxidant",
+    "explanation": "Forme de vitamina E care împiedică râncezirea grăsimilor.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "eritorbat-sodiu",
+    "name": "Eritorbat de sodiu",
+    "aliases": ["E316", "E 316", "eritorbat de sodiu", "izoascorbat de sodiu"],
+    "group": "add",
+    "role": "Antioxidant",
+    "explanation": "Antioxidant folosit în mezeluri pentru culoare.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "lecitine",
+    "name": "Lecitine",
+    "aliases": ["E322", "E 322", "lecitine", "lecitină", "emulsifiant: lecitine"],
+    "group": "add",
+    "role": "Emulgator",
+    "explanation": "Ajută grăsimea și apa să rămână amestecate; sursa (soia, floarea-soarelui) ar trebui scrisă.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "lactat-sodiu",
+    "name": "Lactat de sodiu",
+    "aliases": ["E325", "E 325", "lactat de sodiu"],
+    "group": "add",
+    "role": "Corector de aciditate",
+    "explanation": "Sare a acidului lactic; păstrează umezeala și încetinește bacteriile.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "acid-citric",
+    "name": "Acid citric",
+    "aliases": ["E330", "E 330", "acid citric"],
+    "group": "add",
+    "role": "Acidifiant",
+    "explanation": "Acidul din citrice; dă gust acrișor și ajută conservarea.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "citrati-sodiu",
+    "name": "Citrați de sodiu",
+    "aliases": ["E331", "E 331", "citrați de sodiu", "citrat de sodiu", "citrat trisodic"],
+    "group": "add",
+    "role": "Corector de aciditate",
+    "explanation": "Săruri ale acidului citric; reglează aciditatea.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "citrati-potasiu",
+    "name": "Citrați de potasiu",
+    "aliases": ["E332", "E 332", "citrați de potasiu", "citrat de potasiu"],
+    "group": "add",
+    "role": "Corector de aciditate",
+    "explanation": "Săruri ale acidului citric; reglează aciditatea.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "acid-fosforic",
+    "name": "Acid fosforic",
+    "aliases": ["E338", "E 338", "acid fosforic"],
+    "group": "add",
+    "role": "Acidifiant",
+    "explanation": "Acid folosit în băuturi tip cola.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "fosfati-sodiu",
+    "name": "Fosfați de sodiu",
+    "aliases": ["E339", "E 339", "fosfați de sodiu", "fosfat de sodiu"],
+    "group": "add",
+    "role": "Corector de aciditate",
+    "explanation": "Săruri de fosfat; reglează aciditatea și leagă apa.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "fosfati-potasiu",
+    "name": "Fosfați de potasiu",
+    "aliases": ["E340", "E 340", "fosfați de potasiu", "fosfat de potasiu"],
+    "group": "add",
+    "role": "Corector de aciditate",
+    "explanation": "Săruri de fosfat; reglează aciditatea.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "fosfati-calciu",
+    "name": "Fosfați de calciu",
+    "aliases": ["E341", "E 341", "fosfați de calciu", "fosfat de calciu"],
+    "group": "add",
+    "role": "Agent de afânare",
+    "explanation": "Săruri de fosfat; ajută aluatul să crească.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "alginat-sodiu",
+    "name": "Alginat de sodiu",
+    "aliases": ["E401", "E 401", "alginat de sodiu"],
+    "group": "add",
+    "role": "Agent de îngroșare",
+    "explanation": "Extras din alge brune; îngroașă și gelifică.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "agar",
+    "name": "Agar",
+    "aliases": ["E406", "E 406", "agar", "agar-agar"],
+    "group": "add",
+    "role": "Agent de gelifiere",
+    "explanation": "Gelifiant din alge roșii.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "caragenan",
+    "name": "Caragenan",
+    "aliases": ["E407", "E 407", "caragenan", "caragenani"],
+    "group": "add",
+    "role": "Agent de îngroșare",
+    "explanation": "Extras din alge roșii; îngroașă produse lactate și deserturi.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "guma-roscove",
+    "name": "Gumă din semințe de roșcove",
+    "aliases": [
+      "E410",
+      "E 410",
+      "gumă din semințe de roșcove",
+      "gumă de roșcove",
+      "făină din semințe de roșcove"
+    ],
+    "group": "add",
+    "role": "Agent de îngroșare",
+    "explanation": "Îngroșător din semințele de roșcov.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "guma-guar",
+    "name": "Gumă guar",
+    "aliases": ["E412", "E 412", "gumă guar", "guar"],
+    "group": "add",
+    "role": "Agent de îngroșare",
+    "explanation": "Îngroșător din semințele plantei guar.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "guma-arabica",
+    "name": "Gumă arabică",
+    "aliases": ["E414", "E 414", "gumă arabică", "gumă de acacia"],
+    "group": "add",
+    "role": "Agent de îngroșare",
+    "explanation": "Rășină din arborele de acacia; stabilizează.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "guma-xantan",
+    "name": "Gumă xantan",
+    "aliases": ["E415", "E 415", "gumă xantan", "xantan"],
+    "group": "add",
+    "role": "Agent de îngroșare",
+    "explanation": "Îngroșător produs prin fermentare bacteriană.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "guma-gellan",
+    "name": "Gumă gellan",
+    "aliases": ["E418", "E 418", "gumă gellan", "gellan"],
+    "group": "add",
+    "role": "Agent de gelifiere",
+    "explanation": "Gelifiant produs prin fermentare bacteriană.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "sorbitol",
+    "name": "Sorbitol",
+    "aliases": ["E420", "E 420", "sorbitol"],
+    "group": "add",
+    "role": "Îndulcitor",
+    "explanation": "Îndulcitor din grupa polialcoolilor; în exces poate avea efect laxativ.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "glicerol",
+    "name": "Glicerol",
+    "aliases": ["E422", "E 422", "glicerol", "glicerină"],
+    "group": "add",
+    "role": "Umectant",
+    "explanation": "Păstrează produsul umed și moale.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "pectine",
+    "name": "Pectine",
+    "aliases": ["E440", "E 440", "pectine", "pectină"],
+    "group": "add",
+    "role": "Agent de gelifiere",
+    "explanation": "Gelifiant din fructe; folosit în gemuri.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "difosfati",
+    "name": "Difosfați",
+    "aliases": ["E450", "E 450", "difosfați", "difosfat", "pirofosfat"],
+    "group": "add",
+    "role": "Agent de afânare",
+    "explanation": "Fosfați care ajută aluatul să crească sau leagă apa în carne.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "trifosfati",
+    "name": "Trifosfați",
+    "aliases": ["E451", "E 451", "trifosfați", "trifosfat"],
+    "group": "add",
+    "role": "Stabilizator",
+    "explanation": "Fosfați care leagă apa în carne și mezeluri.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "polifosfati",
+    "name": "Polifosfați",
+    "aliases": ["E452", "E 452", "polifosfați", "polifosfat"],
+    "group": "add",
+    "role": "Stabilizator",
+    "explanation": "Fosfați care leagă apa în carne și mezeluri.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "celuloza",
+    "name": "Celuloză",
+    "aliases": ["E460", "E 460", "celuloză", "celuloză microcristalină"],
+    "group": "add",
+    "role": "Agent de îngroșare",
+    "explanation": "Fibră din plante; dă corp și împiedică lipirea.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "carboximetilceluloza",
+    "name": "Carboximetilceluloză",
+    "aliases": ["E466", "E 466", "carboximetilceluloză", "carboximetilceluloză sodică", "cmc"],
+    "group": "add",
+    "role": "Agent de îngroșare",
+    "explanation": "Celuloză modificată; îngroașă și stabilizează.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "mono-digliceride",
+    "name": "Mono- și digliceride ale acizilor grași",
+    "aliases": [
+      "E471",
+      "E 471",
+      "mono- și digliceride ale acizilor grași",
+      "mono- și digliceride",
+      "mono și digliceride ale acizilor grași"
+    ],
+    "group": "add",
+    "role": "Emulgator",
+    "explanation": "Emulgatori făcuți din grăsimi; țin amestecul omogen.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "esteri-datem",
+    "name": "Esteri ai acidului diacetiltartric",
+    "aliases": ["E472e", "E 472e", "esteri ai acidului diacetiltartric", "datem"],
+    "group": "add",
+    "role": "Emulgator",
+    "explanation": "Emulgator folosit în pâine pentru volum.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "pgpr",
+    "name": "Poliricinoleat de poliglicerol",
+    "aliases": ["E476", "E 476", "poliricinoleat de poliglicerol", "pgpr"],
+    "group": "add",
+    "role": "Emulgator",
+    "explanation": "Face ciocolata mai fluidă la turnare.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "stearoil-lactilat-sodiu",
+    "name": "Stearoil-2-lactilat de sodiu",
+    "aliases": ["E481", "E 481", "stearoil-2-lactilat de sodiu"],
+    "group": "add",
+    "role": "Emulgator",
+    "explanation": "Emulgator pentru aluaturi.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "carbonati-sodiu",
+    "name": "Carbonați de sodiu",
+    "aliases": [
+      "E500",
+      "E 500",
+      "carbonați de sodiu",
+      "bicarbonat de sodiu",
+      "carbonat acid de sodiu"
+    ],
+    "group": "add",
+    "role": "Agent de afânare",
+    "explanation": "Bicarbonat de sodiu; face aluatul să crească.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "carbonati-potasiu",
+    "name": "Carbonați de potasiu",
+    "aliases": ["E501", "E 501", "carbonați de potasiu"],
+    "group": "add",
+    "role": "Agent de afânare",
+    "explanation": "Afânător, de exemplu în turtă dulce.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "carbonati-amoniu",
+    "name": "Carbonați de amoniu",
+    "aliases": ["E503", "E 503", "carbonați de amoniu", "bicarbonat de amoniu"],
+    "group": "add",
+    "role": "Agent de afânare",
+    "explanation": "Afânător pentru biscuiți; se evaporă la coacere.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "clorura-potasiu",
+    "name": "Clorură de potasiu",
+    "aliases": ["E508", "E 508", "clorură de potasiu"],
+    "group": "add",
+    "role": "Agent de gelifiere / înlocuitor de sare",
+    "explanation": "Folosită pentru a reduce sarea.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "clorura-calciu",
+    "name": "Clorură de calciu",
+    "aliases": ["E509", "E 509", "clorură de calciu"],
+    "group": "add",
+    "role": "Agent de întărire",
+    "explanation": "Ajută închegarea laptelui și fermitatea legumelor.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "hidroxid-sodiu",
+    "name": "Hidroxid de sodiu",
+    "aliases": ["E524", "E 524", "hidroxid de sodiu"],
+    "group": "add",
+    "role": "Corector de aciditate",
+    "explanation": "Bază puternică folosită în procesare, de exemplu la covrigi.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "dioxid-siliciu",
+    "name": "Dioxid de siliciu",
+    "aliases": ["E551", "E 551", "dioxid de siliciu"],
+    "group": "add",
+    "role": "Antiaglomerant",
+    "explanation": "Împiedică pulberile să se lipească.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "glucono-delta-lactona",
+    "name": "Glucono-delta-lactonă",
+    "aliases": ["E575", "E 575", "glucono-delta-lactonă"],
+    "group": "add",
+    "role": "Acidifiant",
+    "explanation": "Acidifiant lent, folosit în mezeluri și tofu.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "glutamat-monosodic",
+    "name": "Glutamat monosodic",
+    "aliases": ["E621", "E 621", "glutamat monosodic", "glutamat de sodiu", "msg"],
+    "group": "add",
+    "role": "Potențiator de gust",
+    "explanation": "Accentuează gustul sărat-savuros (umami).",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "guanilat-disodic",
+    "name": "Guanilat disodic",
+    "aliases": ["E627", "E 627", "guanilat disodic"],
+    "group": "add",
+    "role": "Potențiator de gust",
+    "explanation": "Accentuează gustul, de obicei împreună cu glutamatul.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "inozinat-disodic",
+    "name": "Inozinat disodic",
+    "aliases": ["E631", "E 631", "inozinat disodic"],
+    "group": "add",
+    "role": "Potențiator de gust",
+    "explanation": "Accentuează gustul, de obicei împreună cu glutamatul.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "ribonucleotide",
+    "name": "5'-ribonucleotide disodice",
+    "aliases": ["E635", "E 635", "5'-ribonucleotide disodice", "ribonucleotide disodice"],
+    "group": "add",
+    "role": "Potențiator de gust",
+    "explanation": "Amestec de E627 și E631.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "dimetilpolisiloxan",
+    "name": "Dimetilpolisiloxan",
+    "aliases": ["E900", "E 900", "dimetilpolisiloxan"],
+    "group": "add",
+    "role": "Antispumant",
+    "explanation": "Împiedică spumarea uleiului la prăjire.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "ceara-albine",
+    "name": "Ceară de albine",
+    "aliases": ["E901", "E 901", "ceară de albine"],
+    "group": "add",
+    "role": "Agent de glazurare",
+    "explanation": "Strat lucios pe dulciuri sau fructe.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "ceara-carnauba",
+    "name": "Ceară carnauba",
+    "aliases": ["E903", "E 903", "ceară carnauba"],
+    "group": "add",
+    "role": "Agent de glazurare",
+    "explanation": "Ceară vegetală pentru luciu pe drajeuri.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "shellac",
+    "name": "Shellac",
+    "aliases": ["E904", "E 904", "shellac", "șelac"],
+    "group": "add",
+    "role": "Agent de glazurare",
+    "explanation": "Rășină produsă de insecte, pentru luciu.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "acesulfam-k",
+    "name": "Acesulfam K",
+    "aliases": ["E950", "E 950", "acesulfam k", "acesulfam de potasiu"],
+    "group": "add",
+    "role": "Îndulcitor",
+    "explanation": "Îndulcitor fără calorii, de aproximativ 200 de ori mai dulce decât zahărul.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "aspartam",
+    "name": "Aspartam",
+    "aliases": ["E951", "E 951", "aspartam"],
+    "group": "add",
+    "role": "Îndulcitor",
+    "explanation": "Îndulcitor intens, practic fără calorii în cantitățile folosite; conține o sursă de fenilalanină.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "ciclamati",
+    "name": "Ciclamați",
+    "aliases": ["E952", "E 952", "ciclamați", "ciclamat de sodiu", "acid ciclamic"],
+    "group": "add",
+    "role": "Îndulcitor",
+    "explanation": "Îndulcitor fără calorii.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "zaharina",
+    "name": "Zaharină",
+    "aliases": ["E954", "E 954", "zaharină"],
+    "group": "add",
+    "role": "Îndulcitor",
+    "explanation": "Îndulcitor fără calorii, foarte dulce.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "sucraloza",
+    "name": "Sucraloză",
+    "aliases": ["E955", "E 955", "sucraloză"],
+    "group": "add",
+    "role": "Îndulcitor",
+    "explanation": "Îndulcitor fără calorii făcut din zahăr.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "glicozide-steviol",
+    "name": "Glicozide de steviol",
+    "aliases": [
+      "E960",
+      "E 960",
+      "glicozide de steviol",
+      "stevie",
+      "extract de stevia",
+      "glicozide steviol"
+    ],
+    "group": "add",
+    "role": "Îndulcitor",
+    "explanation": "Îndulcitor fără calorii din planta stevia.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "maltitol",
+    "name": "Maltitol",
+    "aliases": ["E965", "E 965", "maltitol", "sirop de maltitol"],
+    "group": "add",
+    "role": "Îndulcitor",
+    "explanation": "Polialcool folosit în produse „fără zahăr”; în exces poate avea efect laxativ.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "xilitol",
+    "name": "Xilitol",
+    "aliases": ["E967", "E 967", "xilitol"],
+    "group": "add",
+    "role": "Îndulcitor",
+    "explanation": "Polialcool folosit în gumă de mestecat.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "amidon-acetilat",
+    "name": "Adipat de diamidon acetilat",
+    "aliases": ["E1422", "E 1422", "adipat de diamidon acetilat"],
+    "group": "add",
+    "role": "Agent de îngroșare",
+    "explanation": "Amidon modificat care rezistă la fierbere și congelare.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "fosfat-diamidon-hidroxipropilat",
+    "name": "Fosfat de diamidon hidroxipropilat",
+    "aliases": ["E1442", "E 1442", "fosfat de diamidon hidroxipropilat"],
+    "group": "add",
+    "role": "Agent de îngroșare",
+    "explanation": "Amidon modificat folosit în sosuri și deserturi.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "propilenglicol",
+    "name": "Propan-1,2-diol",
+    "aliases": ["E1520", "E 1520", "propan-1,2-diol", "propilenglicol"],
+    "group": "add",
+    "role": "Solvent",
+    "explanation": "Solvent pentru arome.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  },
+  {
+    "slug": "lecitina-soia",
+    "name": "Lecitină din soia",
+    "aliases": ["lecitină din soia", "lecitină de soia", "lecitine din soia"],
+    "group": "add",
+    "role": "Emulgator",
+    "explanation": "Lecitină (E322) din soia; ține grăsimea și apa amestecate.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": "Soia"
+  },
+  {
+    "slug": "lecitina-floarea-soarelui",
+    "name": "Lecitină din floarea-soarelui",
+    "aliases": ["lecitină din floarea-soarelui", "lecitine din floarea-soarelui"],
+    "group": "add",
+    "role": "Emulgator",
+    "explanation": "Lecitină (E322) din floarea-soarelui.",
+    "source": "Reg. (UE) nr. 1333/2008 privind aditivii alimentari, Anexa II — https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null
+  }
+]
