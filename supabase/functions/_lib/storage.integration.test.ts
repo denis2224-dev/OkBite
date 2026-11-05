@@ -1,9 +1,10 @@
+import { integrationTest } from './integration.ts';
 import { strict as assert } from 'node:assert';
 import jpeg from 'npm:jpeg-js@0.4.4';
 import { adminClient } from './http.ts';
 import { publishPhoto, saveJpeg } from './storage.ts';
 
-Deno.test('private JPEG uploads publish to products without EXIF and are independently readable', async () => {
+integrationTest('private JPEG uploads publish to products without EXIF and are independently readable', async () => {
   const db = adminClient();
   const id = crypto.randomUUID();
   const device = crypto.randomUUID();

@@ -1,10 +1,11 @@
+import { integrationTest } from '../_lib/integration.ts';
 import { strict as assert } from 'node:assert';
 import { createClient } from '@supabase/supabase-js';
 import { adminClient } from '../_lib/client.ts';
 import { loadProduct } from '../_lib/db.ts';
 import { handler } from './index.ts';
 
-Deno.test('real Auth JWT and membership protect verify/hide/report actions and transactional rollback', async () => {
+integrationTest('real Auth JWT and membership protect verify/hide/report actions and transactional rollback', async () => {
   const db = adminClient();
   const email = `c7-${crypto.randomUUID()}@example.invalid`;
   const password = crypto.randomUUID();
