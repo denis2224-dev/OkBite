@@ -5,14 +5,19 @@ import { useScanLookup } from './useScanLookup';
 import { CODE, PRODUCT_ID, lookupFound, lookupNotFound } from '../capture/__fixtures__/responses';
 
 const mockReplace = jest.fn();
+const mockEnqueue = jest.fn(async () => {});
 jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }) }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
+jest.mock('../offline/queue', () => ({ enqueue: (...args: unknown[]) => mockEnqueue(...args) }));
 
 const lookup = api.lookup as unknown as jest.Mock<(...a: unknown[]) => Promise<unknown>>;
 const offline = Object.assign(new Error('offline'), { code: 'offline' });
 
 describe('useScanLookup', () => {
-  beforeEach(() => { jest.resetAllMocks(); });
+  beforeEach(() => {
+    jest.resetAllMocks();
+    mockEnqueue.mockResolvedValue(undefined);
+  });
 
   it('opens the product for a code that exists', async () => {
     lookup.mockResolvedValue(lookupFound);
@@ -53,13 +58,16 @@ describe('useScanLookup', () => {
     expect(accept).toHaveBeenCalledTimes(1);
   });
 
-  it('reports offline, ignores the camera repeating the code, and retries on request', async () => {
+  it('reports offline, enqueues the code once, ignores camera repetition, and retries on request', async () => {
     lookup.mockRejectedValueOnce(offline).mockResolvedValue(lookupFound);
     const { result } = await renderHook(() => useScanLookup());
     await act(async () => { await result.current.onCameraCode(CODE); });
     expect(result.current.state).toEqual({ status: 'offline' });
+    expect(mockEnqueue).toHaveBeenCalledTimes(1);
+    expect(mockEnqueue).toHaveBeenCalledWith({ kind: 'code', code: CODE });
     await act(async () => { await result.current.onCameraCode(CODE); });
     expect(lookup).toHaveBeenCalledTimes(1);
+    expect(mockEnqueue).toHaveBeenCalledTimes(1);
     await act(async () => { await result.current.retry(); });
     expect(lookup).toHaveBeenCalledTimes(2);
     expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);

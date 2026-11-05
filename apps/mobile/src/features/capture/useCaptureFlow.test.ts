@@ -9,11 +9,13 @@ import { useCaptureFlow } from './useCaptureFlow';
 import { CODE, PRODUCT_ID, identifyCandidates, identifyFound, identifyNotFound, lookupFound, lookupNotFound } from './__fixtures__/responses';
 
 const mockReplace = jest.fn();
+const mockEnqueue = jest.fn(async () => {});
 jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }) }));
 jest.mock('expo-image-manipulator', () => ({ SaveFormat: { JPEG: 'jpeg' }, ImageManipulator: { manipulate: jest.fn() } }));
 jest.mock('expo-camera', () => ({ scanFromURLAsync: jest.fn() }));
 jest.mock('expo-image-picker', () => ({ launchImageLibraryAsync: jest.fn() }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
+jest.mock('../offline/queue', () => ({ enqueue: (...args: unknown[]) => mockEnqueue(...args) }));
 
 type AsyncMock = jest.Mock<(...a: unknown[]) => Promise<unknown>>;
 const scan = scanFromURLAsync as unknown as AsyncMock;
@@ -40,6 +42,7 @@ describe('fixtures', () => {
 describe('useCaptureFlow', () => {
   beforeEach(() => {
     jest.resetAllMocks();
+    mockEnqueue.mockResolvedValue(undefined);
     photo.takePictureAsync.mockResolvedValue({ uri: 'file:///shot.jpg' });
     const image = { width: 1200, height: 900, saveAsync: async () => ({ uri: 'file:///c.jpg', base64: Buffer.from('jpeg-bytes').toString('base64') }) };
     (ImageManipulator.manipulate as unknown as jest.Mock).mockReturnValue({ resize: jest.fn(), renderAsync: async () => image });
@@ -131,22 +134,25 @@ describe('useCaptureFlow', () => {
     expect(result.current.state).toEqual({ status: 'idle' });
   });
 
-  it('goes offline when identify has no network, then retries the same photo', async () => {
+  it('goes offline when identify has no network, enqueues the photo once, then retries the same photo', async () => {
     identify.mockRejectedValueOnce(offline).mockResolvedValue(identifyFound);
     const { result } = await capture();
     expect(result.current.state).toEqual({ status: 'offline' });
     expect(result.current.canRetry).toBe(true);
     expect(mockReplace).not.toHaveBeenCalled();
+    expect(mockEnqueue).toHaveBeenCalledTimes(1);
+    expect(mockEnqueue).toHaveBeenCalledWith({ kind: 'photo', uri: 'file:///c.jpg' });
     await act(async () => { await result.current.retry(); });
     expect(photo.takePictureAsync).toHaveBeenCalledTimes(1);
     expect(identify).toHaveBeenCalledTimes(2);
     expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
   });
 
-  it('goes offline when the barcode lookup has no network', async () => {
+  it('goes offline and enqueues the code when the barcode lookup has no network', async () => {
     scan.mockResolvedValue([{ data: CODE }]);
     lookup.mockRejectedValue(offline);
     expect((await capture()).result.current.state).toEqual({ status: 'offline' });
+    expect(mockEnqueue).toHaveBeenCalledWith({ kind: 'code', code: CODE });
   });
 
   it.each([

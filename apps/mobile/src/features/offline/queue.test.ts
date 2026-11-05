@@ -5,7 +5,7 @@ import { mkdtempSync as mockMkdtempSync } from 'node:fs';
 import { tmpdir as mockTmpdir } from 'node:os';
 import { join as mockJoin } from 'node:path';
 import * as FileSystem from 'expo-file-system/legacy';
-import { enqueue, flushQueue } from './queue';
+import { enqueue, flushQueue, resumeQueuedItem, listUnresolvedQueued } from './queue';
 import { listQueued, deleteQueued } from '../history/db';
 import { getFromHistory, clearHistory } from '../history/store';
 import { api, ApiError } from '../../lib/api';
@@ -86,4 +86,49 @@ it('drops a queued photo whose stored file is gone and keeps processing later it
   expect(await flushQueue()).toEqual({ resolved: 1 });
   expect(api.identify).not.toHaveBeenCalled();
   expect(await listQueued()).toEqual([]);
+});
+
+it('resumes an unresolved code item when it is found', async () => {
+  await enqueue({ kind: 'code', code: '4840001000014' });
+  const item = (await listQueued())[0]!;
+  jest.mocked(api.lookup).mockResolvedValueOnce(foundYogurt);
+  const res = await resumeQueuedItem(item);
+  expect(res).toEqual({ kind: 'found', productId: foundYogurt.product.id });
+  expect(await listQueued()).toEqual([]);
+  expect((await getFromHistory(foundYogurt.product.id))?.product.id).toBe(foundYogurt.product.id);
+});
+
+it('resumes an unresolved code item when it is not_found and routes to identify', async () => {
+  await enqueue({ kind: 'code', code: '12345670' });
+  const item = (await listQueued())[0]!;
+  jest.mocked(api.lookup).mockResolvedValueOnce({ status: 'not_found' });
+  const res = await resumeQueuedItem(item);
+  expect(res).toEqual({
+    kind: 'identify',
+    pathname: '/identify',
+    params: { source: 'code', code: '12345670' },
+  });
+  expect(await listQueued()).toEqual([]);
+});
+
+it('resumes an unresolved photo item when it has candidates and routes to identify', async () => {
+  const source = FileSystem.documentDirectory! + 'candidate.jpg';
+  await mockFs.writeFile(source, 'photo content');
+  await enqueue({ kind: 'photo', uri: source });
+  const item = (await listQueued())[0]!;
+  const candidatesResponse = {
+    status: 'candidates' as const,
+    candidates: [{ product: foundYogurt.product, similarity: 0.8 }],
+    read: { brand: 'Danone', name: 'Yogurt', quantity: '150g', code: null },
+    photoPath: 'stored/path.jpg',
+  };
+  jest.mocked(api.identify).mockResolvedValueOnce(candidatesResponse);
+  const res = await resumeQueuedItem(item);
+  expect(res).toEqual({
+    kind: 'identify',
+    pathname: '/identify',
+    params: { source: 'photo', payload: JSON.stringify(candidatesResponse) },
+  });
+  expect(await listQueued()).toEqual([]);
+  expect(await listUnresolvedQueued()).toEqual([]);
 });
