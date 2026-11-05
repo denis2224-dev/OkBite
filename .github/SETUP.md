@@ -4,6 +4,35 @@ The scaffold and CI can run without hosted service credentials. Native EAS
 builds, QR previews, and Cloudflare preview URLs require the setup below.
 Never put tokens, service-role keys, or AI keys in app config or public variables.
 
+## Reproducible toolchain
+
+R1 policy revision (2026-11-05): pnpm **11.25.0**, pinned in `package.json`,
+replaces the initial 9.12.0 plan value. PR #25 had already merged pnpm 11
+build approvals while the declaration still named pnpm 9. This revision makes
+local development, CI and Cloudflare use the same version and retains the
+24-hour minimum release age (`minimumReleaseAge: 1440`). No age exclusions
+are granted. Only esbuild and @parcel/watcher may run dependency build scripts.
+The existing hoisted layout is declared with `nodeLinker: hoisted` in
+`pnpm-workspace.yaml`; pnpm 11 no longer reads install settings from `.npmrc`.
+Root Supabase uses the same 2.118.0 client as the target app; the former
+2.119.0 lock entries were younger than the release-age limit.
+
+Use `corepack pnpm` when a bundled/global pnpm differs; it reads the declared
+version. `pnpm verify:toolchain` and the install lifecycle reject a different
+version or npm. The `pnpm:devPreinstall` guard rejects pnpm 9
+before it can execute any dependency build scripts. Node 22+ remains required; CI reads `.nvmrc` (22).
+When switching from pnpm 9 or a different linker, delete the regenerable
+`node_modules` directories at the root, `apps/mobile` and `packages/shared`,
+then reinstall; stale workspace links can load two React instances.
+
+Regenerate lockfiles with this exact version and the committed policy; never
+change the release age, force a frozen install, or use `--ignore-scripts` to
+hide a build failure. Commit regenerated lockfiles separately from source.
+
+`apps/mobile` is the native/web application. Normal root dev/start/web/native
+commands and CI exports use this workspace. The merged root preview source
+and its tests remain migration references; they are not a second CI deployment.
+
 ## Local development
 
 ```sh
@@ -70,7 +99,7 @@ Connect `denis2224-dev/OkBite` to a Pages project. Set:
 - Root directory: repository root.
 - Build: `corepack enable && pnpm install --frozen-lockfile && pnpm --filter mobile web`.
 - Output directory: `apps/mobile/dist`.
-- `NODE_VERSION=22`, `PNPM_VERSION=9.12.0`.
+- `NODE_VERSION=22`, `PNPM_VERSION=11.25.0`.
 - Public `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, and
   `EXPO_PUBLIC_EAS_PROJECT_ID`, with staging values for previews and production
   values for `main`.
@@ -113,3 +142,11 @@ Edge unit tests run without service credentials. `*.integration.test.ts` files
 are excluded from that step, then run explicitly with local CLI-generated keys
 and `OKBITE_RUN_INTEGRATION=1` after the local gateway is ready. Shared generation
 is checked for tracked changes and newly generated untracked files.
+
+## Mobile Metro context
+
+The target workspace has its own Metro config. Inheriting the root preview
+config set projectRoot to the repository root and exported an app that failed
+with "No routes found". `pnpm test:metro` loads the real config and checks its
+project root before the normal suites run. Bundle export alone is not runtime
+route acceptance.

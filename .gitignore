@@ -17,3 +17,8 @@ supabase/.temp/
 *.p8
 *.p12
 *.mobileprovision
+
+**/dist-native/
+**/dist-e2e/
+test-results/
+playwright-report/
