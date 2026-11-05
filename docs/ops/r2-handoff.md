@@ -1,3 +1,14 @@
+# Current R2 review follow-up
+
+The original R2 stack merged independently during validation. The remaining fixes
+are a focused main-based follow-up; no closed branch was overwritten. See the
+[finding report](r2-review-reconciliation.md) and [R1 handoff](r1-review-handoff.md).
+Current checks: 243 workspace tests, 27 configured Deno tests, 87 database
+assertions, verified local restore/photo recovery and web export pass.
+Credential-free Deno discovery reports 16 passed and 11 ignored separately.
+Review remains waived; no approval, merge or deployment was performed by this task.
+The original delivery evidence below is historical.
+
 # R2 local delivery — 2026-11-05
 
 The remaining R2 contribution, moderation and recovery code is implemented and

@@ -67,8 +67,11 @@ web callback tokens are removed from the address fragment after consumption.
 
 ## Local recovery commands and evidence
 
-Use the dedicated `okbite-c6` stack, API 57431 / DB 57432. C2/C3 services are not
-reset. Required versions used: Node 22.23.4, pnpm 9.12.0, Deno 2.9.6,
+Use the stable team `okbite` defaults, API 54321 / DB 54322. For isolated
+reconciliation tests, use the separate `okbite-r2-review` configuration, API 58431 /
+DB 58432, and run the copied scripts from that configuration directory. Existing
+C2/C3/C6 services are never reset. Maintenance scripts accept only the explicit
+local IDs in `supabase/local-project.mjs`; arbitrary project IDs are refused. Required versions used: Node 22.23.4, pnpm 9.12.0, Deno 2.9.6,
 Supabase CLI 2.65.5 and local PostgreSQL 15.
 
 ```sh
@@ -117,3 +120,9 @@ temporary local evidence is not a standing backup service.
   magic-link checks remain pending. No staging success is claimed.
 - The rota needs human names and the owner must confirm recovery access and backup
   retention. Never fill these with invented confirmations.
+
+The pinned CLI recovery check sets `PGSSLMODE=disable` only for its loopback
+pgTAP subprocess: the drill reproduced a TLS connection failure even with URL
+`sslmode=disable`. Supabase tracks the connection-option round-trip bug in
+[CLI issue #5873](https://github.com/supabase/cli/issues/5873). Hosted connections
+are not accepted by this recovery tool.
