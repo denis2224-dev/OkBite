@@ -1,0 +1,31 @@
+import { View } from "react-native";
+import type { PropsWithChildren } from "react";
+import { Body } from "./typography";
+import { useTheme } from "../../core/theme/app_theme";
+export function Badge({
+  children,
+  tone = "info",
+}: PropsWithChildren<{ tone?: "unverified" | "info" }>) {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={{
+        alignSelf: "flex-start",
+        backgroundColor: tone === "unverified" ? colors.mediumBg : colors.mint,
+        borderRadius: 14,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+      }}
+    >
+      <Body
+        style={{
+          fontSize: 12,
+          lineHeight: 18,
+          color: tone === "unverified" ? colors.medium : colors.good,
+        }}
+      >
+        {children}
+      </Body>
+    </View>
+  );
+}

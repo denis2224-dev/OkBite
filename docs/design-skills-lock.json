@@ -1,0 +1,70 @@
+{
+  "sources": [
+    {
+      "repository": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "commit": "ccce51cba388476d4f403091ddb91636d5cd9fed",
+      "skills": [
+        {
+          "upstreamPath": ".claude/skills/ui-ux-pro-max",
+          "localPath": ".agents/skills/ui-ux-pro-max"
+        }
+      ]
+    },
+    {
+      "repository": "Nutlope/hallmark",
+      "commit": "de4999e0cd7a7a41df0b4e6903fa02fe9f1492a8",
+      "skills": [
+        {
+          "upstreamPath": "skills/hallmark",
+          "localPath": ".agents/skills/hallmark"
+        }
+      ]
+    },
+    {
+      "repository": "emilkowalski/skills",
+      "commit": "c8a79627b59d72d764d6ab6f2c87c09a48169833",
+      "skills": [
+        {
+          "upstreamPath": "skills/emil-design-eng",
+          "localPath": ".agents/skills/emil-design-eng"
+        },
+        {
+          "upstreamPath": "skills/animate",
+          "localPath": ".agents/skills/animate"
+        },
+        {
+          "upstreamPath": "skills/animation-performance",
+          "localPath": ".agents/skills/animation-performance"
+        }
+      ]
+    },
+    {
+      "repository": "shadcn-ui/ui",
+      "commit": "8a3536678a528cc012b9e62484290e79d0be410f",
+      "skills": [
+        {
+          "upstreamPath": "skills/shadcn",
+          "localPath": ".agents/skills/shadcn"
+        }
+      ]
+    },
+    {
+      "repository": "vercel-labs/agent-skills",
+      "commit": "1a2c79d4e6c4a2283dc2c614b6538cbe1ed5ca62",
+      "skills": [
+        {
+          "upstreamPath": "skills/composition-patterns",
+          "localPath": ".agents/skills/composition-patterns"
+        },
+        {
+          "upstreamPath": "skills/react-best-practices",
+          "localPath": ".agents/skills/react-best-practices"
+        },
+        {
+          "upstreamPath": "skills/web-design-guidelines",
+          "localPath": ".agents/skills/web-design-guidelines"
+        }
+      ]
+    }
+  ]
+}

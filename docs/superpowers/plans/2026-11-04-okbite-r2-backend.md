@@ -183,6 +183,8 @@ Then add `export type X = z.infer<typeof X>;` for every schema above (same name 
 
 ### Task C2: Database schema, RLS, search and seed (fully specified)
 
+Implemented and locally verified on `C2-database-schema` (2026-11-04). Review was explicitly waived by the user; no review or approval is recorded. C1/PR #4 remains the merge dependency. See `supabase/README.md` for evidence and handoff.
+
 **Files:**
 - Create: `supabase/config.toml` (via `supabase init`), `supabase/migrations/20261105000000_init.sql`, `supabase/seed.sql`
 - Test: `supabase/tests/rls.test.sql`, `supabase/tests/search.test.sql` (pgTAP)
@@ -190,10 +192,10 @@ Then add `export type X = z.infer<typeof X>;` for every schema above (same name 
 **Interfaces:**
 - Produces: tables `categories`, `ingredients`, `products`, `product_ingredients`, `reports`, `moderators`, `usage_events`, `client_errors`; SQL functions `is_moderator() returns boolean` and `search_products(q text, max_results int default 3) returns table(id uuid, name text, brand text, quantity text, image_path text, similarity real)`; view `daily_stats`; buckets `uploads` (private) and `products` (public).
 
-- [ ] **Step 1: Failing pgTAP tests** — anon can select a `verified` and an `unverified` product, not a `hidden` one; anon cannot insert into any table; `search_products('zorel iaurt capsuni')` returns the strawberry yogurt first with similarity ≥ 0.35; `search_products('branza')` matches a product named "Brânză …"; a hidden product never appears in search.
+- [x] **Step 1: Failing pgTAP tests** — anon can select a `verified` and an `unverified` product, not a `hidden` one; anon cannot insert into any table; `search_products('zorel iaurt capsuni')` returns the strawberry yogurt first with similarity ≥ 0.35; `search_products('branza')` matches a product named "Brânză …"; a hidden product never appears in search.
 Run: `supabase start && supabase test db` → Expected: FAIL.
 
-- [ ] **Step 2: Write the migration**
+- [x] **Step 2: Write the migration**
 
 ```sql
 create extension if not exists pg_trgm;
@@ -235,11 +237,11 @@ create table client_errors (id bigserial primary key, device_id text not null, m
 ```
 Then: `search_products` (`select … similarity(search_text, lower(f_unaccent(q))) … where status <> 'hidden' and search_text % lower(f_unaccent(q)) order by similarity desc limit max_results`, `stable`, `security definer`, with `set pg_trgm.similarity_threshold = 0.35`); `is_moderator()` (`security definer`); RLS on every table; anon `select` on `categories`, `ingredients`, `product_ingredients`, and `products where status <> 'hidden'`; moderators full access on `products`, `product_ingredients`, `reports`; no other policies (functions use the service role). View `daily_stats` per day: photos, barcodes, identified, not_found, read_labels, added. Buckets: `insert into storage.buckets (id, name, public) values ('uploads','uploads',false), ('products','products',true);`
 
-- [ ] **Step 3: Seed** — `seed.sql` inserts categories `iaurt` (Iaurturi, general), `biscuiti` (Biscuiți, general), `suc` (Sucuri, beverage); the ingredients used by the prototype products; and the 6 prototype products as `verified`, with the prototype's values and these checksum-valid codes (the prototype's own codes have wrong check digits): natural yogurt `4840001000014`, strawberry yogurt `4840001000021`, Greek yogurt `4840001000038`, oat-chocolate biscuits `4840001000045`, apple juice `4840001000052` (with `sat`, `sugar`, `salt`, `fiber` null), wholegrain biscuits `4840001000069`. Values come from the product table in `docs/prototype/Main.dc.html`.
+- [x] **Step 3: Seed** — `seed.sql` inserts categories `iaurt` (Iaurturi, general), `biscuiti` (Biscuiți, general), `suc` (Sucuri, beverage); the ingredients used by the prototype products; and the 6 prototype products as `verified`, with the prototype's values and these checksum-valid codes (the prototype's own codes have wrong check digits): natural yogurt `4840001000014`, strawberry yogurt `4840001000021`, Greek yogurt `4840001000038`, oat-chocolate biscuits `4840001000045`, apple juice `4840001000052` (with `sat`, `sugar`, `salt`, `fiber` null), wholegrain biscuits `4840001000069`. Values come from the product table in `docs/prototype/Main.dc.html`.
 
-- [ ] **Step 4: Run** — `supabase db reset && supabase test db` → Expected: PASS.
+- [x] **Step 4: Run** — `supabase db reset && supabase test db` → Expected: PASS.
 
-- [ ] **Step 5: Commit** — `feat(db): schema, RLS, trigram product search, buckets and seed`
+- [x] **Step 5: Commit** — `feat(db): schema, RLS, trigram product search, buckets and seed`
 
 ---
 
@@ -258,15 +260,18 @@ Then: `search_products` (`select … similarity(search_text, lower(f_unaccent(q)
   - `_lib/db.ts`: `loadProduct(by: { id: string } | { code: string }): Promise<{ product: Product; score: ScoreResult } | null>` (hidden → null).
   - `computeScore(nutrients: Nutrients, kind: ScoreKind): ScoreResult` from `@okbite/shared` (temporary body returns `{ score: null, letter: null, grade: 'unavailable', reasons: [], missing: [] }`; C4 replaces it).
 
-- [ ] **Step 1: `sync-shared`** copies `packages/shared/src/**/*.ts` (not tests) to `supabase/functions/_shared/`, rewrites `'zod'` to `'npm:zod@3.23.8'`, adds `.ts` to relative imports, and writes a `// GENERATED by pnpm sync-shared — do not edit` header. `deno.json` imports `@supabase/supabase-js` as `npm:@supabase/supabase-js@2`.
+- [x] **C3a: generation only (locally verified)** — generator, root script wiring and focused tests; repeatable output and stale-file cleanup verified; generated entry point passes `deno check`. Review requirements waived by the user.
+  C3a does not require C2 or database services. Remaining C3 work is implemented and locally verified in dependent C3b/C3c/C3d/C3 PRs; see `supabase/README.md`. Review waived; unmerged and undeployed.
+
+- [x] **Step 1: `sync-shared`** copies `packages/shared/src/**/*.ts` (not tests) to `supabase/functions/_shared/`, rewrites `'zod'` to `'npm:zod@3.23.8'`, adds `.ts` to relative imports, and writes a `// GENERATED by pnpm sync-shared — do not edit` header. `deno.json` imports `@supabase/supabase-js` as `npm:@supabase/supabase-js@2`.
 Run: `pnpm sync-shared && deno check supabase/functions/_shared/index.ts` → Expected: exit 0.
 
-- [ ] **Step 2: Failing tests** — `lookup?code=4840001000014` → 200 `found`, valid `LookupResponse`, `product.status === 'verified'`, ingredients in label order; `lookup?id=<seeded uuid>` → same product; `code=4840001009995` → 200 `not_found`, one `not_found` usage event; `code=abc` → 400 `bad_request`; neither `code` nor `id` → 400; missing `x-device-id` → 400.
+- [x] **Step 2: Failing tests** — `lookup?code=4840001000014` → 200 `found`, valid `LookupResponse`, `product.status === 'verified'`, ingredients in label order; `lookup?id=<seeded uuid>` → same product; `code=4840001009995` → 200 `not_found`, one `not_found` usage event; `code=abc` → 400 `bad_request`; neither `code` nor `id` → 400; missing `x-device-id` → 400.
 Run: `deno test --allow-all supabase/functions/lookup/` (with `supabase start`) → Expected: FAIL.
 
-- [ ] **Step 3: Implement** the helpers and `lookup` (validate → `loadProduct` → log `barcode` or `not_found` → `json`). Run → Expected: PASS.
+- [x] **Step 3: Implement** the helpers and `lookup` (validate → `loadProduct` → log `barcode` or `not_found` → `json`). Run → Expected: PASS.
 
-- [ ] **Step 4: Commit** — `feat(functions): shared helpers and product lookup`
+- [x] **Step 4: Commit** — `feat(functions): shared helpers and product lookup`
 
 ---
 

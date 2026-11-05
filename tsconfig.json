@@ -1,0 +1,23 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "types": [
+      "jest",
+      "node"
+    ]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "test/**/*.ts",
+    "test/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    ".worktrees",
+    "design",
+    "dist",
+    ".agents"
+  ]
+}
