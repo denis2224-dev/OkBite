@@ -1,23 +1,26 @@
 import React from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { describe, it, expect, jest, beforeAll, beforeEach, afterEach } from '@jest/globals';
-import { render, fireEvent, screen, act } from '@testing-library/react-native';
+import { render, fireEvent, screen, act, within } from '@testing-library/react-native';
 import {
   AddProductRequest,
-  Category,
+  CategoryEntry,
   LookupResponse,
   NUTRIENT_KEYS,
   ReadLabelResponse,
   type AddProductRequest as AddProductRequestType,
   type NutrientKey,
 } from '@okbite/shared';
+import rawCategoriesJson from '../../../../../data/categories.json';
 import { ro } from '../../copy/ro';
+import { ApiError } from '../../lib/api';
 import { parseAddParams } from '../identify/routes';
 import ReviewRouteScreen from '../../../app/add/review';
 import {
   clearAddReviewDraft,
   getAddReviewDraft,
   getAvailableCategories,
+  resetAvailableCategories,
   setAddReviewDraft,
   setAvailableCategories,
 } from './draftStore';
@@ -30,32 +33,27 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace }),
 }));
 
-jest.mock('../../lib/api', () => ({
-  api: {
-    addProduct: (req: AddProductRequestType) => mockAddProduct(req),
-  },
-}));
-
-const COMPLETE_NUTRIENT_LABELS: Record<NutrientKey, string> = {
-  kcal: 'Energie',
-  fat: 'Grăsimi',
-  sat: 'din care saturate',
-  sugar: 'Zaharuri',
-  salt: 'Sare',
-  protein: 'Proteine',
-  fiber: 'Fibre',
-  fruitVegPct: 'Fructe, legume și leguminoase',
-};
+jest.mock('../../lib/api', () => {
+  const actual = jest.requireActual<typeof import('../../lib/api')>('../../lib/api');
+  return {
+    ...actual,
+    api: {
+      ...actual.api,
+      addProduct: (req: AddProductRequestType) => mockAddProduct(req),
+    },
+  };
+});
 
 const mutableReviewCopy = ro.review as unknown as {
   nutrients?: Partial<Record<NutrientKey, string>>;
 };
 
-const CATEGORIES = [
-  Category.parse({ slug: 'iaurt', name: 'Iaurturi', scoreKind: 'general' }),
-  Category.parse({ slug: 'biscuiti', name: 'Biscuiți', scoreKind: 'general' }),
-  Category.parse({ slug: 'suc', name: 'Sucuri', scoreKind: 'beverage' }),
-] as const;
+const REAL_IAURT = CategoryEntry.parse(
+  rawCategoriesJson.find((c) => c.slug === 'iaurt'),
+);
+const REAL_BISCUITI = CategoryEntry.parse(
+  rawCategoriesJson.find((c) => c.slug === 'biscuiti'),
+);
 
 const BASE_INGREDIENTS =
   'lapte normalizat, culturi lactice vii. Poate conține urme de arahide.';
@@ -95,7 +93,7 @@ const SAVED_LOOKUP = LookupResponse.parse({
     name: 'Iaurt natural 2,5%',
     brand: 'Livada Verde',
     quantity: '400 g',
-    category: CATEGORIES[0],
+    category: REAL_IAURT,
     unit: 'g',
     portion: { amount: 100, label: '100 g' },
     nutrients: BASE_LABEL.nutrients,
@@ -128,58 +126,78 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     clearAddReviewDraft();
-    setAvailableCategories(CATEGORIES);
-    mutableReviewCopy.nutrients = { ...COMPLETE_NUTRIENT_LABELS };
+    resetAvailableCategories();
   });
 
   afterEach(() => {
-    setAvailableCategories([]);
-    delete mutableReviewCopy.nutrients;
+    resetAvailableCategories();
+  });
+
+  it('loads real categories from data/categories.json validated with C1 before /add/review opens and never duplicates slugs', async () => {
+    const catalog = getAvailableCategories();
+    expect(catalog.length).toBe(rawCategoriesJson.length);
+    expect(new Set(catalog.map((c) => c.slug)).size).toBe(rawCategoriesJson.length);
+    for (const entry of catalog) {
+      expect(CategoryEntry.safeParse(entry).success).toBe(true);
+    }
+
+    // Dedupes duplicate slugs and rejects invalid entries without mutating bundled defaults on reset
+    setAvailableCategories([REAL_IAURT, REAL_IAURT, REAL_BISCUITI]);
+    expect(getAvailableCategories()).toEqual([REAL_IAURT, REAL_BISCUITI]);
+
+    resetAvailableCategories();
+    expect(getAvailableCategories().length).toBe(rawCategoriesJson.length);
   });
 
   it('blocks saving and shows unavailable state when ro.review.nutrients is missing or partial (never renders unidentified nutrient inputs)', async () => {
     const onSubmit = jest.fn<(req: AddProductRequestType) => void>();
+    const originalNutrients = ro.review.nutrients;
+    const categories = getAvailableCategories();
 
-    // 1. Completely missing nutrient labels (current unmerged R4 A1 state)
-    delete mutableReviewCopy.nutrients;
-    const { unmount } = await render(
-      <ReviewForm
-        label={BASE_LABEL}
-        initial={BASE_INITIAL}
-        categories={CATEGORIES}
-        onSubmit={onSubmit}
-      />,
-    );
+    try {
+      // 1. Completely missing nutrient labels
+      delete mutableReviewCopy.nutrients;
+      const { unmount } = await render(
+        <ReviewForm
+          label={BASE_LABEL}
+          initial={BASE_INITIAL}
+          categories={categories}
+          onSubmit={onSubmit}
+        />,
+      );
 
-    expect(screen.getByTestId('nutrition-copy-unavailable')).toBeTruthy();
-    expect(screen.queryByTestId('nutrient-kcal')).toBeNull();
-    expect(screen.queryByTestId('nutrient-sugar')).toBeNull();
-    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurturi` }));
-    const saveBtnMissing = screen.getByRole('button', { name: ro.review.save });
-    expect(saveBtnMissing.props.accessibilityState?.disabled).toBe(true);
-    await fireEvent.press(saveBtnMissing);
-    expect(onSubmit).not.toHaveBeenCalled();
-    await unmount();
+      expect(screen.getByTestId('nutrition-copy-unavailable')).toBeTruthy();
+      expect(screen.queryByTestId('nutrient-kcal')).toBeNull();
+      expect(screen.queryByTestId('nutrient-sugar')).toBeNull();
+      await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurt` }));
+      const saveBtnMissing = screen.getByRole('button', { name: ro.review.save });
+      expect(saveBtnMissing.props.accessibilityState?.disabled).toBe(true);
+      await fireEvent.press(saveBtnMissing);
+      expect(onSubmit).not.toHaveBeenCalled();
+      await unmount();
 
-    // 2. Partial nutrient labels (missing fruitVegPct)
-    const { fruitVegPct: _omitted, ...partialLabels } = COMPLETE_NUTRIENT_LABELS;
-    mutableReviewCopy.nutrients = partialLabels;
-    await render(
-      <ReviewForm
-        label={BASE_LABEL}
-        initial={BASE_INITIAL}
-        categories={CATEGORIES}
-        onSubmit={onSubmit}
-      />,
-    );
+      // 2. Partial nutrient labels (missing fruitVegPct)
+      const { fruitVegPct: _omitted, ...partialLabels } = originalNutrients;
+      mutableReviewCopy.nutrients = partialLabels;
+      await render(
+        <ReviewForm
+          label={BASE_LABEL}
+          initial={BASE_INITIAL}
+          categories={categories}
+          onSubmit={onSubmit}
+        />,
+      );
 
-    expect(screen.getByTestId('nutrition-copy-unavailable')).toBeTruthy();
-    expect(screen.queryByTestId('nutrient-kcal')).toBeNull();
-    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurturi` }));
-    const saveBtnPartial = screen.getByRole('button', { name: ro.review.save });
-    expect(saveBtnPartial.props.accessibilityState?.disabled).toBe(true);
-    await fireEvent.press(saveBtnPartial);
-    expect(onSubmit).not.toHaveBeenCalled();
+      expect(screen.getByTestId('nutrition-copy-unavailable')).toBeTruthy();
+      expect(screen.queryByTestId('nutrient-kcal')).toBeNull();
+      await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurt` }));
+      const saveBtnPartial = screen.getByRole('button', { name: ro.review.save });
+      expect(saveBtnPartial.props.accessibilityState?.disabled).toBe(true);
+      await fireEvent.press(saveBtnPartial);
+      expect(onSubmit).not.toHaveBeenCalled();
+    } finally {
+      mutableReviewCopy.nutrients = originalNutrients;
+    }
   });
 
   it('renders visible Romanian names and distinct Romanian accessibility labels for every nutrient when labels are complete', async () => {
@@ -188,14 +206,14 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
       <ReviewForm
         label={BASE_LABEL}
         initial={BASE_INITIAL}
-        categories={CATEGORIES}
+        categories={getAvailableCategories()}
         onSubmit={onSubmit}
       />,
     );
 
     const seenA11yLabels = new Set<string>();
     for (const key of NUTRIENT_KEYS) {
-      const expectedName = COMPLETE_NUTRIENT_LABELS[key];
+      const expectedName = ro.review.nutrients[key];
       expect(screen.getByText(expectedName)).toBeTruthy();
       const input = screen.getByTestId(`nutrient-${key}`);
       const a11yLabel = input.props.accessibilityLabel as string;
@@ -240,12 +258,12 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
       <ReviewForm
         label={labelNullUnit}
         initial={BASE_INITIAL}
-        categories={CATEGORIES}
+        categories={getAvailableCategories()}
         onSubmit={onSubmit}
       />,
     );
 
-    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Sucuri` }));
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Suc` }));
     const saveButton = screen.getByRole('button', { name: ro.review.save });
     expect(saveButton.props.accessibilityState?.disabled).toBe(true);
     await fireEvent.press(saveButton);
@@ -264,28 +282,29 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
       <ReviewForm
         label={BASE_LABEL}
         initial={BASE_INITIAL}
-        categories={CATEGORIES}
+        categories={getAvailableCategories()}
         onSubmit={onSubmit}
       />,
     );
 
-    expect(screen.getByText('Lapte')).toBeTruthy();
-    expect(screen.getByText('Arahide')).toBeTruthy();
+    const allergensBox = within(screen.getByTestId('detected-allergens'));
+    expect(allergensBox.getByText('Lapte')).toBeTruthy();
+    expect(allergensBox.getByText('Arahide')).toBeTruthy();
 
     const ingInput = screen.getByLabelText(ro.review.ingredients);
     await fireEvent.changeText(ingInput, 'apă, zahăr, suc de mere');
-    expect(screen.getByText(ro.review.allergensNone)).toBeTruthy();
-    expect(screen.queryByText('Lapte')).toBeNull();
+    expect(allergensBox.getByText(ro.review.allergensNone)).toBeTruthy();
+    expect(allergensBox.queryByText('Lapte')).toBeNull();
 
     await fireEvent.changeText(
       ingInput,
       'făină de grâu, unt de cacao, lecitină din soia. Poate conține: ouă și susan.',
     );
-    expect(screen.getByText('Gluten')).toBeTruthy();
-    expect(screen.getByText('Soia')).toBeTruthy();
-    expect(screen.queryByText('Lapte')).toBeNull();
-    expect(screen.getByText('Ouă')).toBeTruthy();
-    expect(screen.getByText('Susan')).toBeTruthy();
+    expect(allergensBox.getByText('Gluten')).toBeTruthy();
+    expect(allergensBox.getByText('Soia')).toBeTruthy();
+    expect(allergensBox.queryByText('Lapte')).toBeNull();
+    expect(allergensBox.getByText('Ouă')).toBeTruthy();
+    expect(allergensBox.getByText('Susan')).toBeTruthy();
   });
 
   it('explains unavailable categories using approved copy and prevents submission when categories is empty', async () => {
@@ -322,12 +341,12 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
       <ReviewForm
         label={labelSinglePhoto}
         initial={initialNoPhoto}
-        categories={CATEGORIES}
+        categories={getAvailableCategories()}
         onSubmit={onSubmit}
       />,
     );
 
-    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurturi` }));
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurt` }));
     await fireEvent.changeText(screen.getByTestId('nutrient-salt'), '0,3');
     await fireEvent.changeText(screen.getByTestId('nutrient-fiber'), '0');
 
@@ -369,12 +388,12 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
       <ReviewForm
         label={BASE_LABEL}
         initial={BASE_INITIAL}
-        categories={CATEGORIES}
+        categories={getAvailableCategories()}
         onSubmit={onSubmit}
       />,
     );
 
-    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurturi` }));
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurt` }));
 
     await fireEvent.changeText(screen.getByTestId('nutrient-salt'), '300 mg');
     await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
@@ -410,10 +429,10 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     const onSubmit = jest.fn(async (_req: AddProductRequestType) => {
       callCount += 1;
       if (callCount === 1) {
-        throw Object.assign(new Error('rate_limited'), { code: 'rate_limited' });
+        throw new ApiError('rate_limited');
       }
       if (callCount === 2) {
-        throw Object.assign(new Error('upstream_failed'), { code: 'upstream_failed' });
+        throw new ApiError('configuration');
       }
     });
 
@@ -421,26 +440,26 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
       <ReviewForm
         label={BASE_LABEL}
         initial={BASE_INITIAL}
-        categories={CATEGORIES}
+        categories={getAvailableCategories()}
         onSubmit={onSubmit}
       />,
     );
 
     await fireEvent.changeText(screen.getByLabelText(ro.review.name), 'Iaurt editat');
     await fireEvent.changeText(screen.getByTestId('nutrient-sugar'), '4,1');
-    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurturi` }));
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurt` }));
 
     const saveButton = screen.getByRole('button', { name: ro.review.save });
 
     await fireEvent.press(saveButton);
     expect(onSubmit).toHaveBeenCalledTimes(1);
-    expect(await screen.findByText(ro.errors.rateLimited)).toBeTruthy();
+    expect(await screen.findByText(ro.errors.rate_limited)).toBeTruthy();
     expect(screen.getByDisplayValue('Iaurt editat')).toBeTruthy();
     expect(screen.getByDisplayValue('4,1')).toBeTruthy();
 
     await fireEvent.press(saveButton);
     expect(onSubmit).toHaveBeenCalledTimes(2);
-    expect(await screen.findByText(ro.errors.upstreamFailed)).toBeTruthy();
+    expect(await screen.findByText(ro.errors.configuration)).toBeTruthy();
 
     await fireEvent.press(saveButton);
     expect(onSubmit).toHaveBeenCalledTimes(3);
@@ -462,13 +481,13 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
       <ReviewForm
         label={BASE_LABEL}
         initial={BASE_INITIAL}
-        categories={CATEGORIES}
+        categories={getAvailableCategories()}
         onSubmit={onSubmit}
         onRetake={onRetake}
       />,
     );
 
-    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurturi` }));
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurt` }));
     const saveButton = screen.getByRole('button', { name: ro.review.save });
 
     await fireEvent.press(saveButton);
@@ -513,7 +532,7 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     await render(<ReviewRouteScreen />);
 
     expect(screen.getByDisplayValue('Iaurt natural 2,5%')).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurturi` }));
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurt` }));
     await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
 
     expect(mockAddProduct).toHaveBeenCalledTimes(1);
@@ -526,10 +545,7 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
       throw new Error('Expected found LookupResponse fixture');
     }
 
-    // Load categories once at app startup
-    setAvailableCategories(CATEGORIES);
-
-    // Save Product A
+    // Save Product A using bundled categories (no manual setAvailableCategories needed)
     setAddReviewDraft({
       initial: BASE_INITIAL,
       label: BASE_LABEL,
@@ -537,10 +553,10 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     mockAddProduct.mockResolvedValueOnce(SAVED_LOOKUP);
 
     const renderA = await render(<ReviewRouteScreen />);
-    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurturi` }));
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurt` }));
     await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
     expect(getAddReviewDraft()).toBeNull();
-    expect(getAvailableCategories()).toEqual(CATEGORIES);
+    expect(getAvailableCategories().length).toBe(rawCategoriesJson.length);
     await renderA.unmount();
 
     // Start Product B without reloading categories
@@ -560,7 +576,7 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
         name: 'Biscuiți de casă',
         brand: 'Brutăria Veche',
         quantity: '250 g',
-        category: CATEGORIES[1],
+        category: REAL_BISCUITI,
       },
     });
     if (savedProductB.status !== 'found') {

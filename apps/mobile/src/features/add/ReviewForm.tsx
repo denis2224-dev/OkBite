@@ -14,6 +14,7 @@ import {
   type Unit,
 } from '@okbite/shared';
 import { ro } from '../../copy/ro';
+import { AllergenChip } from '../../ui/AllergenChip';
 import { ActionButton, errorMessage } from '../capture/StatusPanel';
 import type { AddInitialValues } from '../identify/routes';
 import { CategoryPicker } from './CategoryPicker';
@@ -215,24 +216,26 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
         ) : null}
         <TextInput accessibilityLabel={ro.review.ingredients} multiline value={ingredientsText} onChangeText={(v) => { setIngredientsText(v); setFormError(null); }} style={[styles.input, styles.multiline]} />
 
-        <Text style={styles.subLabel}>{ro.review.allergensDetected}</Text>
-        {detected.allergens.length === 0 && detected.mayContain.length === 0 ? (
-          <Text style={styles.muted}>{ro.review.allergensNone}</Text>
-        ) : (
-          <View style={styles.chipRow}>
-            {detected.allergens.map((alg) => (
-              <View key={alg} style={styles.allergenChip}><Text style={styles.allergenChipText}>{alg}</Text></View>
-            ))}
-            {detected.mayContain.length > 0 ? (
-              <View style={styles.chipRow}>
-                <Text style={styles.muted}>{ro.result.mayContain}</Text>
-                {detected.mayContain.map((alg) => (
-                  <View key={`may-${alg}`} style={styles.mayChip}><Text style={styles.mayChipText}>{alg}</Text></View>
-                ))}
-              </View>
-            ) : null}
-          </View>
-        )}
+        <View testID="detected-allergens" style={styles.allergensSection}>
+          <Text style={styles.subLabel}>{ro.review.allergensDetected}</Text>
+          {detected.allergens.length === 0 && detected.mayContain.length === 0 ? (
+            <Text style={styles.muted}>{ro.review.allergensNone}</Text>
+          ) : (
+            <View style={styles.chipRow}>
+              {detected.allergens.map((alg) => (
+                <AllergenChip key={alg} name={alg} />
+              ))}
+              {detected.mayContain.length > 0 ? (
+                <View style={styles.chipRow}>
+                  <Text style={styles.muted}>{ro.result.mayContain}</Text>
+                  {detected.mayContain.map((alg) => (
+                    <View key={`may-${alg}`} style={styles.mayChip}><Text style={styles.mayChipText}>{alg}</Text></View>
+                  ))}
+                </View>
+              ) : null}
+            </View>
+          )}
+        </View>
         <Text style={styles.muted}>{ro.review.allergensHint}</Text>
       </View>
 
@@ -240,8 +243,8 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
 
       {formError ? <Text accessibilityRole="alert" style={styles.errorBanner}>{formError}</Text> : null}
 
-      <ActionButton label={ro.review.save} onPress={() => { void handleSubmit(); }} disabled={!canSave} />
-      {onRetake ? <ActionButton label={ro.review.retakePhotos} onPress={handleRetakePress} disabled={submitting} /> : null}
+      <ActionButton variant="primary" label={ro.review.save} onPress={() => { void handleSubmit(); }} disabled={!canSave} />
+      {onRetake ? <ActionButton variant="secondary" label={ro.review.retakePhotos} onPress={handleRetakePress} disabled={submitting} /> : null}
     </ScrollView>
   );
 }
@@ -264,9 +267,8 @@ const styles = StyleSheet.create({
   unitButtonSelected: { backgroundColor: '#173A2A', borderColor: '#173A2A' },
   unitText: { fontSize: 14, fontWeight: '600', color: '#1C2420' },
   unitTextSelected: { color: '#FFFFFF' },
+  allergensSection: { gap: 6 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' },
-  allergenChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: '#5A3D00' },
-  allergenChipText: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
   mayChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: '#ECE7DA' },
   mayChipText: { fontSize: 13, fontWeight: '600', color: '#3F4842' },
   muted: { fontSize: 13, color: '#56615A' },

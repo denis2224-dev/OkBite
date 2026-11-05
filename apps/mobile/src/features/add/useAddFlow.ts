@@ -5,7 +5,11 @@ import { ReadLabelRequest, ReadLabelResponse } from '@okbite/shared';
 import { api } from '../../lib/api';
 import { compressPhoto } from '../capture/compressPhoto';
 import { parseAddParams } from '../identify/routes';
-import { setAddReviewDraft } from './draftStore';
+import {
+  getAvailableCategories,
+  initializeAvailableCategories,
+  setAddReviewDraft,
+} from './draftStore';
 
 export type AddFlowState =
   | { status: 'idle' }
@@ -32,6 +36,7 @@ export function useAddFlow() {
   const rawParams = useLocalSearchParams<Record<string, string | string[] | undefined>>();
   const [step, setStep] = useState<1 | 2>(1);
   const [state, setState] = useState<AddFlowState>(IDLE);
+  const [canRetry, setCanRetry] = useState(false);
   const busy = useRef(false);
   const ingredientsUriRef = useRef<string | null>(null);
   const lastAttemptRef = useRef<{ ingredientsUri: string; nutritionUri: string | null } | null>(null);
@@ -39,6 +44,7 @@ export function useAddFlow() {
   const submitPair = useCallback(
     async (ingredientsUri: string, nutritionUri: string | null) => {
       lastAttemptRef.current = { ingredientsUri, nutritionUri };
+      setCanRetry(true);
       const budget = nutritionUri === null ? SINGLE_PHOTO_MAX_BYTES : TWO_PHOTO_MAX_BYTES;
       const ingPhoto = await compressPhoto(ingredientsUri, budget);
       const nutPhoto = nutritionUri ? await compressPhoto(nutritionUri, budget) : null;
@@ -65,6 +71,9 @@ export function useAddFlow() {
         throw Object.assign(new Error('invalid_response'), { code: 'invalid_response' });
       }
 
+      if (getAvailableCategories().length === 0) {
+        initializeAvailableCategories();
+      }
       setAddReviewDraft({
         initial: parseAddParams(rawParams),
         label: parsedRes.data,
@@ -160,6 +169,6 @@ export function useAddFlow() {
     submitSamePhoto,
     retry,
     dismiss,
-    canRetry: lastAttemptRef.current !== null,
+    canRetry,
   };
 }

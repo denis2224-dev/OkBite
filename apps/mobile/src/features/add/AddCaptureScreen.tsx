@@ -181,4 +181,3 @@ const styles = StyleSheet.create({
   },
   overlayText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });
-

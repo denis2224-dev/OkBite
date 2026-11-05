@@ -80,4 +80,3 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 14, fontWeight: '700', color: '#8E3417' },
   emptyText: { fontSize: 13, color: '#8E3417' },
 });
-

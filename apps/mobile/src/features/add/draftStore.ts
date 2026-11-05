@@ -1,5 +1,6 @@
+import rawCategories from '../../../../../data/categories.json';
 import {
-  Category,
+  CategoryEntry,
   ReadLabelResponse,
   type Category as CategoryType,
   type ReadLabelResponse as ReadLabelResponseType,
@@ -9,6 +10,21 @@ import type { AddInitialValues } from '../identify/routes';
 export interface AddReviewDraft {
   initial: AddInitialValues;
   label: ReadLabelResponseType;
+}
+
+function parseUniqueCategories(entries: readonly unknown[]): readonly CategoryType[] {
+  const seen = new Set<string>();
+  const valid: CategoryType[] = [];
+  for (const item of entries) {
+    const parsed = CategoryEntry.safeParse(item);
+    if (!parsed.success) continue;
+    const slug = parsed.data.slug.trim();
+    const name = parsed.data.name.trim();
+    if (!slug || !name || seen.has(slug)) continue;
+    seen.add(slug);
+    valid.push({ ...parsed.data, slug, name });
+  }
+  return valid;
 }
 
 let currentDraft: AddReviewDraft | null = null;
@@ -40,13 +56,13 @@ export function clearAddReviewDraft(): void {
   currentDraft = null;
 }
 
-export function setAvailableCategories(categories: readonly CategoryType[]): void {
-  const valid: CategoryType[] = [];
-  for (const item of categories) {
-    const parsed = Category.safeParse(item);
-    if (parsed.success) valid.push(parsed.data);
-  }
-  availableCategories = valid;
+export function setAvailableCategories(categories: readonly unknown[]): void {
+  availableCategories = parseUniqueCategories(categories);
+}
+
+export function initializeAvailableCategories(): readonly CategoryType[] {
+  setAvailableCategories(Array.isArray(rawCategories) ? rawCategories : []);
+  return availableCategories;
 }
 
 export function getAvailableCategories(): readonly CategoryType[] {
@@ -54,5 +70,7 @@ export function getAvailableCategories(): readonly CategoryType[] {
 }
 
 export function resetAvailableCategories(): void {
-  availableCategories = [];
+  initializeAvailableCategories();
 }
+
+initializeAvailableCategories();

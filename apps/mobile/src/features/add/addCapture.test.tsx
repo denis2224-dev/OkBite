@@ -3,14 +3,14 @@ import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { describe, it, expect, jest, beforeAll, beforeEach, afterEach } from '@jest/globals';
 import { render, fireEvent, screen, act } from '@testing-library/react-native';
 import {
-  Category,
+  CategoryEntry,
   LookupResponse,
   ReadLabelRequest,
   ReadLabelResponse,
   type AddProductRequest as AddProductRequestType,
-  type NutrientKey,
   type ReadLabelRequest as ReadLabelRequestType,
 } from '@okbite/shared';
+import rawCategoriesJson from '../../../../../data/categories.json';
 import { ro } from '../../copy/ro';
 import AddScreen from '../../../app/add/index';
 import ReviewRouteScreen from '../../../app/add/review';
@@ -18,6 +18,7 @@ import { addProductRoute } from '../identify/routes';
 import {
   clearAddReviewDraft,
   getAddReviewDraft,
+  resetAvailableCategories,
   setAvailableCategories,
 } from './draftStore';
 
@@ -29,7 +30,7 @@ const mockCompressPhoto = jest.fn<
   (uri: string, maxBytes?: number) => Promise<{ uri: string; base64: string; bytes: number }>
 >();
 const mockLaunchLibrary = jest.fn<
-  () => Promise<{ canceled: boolean; assets: Array<{ uri: string }> }>
+  () => Promise<{ canceled: boolean; assets: { uri: string }[] }>
 >();
 const mockRequestPermission = jest.fn<() => Promise<unknown>>();
 const mockTakePicture = jest.fn<() => Promise<{ uri: string } | undefined>>();
@@ -45,15 +46,18 @@ jest.mock('expo-router', () => ({
 }));
 
 jest.mock('expo-camera', () => {
-  const ReactActual = require('react') as typeof import('react');
-  const { View } = require('react-native') as typeof import('react-native');
+  const ReactActual = jest.requireActual<typeof import('react')>('react');
+  const { View: MockView } = jest.requireActual<typeof import('react-native')>('react-native');
   return {
     useCameraPermissions: () => [mockPermissionState.value, mockRequestPermission],
-    CameraView: ReactActual.forwardRef((props: Record<string, unknown>, ref) => {
+    CameraView: ReactActual.forwardRef(function MockAddCameraView(
+      props: Record<string, unknown>,
+      ref: React.Ref<unknown>,
+    ) {
       ReactActual.useImperativeHandle(ref, () => ({
         takePictureAsync: mockTakePicture,
       }));
-      return <View testID="add-camera-view" {...props} />;
+      return <MockView testID="add-camera-view" {...props} />;
     }),
   };
 });
@@ -73,24 +77,9 @@ jest.mock('../../lib/api', () => ({
   },
 }));
 
-const COMPLETE_NUTRIENT_LABELS: Record<NutrientKey, string> = {
-  kcal: 'Energie',
-  fat: 'Grăsimi',
-  sat: 'din care saturate',
-  sugar: 'Zaharuri',
-  salt: 'Sare',
-  protein: 'Proteine',
-  fiber: 'Fibre',
-  fruitVegPct: 'Fructe, legume și leguminoase',
-};
-
-const mutableReviewCopy = ro.review as unknown as {
-  nutrients?: Partial<Record<NutrientKey, string>>;
-};
-
-const CATEGORIES = [
-  Category.parse({ slug: 'biscuiti', name: 'Biscuiți', scoreKind: 'general' }),
-] as const;
+const REAL_BISCUITI = CategoryEntry.parse(
+  rawCategoriesJson.find((c) => c.slug === 'biscuiti'),
+);
 
 const cameraReady = async () => {
   await act(async () => {
@@ -124,8 +113,8 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
   beforeEach(() => {
     jest.resetAllMocks();
     clearAddReviewDraft();
-    setAvailableCategories(CATEGORIES);
-    mutableReviewCopy.nutrients = { ...COMPLETE_NUTRIENT_LABELS };
+    // Simulate uninitialized store before /add flow runs: useAddFlow must initialize real categories before opening /add/review
+    setAvailableCategories([]);
     mockPermissionState.value = { status: 'granted', granted: true };
     mockParams.value = {
       code: '4840001000014',
@@ -151,8 +140,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
   });
 
   afterEach(() => {
-    setAvailableCategories([]);
-    delete mutableReviewCopy.nutrients;
+    resetAvailableCategories();
   });
 
   it('captures shot 1 (ingredients), advances to step 2, and supports "Sunt pe aceeași poză" (nutritionImage: null)', async () => {
@@ -289,7 +277,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
         name: 'Biscuiți integrali cu ovăz',
         brand: 'Morărița Nou',
         quantity: '250 g',
-        category: CATEGORIES[0],
+        category: REAL_BISCUITI,
         unit: 'g',
         portion: { amount: 100, label: '100 g' },
         nutrients: secondLabelResponse.nutrients,
