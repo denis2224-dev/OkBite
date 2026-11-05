@@ -51,7 +51,8 @@ export function ResultView({ product, score }: { product: Product; score: ScoreR
       <Body>{ro.result.allergyNote}</Body>
     </Card>
     <ScoreCard score={shownScore} /><PortionTable product={product} /><SourceCard product={product} />
-    {/* Ingredients and original-label buttons return with their routes in B5. */}
+    <Button variant="secondary" onPress={() => router.push({ pathname: '/product/[id]/ingredients', params: { id: product.id } })}>{ro.ingredients.title}</Button>
+    <Button variant="secondary" onPress={() => router.push({ pathname: '/product/[id]/label', params: { id: product.id } })}>{ro.result.original}</Button>
     <Button variant="secondary" onPress={() => router.push({ pathname: '/compare', params: { id: product.id } })}>{ro.result.compare}</Button>
     {!isPreview && <Button variant="secondary" disabled={sharing} onPress={share}>{ro.share.button}</Button>}
     {shareFailed && <View style={{ gap: 8 }}>

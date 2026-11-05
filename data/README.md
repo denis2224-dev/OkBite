@@ -27,7 +27,9 @@ To check one (needs 30 in total: at least 5 per letter, 4 beverages, 3 cheeses, 
 3. Enter the values in Santé publique France's official Nutri-Score 2023 calculator. Write its result in `expectedPoints` and `expectedLetter`, and `checkedWith: "SpF calculator <version>, <your name>, YYYY-MM-DD"`.
 4. Move the entry to `score-fixtures.json` with only the `ScoreFixture` fields (`name`, `scoreKind`, `nutrients`, `expectedPoints`, `expectedLetter`, `checkedWith`), then run `pnpm data:check` and `pnpm --filter @okbite/shared test score`.
 
-Beverages with a non-nutritive sweetener cannot be fixtures yet: `ScoreFixture` has no ingredients field (R2 request in PR #31).
+Beverages with a non-nutritive sweetener must include `ingredientsText` in the
+fixture so their sweetener points are tested. The field is optional/nullable for
+existing fixtures; do not invent ingredient text or human verification.
 
 ### Status (2026-11-05)
 

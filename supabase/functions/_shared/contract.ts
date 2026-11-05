@@ -99,6 +99,7 @@ export const IngredientEntry = z.object({
 });
 export const ScoreFixture = z.object({
   name: z.string(), scoreKind: ScoreKind, nutrients: Nutrients,
+  ingredientsText: z.string().nullable().optional(),
   expectedPoints: z.number().int(), expectedLetter: Letter, checkedWith: z.string(),
 });
 

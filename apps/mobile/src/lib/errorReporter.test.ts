@@ -55,6 +55,12 @@ test('reports the screen where the error occurred even if navigation changes dur
   expect(JSON.parse(requests[0]!.init.body as string).screen).toBe('/capture');
 });
 
+test('rejects unsupported platforms and empty app versions before sending diagnostics', async () => {
+  await reportClientError(new Error('invalid platform'), 'desktop', '1');
+  await reportClientError(new Error('empty version'), 'web', '');
+  expect(requests).toHaveLength(0);
+});
+
 test('installs once and preserves the original fatal error handler', async () => {
   const previous = jest.fn();
   let handler = previous;
