@@ -96,7 +96,9 @@ credentials, paths, queries and fragments before creating fixtures.
 The database script dumps `public`, `auth`, `storage` and `extensions`, retaining
 owners and grants. It creates a fresh disposable database in the local cluster,
 restores pre-data, recreates the installed extensions from the captured list,
-then restores data and post-data. It compares source/restored counts plus schema,
+then restores data and post-data. It replays source schema and extension-member
+grants, which a schema-scoped dump omits when extensions are recreated. It compares
+source/restored counts plus schema,
 relation, column, routine and default-privilege owners/ACLs, then runs the full
 pgTAP suite against the restored copy before dropping only that copy.
 The source database is not reset or replaced.

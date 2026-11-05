@@ -44,27 +44,50 @@ const accessSnapshot = (database) => sql(database, `
     select oid, nspname, nspowner, nspacl from pg_namespace
     where nspname in ('public','auth','storage','extensions')
   ), access as (
-    select 'schema' kind, nspname identity, pg_get_userbyid(nspowner) owner, nspacl::text acl from namespaces
+    select 'schema' kind, nspname::text identity, pg_get_userbyid(nspowner) owner, coalesce(nspacl,acldefault('n',nspowner)) acl from namespaces
     union all
-    select 'relation', n.nspname || '.' || c.relname, pg_get_userbyid(c.relowner), c.relacl::text
+    select 'relation', n.nspname || '.' || c.relname, pg_get_userbyid(c.relowner), coalesce(c.relacl,acldefault(case when c.relkind='S' then 's'::"char" else 'r'::"char" end,c.relowner))
       from pg_class c join namespaces n on n.oid=c.relnamespace
     union all
-    select 'column', n.nspname || '.' || c.relname || '.' || a.attname, null, a.attacl::text
+    select 'column', n.nspname || '.' || c.relname || '.' || a.attname, null, a.attacl
       from pg_attribute a join pg_class c on c.oid=a.attrelid join namespaces n on n.oid=c.relnamespace
       where a.attnum > 0 and not a.attisdropped and a.attacl is not null
     union all
     select 'routine', n.nspname || '.' || p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')',
-      pg_get_userbyid(p.proowner), p.proacl::text
+      pg_get_userbyid(p.proowner), coalesce(p.proacl,acldefault('f',p.proowner))
       from pg_proc p join namespaces n on n.oid=p.pronamespace
     union all
     select 'default', n.nspname || ':' || d.defaclobjtype::text || ':' || pg_get_userbyid(d.defaclrole),
-      pg_get_userbyid(d.defaclrole), d.defaclacl::text
+      pg_get_userbyid(d.defaclrole), d.defaclacl
       from pg_default_acl d join namespaces n on n.oid=d.defaclnamespace
-  ) select jsonb_agg(to_jsonb(access) order by kind, identity)::text from access;`);
+  ) select jsonb_agg(jsonb_build_object('kind',kind,'identity',identity,'owner',owner,
+    'acl',(select jsonb_agg(x::text order by x::text) from unnest(acl) x)) order by kind,identity)::text from access;`);
+// pg_dump omits extension members; replay their source grants after recreation.
+const supplementalGrants = () => sql('postgres', `
+  with objects as (
+    select 'schema' kind, format('%I',nspname) identity, coalesce(nspacl,acldefault('n',nspowner)) acl
+      from pg_namespace where nspname in ('public','auth','storage','extensions')
+    union all
+    select case when c.relkind='S' then 'sequence' else 'table' end,
+      format('%I.%I',n.nspname,c.relname),coalesce(c.relacl,acldefault(case when c.relkind='S' then 's'::"char" else 'r'::"char" end,c.relowner))
+      from pg_class c join pg_namespace n on n.oid=c.relnamespace
+      where n.nspname in ('public','auth','storage','extensions') and c.relkind in ('r','v','m','S','f','p')
+        and exists(select 1 from pg_depend d where d.classid='pg_class'::regclass and d.objid=c.oid and d.deptype='e')
+    union all
+    select 'function', format('%I.%I(%s)',n.nspname,p.proname,pg_get_function_identity_arguments(p.oid)),
+      coalesce(p.proacl,acldefault('f',p.proowner)) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+      where n.nspname in ('public','auth','storage','extensions')
+        and exists(select 1 from pg_depend d where d.classid='pg_proc'::regclass and d.objid=p.oid and d.deptype='e')
+  ) select format('grant %s on %s %s to %s%s;',a.privilege_type,kind,identity,
+    case when a.grantee=0 then 'public' else quote_ident(pg_get_userbyid(a.grantee)) end,
+    case when a.is_grantable then ' with grant option' else '' end)
+    from objects cross join lateral aclexplode(acl) a order by kind,identity,a.grantee,a.privilege_type;`);
 let created = false;
 try {
   const before = snapshot('postgres');
   const accessBefore = accessSnapshot('postgres');
+  const grants = supplementalGrants();
+  writeFileSync(join(directory, 'supplemental-grants.sql'), grants, { mode: 0o600 });
   docker('pg_dump -U supabase_admin -d postgres --format=custom --schema=public --schema=auth --schema=storage --schema=extensions', { stdoutFile: archive });
   const extensions = sql('postgres', `select format('create extension if not exists %I with schema %I;',e.extname,n.nspname)
     from pg_extension e join pg_namespace n on n.oid=e.extnamespace
@@ -76,6 +99,7 @@ try {
   sql(target, extensions);
   docker(`pg_restore -U supabase_admin -d ${target} --exit-on-error --section=data`, { stdinFile: archive });
   docker(`pg_restore -U supabase_admin -d ${target} --exit-on-error --section=post-data`, { stdinFile: archive });
+  sql(target, grants);
   if (snapshot(target) !== before) throw new Error('Restored application/Auth/Storage counts differ');
   if (accessSnapshot(target) !== accessBefore) throw new Error('Restored owners or grants differ');
   const tests = run(process.env.SUPABASE_CLI_BIN ?? 'supabase', ['test', 'db', '--db-url',
