@@ -1,41 +1,41 @@
-# The repository owner remains the effective reviewer until the team confirms
-# @role-r2 through @role-r5. Replace the fallback handles below with real members.
+# Role owners are verified repository collaborators.
+# Keep an alternate reviewer on role paths so authors cannot approve their own PRs.
 * @denis2224-dev
 
-# R4: App Foundation and Product Screens (@role-r4).
+# R4: App Foundation and Product Screens (@davidnenita22-arch).
 # Broad app ownership comes first; the specific exceptions below take precedence.
-/apps/mobile/app/ @denis2224-dev
-/apps/mobile/src/ @denis2224-dev
+/apps/mobile/app/ @davidnenita22-arch @denis2224-dev
+/apps/mobile/src/ @davidnenita22-arch @denis2224-dev
 
-# R2: Backend and Contract (@role-r2)
-/supabase/ @denis2224-dev
-/packages/shared/src/contract* @denis2224-dev
-/scripts/sync-shared.mjs @denis2224-dev
-/apps/mobile/app/admin/ @denis2224-dev
-/apps/mobile/src/features/admin/ @denis2224-dev
-/docs/ops/moderation.md @denis2224-dev
+# R2: Backend and Contract (@denis2224-dev)
+/supabase/ @denis2224-dev @stasikkk777
+/packages/shared/src/contract* @denis2224-dev @stasikkk777
+/scripts/sync-shared.mjs @denis2224-dev @stasikkk777
+/apps/mobile/app/admin/ @denis2224-dev @stasikkk777
+/apps/mobile/src/features/admin/ @denis2224-dev @stasikkk777
+/docs/ops/moderation.md @denis2224-dev @stasikkk777
 
-# R3: AI and Data (@role-r3)
-/packages/shared/src/score/ @denis2224-dev
-/packages/shared/src/ean/ @denis2224-dev
-/packages/shared/src/allergens/ @denis2224-dev
-/supabase/functions/identify/ @denis2224-dev
-/supabase/functions/read-label/ @denis2224-dev
-/supabase/functions/_lib/claude.ts @denis2224-dev
-/data/ @denis2224-dev
-/scripts/check-data* @denis2224-dev
-/scripts/load-data.ts @denis2224-dev
-/scripts/import-off* @denis2224-dev
+# R3: AI and Data (@SergiuTOP)
+/packages/shared/src/score/ @SergiuTOP @denis2224-dev
+/packages/shared/src/ean/ @SergiuTOP @denis2224-dev
+/packages/shared/src/allergens/ @SergiuTOP @denis2224-dev
+/supabase/functions/identify/ @SergiuTOP @denis2224-dev
+/supabase/functions/read-label/ @SergiuTOP @denis2224-dev
+/supabase/functions/_lib/claude.ts @SergiuTOP @denis2224-dev
+/data/ @SergiuTOP @denis2224-dev
+/scripts/check-data* @SergiuTOP @denis2224-dev
+/scripts/load-data.ts @SergiuTOP @denis2224-dev
+/scripts/import-off* @SergiuTOP @denis2224-dev
 
-# R5: Capture, Contribution and Field Testing (@role-r5)
-/apps/mobile/app/capture* @denis2224-dev
-/apps/mobile/app/scan* @denis2224-dev
-/apps/mobile/app/identify* @denis2224-dev
-/apps/mobile/app/add/ @denis2224-dev
-/apps/mobile/src/features/capture/ @denis2224-dev
-/apps/mobile/src/features/scan/ @denis2224-dev
-/apps/mobile/src/features/identify/ @denis2224-dev
-/apps/mobile/src/features/add/ @denis2224-dev
+# R5: Capture, Contribution and Field Testing (@itsjohnyoff)
+/apps/mobile/app/capture* @itsjohnyoff @denis2224-dev
+/apps/mobile/app/scan* @itsjohnyoff @denis2224-dev
+/apps/mobile/app/identify* @itsjohnyoff @denis2224-dev
+/apps/mobile/app/add/ @itsjohnyoff @denis2224-dev
+/apps/mobile/src/features/capture/ @itsjohnyoff @denis2224-dev
+/apps/mobile/src/features/scan/ @itsjohnyoff @denis2224-dev
+/apps/mobile/src/features/identify/ @itsjohnyoff @denis2224-dev
+/apps/mobile/src/features/add/ @itsjohnyoff @denis2224-dev
 
 # R1: Web, Quality and Product Details (verified: @stasikkk777).
 # Keep the repository owner too, so R1's author cannot approve their own PR.
