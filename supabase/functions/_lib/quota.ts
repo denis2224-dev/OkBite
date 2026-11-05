@@ -1,7 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { HttpError } from './http.ts';
 
-export async function reserveUsage(db: SupabaseClient, device: string, kind: 'added' | 'report') {
+export async function reserveUsage(
+  db: SupabaseClient,
+  device: string,
+  kind: 'added' | 'report' | 'photo' | 'read_label',
+) {
   const { data, error } = await db.rpc('reserve_usage', { p_device: device, p_kind: kind });
   if (error) throw new Error('Quota admission failed');
   if (data === null) throw new HttpError(429, 'Ai atins limita zilnică.', 'rate_limited');
