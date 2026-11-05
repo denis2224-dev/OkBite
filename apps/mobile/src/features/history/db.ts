@@ -38,7 +38,7 @@ export async function listQueued(): Promise<QueuedItem[]> {
   return rows.map(({ error, ...row }) => error ? { ...row, error } : row);
 }
 export async function markNeedsReview(id: string, result: string): Promise<void> {
-  await (await getDatabase()).runAsync("UPDATE queue SET status='needs_review',error=NULL,result=? WHERE id=?", result, id);
+  await (await getDatabase()).runAsync("UPDATE queue SET status='needs_review',error=NULL,result=? WHERE id=? AND status='pending'", result, id);
 }
 export async function deleteQueued(id: string): Promise<void> {
   await (await getDatabase()).runAsync('DELETE FROM queue WHERE id=?', id);

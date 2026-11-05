@@ -46,6 +46,33 @@ beforeEach(async () => {
   await clearHistory();
 });
 afterAll(async () => { await mockFs.rm(FileSystem.documentDirectory!, { recursive: true, force: true }); });
+it('does not reopen a cancelled item when cleanup fails during an active lookup', async () => {
+  await enqueue({ kind: 'code', code: '12345670' });
+  const item = (await listQueued())[0]!;
+  let finish!: (result: { status: 'not_found' }) => void;
+  let started!: () => void;
+  const entered = new Promise<void>(resolve => { started = resolve; });
+  jest.mocked(api.lookup).mockImplementationOnce(() => {
+    started(); return new Promise(resolve => { finish = resolve; });
+  });
+  const handoff = jest.fn(() => false);
+  const unsubscribe = subscribeQueueResults(handoff);
+  const draining = flushQueue();
+  await entered;
+  const cleanup = jest.spyOn(queueDb, 'deleteQueued').mockRejectedValueOnce(new Error('row busy'));
+  try {
+    await completeQueued(item.id);
+    finish({ status: 'not_found' });
+    await draining;
+    expect((await listQueued())[0]?.status).toBe('completed');
+    expect(handoff).not.toHaveBeenCalled();
+    await markNeedsReview(item.id, JSON.stringify({ status: 'not_found' }));
+    expect((await listQueued())[0]?.status).toBe('completed');
+    await flushQueue();
+    expect(await listQueued()).toEqual([]);
+    expect(api.lookup).toHaveBeenCalledTimes(1);
+  } finally { cleanup.mockRestore(); unsubscribe(); }
+});
 it('keeps a durable photo copy after the source disappears and deletes it after success', async () => {
   const source = FileSystem.documentDirectory! + 'source.jpg';
   await mockFs.writeFile(source, 'test image');

@@ -3,12 +3,18 @@ import { serialize, deserialize } from 'node:v8';
 import { Blob as mockBlob } from 'node:buffer';
 import { randomUUID as mockRandomUUID } from 'node:crypto';
 import { createStore, get, set } from 'idb-keyval';
-import { writeHistory, readHistory, deleteHistory, putQueued, listQueued, deleteQueued, markNeedsReview, setQueuedReview, resetQueued } from './db.web';
+import { writeHistory, readHistory, deleteHistory, putQueued, listQueued, deleteQueued, markNeedsReview, setQueuedReview, resetQueued, markQueuedComplete } from './db.web';
 import { enqueue, flushQueue, listNeedsReview, resolveQueued, listQueue, retryQueued } from '../offline/queue';
 import { api, ApiError } from '../../lib/api';
 import { foundYogurt } from '../../test/fixtures';
 
 jest.mock('./db', () => jest.requireActual('./db.web'));
+it('never overwrites a completed browser receipt with a late review response', async () => {
+  await putQueued({ id: 'late', kind: 'code', payload: '12345670', createdAt: '2026-11-05T00:00:00.000Z' });
+  await markQueuedComplete('late');
+  await markNeedsReview('late', '{"status":"not_found"}');
+  expect((await listQueued()).find(row => row.id === 'late')?.status).toBe('completed');
+});
 jest.mock('../offline/photos', () => jest.requireActual('../offline/photos.web'));
 jest.mock('expo-crypto', () => ({ randomUUID: mockRandomUUID }));
 jest.mock('../../lib/api', () => ({ ...jest.requireActual('../../lib/api'), api: { lookup: jest.fn(), identify: jest.fn() } }));

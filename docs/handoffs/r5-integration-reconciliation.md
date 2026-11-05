@@ -29,7 +29,7 @@ Main advanced during initial validation, landing R1 #40/#41, R2 recovery/diagnos
 - Native/web photos use the same missing-photo error type; browser drains/resumption serialize across tabs. R4's explicit cancellation and Blob URL release remain intact.
 - R4's queue list, error/retry controls, confirmed cancellation, safe history reload/clear, cached result navigation and actionable product toasts are retained. History also links back to queued work and refreshes on queue changes.
 - The mobile-specific Metro config remains, so the target routes resolve independently of the unchanged root preview.
-- Queue management requires explicit review selection and remains accessible for cancellation. Retry cannot erase a valid result committed by an active drain. Completed receipts precede cleanup, so photo/row deletion failures retry cleanup without repeating review/add; one unreadable photo does not block later healthy items.
+- Queue management requires explicit review selection and remains accessible for cancellation. Retry cannot erase a valid result committed by an active drain. Completed receipts precede cleanup, so photo/row deletion failures retry cleanup without repeating review/add; one unreadable photo does not block later healthy items. Atomic pending-only result writes and fresh state checks prevent an in-flight response from reopening a cancelled row whose cleanup failed.
 
 ## Test reconciliation
 
@@ -47,7 +47,7 @@ If a server save succeeds while all local persistent writes fail, the active rev
 
 - Initial pnpm 9.12.0 snapshot: frozen install, `pnpm run check` and 651 local tests passed before the current-main refresh.
 - Current main's pinned pnpm 11.25.0: frozen install, toolchain verification, lint (0 errors / 57 inherited warnings), root/mobile/shared/e2e strict types and data validation pass.
-- Current-main local suites: 679 automated passes: mobile 405 (47 suites), shared 113, scripts 28, sync generator 6, gateway 7, local guards 3, Metro 1, toolchain 3, root preview 104 (24 suites), web preview 9 (2 suites).
+- Current-main local suites: 681 automated passes: mobile 407 (47 suites), shared 113, scripts 28, sync generator 6, gateway 7, local guards 3, Metro 1, toolchain 3, root preview 104 (24 suites), web preview 9 (2 suites).
 - `pnpm run check` stops at R1's fourth toolchain test on Windows: bare `spawnSync('corepack', …)` returns ENOENT because this host provides `corepack.cmd`. The unchanged test's real Corepack/pnpm 9 rejection and absent dependency-sentinel assertions pass when invoked through Corepack's Node entry point. Remaining suites were run explicitly. The original fourth test must pass in Linux CI; the R1-owned runner is unchanged.
 - Windows managed-worktree Jest globs initially skipped root tests. Both root suites were explicitly executed with relative `--testMatch` globs and `--passWithNoTests=false`; the counts above include those actual runs. No root runner configuration was changed.
 - Shared regeneration produced no tracked or untracked generated-code drift.

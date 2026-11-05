@@ -104,9 +104,10 @@ async function drain() {
     }
     try {
       const result = photo === undefined ? await api.lookup({ code: item.payload }) : await api.identify(photo);
-      if (!(await listQueued()).some(row => row.id === item.id)) continue;
+      if (!(await listQueued()).some(row => row.id === item.id && row.status === 'pending')) continue;
       if (result.status !== 'found') {
         await markNeedsReview(item.id, JSON.stringify(result));
+        if (!(await listQueued()).some(row => row.id === item.id && row.status === 'needs_review')) continue;
         notifyQueue();
         handoff({ item, result });
         continue;

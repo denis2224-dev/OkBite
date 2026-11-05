@@ -13,6 +13,7 @@ Current reconciliation: `R5-integration-reconcile` combines R5 #14/#33/#58, loca
 - `subscribeQueueResults(listener)` preserves the legacy foreground response handoff API. The queue manager uses explicit row selection and never redirects on mount or from background results. Product toast actions remain available; the drain continues with later rows.
 - `resumeQueuedItem(item)` uses a persisted validated outcome when present, includes `queueId` in the identify route, and retains the result/photo until the shopper confirms or successfully contributes. `listUnresolvedQueued()` remains compatible with R5's published consumer API.
 - Browser `flushQueue` and direct resumption share an origin-wide Web Lock. Without Web Locks, work is retained and the caller receives a recoverable error.
+- Review-result writes are conditional on pending status. Completed receipts are never overwritten by late responses, including cancellation during upload followed by a cleanup failure; the response is not handed back to the consumer.
 
 R5 wiring request: continue using listNeedsReview/resolveQueued; openQueuedPhoto makes the browser Blob key usable safely.  render persisted candidate/not_found outcomes using the existing identification/add flows, pass the queue ID through those screens, and acknowledge only after successful confirmation/contribution. Do not interpret outcome rows as resolved or delete the capture on a failed save. R4 does not change R5-owned capture/identify/add files.
 

@@ -25,7 +25,7 @@ export async function listQueued(): Promise<QueuedItem[]> {
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 export async function markNeedsReview(id: string, result: string): Promise<void> {
-  await update<QueuedItem[]>('entries', rows => (rows ?? []).map(row => row.id === id ? { ...row, status: 'needs_review', result, error: undefined } : row), queue);
+  await update<QueuedItem[]>('entries', rows => (rows ?? []).map(row => row.id === id && (row.status ?? 'pending') === 'pending' ? { ...row, status: 'needs_review', result, error: undefined } : row), queue);
 }
 export async function deleteQueued(id: string): Promise<void> {
   await update<QueuedItem[]>('entries', rows => (rows ?? []).filter(row => row.id !== id), queue);
