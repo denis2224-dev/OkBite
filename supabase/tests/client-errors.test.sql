@@ -1,0 +1,13 @@
+begin;
+select plan(9);
+select has_function('public','record_client_error',array['uuid','text','text','text','text','text']);
+select ok(not has_function_privilege('anon','public.record_client_error(uuid,text,text,text,text,text)','execute'), 'anon cannot bypass gateway');
+select ok(not has_function_privilege('authenticated','public.record_client_error(uuid,text,text,text,text,text)','execute'), 'signed-in users cannot bypass gateway');
+select ok(not exists(select 1 from pg_proc p, lateral aclexplode(p.proacl) a where p.proname='record_client_error' and a.grantee=0), 'PUBLIC has no execute grant');
+select ok(has_function_privilege('service_role','public.record_client_error(uuid,text,text,text,text,text)','execute'), 'service role can record diagnostics');
+select is(public.record_client_error('c7000000-0000-4000-8000-000000000001','Test',null,'/capture','1.0','web'),true,'valid diagnostic accepted');
+select is((select device_id from public.client_errors where device_id='c7000000-0000-4000-8000-000000000001'),'c7000000-0000-4000-8000-000000000001','canonical device UUID stored');
+select throws_ok($$select public.record_client_error('c7000000-0000-4000-8000-000000000001','Test',null,'/admin#secret','1.0','web')$$,'22023','Invalid client error','callback fragment rejected');
+select has_index('public','client_errors','client_errors_device_time','device/time lookup is indexed');
+select * from finish();
+rollback;
