@@ -1,10 +1,51 @@
 import { randomUUID } from 'expo-crypto';
-import { Code } from '@okbite/shared';
+import { Code, IdentifyResponse, LookupResponse, Uuid } from '@okbite/shared';
+import { z } from 'zod';
 import { api, ApiError } from '../../lib/api';
-import { putQueued, listQueued, deleteQueued } from '../history/db';
+import { putQueued, listQueued, deleteQueued, setQueuedReview, saveQueuedError, resetQueued, type QueuedItem } from '../history/db';
 import { saveToHistory } from '../history/store';
-import { keepPhoto, readPhoto, removePhoto } from './photos';
+import { keepPhoto, readPhoto, removePhoto, openPhoto } from './photos';
+import { MissingPhotoError } from './photo_errors';
+import { notifyQueue } from './events';
+export { subscribeQueue } from './events';
 
+type Review = Exclude<IdentifyResponse | LookupResponse, { status: 'found' }>;
+const Completed = z.object({ status: z.literal('completed'), productId: Uuid });
+export type QueueEntry = Omit<QueuedItem, 'result'> & { outcome?: Review; completedProductId?: string };
+export async function listQueue(): Promise<QueueEntry[]> {
+  return (await listQueued()).map(({ result, ...item }) => {
+    if (item.status !== 'needs_review') return item;
+    try {
+      const raw: unknown = JSON.parse(result ?? 'null');
+      const completed = Completed.safeParse(raw);
+      if (completed.success) return { ...item, completedProductId: completed.data.productId };
+      const schema = item.kind === 'photo' ? IdentifyResponse : LookupResponse;
+      const outcome = schema.parse(raw);
+      if (outcome.status === 'found') return { ...item, error: 'invalid_response' };
+      return { ...item, outcome };
+    } catch { return { ...item, error: 'invalid_response' }; }
+  });
+}
+export type NeedsReviewItem =
+  | { id: string; kind: 'code'; payload: string; result: LookupResponse }
+  | { id: string; kind: 'photo'; payload: string; result: IdentifyResponse };
+
+export async function listNeedsReview(): Promise<NeedsReviewItem[]> {
+  return (await listQueue()).flatMap<NeedsReviewItem>(({ id, kind, payload, outcome }) => {
+    if (!outcome) return [];
+    if (kind === 'photo' && 'photoPath' in outcome) return [{ id, kind, payload, result: outcome }];
+    if (kind === 'code' && !('photoPath' in outcome)) return [{ id, kind, payload, result: outcome }];
+    return [];
+  });
+}
+export async function resolveQueued(id: string, completedProductId?: string): Promise<void> {
+  if (completedProductId) {
+    const completed = Completed.parse({ status: 'completed', productId: completedProductId });
+    // Keep the successful result durable while local cleanup can still fail.
+    await setQueuedReview(id, JSON.stringify(completed));
+  }
+  await completeQueued(id);
+}
 export async function enqueue(item: { kind: 'photo'; uri: string } | { kind: 'code'; code: string }): Promise<void> {
   const payload = item.kind === 'photo' ? await keepPhoto(item.uri) : Code.parse(item.code);
   try { await putQueued({ id: randomUUID(), kind: item.kind, payload, createdAt: new Date().toISOString() }); }
@@ -12,83 +53,68 @@ export async function enqueue(item: { kind: 'photo'; uri: string } | { kind: 'co
     if (item.kind === 'photo') await removePhoto(payload).catch(() => {});
     throw error;
   }
+  notifyQueue();
+}
+export async function openQueuedPhoto(id: string) {
+  const item = (await listQueue()).find(row => row.id === id);
+  if (!item || item.kind !== 'photo') throw new ApiError('bad_request');
+  return openPhoto(item.payload);
+}
+export async function completeQueued(id: string): Promise<void> {
+  const item = (await listQueued()).find(row => row.id === id);
+  if (!item) return;
+  if (item.kind === 'photo') await removePhoto(item.payload);
+  await deleteQueued(id);
+  notifyQueue();
+}
+export async function retryQueued(id: string) {
+  if (running) await running;
+  await resetQueued(id);
+  notifyQueue();
+  return flushQueue();
 }
 let running: Promise<{ resolved: number }> | undefined;
+const resolvedListeners = new Set<(id: string) => void>();
 export function flushQueue(onResolved?: (id: string) => void): Promise<{ resolved: number }> {
-  running ??= drain(onResolved).finally(() => { running = undefined; });
+  if (onResolved) resolvedListeners.add(onResolved);
+  running ??= drain().finally(() => { running = undefined; resolvedListeners.clear(); notifyQueue(); });
   return running;
 }
-async function drain(onResolved?: (id: string) => void) {
+async function drain() {
   let resolved = 0;
-  for (const item of await listQueued()) {
+  for (const item of await listQueue()) {
+    // Human-review outcomes and failed work stay durable until explicit retry/acknowledgement.
+    if (item.status !== 'pending' || (item.error && item.error !== 'offline')) continue;
     let photo: string | undefined;
     if (item.kind === 'photo') {
-      // A stored photo that can no longer be read will never resolve; drop it instead of retrying forever.
       try { photo = await readPhoto(item.payload); }
-      catch { await deleteQueued(item.id).catch(() => {}); continue; }
+      catch (error) {
+        if (error instanceof MissingPhotoError) { await deleteQueued(item.id); notifyQueue('missing_photo'); continue; }
+        await saveQueuedError(item.id, 'storage');
+        notifyQueue();
+        break;
+      }
     }
     try {
       const result = photo === undefined ? await api.lookup({ code: item.payload }) : await api.identify(photo);
-      // R5 resumes confirmation/contribution for candidates and not_found; retain their capture until then.
-      if (result.status !== 'found') continue;
+      if (!(await listQueued()).some(row => row.id === item.id)) continue;
+      if (result.status !== 'found') {
+        await setQueuedReview(item.id, JSON.stringify(result));
+        notifyQueue();
+        continue;
+      }
       await saveToHistory(result);
-      await deleteQueued(item.id);
-      if (item.kind === 'photo') await removePhoto(item.payload).catch(() => {});
+      await completeQueued(item.id);
       resolved++;
-      onResolved?.(result.product.id);
+      for (const listener of resolvedListeners) {
+        try { listener(result.product.id); } catch { /* Resolution must not depend on navigation. */ }
+      }
     } catch (error) {
-      if (error instanceof ApiError && (error.code === 'offline' || error.code === 'rate_limited' || error.code === 'configuration')) break;
+      const code = error instanceof ApiError ? error.code : 'storage';
+      await saveQueuedError(item.id, code);
+      notifyQueue();
+      if (code === 'offline' || code === 'rate_limited' || code === 'configuration' || code === 'storage') break;
     }
   }
   return { resolved };
 }
-
-export type ResumeResult =
-  | { kind: 'found'; productId: string }
-  | { kind: 'identify'; pathname: string; params: Record<string, string> };
-
-/**
- * Resumes confirmation or contribution for an unresolved queued item.
- * - If product is found on retry, saves to history, cleans up queue/photo, returns found productId.
- * - If candidates or not_found, removes from queue (preventing duplicate queue runs) and returns navigation route.
- */
-export async function resumeQueuedItem(item: { id: string; kind: 'photo' | 'code'; payload: string }): Promise<ResumeResult> {
-  if (item.kind === 'code') {
-    const result = await api.lookup({ code: item.payload });
-    await deleteQueued(item.id);
-    if (result.status === 'found') {
-      await saveToHistory(result);
-      return { kind: 'found', productId: result.product.id };
-    }
-    return {
-      kind: 'identify',
-      pathname: '/identify',
-      params: { source: 'code', code: item.payload },
-    };
-  } else {
-    let photoBase64: string;
-    try {
-      photoBase64 = await readPhoto(item.payload);
-    } catch {
-      await deleteQueued(item.id).catch(() => {});
-      throw new Error('Photo not available');
-    }
-    const result = await api.identify(photoBase64);
-    await deleteQueued(item.id);
-    if (result.status === 'found') {
-      await saveToHistory(result);
-      await removePhoto(item.payload).catch(() => {});
-      return { kind: 'found', productId: result.product.id };
-    }
-    return {
-      kind: 'identify',
-      pathname: '/identify',
-      params: { source: 'photo', payload: JSON.stringify(result) },
-    };
-  }
-}
-
-export async function listUnresolvedQueued() {
-  return listQueued();
-}
-
