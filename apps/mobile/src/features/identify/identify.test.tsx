@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { describe, it, expect, jest, beforeAll, beforeEach } from '@jest/globals';
 import { render, fireEvent, screen } from '@testing-library/react-native';
 import { IdentifyResponse } from '@okbite/shared';
 import { ro } from '../../copy/ro';
+import { dark } from '../../theme/tokens';
+import { ThemeProvider, useTheme } from '../../theme/useTheme';
 import IdentifyScreen from '../../../app/identify';
 import {
   addProductRoute,
@@ -16,6 +18,13 @@ import {
 type ReplaceArg = string | { pathname: string; params: Record<string, string | undefined> };
 const mockReplace = jest.fn<(href: ReplaceArg) => void>();
 const mockParams: { value: Record<string, string | string[] | undefined> } = { value: {} };
+const mockListNeedsReview = jest.fn<() => Promise<unknown[]>>();
+const mockResolveQueued = jest.fn<(id: string, productId: string) => Promise<void>>();
+
+jest.mock('../offline/queue', () => ({
+  listNeedsReview: () => mockListNeedsReview(),
+  resolveQueued: (id: string, productId: string) => mockResolveQueued(id, productId),
+}));
 
 function requireReplacedParams(callIndex = 0): Record<string, string | undefined> {
   const call = mockReplace.mock.calls[callIndex];
@@ -53,6 +62,12 @@ const ORIGINAL_READ = {
   code: null,
 };
 const PHOTO_PATH = 'uploads/dev-1/front-1.jpg';
+
+function DarkIdentify() {
+  const { setPreference } = useTheme();
+  useEffect(() => { setPreference('dark'); }, [setPreference]);
+  return <IdentifyScreen />;
+}
 
 describe('IdentifyScreen and B3 flow', () => {
   beforeAll(() => {
@@ -112,6 +127,45 @@ describe('IdentifyScreen and B3 flow', () => {
     expect('code' in sentParams).toBe(false);
     expect(Object.values(sentParams)).not.toContain('null');
     expect(Object.values(sentParams)).not.toContain('undefined');
+  });
+
+  it('opens a saved photo for confirmation and acknowledges it only when confirmed', async () => {
+    mockParams.value = { queuedId: CAND_2.id };
+    const result = { status: 'candidates', candidates: [CAND_1], read: ORIGINAL_READ, photoPath: PHOTO_PATH };
+    mockListNeedsReview.mockResolvedValue([{ id: CAND_2.id, kind: 'photo', payload: 'retained-front', result }]);
+    mockResolveQueued.mockRejectedValueOnce(new Error('storage')).mockResolvedValueOnce(undefined);
+    await render(<IdentifyScreen />);
+    const confirm = await screen.findByRole('button', { name: ro.identify.confirmYes });
+    expect(mockResolveQueued).not.toHaveBeenCalled();
+    await fireEvent.press(confirm);
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(screen.getByText(ro.offline.queueError)).toBeTruthy();
+    await fireEvent.press(confirm);
+    expect(mockResolveQueued).toHaveBeenCalledWith(CAND_2.id, CAND_1.id);
+    expect(mockReplace).toHaveBeenCalledWith(`/product/${CAND_1.id}`);
+  });
+
+  it('opens a saved barcode miss and keeps its queue ID when starting a contribution', async () => {
+    mockParams.value = { queuedId: CAND_2.id };
+    mockListNeedsReview.mockResolvedValue([
+      { id: CAND_2.id, kind: 'code', payload: '96385074', result: { status: 'not_found' } },
+    ]);
+    await render(<IdentifyScreen />);
+    await fireEvent.press(await screen.findByRole('button', { name: ro.identify.addButton }));
+    expect(mockResolveQueued).not.toHaveBeenCalled();
+    expect(mockReplace).toHaveBeenCalledWith({
+      pathname: '/add',
+      params: { code: '96385074', queuedId: CAND_2.id },
+    });
+  });
+
+  it('uses readable dark colors for confirmation text', async () => {
+    mockParams.value = { source: 'photo', payload: JSON.stringify({
+      status: 'candidates', candidates: [CAND_1], read: ORIGINAL_READ, photoPath: PHOTO_PATH,
+    }) };
+    await render(<ThemeProvider><DarkIdentify /></ThemeProvider>);
+    expect(screen.getByText(CAND_1.name)).toHaveStyle({ color: dark.ink });
+    expect(screen.getByText(ro.identify.confirmHint)).toHaveStyle({ color: dark.muted });
   });
 
   it('shows CandidateList when a single candidate has similarity < 0.6', async () => {

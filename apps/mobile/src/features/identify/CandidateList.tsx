@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { Candidate } from '@okbite/shared';
 import { ro } from '../../copy/ro';
+import type { Palette } from '../../theme/tokens';
+import { useTheme } from '../../theme/useTheme';
 import { ActionButton } from '../capture/StatusPanel';
 
 export function CandidateList({
@@ -13,6 +15,8 @@ export function CandidateList({
   onSelect: (id: string) => void;
   onNone: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text accessibilityRole="header" style={styles.title}>
@@ -40,21 +44,21 @@ export function CandidateList({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   container: { padding: 16, gap: 16 },
-  title: { fontSize: 22, fontWeight: '700' },
+  title: { color: colors.ink, fontSize: 22, fontWeight: '700' },
   list: { gap: 10 },
   row: {
     minHeight: 44,
     padding: 14,
     borderRadius: 16,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
   thumb: { width: 52, height: 52, borderRadius: 10 },
   info: { flex: 1, gap: 4 },
-  name: { fontSize: 16, fontWeight: '700' },
-  meta: { fontSize: 14, color: '#56615A' },
+  name: { color: colors.ink, fontSize: 16, fontWeight: '700' },
+  meta: { fontSize: 14, color: colors.muted },
 });

@@ -1,5 +1,6 @@
 import {
   IdentifyResponse,
+  Uuid,
   normalizeCode,
   type Candidate,
   type FrontRead,
@@ -13,6 +14,7 @@ import {
 export type IdentifyPayload = Exclude<IdentifyResponse, { status: 'found' }>;
 
 export type AddRouteParams = {
+  queuedId?: string;
   code?: string;
   brand?: string;
   name?: string;
@@ -21,6 +23,7 @@ export type AddRouteParams = {
 };
 
 export type AddInitialValues = {
+  queuedId?: string;
   code: string | null;
   brand: string | null;
   name: string | null;
@@ -51,6 +54,11 @@ function cleanParam(val: string | string[] | undefined): string | null {
   return trimmed;
 }
 
+export function parseQueuedId(value: unknown): string | undefined {
+  const parsed = Uuid.safeParse(value);
+  return parsed.success ? parsed.data : undefined;
+}
+
 /**
  * Builds the `/add` route for B7 from the extracted FrontRead and optional uploaded photoPath.
  * Absent/null fields are omitted so Expo Router never serializes "null" or "undefined".
@@ -58,9 +66,11 @@ function cleanParam(val: string | string[] | undefined): string | null {
 export function addProductRoute({
   read,
   photoPath,
+  queuedId,
 }: {
   read: FrontRead;
   photoPath: string | null;
+  queuedId?: string | undefined;
 }): { pathname: '/add'; params: AddRouteParams } {
   const params: AddRouteParams = {};
   const code = read.code ? normalizeCode(read.code) : null;
@@ -74,6 +84,7 @@ export function addProductRoute({
   if (name) params.name = name;
   if (quantity) params.quantity = quantity;
   if (cleanPhoto) params.photoPath = cleanPhoto;
+  if (queuedId) params.queuedId = queuedId;
   return { pathname: '/add', params };
 }
 
@@ -82,7 +93,9 @@ export function parseAddParams(
   raw: Record<string, string | string[] | undefined>,
 ): AddInitialValues {
   const rawCode = cleanParam(raw.code);
+  const queuedId = parseQueuedId(raw.queuedId);
   return {
+    ...(queuedId ? { queuedId } : {}),
     code: rawCode ? normalizeCode(rawCode) : null,
     brand: cleanParam(raw.brand),
     name: cleanParam(raw.name),
