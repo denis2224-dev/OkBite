@@ -26,3 +26,7 @@ verify_jwt = false
 
 [functions.report]
 verify_jwt = false
+
+# Auth and moderator membership are checked by the handler via Auth.getUser.
+[functions.moderate]
+verify_jwt = false
