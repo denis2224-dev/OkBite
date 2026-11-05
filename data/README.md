@@ -28,3 +28,7 @@ To check one (needs 30 in total: at least 5 per letter, 4 beverages, 3 cheeses, 
 4. Move the entry to `score-fixtures.json` with only the `ScoreFixture` fields (`name`, `scoreKind`, `nutrients`, `expectedPoints`, `expectedLetter`, `checkedWith`), then run `pnpm data:check` and `pnpm --filter @okbite/shared test score`.
 
 Beverages with a non-nutritive sweetener cannot be fixtures yet: `ScoreFixture` has no ingredients field (R2 request in PR #31).
+
+### Status (2026-11-05)
+
+`score-fixtures.json` holds 25 entries computed with the official calculator (FPS Belgium copy of the SpF updated-algorithm workbook), run by Claude on the OFF values; each `checkedWith` says so. Our engine matches all 25. Left out of it: Yaw (label kJ 1300 vs 365 kcal disagree), the mango drink (saturates missing), and the orange juice filed as a general food. Still needed for the plan's 30: 2 cheeses, 1 more A and 1 more B product, plus 1 more of any letter; and a person re-enters at least 5 of the 25 in the calculator and confirms them.

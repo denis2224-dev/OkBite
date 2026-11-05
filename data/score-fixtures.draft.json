@@ -26,9 +26,9 @@
       "points": -10,
       "letter": "A"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": -10,
+    "expectedLetter": "A",
+    "checkedWith": "SpF calculator <version>, Sergiu, 2026-11-05"
   },
   {
     "name": "Mandorle",
@@ -57,9 +57,9 @@
       "points": -11,
       "letter": "A"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": -11,
+    "expectedLetter": "A",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 24; label kJ 2447; not yet checked by a person"
   },
   {
     "name": "Brânză granulată 4%",
@@ -88,9 +88,9 @@
       "points": 0,
       "letter": "A"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 0,
+    "expectedLetter": "A",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 19; label kJ 462.5; not yet checked by a person"
   },
   {
     "name": "Pasta de tomate",
@@ -119,9 +119,9 @@
       "points": -2,
       "letter": "A"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 3,
+    "expectedLetter": "C",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 19; label kJ null; not yet checked by a person"
   },
   {
     "name": "Yaw",
@@ -178,9 +178,9 @@
       "unit": "g"
     },
     "offReference": null,
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 0,
+    "expectedLetter": "A",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10): plain water (\"Water without any addition\" = YES, no nutrients) gives Nutriscore_A and no points; points recorded as 0. Run by Claude 2026-11-05 on OFF rev 24; not yet checked by a person"
   },
   {
     "name": "Молоко пастеризованное",
@@ -209,9 +209,9 @@
       "points": 2,
       "letter": "B"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 2,
+    "expectedLetter": "B",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 14; label kJ null; not yet checked by a person"
   },
   {
     "name": "Apă potabilă",
@@ -240,9 +240,9 @@
       "points": 0,
       "letter": "B"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 0,
+    "expectedLetter": "B",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 21; label kJ 0; not yet checked by a person"
   },
   {
     "name": "Monastârschi",
@@ -271,9 +271,9 @@
       "points": 2,
       "letter": "B"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 2,
+    "expectedLetter": "B",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 12; label kJ 1081.6; not yet checked by a person"
   },
   {
     "name": "Suc juice",
@@ -333,9 +333,9 @@
       "points": 1,
       "letter": "B"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 1,
+    "expectedLetter": "B",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 17; label kJ 0; not yet checked by a person"
   },
   {
     "name": "Fruit2go prune uscate",
@@ -364,9 +364,9 @@
       "points": 2,
       "letter": "B"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 7,
+    "expectedLetter": "C",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 20; label kJ 974.5; not yet checked by a person"
   },
   {
     "name": "Pâine De Sud",
@@ -395,9 +395,9 @@
       "points": 4,
       "letter": "C"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 4,
+    "expectedLetter": "C",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 7; label kJ null; not yet checked by a person"
   },
   {
     "name": "Pâine Panmix Maia & Fibre",
@@ -426,9 +426,9 @@
       "points": 4,
       "letter": "C"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 4,
+    "expectedLetter": "C",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 4; label kJ 1067.7; not yet checked by a person"
   },
   {
     "name": "Biscottini",
@@ -457,9 +457,9 @@
       "points": 8,
       "letter": "C"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 8,
+    "expectedLetter": "C",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 6; label kJ null; not yet checked by a person"
   },
   {
     "name": "Prune uscate fără sâmburi",
@@ -488,9 +488,9 @@
       "points": 7,
       "letter": "C"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 7,
+    "expectedLetter": "C",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 24; label kJ 1002; not yet checked by a person"
   },
   {
     "name": "Seminte de floaréa soarelui prajite",
@@ -519,9 +519,9 @@
       "points": 7,
       "letter": "C"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 7,
+    "expectedLetter": "C",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 18; label kJ 2482; not yet checked by a person"
   },
   {
     "name": "Напиток манго",
@@ -581,9 +581,9 @@
       "points": 15,
       "letter": "D"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 15,
+    "expectedLetter": "D",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 17; label kJ 1033; not yet checked by a person"
   },
   {
     "name": "Smântână 15%",
@@ -612,9 +612,9 @@
       "points": 11,
       "letter": "D"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 11,
+    "expectedLetter": "D",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 5; label kJ 657; not yet checked by a person"
   },
   {
     "name": "Milk",
@@ -643,9 +643,9 @@
       "points": 7,
       "letter": "D"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 7,
+    "expectedLetter": "D",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 5; label kJ 312.5; not yet checked by a person"
   },
   {
     "name": "Petit beurre",
@@ -674,9 +674,9 @@
       "points": 17,
       "letter": "D"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 17,
+    "expectedLetter": "D",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 15; label kJ 1852.5; not yet checked by a person"
   },
   {
     "name": "Covrigei Cu Mac",
@@ -705,9 +705,9 @@
       "points": 12,
       "letter": "D"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 12,
+    "expectedLetter": "D",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 12; label kJ 1752; not yet checked by a person"
   },
   {
     "name": "Naturalis Tropic",
@@ -736,9 +736,9 @@
       "points": 13,
       "letter": "E"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 13,
+    "expectedLetter": "E",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 6; label kJ null; not yet checked by a person"
   },
   {
     "name": "Apple Juice",
@@ -767,9 +767,9 @@
       "points": 14,
       "letter": "E"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 20,
+    "expectedLetter": "E",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 6; label kJ 493; not yet checked by a person"
   },
   {
     "name": "Choco animal cookies",
@@ -798,9 +798,9 @@
       "points": 24,
       "letter": "E"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 24,
+    "expectedLetter": "E",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 12; label kJ 1973.7; not yet checked by a person"
   },
   {
     "name": "Salty Pretzel",
@@ -829,9 +829,9 @@
       "points": 26,
       "letter": "E"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 26,
+    "expectedLetter": "E",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 8; label kJ 1737.3; not yet checked by a person"
   },
   {
     "name": "Butterfly Biscuits",
@@ -860,8 +860,8 @@
       "points": 25,
       "letter": "E"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": 25,
+    "expectedLetter": "E",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 11; label kJ null; not yet checked by a person"
   }
 ]

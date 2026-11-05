@@ -1,0 +1,427 @@
+[
+  {
+    "name": "Roasted sunflower seeds (Dandar, 4840490000311)",
+    "scoreKind": "fat",
+    "nutrients": {
+      "kcal": 596,
+      "fat": 50,
+      "sat": 5.2,
+      "sugar": 3,
+      "salt": 0,
+      "protein": 19,
+      "fiber": 10,
+      "fruitVegPct": null
+    },
+    "expectedPoints": -10,
+    "expectedLetter": "A",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 19; label kJ 2474; also entered by Sergiu (-10, A)"
+  },
+  {
+    "name": "Mandorle (Amonatura, 4841900000143)",
+    "scoreKind": "fat",
+    "nutrients": {
+      "kcal": 592,
+      "fat": 51,
+      "sat": 4.9,
+      "sugar": 2,
+      "salt": 0.01,
+      "protein": 25,
+      "fiber": 13,
+      "fruitVegPct": null
+    },
+    "expectedPoints": -11,
+    "expectedLetter": "A",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 24; label kJ 2447; not yet checked by a person"
+  },
+  {
+    "name": "Brânză granulată 4% (JLC, 4840053000505)",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 110,
+      "fat": 4,
+      "sat": 2.5,
+      "sugar": 1.5,
+      "salt": 0.8,
+      "protein": 17,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 0,
+    "expectedLetter": "A",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 19; label kJ 462.5; not yet checked by a person"
+  },
+  {
+    "name": "Pasta de tomate (ALFA-NISTRU&quot; S.A., 4840019001881)",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 68,
+      "fat": 0.2,
+      "sat": 0.07,
+      "sugar": 11.3,
+      "salt": 0.2,
+      "protein": 1.3,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 3,
+    "expectedLetter": "C",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 19; label kJ null; not yet checked by a person"
+  },
+  {
+    "name": "Молоко пастеризованное (Lapmol, 4840331002023)",
+    "scoreKind": "beverage",
+    "nutrients": {
+      "kcal": 52.5,
+      "fat": 2.5,
+      "sat": 1.7,
+      "sugar": 4.7,
+      "salt": 0.1,
+      "protein": 2.8,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 2,
+    "expectedLetter": "B",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 14; label kJ null; not yet checked by a person"
+  },
+  {
+    "name": "Apă potabilă (OM, 4841257001275)",
+    "scoreKind": "beverage",
+    "nutrients": {
+      "kcal": 0,
+      "fat": 0,
+      "sat": 0,
+      "sugar": 0,
+      "salt": 0,
+      "protein": 0,
+      "fiber": 0,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 0,
+    "expectedLetter": "B",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 21; label kJ 0; not yet checked by a person"
+  },
+  {
+    "name": "Monastârschi (Milina, 4841031003259)",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 246,
+      "fat": 0.9,
+      "sat": 0.16,
+      "sugar": 1.5,
+      "salt": 1,
+      "protein": 7.5,
+      "fiber": 4.6,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 2,
+    "expectedLetter": "B",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 12; label kJ 1081.6; not yet checked by a person"
+  },
+  {
+    "name": "LAPTE (Căsuța mea, 4840362001095)",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 52.5,
+      "fat": 2.5,
+      "sat": 1.7,
+      "sugar": 4.7,
+      "salt": 0.1,
+      "protein": 2.8,
+      "fiber": 0,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 1,
+    "expectedLetter": "B",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 17; label kJ 0; not yet checked by a person"
+  },
+  {
+    "name": "Fruit2go prune uscate (Belevini, 4840801000269)",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 237,
+      "fat": 0.6,
+      "sat": 0.1,
+      "sugar": 36,
+      "salt": 0.0625,
+      "protein": 2.5,
+      "fiber": 9.6,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 7,
+    "expectedLetter": "C",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 20; label kJ 974.5; not yet checked by a person"
+  },
+  {
+    "name": "Pâine De Sud (милина, 4841031000340)",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 263,
+      "fat": 0.7,
+      "sat": 0.16,
+      "sugar": 1.4,
+      "salt": 0.895,
+      "protein": 8.2,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 4,
+    "expectedLetter": "C",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 7; label kJ null; not yet checked by a person"
+  },
+  {
+    "name": "Pâine Panmix Maia & Fibre (Franzeluța, 4840008040723)",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 258.6,
+      "fat": 4,
+      "sat": 0.4,
+      "sugar": 1.3,
+      "salt": 1,
+      "protein": 8,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 4,
+    "expectedLetter": "C",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 4; label kJ 1067.7; not yet checked by a person"
+  },
+  {
+    "name": "Biscottini (?, 4841572000922)",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 428.8,
+      "fat": 8,
+      "sat": 0.96,
+      "sugar": 6,
+      "salt": 1.3,
+      "protein": 8.2,
+      "fiber": 6.5,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 8,
+    "expectedLetter": "C",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 6; label kJ null; not yet checked by a person"
+  },
+  {
+    "name": "Prune uscate fără sâmburi (Fruit2go MONICOL, 4840801000702)",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 237,
+      "fat": 0.6,
+      "sat": 0.1,
+      "sugar": 36,
+      "salt": 0.02,
+      "protein": 2.5,
+      "fiber": 9.6,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 7,
+    "expectedLetter": "C",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 24; label kJ 1002; not yet checked by a person"
+  },
+  {
+    "name": "Seminte de floaréa soarelui prajite (Banzai, 4840811002024)",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 600,
+      "fat": 50,
+      "sat": 5.2,
+      "sugar": 2.7,
+      "salt": 0,
+      "protein": 19,
+      "fiber": 11,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 7,
+    "expectedLetter": "C",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 18; label kJ 2482; not yet checked by a person"
+  },
+  {
+    "name": "Latti Crema de branza cu usturoi (?, 4841259002058)",
+    "scoreKind": "cheese",
+    "nutrients": {
+      "kcal": 250,
+      "fat": 23,
+      "sat": 16,
+      "sugar": 3.8,
+      "salt": 0.7,
+      "protein": 5.8,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 15,
+    "expectedLetter": "D",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 17; label kJ 1033; not yet checked by a person"
+  },
+  {
+    "name": "Smântână 15% (Latti, 4841259004533)",
+    "scoreKind": "fat",
+    "nutrients": {
+      "kcal": 159,
+      "fat": 15,
+      "sat": 9.5,
+      "sugar": 3,
+      "salt": 0.00025,
+      "protein": 3,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 11,
+    "expectedLetter": "D",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 5; label kJ 657; not yet checked by a person"
+  },
+  {
+    "name": "Milk (Casuța Mea, 4840331002016)",
+    "scoreKind": "beverage",
+    "nutrients": {
+      "kcal": 75,
+      "fat": 5,
+      "sat": 2.5,
+      "sugar": 4.7,
+      "salt": 0.25,
+      "protein": 2.8,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 7,
+    "expectedLetter": "D",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 5; label kJ 312.5; not yet checked by a person"
+  },
+  {
+    "name": "Petit beurre (Nefis, 4840266003829)",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 432.142857142857,
+      "fat": 9.64285714285714,
+      "sat": 5,
+      "sugar": 21.4285714285714,
+      "salt": 0.535714285714286,
+      "protein": 8.57142857142857,
+      "fiber": 1.78571428571429,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 17,
+    "expectedLetter": "D",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 15; label kJ 1852.5; not yet checked by a person"
+  },
+  {
+    "name": "Covrigei Cu Mac (Galfim, 4840760000737)",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 420,
+      "fat": 11.7,
+      "sat": 1.3,
+      "sugar": 9.8,
+      "salt": 1,
+      "protein": 9.3,
+      "fiber": 0.2,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 12,
+    "expectedLetter": "D",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 12; label kJ 1752; not yet checked by a person"
+  },
+  {
+    "name": "Naturalis Tropic (?, 4840022009553)",
+    "scoreKind": "beverage",
+    "nutrients": {
+      "kcal": 45.8,
+      "fat": 0,
+      "sat": 0,
+      "sugar": 11.6,
+      "salt": 0,
+      "protein": 0,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 13,
+    "expectedLetter": "E",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 6; label kJ null; not yet checked by a person"
+  },
+  {
+    "name": "Apple Juice (?, 4840022006705)",
+    "scoreKind": "beverage",
+    "nutrients": {
+      "kcal": 112,
+      "fat": 0,
+      "sat": 0,
+      "sugar": 28,
+      "salt": 0,
+      "protein": 1,
+      "fiber": 0,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 20,
+    "expectedLetter": "E",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 6; label kJ 493; not yet checked by a person"
+  },
+  {
+    "name": "Choco animal cookies (Nefis, 4840266000651)",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 472,
+      "fat": 17,
+      "sat": 14,
+      "sugar": 30,
+      "salt": 0.255,
+      "protein": 7.1,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 24,
+    "expectedLetter": "E",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 12; label kJ 1973.7; not yet checked by a person"
+  },
+  {
+    "name": "Salty Pretzel (Nefis, 4840266003737)",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 411,
+      "fat": 7.9,
+      "sat": 3.3,
+      "sugar": 2.5,
+      "salt": 3.8,
+      "protein": 11,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 26,
+    "expectedLetter": "E",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 8; label kJ 1737.3; not yet checked by a person"
+  },
+  {
+    "name": "Butterfly Biscuits (?, 4840008019521)",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 466.66666666667,
+      "fat": 20,
+      "sat": 13.333333333333,
+      "sugar": 26.666666666667,
+      "salt": 0.65,
+      "protein": 6.6666666666667,
+      "fiber": 2,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 25,
+    "expectedLetter": "E",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 11; label kJ null; not yet checked by a person"
+  },
+  {
+    "name": "Izvorul Gura Căinarului (?, 4840237001595)",
+    "scoreKind": "water",
+    "nutrients": {
+      "kcal": null,
+      "fat": null,
+      "sat": null,
+      "sugar": null,
+      "salt": 0.10875,
+      "protein": null,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "expectedPoints": 0,
+    "expectedLetter": "A",
+    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10): plain water (\"Water without any addition\" = YES, no nutrients) gives Nutriscore_A and no points; points recorded as 0. Run by Claude 2026-11-05 on OFF rev 24; not yet checked by a person"
+  }
+]
