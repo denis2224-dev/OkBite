@@ -183,6 +183,8 @@ Then add `export type X = z.infer<typeof X>;` for every schema above (same name 
 
 ### Task C2: Database schema, RLS, search and seed (fully specified)
 
+Implemented and locally verified on `C2-database-schema` (2026-11-04). Review was explicitly waived by the user; no review or approval is recorded. C1/PR #4 remains the merge dependency. See `supabase/README.md` for evidence and handoff.
+
 **Files:**
 - Create: `supabase/config.toml` (via `supabase init`), `supabase/migrations/20261105000000_init.sql`, `supabase/seed.sql`
 - Test: `supabase/tests/rls.test.sql`, `supabase/tests/search.test.sql` (pgTAP)
@@ -190,10 +192,10 @@ Then add `export type X = z.infer<typeof X>;` for every schema above (same name 
 **Interfaces:**
 - Produces: tables `categories`, `ingredients`, `products`, `product_ingredients`, `reports`, `moderators`, `usage_events`, `client_errors`; SQL functions `is_moderator() returns boolean` and `search_products(q text, max_results int default 3) returns table(id uuid, name text, brand text, quantity text, image_path text, similarity real)`; view `daily_stats`; buckets `uploads` (private) and `products` (public).
 
-- [ ] **Step 1: Failing pgTAP tests** — anon can select a `verified` and an `unverified` product, not a `hidden` one; anon cannot insert into any table; `search_products('zorel iaurt capsuni')` returns the strawberry yogurt first with similarity ≥ 0.35; `search_products('branza')` matches a product named "Brânză …"; a hidden product never appears in search.
+- [x] **Step 1: Failing pgTAP tests** — anon can select a `verified` and an `unverified` product, not a `hidden` one; anon cannot insert into any table; `search_products('zorel iaurt capsuni')` returns the strawberry yogurt first with similarity ≥ 0.35; `search_products('branza')` matches a product named "Brânză …"; a hidden product never appears in search.
 Run: `supabase start && supabase test db` → Expected: FAIL.
 
-- [ ] **Step 2: Write the migration**
+- [x] **Step 2: Write the migration**
 
 ```sql
 create extension if not exists pg_trgm;
@@ -235,11 +237,11 @@ create table client_errors (id bigserial primary key, device_id text not null, m
 ```
 Then: `search_products` (`select … similarity(search_text, lower(f_unaccent(q))) … where status <> 'hidden' and search_text % lower(f_unaccent(q)) order by similarity desc limit max_results`, `stable`, `security definer`, with `set pg_trgm.similarity_threshold = 0.35`); `is_moderator()` (`security definer`); RLS on every table; anon `select` on `categories`, `ingredients`, `product_ingredients`, and `products where status <> 'hidden'`; moderators full access on `products`, `product_ingredients`, `reports`; no other policies (functions use the service role). View `daily_stats` per day: photos, barcodes, identified, not_found, read_labels, added. Buckets: `insert into storage.buckets (id, name, public) values ('uploads','uploads',false), ('products','products',true);`
 
-- [ ] **Step 3: Seed** — `seed.sql` inserts categories `iaurt` (Iaurturi, general), `biscuiti` (Biscuiți, general), `suc` (Sucuri, beverage); the ingredients used by the prototype products; and the 6 prototype products as `verified`, with the prototype's values and these checksum-valid codes (the prototype's own codes have wrong check digits): natural yogurt `4840001000014`, strawberry yogurt `4840001000021`, Greek yogurt `4840001000038`, oat-chocolate biscuits `4840001000045`, apple juice `4840001000052` (with `sat`, `sugar`, `salt`, `fiber` null), wholegrain biscuits `4840001000069`. Values come from the product table in `docs/prototype/Main.dc.html`.
+- [x] **Step 3: Seed** — `seed.sql` inserts categories `iaurt` (Iaurturi, general), `biscuiti` (Biscuiți, general), `suc` (Sucuri, beverage); the ingredients used by the prototype products; and the 6 prototype products as `verified`, with the prototype's values and these checksum-valid codes (the prototype's own codes have wrong check digits): natural yogurt `4840001000014`, strawberry yogurt `4840001000021`, Greek yogurt `4840001000038`, oat-chocolate biscuits `4840001000045`, apple juice `4840001000052` (with `sat`, `sugar`, `salt`, `fiber` null), wholegrain biscuits `4840001000069`. Values come from the product table in `docs/prototype/Main.dc.html`.
 
-- [ ] **Step 4: Run** — `supabase db reset && supabase test db` → Expected: PASS.
+- [x] **Step 4: Run** — `supabase db reset && supabase test db` → Expected: PASS.
 
-- [ ] **Step 5: Commit** — `feat(db): schema, RLS, trigram product search, buckets and seed`
+- [x] **Step 5: Commit** — `feat(db): schema, RLS, trigram product search, buckets and seed`
 
 ---
 
