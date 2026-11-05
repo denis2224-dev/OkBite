@@ -4,16 +4,11 @@ import { sep } from "node:path";
 import jpeg from "npm:jpeg-js@0.4.4";
 import { adminClient } from "../functions/_lib/client.ts";
 import { publishPhoto, saveJpeg } from "../functions/_lib/storage.ts";
+import { localApiUrl } from "../local-project.mjs";
 
 // Destructive steps are limited to fresh UUID fixtures created by this invocation.
-const url = new URL(Deno.env.get("SUPABASE_URL") ?? "");
-if (
-  url.protocol !== "http:" || !["127.0.0.1", "localhost"].includes(url.hostname)
-) {
-  throw new Error(
-    "Photo restore drill requires an explicit local-only Supabase URL",
-  );
-}
+const config = await Deno.readTextFile(new URL("../config.toml", import.meta.url));
+localApiUrl(config, Deno.env.get("SUPABASE_URL"));
 const directory = Deno.args[0];
 if (!directory) {
   throw new Error("Pass a private output directory outside the repository");

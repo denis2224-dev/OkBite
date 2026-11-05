@@ -28,3 +28,7 @@ To check one (needs 30 in total: at least 5 per letter, 4 beverages, 3 cheeses, 
 4. Move the entry to `score-fixtures.json` with only the `ScoreFixture` fields (`name`, `scoreKind`, `nutrients`, `expectedPoints`, `expectedLetter`, `checkedWith`), then run `pnpm data:check` and `pnpm --filter @okbite/shared test score`.
 
 Beverages with a non-nutritive sweetener cannot be fixtures yet: `ScoreFixture` has no ingredients field (R2 request in PR #31).
+
+### Status (2026-11-05)
+
+`score-fixtures.json` holds 31 entries (A 5, B 5, C 9, D 6, E 6; 5 beverages, 3 cheeses, 4 fats/oils/nuts, 1 water), each computed by Claude with the official calculator (FPS/SpF updated-algorithm workbook, health.belgium.be copy) on the Open Food Facts revision named in `checkedWith`. Our engine matches all 31. Rusu Serghei re-checked the first 25 on 2026-11-05; the 6 added after that (2 cheeses, Barilla Capellini, Vis beans, Floris sunflower oil, Activia natur) still say "not yet checked". Kept only in the draft: Yaw (label kJ and kcal disagree), the mango drink (saturates missing) and the orange juice filed as a general food.

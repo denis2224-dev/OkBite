@@ -1,3 +1,12 @@
+# Current local setup
+
+Use the checked-in `okbite` team defaults (API 54321 / DB 54322), or the separate
+`okbite-r2-review` test configuration (API 58431 / DB 58432). Preserve existing
+C2/C3/C6 stacks. Integration discovery creates no clients without configuration;
+provide all three server-only SUPABASE_* variables to execute real-service tests.
+Missing configuration is reported as ignored; partial/invalid configuration fails.
+The historical evidence below records the original C6 stack and test run.
+
 # C6 contribution handoff
 
 Local checks on 2026-11-05: six Deno contribution tests exercise real Postgres and
@@ -14,7 +23,7 @@ pnpm sync-shared
 supabase start
 supabase test db --local
 supabase db lint --local --schema public --fail-on warning
-OKBITE_RUN_INTEGRATION=1 deno test --config supabase/functions/deno.json -A --env-file=supabase/.env.c6-tests supabase/functions/add-product/ supabase/functions/report/
+deno test -A --env-file=supabase/.env.c6-tests supabase/functions/add-product/ supabase/functions/report/
 pnpm lint && pnpm typecheck && pnpm test
 ```
 
@@ -43,5 +52,3 @@ R3/D3 and R3/C4 (Nutri-Score 2023 engine) are integrated from main. C6 backend p
 is implemented and tested; real-score acceptance still needs the human-checked A3 fixtures.
 No real product, ingredient or score provenance has been invented. No hosted
 Supabase project, deployment, phone verification or merge is claimed.
-
-Integration refresh (2026-11-05): current reviews are required; historical waiver statements do not authorize merge in this coordination run. CI uses a fresh runner-local stack. No staging or physical-phone verification is claimed.

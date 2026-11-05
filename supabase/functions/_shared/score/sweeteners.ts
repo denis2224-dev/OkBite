@@ -6,9 +6,13 @@
 const E_NUMBERS = /\be[\s-]?(950|951|952|954|955|957|959|960a?|961|962|969)\b/;
 // Romanian label names, without diacritics. A human still has to check them against the RO text of
 // Reg. (CE) nr. 1333/2008, Anexa II; the E-numbers above are the authoritative match.
-const NAMES = /acesulfam|aspartam|ciclamat|zaharina|sucraloza|taumatina|neohesperidina|steviol|\bstevia\b|neotam|advantam/;
+const NAMES = /acesulfam|aspartam|ciclamat|zaharina|sucraloza|taumatina|neohesperidina|neotam|advantam/;
+// Steviol glycosides count only as E960a (from the plant). E960b/E960c and enzymatically produced
+// glycosides are outside Table 2's included list, so a stevia name alone never overrides them.
+const STEVIA = /steviol|\bstevia\b/;
+const NOT_E960A = /\be[\s-]?960[bc]\b|enzimatic/;
 
 export function hasNonNutritiveSweetener(ingredientsText: string): boolean {
   const plain = ingredientsText.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
-  return E_NUMBERS.test(plain) || NAMES.test(plain);
+  return E_NUMBERS.test(plain) || NAMES.test(plain) || (STEVIA.test(plain) && !NOT_E960A.test(plain));
 }

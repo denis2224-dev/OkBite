@@ -84,6 +84,12 @@ describe('fats, oils, nuts and seeds (2022 report, recap §2)', () => {
   });
 });
 
+it('fat ratio thresholds stay inclusive for decimal label values (5,8 g of 10 g = 58 % → 9 points)', () => {
+  const ratio = (sat: number, fat: number) =>
+    nutriScorePoints({ ...zero, sat, fat }, 'fat').components.satRatio;
+  expect([ratio(5.8, 10), ratio(5.79, 10), ratio(1, 10), ratio(0.99, 10), ratio(6.4, 10)]).toEqual([9, 8, 1, 0, 10]);
+});
+
 describe('beverages (2023 report, points allocation)', () => {
   it.each([
     [{ kcal: 7 }, 0], [{ kcal: 7.5 }, 1], [{ kcal: 22 }, 2], [{ kcal: 94 }, 10],
