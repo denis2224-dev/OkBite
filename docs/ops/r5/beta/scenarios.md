@@ -15,7 +15,7 @@ de mai jos nu este executat prin simpla existență a acestei fișe.
 | S07 | produs necunoscut: ingrediente + tabel, apoi aceeași poză | ambele variante duc la review; la aceeași poză nutritionImage este null |
 | S08 | corectați „0,3”, un câmp gol, un nutrient zero și unitatea necunoscută | 0.3, null și 0 rămân distincte; unitatea trebuie aleasă; save invalid rămâne blocat |
 | S09 | schimbați ingredientele și reveniți să refaceți fotografia | alergeni actualizați; identitatea editată păstrată; nu se pierde front photoPath |
-| S10 | salvați produsul necunoscut, apoi găsiți-l cu telefonul 2 și verificați ca moderator | produs vizibil „Neverificat”, același UUID pe telefonul 2; R2 consemnează verificarea |
+| S10 | salvați produsul necunoscut, apoi găsiți-l cu telefonul 2 și cereți verificarea de către R2 | produs vizibil „Neverificat”, același UUID pe telefonul 2; R2 consemnează verificarea |
 | S11 | deschideți un produs online; opriți rețeaua; deschideți istoricul; fotografiați offline; reporniți aplicația și rețeaua | istoricul și fotografia persistă; o singură intrare în coadă; retry rezolvă fără pierdere; candidates/not_found au reluare explicită |
 | S12 | provocați controlat offline/rate limit/eroare server pe staging, apoi retry | mesaj corect, aceeași fotografie reutilizabilă, fără salvări duplicate |
 | S13 | font 200%, light/dark, VoiceOver/TalkBack și navigare tastatură web | text lizibil, controale etichetate, fără clipping sau acțiuni inaccesibile |

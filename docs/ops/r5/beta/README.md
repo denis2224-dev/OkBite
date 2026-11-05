@@ -21,7 +21,8 @@ Folosiți [scenariile și fișa de dovadă](scenarios.md) și
   de moderator. Un gate blocat nu devine trecut prin folosirea mock-urilor.
 - R1 desemnează persoana care distribuie buildurile în conturile autorizate.
   Android primește linkul intern EAS; pentru iPhone, R1 gestionează înregistrarea
-  dispozitivului și buildul intern, sau oferă Safari. Nu se trimite la magazine.
+  dispozitivului și buildul intern, sau oferă Safari. Identificatorii dispozitivelor
+  se păstrează numai în sistemul autorizat de înregistrare. Nu se trimite la magazine.
 - R5 și echipa aleg canalul privat și persoana care primește feedbackul.
   Aceste materiale nu creează un formular public și nu trimit invitații automat.
 
@@ -29,8 +30,9 @@ Folosiți [scenariile și fișa de dovadă](scenarios.md) și
 
 Echipa invită colegi, familie și, dacă există contact autorizat, o comunitate
 interesată de alergeni. Participarea nu cere divulgarea unui diagnostic.
-R5 atribuie T01–T25 persoanelor reale și păstrează contactele separat, privat.
-Un participant poate verifica mai multe platforme, dar este numărat o singură dată.
+R5 atribuie T01–T25 participanților adulți din afara echipei R1–R5 și păstrează
+contactele separat, privat. Numărați o persoană o singură dată, după cel puțin
+un scenariu consemnat cu rezultatul și SHA-ul buildului.
 
 | Suprafață necesară | Dovadă cerută | Stare inițială |
 | --- | --- | --- |
@@ -60,7 +62,8 @@ invitație nu dovedește că cineva a fost contactat sau și-a dat acordul.
 R5 citește feedbackul zilnic și deduplică; operatorul uman deschide și atribuie
 issue-uri `beta` cu mediul,
 SHA-ul, pașii, rezultatul așteptat/observat, dovada redactată și proprietarul.
-Publicarea unui issue nu trebuie să expună contacte, chei sau fotografii private.
+Redactați contactele, identificatorii, cheile și fotografiile private înainte de
+publicarea unui issue.
 R1 coordonează integrarea; fiecare rol repară numai propriile căi.
 
 | Severitate | Exemple din plan / impact | Acțiune |
@@ -89,12 +92,15 @@ buildul corectat. „Nu am mai văzut problema” fără aceiași pași nu este 
 
 ## Registru privat și criteriu de ieșire
 
-Registrul per tester: ID, data sesiunii, platformele, SHA, scenariile efectuate,
-rezultatele, formular primit și issue-urile aferente. Nu păstrați în Git contacte
-sau răspunsuri care pot identifica persoana.
-Raport zilnic: persoane distincte care chiar au folosit aplicația / 25, acoperirea
-celor patru suprafețe, scenarii trecute/eșuate/blocate/neexecutate, P1/P2/P3 deschise.
+Registrul per tester: ID, data și canalul acordului pentru participare, data
+sesiunii, platformele, SHA, scenariile efectuate, rezultatele, formularul primit
+și issue-urile aferente. Nu păstrați în Git contacte sau răspunsuri care pot
+identifica persoana.
+Raport zilnic: participanți adulți distincți din afara echipei, cu minimum un
+scenariu consemnat cu rezultat și SHA / 25; acoperirea celor patru suprafețe;
+scenarii trecute/eșuate/blocate/neexecutate; P1/P2/P3 deschise.
 
-Gate-ul din 1 decembrie cere 25 de utilizatori reali și **zero P1 deschise**,
+Gate-ul din 1 decembrie cere 25 de participanți eligibili conform raportului
+zilnic și **zero P1 deschise**,
 împreună cu celelalte condiții din planul general. R5 raportează dovezile către R1;
 nu declară întreaga aplicație completă și nu publică builduri de producție.
