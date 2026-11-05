@@ -321,6 +321,6 @@ Run: `deno test --allow-all supabase/functions/lookup/` (with `supabase start`) 
 
 See `docs/integration/2026-11-05-repository-audit.md` for exact-SHA CI evidence,
 published dependency order and outstanding acceptance. C1/C2/C3 code is merged;
-C6/C7/C8 implementation is published. Real C4 scoring, staging/recovery and phone
+C6/C7/C8 code was also merged externally. Real C4 scoring, staging/recovery and phone
 acceptance remain incomplete. Historical review waivers do not apply to this
 coordination run: independent cross-review and human approval are still required.

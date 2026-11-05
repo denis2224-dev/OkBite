@@ -41,7 +41,8 @@ by hand, no alternative scaffold was added, and no shared branch was force-pushe
 | C3 HTTP | `8a0a9a5b522e9fd315df34093e6b6462cee29df9` | [CI success](https://github.com/denis2224-dev/OkBite/actions/runs/41987075792); 75 pgTAP assertions, DB lint, Deno and workspace checks |
 | C3 storage | `11b491021013439f08038108b322a8fc859ba66c` | [CI success](https://github.com/denis2224-dev/OkBite/actions/runs/41987080505) |
 | C3 lookup | `043746ebf9ae6eee247ecba22a0f170c58ff0932` | [CI success](https://github.com/denis2224-dev/OkBite/actions/runs/41988342868); 235 workspace tests, 11 Deno unit tests, 17 tests with local services, 75 pgTAP assertions |
-| Combined R2 code | `d3431019f3a3fb27cd9e1f2d3f44ae80666a9ba6` | [CI success](https://github.com/denis2224-dev/OkBite/actions/runs/41988512575); inspect this run for exact full-stack counts |
+| Combined R2 code | `d3431019f3a3fb27cd9e1f2d3f44ae80666a9ba6` | [CI success](https://github.com/denis2224-dev/OkBite/actions/runs/41988512575); 240 workspace tests, 14 Deno unit tests, 25 with local services, 87 pgTAP assertions |
+| Main after all backend merges | `3914c889293af9b6a0616db1aaea9f730a1cf9e4` | [CI success](https://github.com/denis2224-dev/OkBite/actions/runs/41989145729); 240 workspace tests, 14 Deno unit tests, 25 with local services, 87 pgTAP assertions |
 | New CI run isolation | `c46342048e6b7714fa655c7965efac990e9e0d90` | 2 local Node tests, ESLint and diff checks pass; exact-head service CI must also pass |
 
 Successful CI includes frozen pnpm installation, lint, strict typecheck, meaningful
@@ -97,7 +98,10 @@ could not be determined safely. PR descriptions could not be updated through tho
 channels. Ready-to-apply replacement bodies and the final exact-head CI snapshot
 are supplied in the coordinator's local delivery artifacts. The additional branch
 `CI-isolated-services` is published for a focused R1/R2 review; opening its PR was
-blocked by the same 403. These changes are also inherited by the backend stack.
+blocked by the same 403. The isolation fix and this report remain on that review
+branch, separate from the independently merged backend. A narrowly scoped push
+trigger verifies this branch even while PR creation is unavailable; it does not
+publish an app, change secrets or deploy anything.
 
 No shared C:\ASCS\OkBite files or pre-existing worktrees were edited. Its existing
 AGENTS.md change, staged/uncommitted work and all published branches were preserved.
