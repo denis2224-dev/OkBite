@@ -1,0 +1,1080 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<title>Pe Etichetă — prototip</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/10c9a67648e3be5c6fc8811302c1e4ce">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div class="app" style="font-family: Manrope, system-ui, sans-serif; color: #1C2420; background: #F7F4EC">
+
+<sc-if value="{{offline}}" hint-placeholder-val="{{false}}">
+<div class="offbar" role="status"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18M8.5 16.5a5 5 0 0 1 7 0M5 13a10 10 0 0 1 5-2.7M14 10.3A10 10 0 0 1 19 13M2 9.5a15 15 0 0 1 4-2.4M10.5 6.1A15 15 0 0 1 22 9.5"></path></svg><span>Fără conexiune · istoricul rămâne disponibil</span></div>
+</sc-if>
+
+<!-- ============ ACASĂ ============ -->
+<sc-if value="{{scr.home}}" hint-placeholder-val="{{true}}">
+<div class="screen">
+  <div class="top" style="padding: 12px 16px 6px">
+    <div style="display: flex; align-items: center; gap: 10px; flex: 1">
+      <div style="width: 38px; height: 38px; border-radius: 12px; background: #173A2A; color: #C8E07A; display: grid; place-items: center">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12.5L12 3.5h8.5V12L11.5 21z"></path><circle cx="16" cy="8" r="1.6"></circle></svg>
+      </div>
+      <div class="h" style="font-size: 21px; font-weight: 800; color: #173A2A">Pe Etichetă</div>
+    </div>
+    <button class="chip" style="background: #ECE7DA; color: #1C2420; min-height: 44px; cursor: pointer" onClick="{{openDemo}}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>
+      Stări demo
+    </button>
+  </div>
+  <div class="scroll">
+    <div style="background: #173A2A; color: #fff; border-radius: 24px; padding: 22px 20px 24px; margin-top: 8px; position: relative; overflow: hidden">
+      <svg width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="#C8E07A" stroke-width="1" stroke-linejoin="round" aria-hidden="true" style="position: absolute; right: -30px; top: -26px; opacity: 0.22"><path d="M3 12.5L12 3.5h8.5V12L11.5 21z"></path><circle cx="16" cy="8" r="1.6"></circle></svg>
+      <p class="lbl" style="color: #C8E07A">Asistentul tău la raft</p>
+      <h1 class="h" style="font-size: 30px; line-height: 1.08; margin: 8px 0 10px; font-weight: 800; max-width: 290px">Ce scrie, de fapt, pe etichetă?</h1>
+      <p style="margin: 0; color: #D3E1D6; font-size: 15px">Scanezi codul de bare și afli scorul nutrițional, alergenii și ce înseamnă fiecare ingredient.</p>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px">
+      <button class="card qa" onClick="{{startCapture}}">
+        <span style="width: 40px; height: 40px; border-radius: 12px; background: #E3EEDF; color: #173A2A; display: grid; place-items: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg></span>
+        <span><span style="display: block; font-weight: 800">Fotografiază eticheta</span><span class="mut" style="display: block; font-size: 13px">Pentru produse lipsă</span></span>
+      </button>
+      <button class="card qa" onClick="{{tabCompare}}">
+        <span style="width: 40px; height: 40px; border-radius: 12px; background: #E3EEDF; color: #173A2A; display: grid; place-items: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V10M12 20V4M19 20v-7"></path></svg></span>
+        <span><span style="display: block; font-weight: 800">Compară produse</span><span class="mut" style="display: block; font-size: 13px">Valori la 100 g</span></span>
+      </button>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin: 20px 0 8px">
+      <h2 class="h" style="font-size: 18px; margin: 0">Scanate recent</h2>
+      <button class="link" onClick="{{tabHistory}}">Vezi tot istoricul</button>
+    </div>
+    <sc-if value="{{hasHistory}}" hint-placeholder-val="{{true}}">
+      <div class="card" style="padding: 4px 0">
+        <sc-for list="{{recent}}" as="it" hint-placeholder-count="3">
+          <div class="rw">
+            <button class="row" onClick="{{it.open}}">
+              <span class="tile" style="background: {{it.tint}}; color: {{it.lid}}">{{it.ini}}</span>
+              <span style="flex: 1; min-width: 0"><span style="display: block; font-weight: 700">{{it.name}}</span><span class="mut" style="display: block; font-size: 13px">{{it.brand}} · {{it.t}}</span></span>
+              <span class="chip" style="background: {{it.g.bg}}; color: {{it.g.fg}}">{{it.scoreText}}</span>
+            </button>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{noHistory}}" hint-placeholder-val="{{false}}">
+      <div class="card mut" style="font-size: 14px">Încă nu ai scanat nimic. Produsele analizate apar aici și rămân disponibile fără internet.</div>
+    </sc-if>
+    <div class="card" style="margin-top: 12px">
+      <p class="lbl">Cum citești scorul</p>
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px">
+        <div style="display: flex; align-items: center; gap: 10px"><span class="chip" style="background: #E1EEDC; color: #1F4A35; min-width: 76px; justify-content: center">60–100</span><span style="font-weight: 600">Calitate nutrițională bună</span></div>
+        <div style="display: flex; align-items: center; gap: 10px"><span class="chip" style="background: #FCEFD2; color: #6B4600; min-width: 76px; justify-content: center">40–59</span><span style="font-weight: 600">Medie</span></div>
+        <div style="display: flex; align-items: center; gap: 10px"><span class="chip" style="background: #FBE3D8; color: #8E3417; min-width: 76px; justify-content: center">0–39</span><span style="font-weight: 600">Scăzută</span></div>
+      </div>
+      <p class="mut" style="font-size: 13px; margin: 12px 0 0">Scorul descrie calitatea nutrițională la 100 g, comparabilă în aceeași categorie. Nu arată probabilitatea unei boli. În prototip, scorurile sunt ilustrative.</p>
+    </div>
+  </div>
+  <div style="padding: 10px 16px 8px; background: #F7F4EC">
+    <button class="btn btn-p" style="min-height: 62px; font-size: 18px; border-radius: 20px" onClick="{{goScanner}}">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"></path></svg>
+      Scanează produsul
+    </button>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ SCANNER ============ -->
+<sc-if value="{{scr.scanner}}" hint-placeholder-val="{{false}}">
+<div class="screen">
+  <div class="top">
+    <button class="ib" aria-label="Înapoi" onClick="{{back}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></button>
+    <h1 class="h">Scanează codul de bare</h1>
+  </div>
+  <div class="scroll">
+    <sc-if value="{{camOk}}" hint-placeholder-val="{{true}}">
+      <div style="position: relative; height: 320px; border-radius: 24px; background: #10241A; overflow: hidden" role="img" aria-label="Previzualizare cameră cu chenar pentru codul de bare">
+        <div style="position: absolute; left: -20px; top: 30px; width: 130px; height: 200px; border-radius: 16px; background: #24412F; transform: rotate(-6deg)"></div>
+        <div style="position: absolute; right: -30px; top: 60px; width: 150px; height: 230px; border-radius: 16px; background: #1C3527; transform: rotate(5deg)"></div>
+        <div style="position: absolute; left: 50px; right: 50px; top: 82px; height: 140px; border-radius: 18px; background: rgba(255,253,248,0.94); display: grid; place-items: center">
+          <svg width="190" height="82" viewBox="0 0 190 82" aria-hidden="true"><g fill="#1C2420"><rect x="6" y="4" width="4" height="60"></rect><rect x="13" y="4" width="2" height="60"></rect><rect x="19" y="4" width="5" height="60"></rect><rect x="28" y="4" width="2" height="60"></rect><rect x="34" y="4" width="3" height="60"></rect><rect x="41" y="4" width="6" height="60"></rect><rect x="51" y="4" width="2" height="60"></rect><rect x="57" y="4" width="4" height="60"></rect><rect x="65" y="4" width="2" height="60"></rect><rect x="71" y="4" width="5" height="60"></rect><rect x="80" y="4" width="3" height="60"></rect><rect x="87" y="4" width="2" height="60"></rect><rect x="93" y="4" width="6" height="60"></rect><rect x="103" y="4" width="2" height="60"></rect><rect x="109" y="4" width="4" height="60"></rect><rect x="117" y="4" width="3" height="60"></rect><rect x="124" y="4" width="5" height="60"></rect><rect x="133" y="4" width="2" height="60"></rect><rect x="139" y="4" width="4" height="60"></rect><rect x="147" y="4" width="2" height="60"></rect><rect x="153" y="4" width="6" height="60"></rect><rect x="163" y="4" width="2" height="60"></rect><rect x="169" y="4" width="4" height="60"></rect><rect x="177" y="4" width="5" height="60"></rect></g><text x="95" y="79" text-anchor="middle" font-family="Manrope, sans-serif" font-size="12" font-weight="700" fill="#1C2420" letter-spacing="2">4 840001 000024</text></svg>
+        </div>
+        <div style="position: absolute; left: 34px; right: 34px; top: 66px; height: 172px; border-radius: 22px; border: 3px solid #C8E07A">
+          <div class="laser"></div>
+        </div>
+        <p style="position: absolute; bottom: 16px; left: 0; right: 0; text-align: center; color: #fff; margin: 0; font-weight: 700">Încadrează codul de bare în chenar</p>
+      </div>
+    </sc-if>
+    <sc-if value="{{camDenied}}" hint-placeholder-val="{{false}}">
+      <div class="card" style="text-align: center; padding: 26px 18px">
+        <div style="width: 64px; height: 64px; border-radius: 32px; background: #FBE3D8; color: #8E3417; display: grid; place-items: center; margin: 0 auto 12px">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><path d="M3 3l18 18"></path></svg>
+        </div>
+        <h2 class="h" style="font-size: 21px; margin: 0 0 6px">Camera nu este permisă</h2>
+        <p class="mut" style="margin: 0 0 16px; font-size: 14px">Fără acces la cameră nu putem citi codul de bare. Poți permite accesul din setările browserului (Setări › Site-uri › Pe Etichetă › Cameră) sau poți introduce codul mai jos.</p>
+        <button class="btn btn-p" onClick="{{allowCam}}">Am permis accesul, reîncearcă</button>
+      </div>
+    </sc-if>
+    <div class="card" style="margin-top: 12px">
+      <label for="cod" class="h" style="font-size: 16px; font-weight: 700; display: block">Introdu codul manual</label>
+      <p class="mut" style="font-size: 13px; margin: 2px 0 10px">Cifrele de sub codul de bare: 8 sau 13.</p>
+      <div style="display: flex; gap: 8px">
+        <input id="cod" class="field" inputmode="numeric" autocomplete="off" placeholder="ex. 4840001000017" value="{{manual}}" onChange="{{onManual}}">
+        <button class="btn btn-p" style="width: auto; min-width: 92px" onClick="{{submitManual}}">Caută</button>
+      </div>
+      <sc-if value="{{hasManualErr}}" hint-placeholder-val="{{false}}">
+        <p role="alert" style="color: #8E3417; font-size: 13px; font-weight: 700; margin: 8px 0 0">{{manualErr}}</p>
+      </sc-if>
+    </div>
+    <div style="margin-top: 18px">
+      <p class="lbl">Simulează scanarea · date demo</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px">
+        <sc-for list="{{demoCodes}}" as="d" hint-placeholder-count="6">
+          <button class="chip demo" onClick="{{d.scan}}">{{d.label}}</button>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ CONFIRMARE PRODUS ============ -->
+<sc-if value="{{scr.confirm}}" hint-placeholder-val="{{false}}">
+<div class="screen">
+  <div class="top">
+    <button class="ib" aria-label="Înapoi" onClick="{{back}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></button>
+    <h1 class="h">Confirmă produsul</h1>
+  </div>
+  <div class="scroll">
+    <div class="card" style="text-align: center; padding: 24px 18px">
+      <div class="hero" style="width: 168px; height: 176px; margin: 0 auto 14px; background: {{v.tint}}">
+        <sc-if value="{{v.isJar}}" hint-placeholder-val="{{true}}"><svg viewBox="0 0 96 116" aria-hidden="true"><rect x="14" y="4" width="68" height="16" rx="6" fill="{{v.lid}}"></rect><path d="M18 20h60v80a12 12 0 0 1-12 12H30a12 12 0 0 1-12-12z" fill="#FFFFFF"></path><rect x="18" y="46" width="60" height="34" fill="{{v.lid}}" opacity="0.14"></rect><text x="48" y="67" text-anchor="middle" font-family="Manrope, sans-serif" font-size="10" font-weight="800" fill="{{v.lid}}">{{v.short}}</text></svg></sc-if>
+        <sc-if value="{{v.isBox}}" hint-placeholder-val="{{false}}"><svg viewBox="0 0 116 96" aria-hidden="true"><rect x="6" y="12" width="104" height="72" rx="8" fill="#FFFFFF"></rect><rect x="6" y="34" width="104" height="26" fill="{{v.lid}}" opacity="0.15"></rect><circle cx="88" cy="24" r="7" fill="{{v.lid}}" opacity="0.35"></circle><circle cx="74" cy="72" r="6" fill="{{v.lid}}" opacity="0.25"></circle><text x="58" y="51" text-anchor="middle" font-family="Manrope, sans-serif" font-size="10" font-weight="800" fill="{{v.lid}}">{{v.short}}</text></svg></sc-if>
+        <sc-if value="{{v.isCarton}}" hint-placeholder-val="{{false}}"><svg viewBox="0 0 80 120" aria-hidden="true"><path d="M16 22l8-14h32l8 14v90H16z" fill="#FFFFFF"></path><path d="M16 22h48" stroke="{{v.lid}}" stroke-width="2"></path><circle cx="40" cy="44" r="10" fill="{{v.lid}}" opacity="0.4"></circle><rect x="16" y="62" width="48" height="26" fill="{{v.lid}}" opacity="0.15"></rect><text x="40" y="79" text-anchor="middle" font-family="Manrope, sans-serif" font-size="8" font-weight="800" fill="{{v.lid}}">{{v.short}}</text></svg></sc-if>
+        <span class="ptag">FOTO DEMO</span>
+      </div>
+      <div class="mut" style="font-size: 13px">Cod {{v.code}}</div>
+      <h2 class="h" style="font-size: 24px; line-height: 1.15; margin: 6px 0 4px">{{v.name}}</h2>
+      <div class="mut" style="font-size: 15px">{{v.brand}} · {{v.qty}}</div>
+    </div>
+    <p class="mut" style="text-align: center; margin: 16px 12px 0; font-size: 14px">Verifică dacă denumirea și gramajul corespund produsului din mână.</p>
+  </div>
+  <div class="dock">
+    <button class="btn btn-p" onClick="{{confirmYes}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Da, arată analiza</button>
+    <button class="btn btn-o" onClick="{{confirmNo}}">Nu, e alt produs</button>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ REZULTAT ============ -->
+<sc-if value="{{scr.result}}" hint-placeholder-val="{{false}}">
+<div class="screen">
+  <div class="top">
+    <button class="ib" aria-label="Înapoi" onClick="{{back}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></button>
+    <h1 class="h">Analiza produsului</h1>
+    <button class="ib" aria-label="Vezi eticheta originală" onClick="{{openLabel}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"></path><path d="M14 3v4h4M10 12h5M10 16h5"></path></svg></button>
+  </div>
+  <div class="scroll">
+    <div style="display: flex; gap: 14px; align-items: center">
+      <div class="hero" style="width: 104px; height: 112px; background: {{v.tint}}">
+        <sc-if value="{{v.isJar}}" hint-placeholder-val="{{true}}"><svg viewBox="0 0 96 116" aria-hidden="true"><rect x="14" y="4" width="68" height="16" rx="6" fill="{{v.lid}}"></rect><path d="M18 20h60v80a12 12 0 0 1-12 12H30a12 12 0 0 1-12-12z" fill="#FFFFFF"></path><rect x="18" y="46" width="60" height="34" fill="{{v.lid}}" opacity="0.14"></rect><text x="48" y="67" text-anchor="middle" font-family="Manrope, sans-serif" font-size="10" font-weight="800" fill="{{v.lid}}">{{v.short}}</text></svg></sc-if>
+        <sc-if value="{{v.isBox}}" hint-placeholder-val="{{false}}"><svg viewBox="0 0 116 96" aria-hidden="true"><rect x="6" y="12" width="104" height="72" rx="8" fill="#FFFFFF"></rect><rect x="6" y="34" width="104" height="26" fill="{{v.lid}}" opacity="0.15"></rect><circle cx="88" cy="24" r="7" fill="{{v.lid}}" opacity="0.35"></circle><circle cx="74" cy="72" r="6" fill="{{v.lid}}" opacity="0.25"></circle><text x="58" y="51" text-anchor="middle" font-family="Manrope, sans-serif" font-size="10" font-weight="800" fill="{{v.lid}}">{{v.short}}</text></svg></sc-if>
+        <sc-if value="{{v.isCarton}}" hint-placeholder-val="{{false}}"><svg viewBox="0 0 80 120" aria-hidden="true"><path d="M16 22l8-14h32l8 14v90H16z" fill="#FFFFFF"></path><path d="M16 22h48" stroke="{{v.lid}}" stroke-width="2"></path><circle cx="40" cy="44" r="10" fill="{{v.lid}}" opacity="0.4"></circle><rect x="16" y="62" width="48" height="26" fill="{{v.lid}}" opacity="0.15"></rect><text x="40" y="79" text-anchor="middle" font-family="Manrope, sans-serif" font-size="8" font-weight="800" fill="{{v.lid}}">{{v.short}}</text></svg></sc-if>
+      </div>
+      <div style="flex: 1; min-width: 0">
+        <sc-if value="{{v.isUser}}" hint-placeholder-val="{{false}}"><span class="chip sm" style="background: #FCEFD2; color: #6B4600">Introdus de tine · neverificat</span></sc-if>
+        <h2 class="h" style="font-size: 22px; line-height: 1.15; margin: 4px 0">{{v.name}}</h2>
+        <div class="mut" style="font-size: 14px">{{v.brand}} · {{v.qty}}</div>
+        <div class="mut" style="font-size: 12px; margin-top: 2px">Cod {{v.code}}</div>
+      </div>
+    </div>
+
+    <section class="card" style="margin-top: 14px; background: #FFF5D9; border-color: #E8D29A" aria-labelledby="alg">
+      <div style="display: flex; align-items: center; gap: 8px; color: #5A3D00">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"></path><path d="M12 10v4M12 17v.5"></path></svg>
+        <h3 id="alg" class="h" style="margin: 0; font-size: 16px">Alergeni declarați</h3>
+      </div>
+      <sc-if value="{{v.hasAllergens}}" hint-placeholder-val="{{true}}">
+        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px">
+          <sc-for list="{{v.allergens}}" as="a" hint-placeholder-count="1"><span class="chip" style="background: #5A3D00; color: #fff">{{a}}</span></sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{v.noAllergens}}" hint-placeholder-val="{{false}}">
+        <p style="margin: 8px 0 0; color: #5A3D00; font-size: 14px">Eticheta nu declară alergeni. Dacă ai o alergie severă, verifică și ambalajul.</p>
+      </sc-if>
+      <sc-if value="{{v.hasMay}}" hint-placeholder-val="{{false}}">
+        <p style="margin: 12px 0 6px; font-size: 13px; font-weight: 800; color: #5A3D00">Poate conține urme de:</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px">
+          <sc-for list="{{v.may}}" as="m" hint-placeholder-count="1"><span class="chip" style="background: transparent; color: #5A3D00; border: 1.5px solid #B08A3A">{{m}}</span></sc-for>
+        </div>
+      </sc-if>
+    </section>
+
+    <section class="card" style="margin-top: 12px" aria-labelledby="scr">
+      <sc-if value="{{v.hasScore}}" hint-placeholder-val="{{true}}">
+        <div style="display: flex; gap: 16px; align-items: center">
+          <div style="position: relative; width: 120px; height: 120px; flex: none">
+            <svg width="120" height="120" viewBox="0 0 128 128" role="img" aria-label="{{v.ringLabel}}"><circle cx="64" cy="64" r="52" fill="none" stroke="#ECE6D8" stroke-width="12"></circle><circle cx="64" cy="64" r="52" fill="none" stroke="{{v.g.ring}}" stroke-width="12" stroke-linecap="round" stroke-dasharray="{{v.dash}}" transform="rotate(-90 64 64)"></circle></svg>
+            <div style="position: absolute; inset: 0; display: grid; place-items: center; text-align: center" aria-hidden="true">
+              <div><div class="h" style="font-size: 38px; font-weight: 800; line-height: 1">{{v.score}}</div><div style="font-size: 12px; color: #56615A; font-weight: 700">din 100</div></div>
+            </div>
+          </div>
+          <div style="flex: 1">
+            <p id="scr" class="lbl">Calitate nutrițională</p>
+            <span class="chip" style="background: {{v.g.bg}}; color: {{v.g.fg}}; margin-top: 6px; font-size: 15px">{{v.g.label}}</span>
+            <p style="font-size: 12px; color: #56615A; margin: 8px 0 0">Scor ilustrativ · date demo. Calculat la 100 g; nu indică riscul unei boli.</p>
+          </div>
+        </div>
+        <h3 class="h" style="font-size: 16px; margin: 18px 0 4px">De ce acest scor</h3>
+        <sc-for list="{{v.reasons}}" as="r" hint-placeholder-count="3">
+          <div style="display: flex; gap: 12px; padding: 10px 0; border-top: 1px solid #EFEADF">
+            <div style="width: 28px; height: 28px; border-radius: 14px; flex: none; display: grid; place-items: center; font-weight: 800; background: {{r.bg}}; color: {{r.fg}}" aria-hidden="true">{{r.sym}}</div>
+            <div><div style="font-weight: 700"><span class="sr">{{r.tone}}: </span>{{r.t}}</div><div style="font-size: 14px; color: #56615A">{{r.d}}</div></div>
+          </div>
+        </sc-for>
+      </sc-if>
+      <sc-if value="{{v.noScore}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; gap: 16px; align-items: center">
+          <div style="width: 120px; height: 120px; border-radius: 60px; border: 12px solid #ECE6D8; display: grid; place-items: center; flex: none" aria-hidden="true"><span class="h" style="font-size: 34px; font-weight: 800; color: #6F766F">?</span></div>
+          <div>
+            <p id="scr" class="lbl">Calitate nutrițională</p>
+            <div class="h" style="font-size: 21px; font-weight: 800; margin-top: 4px">Scor indisponibil</div>
+            <p style="font-size: 13px; color: #56615A; margin: 6px 0 0">{{v.missing}}</p>
+          </div>
+        </div>
+        <sc-if value="{{v.pendingNo}}" hint-placeholder-val="{{true}}">
+          <button class="btn btn-p" style="margin-top: 16px" onClick="{{captureTable}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg>Fotografiază tabelul nutrițional</button>
+        </sc-if>
+        <sc-if value="{{v.pending}}" hint-placeholder-val="{{false}}">
+          <div style="margin-top: 14px; background: #E3EEDF; color: #1F4A35; border-radius: 14px; padding: 12px 14px; font-weight: 700; font-size: 14px">Ai trimis tabelul nutrițional. Scorul apare după verificarea echipei.</div>
+        </sc-if>
+      </sc-if>
+    </section>
+
+    <section class="card" style="margin-top: 12px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px">
+        <h3 class="h" style="margin: 0; font-size: 16px">Într-o porție</h3>
+        <span class="mut" style="font-size: 13px">{{v.portionName}}</span>
+      </div>
+      <sc-for list="{{v.prows}}" as="q" hint-placeholder-count="4">
+        <div style="padding: 10px 0 2px">
+          <div style="display: flex; justify-content: space-between"><span style="font-weight: 600">{{q.l}}</span><span style="font-weight: 800; {{q.vst}}">{{q.v}}</span></div>
+          <div style="height: 6px; border-radius: 3px; background: #EFEADF; margin-top: 6px"><div style="height: 6px; border-radius: 3px; background: #2E6B45; {{q.bar}}"></div></div>
+          <div style="font-size: 12px; color: #56615A; margin-top: 4px">{{q.ri}}</div>
+        </div>
+      </sc-for>
+      <sc-if value="{{v.hasSpoon}}" hint-placeholder-val="{{true}}">
+        <div style="margin-top: 10px; background: #E3EEDF; border-radius: 14px; padding: 10px 12px; font-size: 14px; color: #1F4A35; font-weight: 700">{{v.spoon}}</div>
+      </sc-if>
+      <p style="font-size: 12px; color: #56615A; margin: 10px 0 0">Referința zilnică pentru un adult: 2000 kcal, 90 g zaharuri, 20 g grăsimi saturate, 6 g sare.</p>
+    </section>
+
+    <section class="card" style="margin-top: 12px">
+      <h3 class="h" style="margin: 0 0 10px; font-size: 16px">Sursa informațiilor</h3>
+      <div style="display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 6px 10px; font-size: 14px">
+        <span class="mut">Sursă</span><span style="font-weight: 600">{{v.source}}</span>
+        <span class="mut">Fotografie</span><span style="font-weight: 600">{{v.photo}}</span>
+        <span class="mut">Verificat</span><span style="font-weight: 600">{{v.checked}}</span>
+      </div>
+      <button class="btn btn-o" style="margin-top: 14px" onClick="{{openLabel}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"></path><path d="M14 3v4h4M10 12h5M10 16h5"></path></svg>Vezi eticheta originală</button>
+      <div style="text-align: center"><button class="link" onClick="{{report}}">Raportează o greșeală</button></div>
+    </section>
+  </div>
+  <div class="dock" style="flex-direction: row">
+    <button class="btn btn-p" onClick="{{goIngredients}}">Ingrediente explicate</button>
+    <sc-if value="{{v.canCompare}}" hint-placeholder-val="{{true}}">
+      <button class="btn btn-s" style="width: auto; padding: 0 18px" onClick="{{compareFrom}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V10M12 20V4M19 20v-7"></path></svg>Compară</button>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ INGREDIENTE ============ -->
+<sc-if value="{{scr.ingredients}}" hint-placeholder-val="{{false}}">
+<div class="screen">
+  <div class="top">
+    <button class="ib" aria-label="Înapoi" onClick="{{back}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></button>
+    <h1 class="h">Ingrediente explicate</h1>
+  </div>
+  <div class="scroll">
+    <div class="mut" style="font-size: 14px">{{v.name}} · {{v.brand}}</div>
+    <div class="h" style="font-size: 22px; font-weight: 800; margin: 2px 0 4px">{{ingSummary}}</div>
+    <p class="mut" style="font-size: 14px; margin: 0">Atinge un ingredient ca să vezi rolul lui și sursa explicației.</p>
+    <sc-if value="{{v.hasAllergens}}" hint-placeholder-val="{{true}}">
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 12px; background: #FFF5D9; border: 1px solid #E8D29A; border-radius: 14px; padding: 10px 12px">
+        <span style="font-weight: 800; color: #5A3D00; font-size: 14px">Alergeni:</span>
+        <sc-for list="{{v.allergens}}" as="a" hint-placeholder-count="1"><span class="chip sm" style="background: #5A3D00; color: #fff">{{a}}</span></sc-for>
+      </div>
+    </sc-if>
+    <sc-for list="{{groups}}" as="gr" hint-placeholder-count="3">
+      <h2 class="lbl" style="margin: 20px 0 8px">{{gr.name}} · {{gr.count}}</h2>
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <sc-for list="{{gr.items}}" as="it" hint-placeholder-count="2">
+          <div class="card" style="padding: 0; overflow: hidden">
+            <button class="acc" aria-expanded="{{it.exp}}" onClick="{{it.toggle}}">
+              <span style="flex: 1; min-width: 0">
+                <span style="display: block; font-weight: 700; font-size: 16px">{{it.name}}</span>
+                <span style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px">
+                  <span class="chip sm" style="background: #E3EEDF; color: #1F4A35">{{it.role}}</span>
+                  <sc-if value="{{it.allergen}}" hint-placeholder-val="{{false}}"><span class="chip sm" style="background: #5A3D00; color: #fff">Alergen</span></sc-if>
+                </span>
+              </span>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; transition: transform .2s; {{it.rot}}"><path d="M6 9l6 6 6-6"></path></svg>
+            </button>
+            <sc-if value="{{it.open}}" hint-placeholder-val="{{false}}">
+              <div style="padding: 0 16px 16px">
+                <p style="margin: 0 0 10px">{{it.d}}</p>
+                <div style="font-size: 12px; color: #56615A; display: flex; gap: 6px; align-items: flex-start">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8v.5"></path></svg>
+                  <span>Sursa explicației: {{it.src}}</span>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </sc-for>
+    <section class="card" style="margin-top: 20px">
+      <p class="lbl">Textul de pe etichetă</p>
+      <p style="margin: 8px 0 12px; font-size: 14px">{{v.ingText}}</p>
+      <button class="btn btn-o" onClick="{{openLabel}}">Verifică fotografia etichetei</button>
+    </section>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ COMPARAȚIE ============ -->
+<sc-if value="{{scr.compare}}" hint-placeholder-val="{{false}}">
+<div class="screen">
+  <div class="top" style="min-height: 64px; {{topPad}}">
+    <sc-if value="{{canBack}}" hint-placeholder-val="{{false}}">
+      <button class="ib" aria-label="Înapoi" onClick="{{back}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></button>
+    </sc-if>
+    <div style="flex: 1"><h1 class="h" style="font-size: 20px; margin: 0">Comparație</h1><div class="mut" style="font-size: 13px">{{cmp.cat}} · valori la 100 {{cmp.unit}}</div></div>
+  </div>
+  <div class="scroll">
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <div class="card" style="padding: 14px">
+        <p class="lbl">Produsul A</p>
+        <span class="tile" style="margin-top: 8px; background: {{cmp.a.tint}}; color: {{cmp.a.lid}}">{{cmp.a.ini}}</span>
+        <div style="font-weight: 800; margin-top: 8px; line-height: 1.25">{{cmp.a.name}}</div>
+        <div class="mut" style="font-size: 13px">{{cmp.a.brand}}</div>
+        <span class="chip" style="margin-top: 8px; background: {{cmp.a.g.bg}}; color: {{cmp.a.g.fg}}">{{cmp.a.score}} · {{cmp.a.g.label}}</span>
+      </div>
+      <div class="card" style="padding: 14px">
+        <p class="lbl">Produsul B</p>
+        <span class="tile" style="margin-top: 8px; background: {{cmp.b.tint}}; color: {{cmp.b.lid}}">{{cmp.b.ini}}</span>
+        <div style="font-weight: 800; margin-top: 8px; line-height: 1.25">{{cmp.b.name}}</div>
+        <div class="mut" style="font-size: 13px">{{cmp.b.brand}}</div>
+        <span class="chip" style="margin-top: 8px; background: {{cmp.b.g.bg}}; color: {{cmp.b.g.fg}}">{{cmp.b.score}} · {{cmp.b.g.label}}</span>
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px; margin-top: 10px">
+      <button class="btn btn-s" style="min-height: 44px; font-size: 14px" onClick="{{swapB}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h12l-3-3M17 17H5l3 3"></path></svg>Schimbă produsul B</button>
+      <button class="btn btn-s" style="min-height: 44px; font-size: 14px" onClick="{{switchCat}}">Altă categorie</button>
+    </div>
+    <section class="card" style="margin-top: 12px; padding: 8px 14px 12px" aria-label="Tabel comparativ la 100 de grame">
+      <div class="cg" style="padding: 8px 0">
+        <span class="lbl">La 100 {{cmp.unit}}</span>
+        <span class="lbl" style="text-align: center">A</span>
+        <span class="lbl" style="text-align: center">B</span>
+      </div>
+      <sc-for list="{{cmp.rows}}" as="r" hint-placeholder-count="7">
+        <div class="cg" style="padding: 9px 0; border-top: 1px solid #EFEADF">
+          <div><div style="font-weight: 700; font-size: 14px">{{r.l}}</div><div style="font-size: 12px; color: #56615A">{{r.diff}}</div></div>
+          <div style="text-align: center; padding: 6px 4px; border-radius: 10px; font-size: 15px; {{r.aSt}}">{{r.av}}</div>
+          <div style="text-align: center; padding: 6px 4px; border-radius: 10px; font-size: 15px; {{r.bSt}}">{{r.bv}}</div>
+        </div>
+      </sc-for>
+      <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; color: #56615A">
+        <span style="width: 18px; height: 14px; border-radius: 4px; background: #D5E8CE; flex: none"></span>Valoarea mai favorabilă dintre cele două
+      </div>
+    </section>
+    <section class="card" style="margin-top: 12px; background: #173A2A; border-color: #173A2A; color: #fff">
+      <p class="lbl" style="color: #C8E07A">Pe scurt</p>
+      <p style="margin: 6px 0 0; font-size: 16px; font-weight: 600">{{cmp.summary}}</p>
+    </section>
+    <section class="card" style="margin-top: 12px; background: #FFF5D9; border-color: #E8D29A; color: #5A3D00">
+      <h3 class="h" style="margin: 0 0 8px; font-size: 16px">Alergeni declarați</h3>
+      <div style="font-size: 14px"><strong>A:</strong> {{cmp.a.alg}}</div>
+      <div style="font-size: 14px; margin-top: 4px"><strong>B:</strong> {{cmp.b.alg}}</div>
+    </section>
+    <p class="mut" style="font-size: 12px; margin: 12px 4px 0">Scorurile sunt ilustrative și comparabile doar în aceeași categorie de produse.</p>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ FOTOGRAFIERE ============ -->
+<sc-if value="{{scr.capture}}" hint-placeholder-val="{{false}}">
+<div class="screen" style="background: #0F1F17; color: #fff">
+  <div class="top">
+    <button class="ib" aria-label="Înapoi" onClick="{{back}}" style="color: #fff"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></button>
+    <h1 class="h" style="color: #fff">{{cap.title}}</h1>
+  </div>
+  <div style="padding: 0 16px">
+    <div style="display: flex; gap: 6px" aria-hidden="true">
+      <div style="flex: 1; height: 5px; border-radius: 3px; {{cap.s1}}"></div>
+      <div style="flex: 1; height: 5px; border-radius: 3px; {{cap.s2}}"></div>
+    </div>
+    <p style="margin: 10px 0 0; color: #D3E1D6; font-size: 14px">{{cap.hint}}</p>
+  </div>
+  <sc-if value="{{camOk}}" hint-placeholder-val="{{true}}">
+    <div style="flex: 1; margin: 14px 16px; border-radius: 22px; position: relative; overflow: hidden; background: #1B3326" role="img" aria-label="Previzualizare cameră cu eticheta în chenar">
+      <div style="position: absolute; left: 44px; right: 44px; top: 40px; bottom: 40px; background: #F4EEDF; border-radius: 6px; transform: rotate(-2deg); padding: 18px 16px; color: #3F4842">
+        <sc-if value="{{cap.isIng}}" hint-placeholder-val="{{true}}">
+          <div style="font-weight: 800; font-size: 11px; letter-spacing: .06em">INGREDIENTE</div>
+          <div style="height: 6px; background: #CFC6B2; border-radius: 3px; margin-top: 10px"></div>
+          <div style="height: 6px; background: #CFC6B2; border-radius: 3px; margin-top: 8px; width: 92%"></div>
+          <div style="height: 6px; background: #CFC6B2; border-radius: 3px; margin-top: 8px; width: 96%"></div>
+          <div style="height: 6px; background: #CFC6B2; border-radius: 3px; margin-top: 8px; width: 70%"></div>
+          <div style="height: 6px; background: #CFC6B2; border-radius: 3px; margin-top: 8px; width: 84%"></div>
+        </sc-if>
+        <sc-if value="{{cap.isTab}}" hint-placeholder-val="{{false}}">
+          <div style="font-weight: 800; font-size: 11px; letter-spacing: .06em; border-bottom: 2px solid #3F4842; padding-bottom: 6px">VALORI NUTRIȚIONALE / 100 g</div>
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #CFC6B2; padding: 6px 0"><span style="height: 6px; width: 50%; background: #CFC6B2; border-radius: 3px"></span><span style="height: 6px; width: 18%; background: #CFC6B2; border-radius: 3px"></span></div>
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #CFC6B2; padding: 6px 0"><span style="height: 6px; width: 40%; background: #CFC6B2; border-radius: 3px"></span><span style="height: 6px; width: 14%; background: #CFC6B2; border-radius: 3px"></span></div>
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #CFC6B2; padding: 6px 0"><span style="height: 6px; width: 56%; background: #CFC6B2; border-radius: 3px"></span><span style="height: 6px; width: 14%; background: #CFC6B2; border-radius: 3px"></span></div>
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #CFC6B2; padding: 6px 0"><span style="height: 6px; width: 34%; background: #CFC6B2; border-radius: 3px"></span><span style="height: 6px; width: 16%; background: #CFC6B2; border-radius: 3px"></span></div>
+          <div style="display: flex; justify-content: space-between; padding: 6px 0"><span style="height: 6px; width: 28%; background: #CFC6B2; border-radius: 3px"></span><span style="height: 6px; width: 12%; background: #CFC6B2; border-radius: 3px"></span></div>
+        </sc-if>
+      </div>
+      <div style="position: absolute; left: 26px; right: 26px; top: 24px; bottom: 24px; border-radius: 18px; border: 3px dashed #C8E07A"></div>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 28px 22px">
+      <div style="width: 52px; height: 52px; border-radius: 12px; border: 2px solid rgba(255,255,255,.35); display: grid; place-items: center; {{cap.thumbSt}}">
+        <sc-if value="{{shot1}}" hint-placeholder-val="{{false}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#173A2A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Ingrediente fotografiate"><path d="M5 12l5 5 9-10"></path></svg></sc-if>
+      </div>
+      <button class="shutter" aria-label="Fotografiază" onClick="{{shutter}}"></button>
+      <button class="ib" style="color: #fff; width: 52px; height: 52px" aria-label="Alege din galerie" onClick="{{shutter}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"></rect><path d="M4 16l5-5 4 4 3-3 4 4"></path></svg></button>
+    </div>
+  </sc-if>
+  <sc-if value="{{camDenied}}" hint-placeholder-val="{{false}}">
+    <div style="flex: 1; margin: 14px 16px 22px; border-radius: 22px; background: #1B3326; padding: 24px; display: flex; flex-direction: column; justify-content: center; text-align: center; gap: 12px">
+      <div style="width: 64px; height: 64px; border-radius: 32px; background: #2E4A3A; color: #C8E07A; display: grid; place-items: center; margin: 0 auto"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><path d="M3 3l18 18"></path></svg></div>
+      <h2 class="h" style="margin: 0; font-size: 21px">Camera nu este permisă</h2>
+      <p style="margin: 0; color: #D3E1D6; font-size: 14px">Poți alege o fotografie a etichetei din galerie sau poți permite accesul la cameră din setările browserului.</p>
+      <button class="btn btn-l" onClick="{{shutter}}">Alege din galerie</button>
+      <button class="btn" style="background: transparent; color: #fff; border: 1.5px solid rgba(255,255,255,.4)" onClick="{{allowCam}}">Am permis accesul, reîncearcă</button>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- ============ CONFIRMARE TEXT (OCR) ============ -->
+<sc-if value="{{scr.ocr}}" hint-placeholder-val="{{false}}">
+<div class="screen">
+  <div class="top">
+    <button class="ib" aria-label="Înapoi" onClick="{{back}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></button>
+    <h1 class="h">Verifică textul extras</h1>
+  </div>
+  <div class="scroll">
+    <p class="mut" style="margin: 0 0 12px; font-size: 14px">Am citit eticheta din fotografii. Corectează orice greșeală înainte de analiză.</p>
+    <sc-if value="{{ocrWarn}}" hint-placeholder-val="{{false}}">
+      <div class="card" role="status" style="background: #FFF5D9; border-color: #E8D29A; display: flex; gap: 10px; color: #5A3D00">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M12 4l9 16H3z"></path><path d="M12 10v4M12 17v.5"></path></svg>
+        <div>
+          <div style="font-weight: 800">{{ocrWarnTitle}}</div>
+          <div style="font-size: 14px">Fotografia e neclară sau are reflexii. Completează câmpurile marcate sau refă fotografia.</div>
+          <button class="btn btn-o" style="margin-top: 10px; min-height: 44px; font-size: 15px; border-color: #B08A3A; color: #5A3D00" onClick="{{retake}}">Refă fotografia</button>
+        </div>
+      </div>
+    </sc-if>
+    <section class="card" style="margin-top: 12px">
+      <label for="ocring" class="h" style="font-weight: 700; font-size: 16px; display: block">Ingrediente</label>
+      <sc-if value="{{ocrIngUnclear}}" hint-placeholder-val="{{false}}"><span style="display: block; font-size: 12px; color: #7A4E00; font-weight: 800; margin-top: 2px">[?] = text necitit · corectează</span></sc-if>
+      <textarea id="ocring" class="field {{ocrIngCls}}" rows="5" style="margin-top: 8px; resize: vertical; line-height: 1.45" value="{{ocrIng}}" onChange="{{onOcrIng}}"></textarea>
+      <p class="lbl" style="margin-top: 12px">Alergeni detectați în text</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px">
+        <sc-for list="{{detected}}" as="a" hint-placeholder-count="2"><span class="chip sm" style="background: #5A3D00; color: #fff">{{a}}</span></sc-for>
+        <sc-if value="{{noDetected}}" hint-placeholder-val="{{false}}"><span class="mut" style="font-size: 13px">Niciunul detectat</span></sc-if>
+      </div>
+      <p class="mut" style="font-size: 12px; margin: 8px 0 0">Compară cu ambalajul: pe etichetă, alergenii sunt scriși îngroșat.</p>
+    </section>
+    <section class="card" style="margin-top: 12px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><h3 class="h" style="margin: 0; font-size: 16px">Tabel nutrițional</h3><span class="mut" style="font-size: 13px">la 100 g/ml</span></div>
+      <sc-for list="{{ocrRows}}" as="f" hint-placeholder-count="7">
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 112px 34px; gap: 8px; align-items: center; margin-top: 10px">
+          <label for="{{f.id}}" style="font-weight: 600; font-size: 14px">{{f.label}}<sc-if value="{{f.flag}}" hint-placeholder-val="{{false}}"><span style="display: block; font-size: 12px; color: #7A4E00; font-weight: 800">Neclar · completează</span></sc-if></label>
+          <input id="{{f.id}}" class="field {{f.cls}}" style="min-height: 46px; text-align: right" inputmode="decimal" autocomplete="off" value="{{f.value}}" onChange="{{f.onChange}}">
+          <span class="mut" style="font-size: 13px">{{f.unit}}</span>
+        </div>
+      </sc-for>
+    </section>
+    <sc-if value="{{hasOcrErr}}" hint-placeholder-val="{{false}}">
+      <p role="alert" style="color: #8E3417; font-weight: 700; font-size: 14px; margin: 12px 4px 0">{{ocrErr}}</p>
+    </sc-if>
+  </div>
+  <div class="dock">
+    <button class="btn btn-p" onClick="{{ocrConfirm}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Confirm textul și analizez</button>
+    <button class="btn btn-o" onClick="{{retake}}">Refă fotografiile</button>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ ISTORIC ============ -->
+<sc-if value="{{scr.history}}" hint-placeholder-val="{{false}}">
+<div class="screen">
+  <div class="top" style="padding-left: 16px">
+    <h1 class="h" style="font-size: 22px">Istoric</h1>
+    <sc-if value="{{hasHistory}}" hint-placeholder-val="{{true}}">
+      <button class="chip" style="background: #FBE3D8; color: #8E3417; min-height: 44px; cursor: pointer" onClick="{{askClear}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"></path></svg>Șterge istoricul</button>
+    </sc-if>
+  </div>
+  <div class="scroll">
+    <p class="mut" style="font-size: 13px; margin: 0 0 10px">Păstrat doar pe acest telefon · disponibil și fără internet.</p>
+    <sc-if value="{{hasHistory}}" hint-placeholder-val="{{true}}">
+      <div class="card" style="padding: 4px 0">
+        <sc-for list="{{histItems}}" as="it" hint-placeholder-count="4">
+          <div class="rw">
+            <button class="row" style="padding-right: 4px" onClick="{{it.open}}">
+              <span class="tile" style="background: {{it.tint}}; color: {{it.lid}}">{{it.ini}}</span>
+              <span style="flex: 1; min-width: 0"><span style="display: block; font-weight: 700">{{it.name}}</span><span class="mut" style="display: block; font-size: 13px">{{it.brand}} · {{it.t}}</span></span>
+              <span class="chip" style="background: {{it.g.bg}}; color: {{it.g.fg}}">{{it.scoreText}}</span>
+            </button>
+            <button class="ib" style="margin-right: 6px; color: #56615A" aria-label="{{it.delLabel}}" onClick="{{it.remove}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{noHistory}}" hint-placeholder-val="{{false}}">
+      <div style="text-align: center; padding: 56px 16px">
+        <div style="width: 72px; height: 72px; border-radius: 36px; background: #E3EEDF; color: #173A2A; display: grid; place-items: center; margin: 0 auto 14px"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg></div>
+        <h2 class="h" style="margin: 0 0 6px; font-size: 21px">Istoricul este gol</h2>
+        <p class="mut" style="margin: 0 0 18px; font-size: 14px">Produsele scanate apar aici, ca să le poți revedea în magazin, chiar și fără internet.</p>
+        <button class="btn btn-p" onClick="{{goScanner}}">Scanează un produs</button>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ PRODUS NEGĂSIT ============ -->
+<sc-if value="{{scr.notfound}}" hint-placeholder-val="{{false}}">
+<div class="screen">
+  <div class="top">
+    <button class="ib" aria-label="Înapoi" onClick="{{back}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></button>
+    <h1 class="h">Produs negăsit</h1>
+  </div>
+  <div class="scroll">
+    <div style="text-align: center; padding: 18px 6px 4px">
+      <div style="width: 84px; height: 84px; border-radius: 42px; background: #ECE7DA; color: #3F4842; display: grid; place-items: center; margin: 0 auto 14px"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6v12M7 6v12M10 6v8M13 6v5"></path><circle cx="16.5" cy="15.5" r="3.5"></circle><path d="M19 18l2.5 2.5"></path></svg></div>
+      <h2 class="h" style="font-size: 24px; margin: 0 0 8px">Nu avem încă acest produs</h2>
+      <p class="mut" style="margin: 0; font-size: 15px">Codul <strong style="color: #1C2420">{{code}}</strong> nu există în baza de date. Îl poți adăuga tu, în aproximativ un minut.</p>
+    </div>
+    <div class="card" style="margin-top: 18px">
+      <p class="lbl">Ce urmează</p>
+      <div style="display: flex; gap: 12px; align-items: center; margin-top: 12px"><span class="tile" style="width: 32px; height: 32px; border-radius: 16px; background: #E3EEDF; color: #173A2A; font-size: 14px">1</span><span>Fotografiezi lista de ingrediente</span></div>
+      <div style="display: flex; gap: 12px; align-items: center; margin-top: 10px"><span class="tile" style="width: 32px; height: 32px; border-radius: 16px; background: #E3EEDF; color: #173A2A; font-size: 14px">2</span><span>Fotografiezi tabelul nutrițional</span></div>
+      <div style="display: flex; gap: 12px; align-items: center; margin-top: 10px"><span class="tile" style="width: 32px; height: 32px; border-radius: 16px; background: #E3EEDF; color: #173A2A; font-size: 14px">3</span><span>Verifici textul extras și primești analiza</span></div>
+    </div>
+  </div>
+  <div class="dock">
+    <button class="btn btn-p" onClick="{{startCapture}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg>Fotografiază eticheta</button>
+    <button class="btn btn-o" onClick="{{rescan}}">Verifică din nou codul</button>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ FĂRĂ CONEXIUNE ============ -->
+<sc-if value="{{scr.offline}}" hint-placeholder-val="{{false}}">
+<div class="screen">
+  <div class="top">
+    <button class="ib" aria-label="Înapoi" onClick="{{back}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></button>
+    <h1 class="h">Fără conexiune</h1>
+  </div>
+  <div class="scroll">
+    <div style="text-align: center; padding: 30px 6px 4px">
+      <div style="width: 84px; height: 84px; border-radius: 42px; background: #ECE7DA; color: #3F4842; display: grid; place-items: center; margin: 0 auto 14px"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18M8.5 16.5a5 5 0 0 1 7 0M5 13a10 10 0 0 1 5-2.7M14 10.3A10 10 0 0 1 19 13M2 9.5a15 15 0 0 1 4-2.4M10.5 6.1A15 15 0 0 1 22 9.5"></path></svg></div>
+      <h2 class="h" style="font-size: 24px; margin: 0 0 8px">Nu putem căuta produsul acum</h2>
+      <p class="mut" style="margin: 0; font-size: 15px">Codul <strong style="color: #1C2420">{{code}}</strong> a fost păstrat. Îl căutăm imediat ce revine internetul.</p>
+    </div>
+    <div class="card" style="margin-top: 18px; display: flex; gap: 12px; align-items: flex-start">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E6B45" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>
+      <div><div style="font-weight: 800">Istoricul funcționează offline</div><div class="mut" style="font-size: 14px">Analizele produselor scanate anterior sunt salvate pe telefon.</div></div>
+    </div>
+    <div style="text-align: center; margin-top: 8px"><button class="link" onClick="{{reconnect}}">Simulează revenirea conexiunii (demo)</button></div>
+  </div>
+  <div class="dock">
+    <button class="btn btn-p" onClick="{{retry}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"></path></svg>Încearcă din nou</button>
+    <button class="btn btn-o" onClick="{{tabHistory}}">Deschide istoricul</button>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ NAVIGARE ============ -->
+<sc-if value="{{showNav}}" hint-placeholder-val="{{true}}">
+<nav class="nav" aria-label="Navigare principală">
+  <button class="navb" style="color: {{navC.home}}" onClick="{{tabHome}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"></path></svg>Acasă</button>
+  <button class="navb" style="color: {{navC.compare}}" onClick="{{tabCompare}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V10M12 20V4M19 20v-7"></path></svg>Compară</button>
+  <button class="navb" style="color: {{navC.history}}" onClick="{{tabHistory}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>Istoric</button>
+</nav>
+</sc-if>
+
+<!-- ============ FOAIE: ETICHETA ORIGINALĂ ============ -->
+<sc-if value="{{sheetLabel}}" hint-placeholder-val="{{false}}">
+<div class="sheet-bg">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="lbltitle">
+    <div class="grab"></div>
+    <div style="display: flex; align-items: center">
+      <h2 id="lbltitle" class="h" style="flex: 1; margin: 0; font-size: 20px">Eticheta originală</h2>
+      <button class="ib" aria-label="Închide" onClick="{{closeSheet}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+    </div>
+    <p class="mut" style="font-size: 13px; margin: 0 0 12px">Fotografie: {{v.photo}} · compară cu ce vezi pe ambalaj.</p>
+    <div style="background: #E6DCC6; border-radius: 16px; padding: 14px">
+      <div style="background: #FFFDF6; border-radius: 6px; padding: 14px; transform: rotate(-0.6deg); box-shadow: 0 2px 8px rgba(0,0,0,.12); font-size: 12px; color: #1C2420">
+        <div style="font-weight: 800; letter-spacing: .03em">{{v.brandUpper}} · {{v.name}} · {{v.qty}}</div>
+        <p style="margin: 8px 0"><strong>Ingrediente:</strong> {{v.ingText}}</p>
+        <sc-if value="{{v.hasMay}}" hint-placeholder-val="{{false}}"><p style="margin: 0 0 8px">Poate conține: {{v.mayText}}.</p></sc-if>
+        <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #1C2420; padding: 4px 0; font-weight: 800"><span>Valori nutriționale</span><span>la 100 {{v.unit}}</span></div>
+        <sc-for list="{{v.lrows}}" as="lr" hint-placeholder-count="7">
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #DDD5C3; padding: 4px 0"><span>{{lr.l}}</span><span style="font-weight: 600; {{lr.st}}">{{lr.v}}</span></div>
+        </sc-for>
+      </div>
+    </div>
+    <p class="mut" style="font-size: 12px; margin: 10px 0 0">Sursa: {{v.source}} · verificat: {{v.checked}}</p>
+    <button class="btn btn-o" style="margin-top: 14px" onClick="{{report}}">Raportează o greșeală</button>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ FOAIE: STĂRI DEMO ============ -->
+<sc-if value="{{sheetDemo}}" hint-placeholder-val="{{false}}">
+<div class="sheet-bg">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="demot">
+    <div class="grab"></div>
+    <div style="display: flex; align-items: center">
+      <h2 id="demot" class="h" style="flex: 1; margin: 0; font-size: 20px">Stări demo</h2>
+      <button class="ib" aria-label="Închide" onClick="{{closeSheet}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+    </div>
+    <p class="mut" style="font-size: 14px; margin: 0 0 6px">Comută situațiile de mai jos ca să vezi cum răspunde aplicația.</p>
+    <sc-for list="{{toggles}}" as="t" hint-placeholder-count="3">
+      <button class="tg" role="switch" aria-checked="{{t.on}}" onClick="{{t.flip}}">
+        <span style="flex: 1"><span style="display: block; font-weight: 700">{{t.l}}</span><span class="mut" style="display: block; font-size: 13px">{{t.d}}</span></span>
+        <span class="sw" style="background: {{t.track}}"><span class="knob" style="transform: translateX({{t.x}}px)"></span></span>
+      </button>
+    </sc-for>
+    <p class="lbl" style="margin-top: 14px">Scurtături</p>
+    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px">
+      <button class="btn btn-s" style="min-height: 46px; font-size: 15px" onClick="{{demoNotFound}}">Produs negăsit</button>
+      <button class="btn btn-s" style="min-height: 46px; font-size: 15px" onClick="{{demoInsufficient}}">Date insuficiente (suc de mere)</button>
+      <button class="btn btn-s" style="min-height: 46px; font-size: 15px" onClick="{{demoRestore}}">Restaurează istoricul demo</button>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ FOAIE: ȘTERGE ISTORICUL ============ -->
+<sc-if value="{{sheetClear}}" hint-placeholder-val="{{false}}">
+<div class="sheet-bg">
+  <div class="sheet" role="alertdialog" aria-modal="true" aria-labelledby="clrt" aria-describedby="clrd" style="text-align: center">
+    <div class="grab"></div>
+    <div style="width: 60px; height: 60px; border-radius: 30px; background: #FBE3D8; color: #8E3417; display: grid; place-items: center; margin: 6px auto 12px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"></path></svg></div>
+    <h2 id="clrt" class="h" style="margin: 0 0 6px; font-size: 21px">Ștergi tot istoricul?</h2>
+    <p id="clrd" class="mut" style="margin: 0 0 18px; font-size: 14px">Vor fi șterse {{histCountText}} de pe acest telefon. Acțiunea nu poate fi anulată.</p>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <button class="btn btn-d" onClick="{{doClear}}">Șterge istoricul</button>
+      <button class="btn btn-o" onClick="{{closeSheet}}">Anulează</button>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div class="toast" role="status">{{toast}}</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"start":{"editor":"enum","options":["home","scanner","confirm","result","ingredients","compare","capture","ocr","history","notfound","camera","insufficient","ocr-unclear","offline"],"default":"home"},"$preview":{"width":390,"height":844}}'>
+var RI = { kcal: 2000, sugar: 90, sat: 20, salt: 6 };
+var GROUPS = [['base', 'Ingrediente de bază'], ['fat', 'Grăsimi'], ['taste', 'Gust și dulceață'], ['add', 'Aditivi'], ['cult', 'Culturi și fermenți']];
+var SA = 'Reg. (UE) nr. 1333/2008 privind aditivii alimentari';
+var SP = 'Fișă explicativă Pe Etichetă (date demo)';
+var NROWS = [['kcal', 'Energie', 'kcal'], ['fat', 'Grăsimi', 'g'], ['sat', 'din care saturate', 'g'], ['sugar', 'Zaharuri', 'g'], ['salt', 'Sare', 'g'], ['protein', 'Proteine', 'g'], ['fiber', 'Fibre', 'g']];
+
+var MILK = { g: 'base', name: 'Lapte normalizat', role: 'Ingredient de bază', d: 'Lapte de vacă cu grăsimea ajustată la valoarea de pe etichetă. Aduce proteine, calciu și lactoză, zahărul natural din lapte.', src: SP, allergen: true };
+var CULT = { g: 'cult', name: 'Culturi lactice vii', role: 'Fermentare', d: 'Bacterii care transformă laptele în iaurt și îi dau gustul acrișor.', src: SP };
+var SUGAR = { g: 'taste', name: 'Zahăr', role: 'Îndulcitor', d: 'Adăugat de producător pentru gust. În tabelul nutrițional apare împreună cu zaharurile naturale, la „din care zaharuri”.', src: SP };
+var SALT = { g: 'taste', name: 'Sare', role: 'Gust', d: 'Adăugată pentru gust. Valoarea din tabel include și sodiul din alte ingrediente.', src: SP };
+var SODA = { g: 'add', name: 'Bicarbonat de sodiu (E500)', role: 'Agent de afânare', d: 'Face aluatul să crească la coacere. Conține sodiu, deci contribuie puțin la cantitatea de sare.', src: SA };
+var LEC = { g: 'add', name: 'Lecitină din soia (E322)', role: 'Emulsifiant', d: 'Ajută grăsimea și apa să se amestece uniform. Provine din soia, alergen declarat.', src: SA, allergen: true };
+var PALM = { g: 'fat', name: 'Ulei de palmier', role: 'Grăsime', d: 'Grăsime vegetală solidă la temperatura camerei, bogată în grăsimi saturate.', src: SP };
+
+var P = {
+  livada: { id: 'livada', name: 'Iaurt natural 2,5%', brand: 'Livada Verde', short: 'LIVADA', ini: 'LV', qty: '400 g', cat: 'iaurt', catName: 'Iaurturi', kind: 'jar', tint: '#DCE8F1', lid: '#2F5D86', code: '4840001000017', score: 78, portion: 150, portionName: '1 pahar · 150 g', unit: 'g', sugarNote: 'natural din lapte',
+    n: { kcal: 63, fat: 2.5, sat: 1.6, sugar: 4.1, salt: 0.1, protein: 3.6, fiber: 0 },
+    reasons: [['good', 'Fără zahăr adăugat', 'Cele 4,1 g de zahăr la 100 g sunt lactoză, prezentă natural în lapte.'], ['good', 'Doar 2 ingrediente', 'Lapte și culturi lactice — fără aditivi, arome sau îndulcitori.'], ['neutral', 'Grăsimi saturate: nivel mediu', '1,6 g la 100 g; un pahar de 150 g acoperă 12% din referința zilnică.']],
+    allergens: ['Lapte'], may: [], ings: [MILK, CULT],
+    ingText: 'lapte normalizat (2,5% grăsime), culturi lactice vii.',
+    source: 'Eticheta producătorului', photo: '12.10.2026, magazin din Chișinău', checked: '28.10.2026' },
+  zorel: { id: 'zorel', name: 'Iaurt cu căpșuni 2%', brand: 'Zorel', short: 'ZOREL', ini: 'Z', qty: '400 g', cat: 'iaurt', catName: 'Iaurturi', kind: 'jar', tint: '#F6D9DE', lid: '#A3324C', code: '4840001000024', score: 44, portion: 150, portionName: '1 pahar · 150 g', unit: 'g', sugarNote: 'în mare parte adăugat',
+    n: { kcal: 98, fat: 2.0, sat: 1.3, sugar: 13.2, salt: 0.12, protein: 2.9, fiber: 0.2 },
+    reasons: [['bad', 'Zahăr adăugat', '13,2 g la 100 g. Un pahar de 150 g are ≈ 20 g de zahăr, cam 5 lingurițe.'], ['bad', '3 aditivi și o aromă', 'Amidon modificat, pectină și colorant carmin, plus aromă naturală.'], ['neutral', 'Proteine moderate', '2,9 g la 100 g, puțin sub un iaurt natural (3,6 g).']],
+    allergens: ['Lapte'], may: ['Fructe cu coajă lemnoasă'],
+    ings: [MILK,
+      { g: 'taste', name: 'Preparat de căpșuni (12%)', role: 'Fructe', d: 'Amestec de căpșuni, zahăr și îngroșători. Procentul de 12% se referă la tot preparatul, nu doar la fructe.', src: SP },
+      SUGAR,
+      { g: 'add', name: 'Amidon modificat', role: 'Îngroșător', d: 'Amidon, de obicei din porumb, tratat ca să rămână cremos la frig și la amestecare.', src: SA },
+      { g: 'add', name: 'Pectină (E440)', role: 'Gelifiant', d: 'Fibră extrasă din fructe, care leagă preparatul de căpșuni. Se folosește și în gemuri.', src: SA },
+      { g: 'add', name: 'Carmin (E120)', role: 'Colorant', d: 'Colorant roșu obținut din insecte (coșenilă). Important dacă eviți produsele de origine animală.', src: SA },
+      { g: 'taste', name: 'Aromă naturală', role: 'Aromă', d: 'Substanțe de aromă din surse naturale, care nu provin neapărat din căpșuni.', src: 'Reg. (CE) nr. 1334/2008 privind aromele' },
+      CULT],
+    ingText: 'lapte normalizat, preparat de căpșuni 12% (căpșuni, zahăr, amidon modificat, gelifiant: pectină, colorant: carmin), zahăr, aromă naturală, culturi lactice vii.',
+    source: 'Eticheta producătorului', photo: '09.10.2026, magazin din Bălți', checked: '27.10.2026' },
+  stana: { id: 'stana', name: 'Iaurt grecesc 10%', brand: 'Stâna Mică', short: 'STÂNA', ini: 'SM', qty: '300 g', cat: 'iaurt', catName: 'Iaurturi', kind: 'jar', tint: '#ECE8D8', lid: '#4E5D2F', code: '4840001000031', score: 64, portion: 150, portionName: '1 porție · 150 g', unit: 'g', sugarNote: 'natural din lapte',
+    n: { kcal: 133, fat: 10, sat: 6.6, sugar: 3.5, salt: 0.1, protein: 5.2, fiber: 0 },
+    reasons: [['good', 'Fără zahăr adăugat', '3,5 g de zahăr la 100 g, natural din lapte.'], ['good', 'Bogat în proteine', '5,2 g la 100 g — sățios pentru o gustare.'], ['bad', 'Multe grăsimi saturate', '6,6 g la 100 g, peste pragul de 5 g considerat ridicat. O porție acoperă aproape 50% din referința zilnică.']],
+    allergens: ['Lapte'], may: [],
+    ings: [Object.assign({}, MILK, { name: 'Lapte integral' }), { g: 'fat', name: 'Smântână', role: 'Grăsime și cremozitate', d: 'Partea grasă a laptelui. Explică cele 10% grăsimi și textura densă.', src: SP, allergen: true }, CULT],
+    ingText: 'lapte integral, smântână, culturi lactice vii.',
+    source: 'Eticheta producătorului', photo: '14.10.2026, magazin din Chișinău', checked: '29.10.2026' },
+  ovazel: { id: 'ovazel', name: 'Biscuiți de ovăz cu ciocolată', brand: 'Ovăzel', short: 'OVĂZEL', ini: 'O', qty: '180 g', cat: 'biscuiti', catName: 'Biscuiți', kind: 'box', tint: '#F1E0C6', lid: '#7A4A24', code: '4840001000048', score: 31, portion: 30, portionName: '3 biscuiți · 30 g', unit: 'g', sugarNote: 'adăugat',
+    n: { kcal: 478, fat: 21, sat: 9.8, sugar: 26, salt: 0.7, protein: 7, fiber: 5.1 },
+    reasons: [['bad', 'Mult zahăr', '26 g la 100 g. Trei biscuiți (30 g) au ≈ 7,8 g, aproape 2 lingurițe.'], ['bad', 'Grăsimi saturate ridicate', '9,8 g la 100 g, mai ales din uleiul de palmier.'], ['good', 'Sursă de fibre', '5,1 g la 100 g din ovăz — peste pragul de 3 g pentru „sursă de fibre”.']],
+    allergens: ['Gluten', 'Lapte', 'Soia'], may: ['Ouă', 'Arahide'],
+    ings: [{ g: 'base', name: 'Fulgi de ovăz (32%)', role: 'Cereale', d: 'Ovăz presat, sursa principală de fibre din acești biscuiți. Conține gluten.', src: SP, allergen: true },
+      { g: 'base', name: 'Făină de grâu', role: 'Cereale', d: 'Făină albă, rafinată, cu mai puține fibre decât cea integrală. Conține gluten.', src: SP, allergen: true },
+      SUGAR, PALM,
+      { g: 'taste', name: 'Ciocolată (15%)', role: 'Gust', d: 'Zahăr, masă de cacao, unt de cacao și lapte praf. Aduce și zahăr, și grăsimi saturate.', src: SP, allergen: true },
+      LEC, SODA, SALT],
+    ingText: 'fulgi de ovăz 32%, făină de grâu, zahăr, ulei de palmier, ciocolată 15% (zahăr, masă de cacao, unt de cacao, lapte praf, emulsifiant: lecitină din soia), agent de afânare: bicarbonat de sodiu, sare.',
+    source: 'Eticheta producătorului', photo: '02.10.2026, magazin din Cahul', checked: '20.10.2026' },
+  morarita: { id: 'morarita', name: 'Biscuiți integrali cu ovăz', brand: 'Morărița', short: 'MORĂRIȚA', ini: 'M', qty: '200 g', cat: 'biscuiti', catName: 'Biscuiți', kind: 'box', tint: '#E5ECD3', lid: '#4D5F24', code: '4840001000062', score: 52, portion: 30, portionName: '3 biscuiți · 30 g', unit: 'g', sugarNote: 'adăugat',
+    n: { kcal: 445, fat: 15, sat: 2.1, sugar: 14, salt: 0.5, protein: 8.5, fiber: 7.8 },
+    reasons: [['good', 'Bogat în fibre', '7,8 g la 100 g, din făină integrală și ovăz.'], ['neutral', 'Zahăr: nivel mediu', '14 g la 100 g. Trei biscuiți (30 g) au ≈ 4,2 g, cam o linguriță.'], ['good', 'Puține grăsimi saturate', '2,1 g la 100 g, datorită uleiului de floarea-soarelui.']],
+    allergens: ['Gluten'], may: ['Lapte', 'Susan'],
+    ings: [{ g: 'base', name: 'Făină integrală de grâu (45%)', role: 'Cereale', d: 'Făină din bobul întreg, cu tărâțe. Are mult mai multe fibre decât făina albă. Conține gluten.', src: SP, allergen: true },
+      { g: 'base', name: 'Fulgi de ovăz (20%)', role: 'Cereale', d: 'Ovăz presat, sursă de fibre. Conține gluten.', src: SP, allergen: true },
+      SUGAR,
+      { g: 'fat', name: 'Ulei de floarea-soarelui', role: 'Grăsime', d: 'Ulei vegetal lichid, cu puține grăsimi saturate.', src: SP },
+      SODA, SALT],
+    ingText: 'făină integrală de grâu 45%, fulgi de ovăz 20%, zahăr, ulei de floarea-soarelui, agent de afânare: bicarbonat de sodiu, sare.',
+    source: 'Eticheta producătorului', photo: '05.10.2026, magazin din Chișinău', checked: '21.10.2026' },
+  gradina: { id: 'gradina', name: 'Suc de mere 100%', brand: 'Grădina Sudului', short: 'GRĂDINA', ini: 'GS', qty: '1 L', cat: 'suc', catName: 'Sucuri', kind: 'carton', tint: '#F3EBC2', lid: '#5E6B12', code: '4840001000055', score: null, portion: 250, portionName: '1 pahar · 250 ml', unit: 'ml', sugarNote: '',
+    n: { kcal: 46, fat: 0.1, sat: null, sugar: null, salt: null, protein: 0.1, fiber: null },
+    missing: 'Eticheta nu declară zaharurile, grăsimile saturate și sarea. Fără ele nu putem calcula corect scorul.',
+    reasons: [], allergens: [], may: [],
+    ings: [{ g: 'base', name: 'Suc de mere din concentrat', role: 'Ingredient de bază', d: 'Sucul a fost concentrat prin eliminarea apei, apoi apa a fost adăugată la loc. Conține zaharurile naturale ale merelor.', src: SP },
+      { g: 'add', name: 'Acid ascorbic (E300)', role: 'Antioxidant', d: 'Vitamina C, adăugată ca sucul să nu se închidă la culoare.', src: SA }],
+    ingText: 'suc de mere din concentrat, antioxidant: acid ascorbic.',
+    source: 'Eticheta producătorului (tabel incomplet)', photo: '11.10.2026, magazin din Orhei', checked: '25.10.2026' }
+};
+
+var NAP_ING = [{ g: 'base', name: 'Făină de grâu', role: 'Cereale', d: 'Făină albă, rafinată. Conține gluten.', src: SP, allergen: true }, SUGAR, Object.assign({}, PALM, { name: 'Grăsime vegetală de palmier' }), { g: 'taste', name: 'Cacao degresată (6%)', role: 'Gust', d: 'Pudră de cacao din care s-a extras o parte din grăsime.', src: SP }, { g: 'base', name: 'Lapte praf', role: 'Ingredient lactat', d: 'Lapte deshidratat; conține lactoză și proteine din lapte.', src: SP, allergen: true }, LEC, SALT, { g: 'taste', name: 'Aromă', role: 'Aromă', d: 'Eticheta nu precizează dacă aroma este naturală.', src: SP }];
+
+var OCR = {
+  nap: { ing: 'Făină de grâu, zahăr, grăsime vegetală de palmier, cacao degresată pudră 6%, lapte praf, emulsifiant: lecitină din soia, sare, aromă.', n: { kcal: '530', fat: '30', sat: '14', sugar: '35', salt: '0,3', protein: '6', fiber: '2' } },
+  napU: { ing: 'Făină de grâu, zah[?]r, grăsime vegetală de palmier, cacao degresată pudră [?]%, lapte praf, emulsifiant: lecitină din soia, sare, aromă.', n: { kcal: '', fat: '30', sat: '14', sugar: '', salt: '0,3', protein: '6', fiber: '2' } },
+  juice: { ing: 'Suc de mere din concentrat, antioxidant: acid ascorbic (E300).', n: { kcal: '46', fat: '0,1', sat: '0', sugar: '10,4', salt: '0,01', protein: '0,1', fiber: '0,2' } },
+  juiceU: { ing: 'Suc de mere din concentrat, antioxidant: acid ascorbic (E300).', n: { kcal: '46', fat: '0,1', sat: '0', sugar: '', salt: '', protein: '0,1', fiber: '0,2' } }
+};
+
+var TONE = { good: { sym: '+', bg: '#E1EEDC', fg: '#1F4A35', tone: 'Punct bun' }, bad: { sym: '−', bg: '#FBE3D8', fg: '#8E3417', tone: 'Atenție' }, neutral: { sym: '•', bg: '#ECE7DA', fg: '#3F4842', tone: 'Informativ' } };
+
+function fmt(x, d) {
+  if (d == null) d = x >= 100 ? 0 : x >= 1 ? 1 : 2;
+  var m = Math.pow(10, d);
+  return String(Math.round(x * m) / m).replace('.', ',');
+}
+function spoons(g) {
+  var v = Math.round(g / 4 * 2) / 2;
+  if (v < 0.5) return 'sub jumătate de linguriță';
+  if (v === 0.5) return 'jumătate de linguriță';
+  if (v === 1) return 'o linguriță';
+  return fmt(v, 1) + ' lingurițe';
+}
+function grade(s) {
+  if (s == null) return { label: 'Indisponibil', bg: '#ECE7DA', fg: '#3F4842', ring: '#CFC8B8' };
+  if (s >= 60) return { label: 'Bună', bg: '#E1EEDC', fg: '#1F4A35', ring: '#2E6B45' };
+  if (s >= 40) return { label: 'Medie', bg: '#FCEFD2', fg: '#6B4600', ring: '#C08A1E' };
+  return { label: 'Scăzută', bg: '#FBE3D8', fg: '#8E3417', ring: '#C2532B' };
+}
+function plural(n, one, many) { return n === 1 ? '1 ' + one : n + (n >= 20 ? ' de ' : ' ') + many; }
+function detect(t) {
+  t = t.toLowerCase(); var r = [];
+  if (/grâu|gluten|ovăz|orz|secară/.test(t)) r.push('Gluten');
+  if (/lapte|smântână|zer|lactoză/.test(t)) r.push('Lapte');
+  if (/soia/.test(t)) r.push('Soia');
+  if (/ouă|ou praf|gălbenuș/.test(t)) r.push('Ouă');
+  if (/arahide|alune/.test(t)) r.push('Arahide');
+  if (/nuci|migdale|caju|fistic/.test(t)) r.push('Fructe cu coajă lemnoasă');
+  if (/susan/.test(t)) r.push('Susan');
+  return r;
+}
+// Ilustrativ: formulă simplă doar pentru produsele adăugate de utilizator.
+function userScore(n) {
+  var s = 100 - Math.min(n.sugar * 2.2, 40) - n.sat * 2 - n.salt * 20 - n.kcal * 0.01 + n.fiber * 1.5 + n.protein;
+  return Math.max(0, Math.min(100, Math.round(s)));
+}
+function userReasons(n) {
+  var r = [];
+  if (n.sugar > 22.5) r.push(['bad', 'Mult zahăr', fmt(n.sugar) + ' g la 100 g, peste pragul de 22,5 g considerat ridicat.']);
+  if (n.sat > 5) r.push(['bad', 'Grăsimi saturate ridicate', fmt(n.sat) + ' g la 100 g, peste pragul de 5 g.']);
+  if (n.salt > 1.5) r.push(['bad', 'Multă sare', fmt(n.salt) + ' g la 100 g, peste pragul de 1,5 g.']);
+  if (n.fiber >= 6) r.push(['good', 'Bogat în fibre', fmt(n.fiber) + ' g la 100 g.']);
+  else if (n.fiber >= 3) r.push(['good', 'Sursă de fibre', fmt(n.fiber) + ' g la 100 g.']);
+  if (n.kcal > 400) r.push(['neutral', 'Densitate energetică mare', fmt(n.kcal, 0) + ' kcal la 100 g.']);
+  if (!r.length) r.push(['good', 'Valori moderate', 'Niciun nutrient nu depășește pragurile de „ridicat”.']);
+  return r.slice(0, 3);
+}
+function demoHistory() {
+  return [{ id: 'zorel', t: 'Azi, 14:32' }, { id: 'livada', t: 'Azi, 14:30' }, { id: 'ovazel', t: 'Ieri, 18:05' }, { id: 'gradina', t: 'Ieri, 18:01' }];
+}
+function ocrData(unclear, forPid) {
+  var src = forPid === 'gradina' ? (unclear ? OCR.juiceU : OCR.juice) : (unclear ? OCR.napU : OCR.nap);
+  var flags = [];
+  for (var k in src.n) if (src.n[k] === '') flags.push(k);
+  return { ocrIng: src.ing, ocrN: Object.assign({}, src.n), ocrFlags: flags, ocrErr: '' };
+}
+var PRE = {
+  scanner: { screen: 'scanner', prev: ['home'] },
+  confirm: { screen: 'confirm', pid: 'zorel', code: '4840001000024', prev: ['home', 'scanner'] },
+  result: { screen: 'result', pid: 'zorel', prev: ['home', 'scanner'] },
+  ingredients: { screen: 'ingredients', pid: 'zorel', open: 'zorel-5', prev: ['home', 'result'] },
+  compare: { screen: 'compare' },
+  capture: { screen: 'capture', capStep: 2, shot1: true, prev: ['home', 'notfound'] },
+  ocr: { screen: 'ocr', prev: ['home', 'capture'] },
+  history: { screen: 'history' },
+  notfound: { screen: 'notfound', code: '4841234567890', prev: ['home', 'scanner'] },
+  camera: { screen: 'scanner', camDenied: true, prev: ['home'] },
+  insufficient: { screen: 'result', pid: 'gradina', prev: ['home', 'scanner'] },
+  'ocr-unclear': { screen: 'ocr', ocrUnclear: true, prev: ['home', 'capture'] },
+  offline: { screen: 'offline', offline: true, code: '4840001000031', prev: ['home', 'scanner'] }
+};
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    var s = { screen: 'home', prev: [], pid: 'livada', code: '', cmpA: 'livada', cmpB: 'zorel', manual: '', manualErr: '', camDenied: false, offline: false, ocrUnclear: false, history: demoHistory(), open: null, sheet: null, capStep: 1, shot1: false, capFor: null, ocrIng: '', ocrN: {}, ocrFlags: [], ocrErr: '', toast: '', pending: {}, userProd: null };
+    Object.assign(s, PRE[props && props.start] || {});
+    if (s.screen === 'ocr') Object.assign(s, ocrData(s.ocrUnclear, s.capFor));
+    this.state = s;
+  }
+  componentWillUnmount() { clearTimeout(this.tt); }
+
+  prod(id) { return id === 'nou' ? this.state.userProd : P[id]; }
+  peers(p) { return Object.keys(P).map(function (k) { return P[k]; }).filter(function (x) { return x.cat === p.cat && x.id !== p.id && x.score != null; }); }
+  toast(m) { var self = this; this.setState({ toast: m }); clearTimeout(this.tt); this.tt = setTimeout(function () { self.setState({ toast: '' }); }, 2800); }
+  go(sc, extra, replace) {
+    var s = this.state;
+    this.setState(Object.assign({ screen: sc, prev: replace ? s.prev : s.prev.concat([s.screen]), sheet: null }, extra || {}));
+  }
+  tab(sc) { this.setState({ screen: sc, prev: [], sheet: null }); }
+  back() { var p = this.state.prev.slice(); var sc = p.pop() || 'home'; this.setState({ screen: sc, prev: p, sheet: null, manualErr: '', ocrErr: '' }); }
+  addHistory(id) {
+    var h = this.state.history.filter(function (x) { return x.id !== id; });
+    h.unshift({ id: id, t: 'Acum' });
+    return h;
+  }
+  // online=true: tratează conexiunea ca restabilită în același pas (fără să aștepte setState).
+  scan(code, replace, online) {
+    var s = this.state, p = null;
+    for (var k in P) if (P[k].code === code) p = P[k];
+    var reset = { code: code, manual: '', manualErr: '' };
+    if (online) reset.offline = false;
+    if (s.offline && !online) {
+      var cached = p && s.history.some(function (x) { return x.id === p.id; });
+      if (cached) { this.go('result', Object.assign(reset, { pid: p.id }), replace); this.toast('Deschis din istoric, fără internet.'); return; }
+      return this.go('offline', reset, replace);
+    }
+    if (p) this.go('confirm', Object.assign(reset, { pid: p.id }), replace);
+    else this.go('notfound', reset, replace);
+  }
+  submitManual() {
+    var d = this.state.manual.replace(/\D/g, '');
+    if (d.length !== 8 && d.length !== 13) {
+      this.setState({ manualErr: d.length ? 'Codul trebuie să aibă 8 sau 13 cifre. Ai introdus ' + d.length + '.' : 'Introdu cifrele de sub codul de bare.' });
+      return;
+    }
+    this.scan(d);
+  }
+  shutter() {
+    var s = this.state;
+    if (s.capStep === 1) { this.setState({ capStep: 2, shot1: true }); this.toast('Ingredientele au fost fotografiate.'); return; }
+    this.setState(Object.assign({ screen: 'ocr', prev: s.prev.concat(['capture']) }, ocrData(s.ocrUnclear, s.capFor)));
+  }
+  retake() {
+    var s = this.state, p = s.prev.slice();
+    if (p[p.length - 1] === 'capture') p.pop();
+    this.setState({ screen: 'capture', prev: p, capStep: s.capFor ? 2 : 1, shot1: !!s.capFor, ocrErr: '' });
+  }
+  ocrConfirm() {
+    var s = this.state, n = {}, bad = [];
+    var ing = s.ocrIng.trim();
+    if (!ing) bad.push('ingredientele');
+    else if (ing.indexOf('[?]') >= 0) bad.push('zonele [?] din ingrediente');
+    NROWS.forEach(function (r) {
+      var raw = String(s.ocrN[r[0]] || '').trim().replace(',', '.');
+      var x = Number(raw), max = r[0] === 'kcal' ? 900 : 100;
+      if (raw === '' || !isFinite(x) || x < 0 || x > max) bad.push(r[1].toLowerCase());
+      else n[r[0]] = x;
+    });
+    if (bad.length) return this.setState({ ocrErr: 'Verifică: ' + bad.join(', ') + '.' });
+    if (n.sat > n.fat) return this.setState({ ocrErr: 'Grăsimile saturate nu pot depăși grăsimile totale.' });
+    var base = s.prev.filter(function (x) { return x !== 'capture' && x !== 'ocr' && x !== 'notfound'; });
+    if (s.capFor) {
+      var pend = Object.assign({}, s.pending); pend[s.capFor] = true;
+      this.setState({ screen: 'result', pid: s.capFor, prev: base, pending: pend, ocrErr: '' });
+      this.toast('Mulțumim! Tabelul a fost trimis spre verificare.');
+      return;
+    }
+    var up = { id: 'nou', name: 'Napolitane cu cremă de cacao', brand: 'Marcă nouă', short: 'FOTO', ini: 'N', qty: '— g', cat: 'napolitane', catName: 'Napolitane', kind: 'box', tint: '#E9DED6', lid: '#6A4B3A', code: s.code || '4841234567890', score: userScore(n), portion: 30, portionName: '3 napolitane · 30 g', unit: 'g', sugarNote: 'din tabelul fotografiat', n: n, reasons: userReasons(n), allergens: detect(ing), may: [], ings: NAP_ING, ingText: ing, source: 'Fotografiile tale', photo: '03.11.2026, de tine', checked: 'în așteptarea echipei', isUser: true };
+    this.setState({ screen: 'result', pid: 'nou', prev: base, userProd: up, history: this.addHistory('nou'), ocrErr: '' });
+    this.toast('Produs adăugat. Echipa va verifica datele.');
+  }
+
+  view(p) {
+    var s = this.state, has = p.score != null, g = grade(p.score), f = p.portion / 100, C = 326.73, pend = !!s.pending[p.id];
+    var prows = [['kcal', 'Energie', 'kcal'], ['sugar', 'Zaharuri', 'g'], ['sat', 'Grăsimi saturate', 'g'], ['salt', 'Sare', 'g']].map(function (k) {
+      var x = p.n[k[0]];
+      if (x == null) return { l: k[1], v: 'nedeclarat', vst: 'color: #8E3417', ri: 'Lipsește de pe etichetă', bar: 'width: 0%' };
+      var y = x * f, pc = Math.round(y / RI[k[0]] * 100);
+      return { l: k[1], v: fmt(y, k[0] === 'kcal' ? 0 : null) + ' ' + k[2], vst: '', ri: pc + '% din referința zilnică', bar: 'width: ' + Math.min(100, Math.max(pc, 2)) + '%' };
+    });
+    return {
+      name: p.name, brand: p.brand, qty: p.qty, code: p.code, short: p.short, tint: p.tint, lid: p.lid, unit: p.unit,
+      brandUpper: p.brand.toUpperCase(),
+      isJar: p.kind === 'jar', isBox: p.kind === 'box', isCarton: p.kind === 'carton', isUser: !!p.isUser,
+      hasScore: has, noScore: !has, score: has ? p.score : '', g: g,
+      dash: (has ? (C * p.score / 100).toFixed(1) : '0') + ' ' + C,
+      ringLabel: has ? 'Scor ' + p.score + ' din 100, calitate ' + g.label.toLowerCase() : 'Scor indisponibil',
+      reasons: p.reasons.slice(0, 3).map(function (r) { var t = TONE[r[0]]; return { t: r[1], d: r[2], sym: t.sym, bg: t.bg, fg: t.fg, tone: t.tone }; }),
+      missing: p.missing || '', pending: pend, pendingNo: !pend,
+      allergens: p.allergens, hasAllergens: p.allergens.length > 0, noAllergens: !p.allergens.length,
+      may: p.may, hasMay: p.may.length > 0, mayText: p.may.join(', ').toLowerCase(),
+      portionName: p.portionName, prows: prows,
+      hasSpoon: p.n.sugar != null, spoon: p.n.sugar != null ? '≈ ' + spoons(p.n.sugar * f) + ' de zahăr într-o porție (' + p.sugarNote + ')' : '',
+      source: p.source, photo: p.photo, checked: p.checked, ingText: p.ingText,
+      lrows: NROWS.map(function (r) { var x = p.n[r[0]]; return { l: r[1], v: x == null ? 'nedeclarat' : fmt(x, r[0] === 'kcal' ? 0 : null) + ' ' + r[2], st: x == null ? 'color: #8E3417; font-weight: 800' : '' }; }),
+      canCompare: has && this.peers(p).length > 0
+    };
+  }
+  item(h) {
+    var self = this, p = this.prod(h.id); if (!p) return null;
+    var g = grade(p.score);
+    return { name: p.name, brand: p.brand, ini: p.ini, tint: p.tint, lid: p.lid, t: h.t, g: g,
+      scoreText: p.score != null ? String(p.score) : 'Indisponibil',
+      delLabel: 'Șterge ' + p.name + ' din istoric',
+      open: function () { self.go('result', { pid: p.id }); },
+      remove: function () { self.setState({ history: self.state.history.filter(function (x) { return x.id !== h.id; }) }); self.toast('Produs șters din istoric.'); } };
+  }
+  compareVals() {
+    var s = this.state, A = P[s.cmpA], B = P[s.cmpB];
+    function side(p) { var g = grade(p.score); return { name: p.name, brand: p.brand, ini: p.ini, tint: p.tint, lid: p.lid, score: p.score, g: g, alg: p.allergens.length ? p.allergens.join(', ') + (p.may.length ? '; poate conține: ' + p.may.join(', ').toLowerCase() : '') : 'niciunul declarat' }; }
+    var BEST = 'background: #D5E8CE; color: #173A2A; font-weight: 800', NORM = 'font-weight: 600';
+    var dir = { kcal: 0, fat: -1, sat: -1, sugar: -1, salt: -1, protein: 1, fiber: 1 };
+    var rows = NROWS.map(function (r) {
+      var a = A.n[r[0]], b = B.n[r[0]], d = Math.abs(a - b), k = dir[r[0]];
+      var aBest = k !== 0 && d > 0.05 && (k < 0 ? a < b : a > b), bBest = k !== 0 && d > 0.05 && !aBest;
+      return { l: r[1], av: fmt(a, r[0] === 'kcal' ? 0 : null) + ' ' + r[2], bv: fmt(b, r[0] === 'kcal' ? 0 : null) + ' ' + r[2],
+        diff: d <= 0.05 ? 'la fel' : 'diferență ' + fmt(d, r[0] === 'kcal' ? 0 : null) + ' ' + r[2],
+        aSt: aBest ? BEST : NORM, bSt: bBest ? BEST : NORM };
+    });
+    var ds = A.n.sugar - B.n.sugar, less = ds < 0 ? A : B, more = ds < 0 ? B : A, d = Math.abs(ds);
+    var sum = d < 0.5 ? 'Cantitatea de zahăr este aproape aceeași.' : less.brand + ' are cu ' + fmt(d) + ' g mai puțin zahăr la 100 g. La o porție de ' + more.portion + ' g, diferența este ≈ ' + spoons(d * more.portion / 100) + '.';
+    var dsat = A.n.sat - B.n.sat;
+    if (Math.abs(dsat) >= 1) sum += ' ' + (dsat < 0 ? A : B).brand + ' are și cu ' + fmt(Math.abs(dsat)) + ' g mai puține grăsimi saturate.';
+    return { cat: A.catName, unit: A.unit, a: side(A), b: side(B), rows: rows, summary: sum };
+  }
+
+  renderVals() {
+    var self = this, s = this.state;
+    var p = this.prod(s.pid) || P.livada;
+    var v = this.view(p);
+    var hist = s.history.map(function (h) { return self.item(h); }).filter(Boolean);
+    var groups = GROUPS.map(function (gr) {
+      var items = [];
+      p.ings.forEach(function (it, i) {
+        if (it.g !== gr[0]) return;
+        var id = p.id + '-' + i, open = s.open === id;
+        items.push({ name: it.name, role: it.role, d: it.d, src: it.src, allergen: !!it.allergen, open: open, exp: String(open), rot: open ? 'transform: rotate(180deg)' : '',
+          toggle: function () { self.setState({ open: open ? null : id }); } });
+      });
+      return { name: gr[1], count: items.length, items: items };
+    }).filter(function (g) { return g.items.length; });
+    var adds = p.ings.filter(function (x) { return x.g === 'add'; }).length;
+    var nav = { home: '#56615A', compare: '#56615A', history: '#56615A' };
+    if (nav[s.screen]) nav[s.screen] = '#173A2A';
+    var ocrIngUnclear = s.ocrIng.indexOf('[?]') >= 0;
+    var flagCount = s.ocrFlags.filter(function (k) { return !String(s.ocrN[k] || '').trim(); }).length + (ocrIngUnclear ? 1 : 0);
+    var detected = detect(s.ocrIng);
+    var scr = {}; scr[s.screen] = true;
+    var DEMO = [['Iaurt natural', 'livada'], ['Iaurt cu căpșuni', 'zorel'], ['Iaurt grecesc', 'stana'], ['Biscuiți ovăz', 'ovazel'], ['Suc de mere', 'gradina']];
+    return {
+      scr: scr, offline: s.offline, camDenied: s.camDenied, camOk: !s.camDenied, code: s.code, shot1: s.shot1,
+      v: v,
+      hasHistory: hist.length > 0, noHistory: !hist.length, recent: hist.slice(0, 3), histItems: hist,
+      histCountText: plural(hist.length, 'produs', 'produse'),
+      showNav: !!(s.screen === 'home' || s.screen === 'history' || (s.screen === 'compare' && !s.prev.length)),
+      navC: nav, canBack: s.prev.length > 0, topPad: s.prev.length ? '' : 'padding-left: 16px',
+      manual: s.manual, manualErr: s.manualErr, hasManualErr: !!s.manualErr,
+      onManual: function (e) { self.setState({ manual: e.target.value.replace(/[^\d\s]/g, '').slice(0, 16), manualErr: '' }); },
+      submitManual: function () { self.submitManual(); },
+      demoCodes: DEMO.map(function (d) { return { label: d[0], scan: function () { self.scan(P[d[1]].code); } }; }).concat([{ label: 'Cod necunoscut', scan: function () { self.scan('4841234567890'); } }]),
+      ingSummary: plural(p.ings.length, 'ingredient', 'ingrediente') + ' · ' + (adds ? plural(adds, 'aditiv', 'aditivi') : 'fără aditivi'),
+      groups: groups,
+      cmp: this.compareVals(),
+      cap: { title: s.capFor ? 'Fotografiază tabelul' : 'Pasul ' + s.capStep + ' din 2', isIng: s.capStep === 1, isTab: s.capStep === 2,
+        hint: s.capStep === 1 ? 'Fotografiază lista de ingrediente. Ține telefonul paralel cu eticheta, fără reflexii.' : 'Acum tabelul nutrițional, cu toate rândurile în chenar.',
+        s1: s.capFor ? 'background: rgba(255,255,255,.25)' : 'background: #C8E07A', s2: s.capStep === 2 ? 'background: #C8E07A' : 'background: rgba(255,255,255,.25)',
+        thumbSt: s.shot1 ? 'background: #C8E07A; border-color: #C8E07A' : '' },
+      ocrIng: s.ocrIng, ocrIngUnclear: ocrIngUnclear, ocrIngCls: ocrIngUnclear ? 'warn' : '',
+      ocrWarn: flagCount > 0, ocrWarnTitle: 'Text neclar în ' + plural(flagCount, 'zonă', 'zone'),
+      onOcrIng: function (e) { self.setState({ ocrIng: e.target.value, ocrErr: '' }); },
+      detected: detected, noDetected: !detected.length,
+      ocrRows: NROWS.map(function (r) {
+        var val = s.ocrN[r[0]] || '', flag = s.ocrFlags.indexOf(r[0]) >= 0 && !String(val).trim();
+        return { id: 'ocr-' + r[0], label: r[1], unit: r[2], value: val, flag: flag, cls: flag ? 'warn' : '',
+          onChange: function (e) { var n = Object.assign({}, self.state.ocrN); n[r[0]] = e.target.value.replace(/[^\d.,]/g, '').slice(0, 6); self.setState({ ocrN: n, ocrErr: '' }); } };
+      }),
+      ocrErr: s.ocrErr, hasOcrErr: !!s.ocrErr,
+      sheetLabel: s.sheet === 'label', sheetDemo: s.sheet === 'demo', sheetClear: s.sheet === 'clear',
+      toggles: [['offline', 'Fără conexiune', 'Căutarea codurilor noi e blocată; istoricul merge.'], ['camDenied', 'Cameră refuzată', 'Scanerul și fotografierea oferă alternative.'], ['ocrUnclear', 'OCR neclar', 'Textul extras are zone necitite.']].map(function (t) {
+        var on = !!s[t[0]];
+        return { l: t[1], d: t[2], on: String(on), track: on ? '#2E6B45' : '#B9B2A3', x: on ? 20 : 0, flip: function () { var o = {}; o[t[0]] = !self.state[t[0]]; self.setState(o); } };
+      }),
+      toast: s.toast, hasToast: !!s.toast,
+      back: function () { self.back(); },
+      tabHome: function () { self.tab('home'); },
+      tabHistory: function () { self.tab('history'); },
+      tabCompare: function () { self.tab('compare'); },
+      goScanner: function () { self.go('scanner', { manualErr: '' }); },
+      goIngredients: function () { self.go('ingredients', { open: null }); },
+      openDemo: function () { self.setState({ sheet: 'demo' }); },
+      openLabel: function () { self.setState({ sheet: 'label' }); },
+      closeSheet: function () { self.setState({ sheet: null }); },
+      askClear: function () { self.setState({ sheet: 'clear' }); },
+      doClear: function () { self.setState({ history: [], sheet: null }); self.toast('Istoricul a fost șters de pe acest telefon.'); },
+      report: function () { self.setState({ sheet: null }); self.toast('Mulțumim! Echipa va compara datele cu eticheta.'); },
+      allowCam: function () { self.setState({ camDenied: false }); self.toast('Acces la cameră permis (simulare).'); },
+      confirmYes: function () { self.setState({ screen: 'result', history: self.addHistory(s.pid) }); },
+      confirmNo: function () { self.setState({ screen: 'notfound' }); },
+      rescan: function () { self.go('scanner', { manual: s.code, manualErr: '' }); },
+      startCapture: function () { self.go('capture', { capStep: 1, shot1: false, capFor: null }); },
+      captureTable: function () { self.go('capture', { capStep: 2, shot1: true, capFor: s.pid }); },
+      shutter: function () { self.shutter(); },
+      retake: function () { self.retake(); },
+      ocrConfirm: function () { self.ocrConfirm(); },
+      compareFrom: function () { var pe = self.peers(p); if (pe.length) self.go('compare', { cmpA: p.id, cmpB: pe[0].id }); },
+      swapB: function () {
+        var pe = self.peers(P[s.cmpA]), i = pe.map(function (x) { return x.id; }).indexOf(s.cmpB);
+        if (pe.length < 2) { self.toast('Nu există alt produs din această categorie în datele demo.'); return; }
+        self.setState({ cmpB: pe[(i + 1) % pe.length].id });
+      },
+      switchCat: function () { var y = P[s.cmpA].cat === 'iaurt'; self.setState({ cmpA: y ? 'morarita' : 'livada', cmpB: y ? 'ovazel' : 'zorel' }); },
+      retry: function () { if (s.offline) self.toast('Încă nu există conexiune. Încearcă în câteva secunde.'); else self.scan(s.code, true); },
+      reconnect: function () { self.scan(s.code, true, true); self.toast('Conexiune restabilită.'); },
+      demoNotFound: function () { self.scan('4841234567890'); },
+      demoInsufficient: function () { self.scan(P.gradina.code, false, true); },
+      demoRestore: function () { self.setState({ history: demoHistory(), sheet: null }); self.toast('Istoricul demo a fost restaurat.'); }
+    };
+  }
+}
+</script>
+</body>
+</html>
