@@ -1,20 +1,20 @@
-# Dedicated C3 stack for this worktree; never reset another task stack. CLI: 2.65.5.
-project_id = "okbite-c3-cd37"
+# Dedicated R2 stack for this worktree; never reset another task stack. CLI: 2.65.5.
+project_id = "okbite-c6"
 [api]
-port = 56431
+port = 57431
 schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 [db]
-port = 56432
-shadow_port = 56430
+port = 57432
+shadow_port = 57430
 major_version = 15
 [db.seed]
 enabled = true
 sql_paths = ["./seed.sql"]
 [studio]
-port = 56433
+port = 57433
 [inbucket]
-port = 56434
+port = 57434
 [analytics]
 enabled = false
 

@@ -13,9 +13,9 @@
     "e2e": "echo \"set up in D6\" && exit 1",
     "sync-shared": "node scripts/sync-shared.mjs",
     "format": "prettier --write .",
+    "test:sync-shared": "node --test scripts/sync-shared.test.mjs",
     "test:scripts": "vitest run scripts --exclude \"**/*.test.mjs\"",
     "data:check": "tsx scripts/check-data.ts",
-    "test:sync-shared": "node --test scripts/sync-shared.test.mjs",
     "test:local-gateway": "node --test supabase/tests/local-cors.test.mjs"
   },
   "devDependencies": {
