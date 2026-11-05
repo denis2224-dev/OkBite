@@ -28,7 +28,7 @@
     },
     "expectedPoints": -10,
     "expectedLetter": "A",
-    "checkedWith": "SpF calculator <version>, Sergiu, 2026-11-05"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 19 (label kJ 2474); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Mandorle",
@@ -59,7 +59,7 @@
     },
     "expectedPoints": -11,
     "expectedLetter": "A",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 24; label kJ 2447; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 24 (label kJ 2447); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Brânză granulată 4%",
@@ -90,11 +90,11 @@
     },
     "expectedPoints": 0,
     "expectedLetter": "A",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 19; label kJ 462.5; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 19 (label kJ 462.5); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Pasta de tomate",
-    "brand": "ALFA-NISTRU&quot; S.A.",
+    "brand": "ALFA-NISTRU S.A.",
     "code": "4840019001881",
     "scoreKind": "general",
     "nutrients": {
@@ -121,7 +121,7 @@
     },
     "expectedPoints": 3,
     "expectedLetter": "C",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 19; label kJ null; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 19 (kJ = kcal × 4.184, no label kJ); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Yaw",
@@ -150,9 +150,9 @@
       "points": 0,
       "letter": "A"
     },
-    "expectedPoints": null,
-    "expectedLetter": null,
-    "checkedWith": null
+    "expectedPoints": -1,
+    "expectedLetter": "A",
+    "checkedWith": "Entered by Rusu Serghei, 2026-11-05 (-1, A). Not used as a fixture: the label gives 1300 kJ but 365 kcal (= 1527 kJ), so energy points depend on which one is right; the calculator gives 0, A with 1300 kJ."
   },
   {
     "name": "Izvorul Gura Căinarului",
@@ -180,7 +180,7 @@
     "offReference": null,
     "expectedPoints": 0,
     "expectedLetter": "A",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10): plain water (\"Water without any addition\" = YES, no nutrients) gives Nutriscore_A and no points; points recorded as 0. Run by Claude 2026-11-05 on OFF rev 24; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 24 (plain water: calculator gives A without points, recorded as 0); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Молоко пастеризованное",
@@ -211,7 +211,7 @@
     },
     "expectedPoints": 2,
     "expectedLetter": "B",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 14; label kJ null; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 14 (kJ = kcal × 4.184, no label kJ); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Apă potabilă",
@@ -242,7 +242,7 @@
     },
     "expectedPoints": 0,
     "expectedLetter": "B",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 21; label kJ 0; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 21 (label kJ 0); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Monastârschi",
@@ -273,7 +273,7 @@
     },
     "expectedPoints": 2,
     "expectedLetter": "B",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 12; label kJ 1081.6; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 12 (label kJ 1081.6); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Suc juice",
@@ -335,7 +335,7 @@
     },
     "expectedPoints": 1,
     "expectedLetter": "B",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 17; label kJ 0; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 17 (label kJ 0); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Fruit2go prune uscate",
@@ -366,7 +366,7 @@
     },
     "expectedPoints": 7,
     "expectedLetter": "C",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 20; label kJ 974.5; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 20 (label kJ 974.5); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Pâine De Sud",
@@ -397,7 +397,7 @@
     },
     "expectedPoints": 4,
     "expectedLetter": "C",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 7; label kJ null; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 7 (kJ = kcal × 4.184, no label kJ); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Pâine Panmix Maia & Fibre",
@@ -428,7 +428,7 @@
     },
     "expectedPoints": 4,
     "expectedLetter": "C",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 4; label kJ 1067.7; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 4 (label kJ 1067.7); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Biscottini",
@@ -459,7 +459,7 @@
     },
     "expectedPoints": 8,
     "expectedLetter": "C",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 6; label kJ null; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 6 (kJ = kcal × 4.184, no label kJ); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Prune uscate fără sâmburi",
@@ -490,7 +490,7 @@
     },
     "expectedPoints": 7,
     "expectedLetter": "C",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 24; label kJ 1002; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 24 (label kJ 1002); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Seminte de floaréa soarelui prajite",
@@ -521,7 +521,7 @@
     },
     "expectedPoints": 7,
     "expectedLetter": "C",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 18; label kJ 2482; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 18 (label kJ 2482); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Напиток манго",
@@ -583,7 +583,7 @@
     },
     "expectedPoints": 15,
     "expectedLetter": "D",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 17; label kJ 1033; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 17 (label kJ 1033); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Smântână 15%",
@@ -614,7 +614,7 @@
     },
     "expectedPoints": 11,
     "expectedLetter": "D",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 5; label kJ 657; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 5 (label kJ 657); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Milk",
@@ -645,7 +645,7 @@
     },
     "expectedPoints": 7,
     "expectedLetter": "D",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 5; label kJ 312.5; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 5 (label kJ 312.5); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Petit beurre",
@@ -676,7 +676,7 @@
     },
     "expectedPoints": 17,
     "expectedLetter": "D",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 15; label kJ 1852.5; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 15 (label kJ 1852.5); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Covrigei Cu Mac",
@@ -707,7 +707,7 @@
     },
     "expectedPoints": 12,
     "expectedLetter": "D",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 12; label kJ 1752; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 12 (label kJ 1752); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Naturalis Tropic",
@@ -738,7 +738,7 @@
     },
     "expectedPoints": 13,
     "expectedLetter": "E",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 6; label kJ null; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 6 (kJ = kcal × 4.184, no label kJ); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Apple Juice",
@@ -769,7 +769,7 @@
     },
     "expectedPoints": 20,
     "expectedLetter": "E",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 6; label kJ 493; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 6 (label kJ 493); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Choco animal cookies",
@@ -800,7 +800,7 @@
     },
     "expectedPoints": 24,
     "expectedLetter": "E",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 12; label kJ 1973.7; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 12 (label kJ 1973.7); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Salty Pretzel",
@@ -831,7 +831,7 @@
     },
     "expectedPoints": 26,
     "expectedLetter": "E",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 8; label kJ 1737.3; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 8 (label kJ 1737.3); checked by Rusu Serghei, 2026-11-05"
   },
   {
     "name": "Butterfly Biscuits",
@@ -862,6 +862,192 @@
     },
     "expectedPoints": 25,
     "expectedLetter": "E",
-    "checkedWith": "FPS/SpF Nutri-Score calculator, updated algorithm (health.belgium.be copy, 2025-10); run by Claude 2026-11-05 on OFF rev 11; label kJ null; not yet checked by a person"
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 11 (kJ = kcal × 4.184, no label kJ); checked by Rusu Serghei, 2026-11-05"
+  },
+  {
+    "name": "Canzona",
+    "brand": "",
+    "code": "5701638115863",
+    "scoreKind": "cheese",
+    "nutrients": {
+      "kcal": 340,
+      "fat": 29,
+      "sat": 18,
+      "sugar": 0.5,
+      "salt": 3.3,
+      "protein": 20,
+      "fiber": null,
+      "fruitVegPct": null
+    },
+    "ingredientsText": null,
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/5701638115863?rev=7",
+      "rev": 7,
+      "lastModified": null,
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 23,
+      "letter": "E"
+    },
+    "expectedPoints": 23,
+    "expectedLetter": "E",
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 7 (label kJ 1421.5); not yet checked by Rusu Serghei"
+  },
+  {
+    "name": "Spring Onion & Cracked Black Pepper Alternative to Soft Cheese",
+    "brand": "Cathedral City",
+    "code": "5000295157569",
+    "scoreKind": "cheese",
+    "nutrients": {
+      "kcal": 230,
+      "fat": 20.6,
+      "sat": 17.8,
+      "sugar": 1,
+      "salt": 1.8,
+      "protein": 7.9,
+      "fiber": 2.4,
+      "fruitVegPct": null
+    },
+    "ingredientsText": "WATER, COCONUT OIL, SOYA PROTEIN CONCENTRATE, FAVA BEAN PROTEIN ISOLATE, ACIDITY REGULATORS (LACTIC ACID, SODIUM LACTATE). SALT, SUGAR, CALCIUM, SPRING ONION, SPIRIT VINEGAR, BLACK PEPPER, CHICORY ROOT FIBRE, NATURAL FLAVOURINGS, THICKENER (CARRAGEENAN).",
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/5000295157569?rev=16",
+      "rev": 16,
+      "lastModified": null,
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 17,
+      "letter": "D"
+    },
+    "expectedPoints": 17,
+    "expectedLetter": "D",
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 16 (label kJ 950); not yet checked by Rusu Serghei"
+  },
+  {
+    "name": "2 x Capellini Nr. 1",
+    "brand": "Barilla",
+    "code": "8076800195019",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 359,
+      "fat": 2,
+      "sat": 0.5,
+      "sugar": 3.5,
+      "salt": 0.01,
+      "protein": 13,
+      "fiber": 3,
+      "fruitVegPct": null
+    },
+    "ingredientsText": "Semola di grano duro, acqua.",
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/8076800195019?rev=2536",
+      "rev": 2536,
+      "lastModified": null,
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 0,
+      "letter": "A"
+    },
+    "expectedPoints": 0,
+    "expectedLetter": "A",
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 2536 (label kJ 1521); not yet checked by Rusu Serghei"
+  },
+  {
+    "name": "bento beans in tomato sauce",
+    "brand": "vis",
+    "code": "4840019000938",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 100,
+      "fat": 1.2,
+      "sat": 0.2,
+      "sugar": 2.3,
+      "salt": 1.18,
+      "protein": 5.1,
+      "fiber": 2.7,
+      "fruitVegPct": null
+    },
+    "ingredientsText": "Beans, water, tomato puree, refined sugar, wheat flour, salt, ground Black pepper, ground Red pepper.",
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840019000938?rev=7",
+      "rev": 7,
+      "lastModified": "2026-04-28",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 2,
+      "letter": "B"
+    },
+    "expectedPoints": 4,
+    "expectedLetter": "C",
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 7 (label kJ 424.7); not yet checked by Rusu Serghei"
+  },
+  {
+    "name": "Sonnenblumenöl, raffiniert",
+    "brand": "Floris",
+    "code": "4840059000929",
+    "scoreKind": "fat",
+    "nutrients": {
+      "kcal": 828,
+      "fat": 92,
+      "sat": 10,
+      "sugar": 0,
+      "salt": 0,
+      "protein": 0,
+      "fiber": 0,
+      "fruitVegPct": null
+    },
+    "ingredientsText": null,
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/4840059000929?rev=20",
+      "rev": 20,
+      "lastModified": "2026-03-26",
+      "retrievedAt": "2026-11-05",
+      "unit": "ml"
+    },
+    "offReference": {
+      "points": -1,
+      "letter": "B"
+    },
+    "expectedPoints": 4,
+    "expectedLetter": "C",
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 20 (label kJ 3400); not yet checked by Rusu Serghei"
+  },
+  {
+    "name": "Activia natur",
+    "brand": "Danone",
+    "code": "59467199",
+    "scoreKind": "general",
+    "nutrients": {
+      "kcal": 60,
+      "fat": 3.4,
+      "sat": 2.2,
+      "sugar": 3.9,
+      "salt": 0.12,
+      "protein": 3.5,
+      "fiber": 0,
+      "fruitVegPct": null
+    },
+    "ingredientsText": "consumul de referintà pentruun aune, migdale, ou, % din c o M umulzilni(derefe 125ge",
+    "source": {
+      "url": "https://world.openfoodfacts.org/product/59467199?rev=81",
+      "rev": 81,
+      "lastModified": "2026-09-10",
+      "retrievedAt": "2026-11-05",
+      "unit": "g"
+    },
+    "offReference": {
+      "points": 2,
+      "letter": "B"
+    },
+    "expectedPoints": 2,
+    "expectedLetter": "B",
+    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 81 (label kJ 251.6); not yet checked by Rusu Serghei"
   }
 ]
