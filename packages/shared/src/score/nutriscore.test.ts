@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ScoreFixture, type Nutrients } from '../contract';
 import { nutriScorePoints } from './nutriscore';
+import { hasNonNutritiveSweetener } from './sweeteners';
 
 const zero: Nutrients = { kcal: 0, fat: 0, sat: 0, sugar: 0, salt: 0, protein: 0, fiber: 0, fruitVegPct: 0 };
 const n = (over: Partial<Nutrients>): Nutrients => ({ ...zero, ...over });
@@ -13,7 +14,7 @@ const fixtures = existsSync(fixturesPath)
 
 describe.skipIf(fixtures.length === 0)('data/score-fixtures.json', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', (_name, f) => {
-    const { points, letter } = nutriScorePoints(f.nutrients, f.scoreKind);
+    const { points, letter } = nutriScorePoints(f.nutrients, f.scoreKind, hasNonNutritiveSweetener(f.ingredientsText ?? ''));
     expect({ points, letter }).toEqual({ points: f.expectedPoints, letter: f.expectedLetter });
   });
 });
