@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Body, Button, Card, Heading, Screen } from '../../ui';
 import { ro } from '../../copy/ro';
+import { displayScore } from '../product/displayScore';
 import { roDate } from '../product/SourceCard';
 import { clearHistory, listHistory, type HistoryEntry } from './store';
 
@@ -70,7 +71,9 @@ export function HistoryScreen() {
       {entries.length > 0 ? <>
         <Body>{ro.history.count(entries.length)}</Body>
         <View accessibilityRole="list" accessibilityLabel={ro.history.title} style={{ gap: 16 }}>
-          {entries.map(({ product, score, savedAt }) => <Card key={product.id}>
+          {entries.map(({ product, score: storedScore, savedAt }) => {
+            const score = displayScore(product, storedScore);
+            return <Card key={product.id}>
             <Heading style={{ fontSize: 20, lineHeight: 27 }}>{product.name}</Heading>
             <Body>{product.brand} · {product.quantity}</Body>
             <Body>{score.score === null || score.grade === 'unavailable'
@@ -85,7 +88,7 @@ export function HistoryScreen() {
             <Button variant="secondary" onPress={() => router.push({ pathname: '/product/[id]', params: { id: product.id, cached: '1' } })}>
               {ro.history.open(product.name)}
             </Button>
-          </Card>)}
+          </Card>; })}
         </View>
         {confirming ? <Card>
           <Heading style={{ fontSize: 20, lineHeight: 27 }}>{ro.history.clearTitle}</Heading>

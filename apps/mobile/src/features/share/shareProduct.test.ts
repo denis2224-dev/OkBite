@@ -29,3 +29,7 @@ it('lets the result view display a native failure', async () => {
   await expect(shareProduct(product, score)).rejects.toThrow('Unavailable');
 });
 afterEach(() => jest.restoreAllMocks());
+
+it('does not share a numeric score when label data is insufficient', () => {
+  expect(productShareText({ ...product, nutrients: { ...product.nutrients, salt: null } }, score)).toContain(ro.result.scoreUnavailable);
+});
