@@ -70,3 +70,15 @@ Original and subsequent remote snapshots are saved as
 `/private/tmp/okbite-R2-pr-recovery-publish.json`, with original local recovery refs.
 No graphify-out, credentials, dump or photo bytes are committed. No merge,
 deployment or branch-protection change was performed by this task.
+
+## Coordinator compatibility fix
+
+The independent `CI-isolated-services` branch assigns project IDs per GitHub
+run/attempt. This follow-up's fixed allowlist initially rejected them. A regression
+was observed failing, then fixed by allowing only the exact numeric run/attempt
+ID when GITHUB_ACTIONS is true. Other attempts, runs, arbitrary projects and
+non-CI use remain refused. Existing maintenance/CORS guards are preserved.
+This R1/R2 integration change requires independent review and human approval in
+the coordinator's run; historical waiver text does not grant that approval.
+The added Node regression raises the workspace total by one; current exact-head
+CI is authoritative. No hosted services, migrations or contracts were modified.
