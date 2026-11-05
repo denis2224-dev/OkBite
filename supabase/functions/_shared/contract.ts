@@ -83,6 +83,13 @@ export const ModerateRequest = z.discriminatedUnion('action', [
 export const ErrorCode = z.enum(['bad_request', 'rate_limited', 'not_found', 'unauthorized', 'upstream_failed', 'duplicate']);
 export const ErrorBody = z.object({ error: ErrorCode, message: z.string() });
 
+export const ClientErrorRequest = z.object({
+  message: z.string().min(1).max(1000), stack: z.string().max(2000).nullable(),
+  screen: z.string().max(200).refine((value) => !/[?#]/.test(value)),
+  appVersion: z.string().min(1).max(50), platform: z.enum(['ios', 'android', 'web']),
+}).strict();
+export const ClientErrorResponse = z.object({ status: z.literal('ok') });
+
 // Hand-maintained data files in /data (R3)
 export const CategoryEntry = Category;
 export const IngredientEntry = z.object({
@@ -125,6 +132,8 @@ export type ProductInput = z.infer<typeof ProductInput>;
 export type ModerateRequest = z.infer<typeof ModerateRequest>;
 export type ErrorCode = z.infer<typeof ErrorCode>;
 export type ErrorBody = z.infer<typeof ErrorBody>;
+export type ClientErrorRequest = z.infer<typeof ClientErrorRequest>;
+export type ClientErrorResponse = z.infer<typeof ClientErrorResponse>;
 export type CategoryEntry = z.infer<typeof CategoryEntry>;
 export type IngredientEntry = z.infer<typeof IngredientEntry>;
 export type ScoreFixture = z.infer<typeof ScoreFixture>;

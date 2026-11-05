@@ -25,6 +25,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm verify:toolchain
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
@@ -35,20 +36,18 @@ jobs:
           git diff --exit-code -- supabase/functions/_shared
           test -z "$(git ls-files --others --exclude-standard supabase/functions/_shared)"
       - run: pnpm --filter mobile web
+      - name: Test offline browser shell with local demo fixtures
+        run: |
+          pnpm exec playwright install --with-deps chromium webkit
+          pnpm e2e:web:build
+          pnpm e2e:web
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: web-export
           path: apps/mobile/dist
           retention-days: 7
-      - name: Export root design preview
-        if: hashFiles('src/main.ts') != ''
-        run: pnpm build:web
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        if: hashFiles('src/main.ts') != ''
-        with:
-          name: web-design-preview
-          path: dist
-          retention-days: 7
+      - name: Export target native applications
+        run: pnpm --filter mobile exec expo export --platform ios --platform android --output-dir dist-native
       - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
         if: hashFiles('supabase/functions/**/*.test.ts', 'supabase/functions/_shared/index.ts') != ''
         with:
