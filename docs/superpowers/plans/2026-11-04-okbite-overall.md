@@ -57,7 +57,7 @@ Task IDs keep their original letters (A content, B app, C backend, D platform/AI
 - No PR over about 400 changed lines (generated files and data JSON excepted).
 - Tests first: every task starts with a failing test. CI (`pnpm lint && pnpm typecheck && pnpm test`) must pass before review.
 - No fact without a source: ingredient explanations, allergen synonyms and score rules are drafted by agents but checked by a human against a cited source before merge.
-- Secrets only in Supabase function secrets, EAS and Cloudflare environment settings; `.env*` is git-ignored except `.env.example`. Anthropic key name: `ANTHROPIC_API_KEY`. The app holds only the Supabase URL and anon key.
+- Secrets only in Supabase function secrets, EAS and Cloudflare environment settings; `.env*` is git-ignored except `.env.example`. AI key name: `AI_API_KEY` (TokenHarbor `thk_live_` key); optional `AI_MODEL` overrides the default `deepseek-v4.1-flash:free`. The app holds only the Supabase URL and anon key.
 - Never show the Nutri-Score logo; always show "Calculat la 100 g; nu indică riscul unei boli." beside a score.
 - Bundle id / package name: `md.okbite.app`. Device id header: `x-device-id`. Rate limits per spec §6.
 - No payment or subscription code: pricing is not decided.
