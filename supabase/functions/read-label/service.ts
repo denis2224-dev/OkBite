@@ -18,8 +18,14 @@ export function createService(deps = { adminClient, saveJpeg, askClaude }) {
       }
     } catch (error) {
       // Nothing reached Claude: undo the upload and the quota use.
-      if (saved.length) await db.storage.from('uploads').remove(saved);
-      await releaseUsage(db, event).catch(() => console.warn('Quota release failed'));
+      try {
+        if (saved.length) {
+          const { error } = await db.storage.from('uploads').remove(saved);
+          if (error) throw new Error('Private photo cleanup failed');
+        }
+      } finally {
+        await releaseUsage(db, event);
+      }
       throw error;
     }
     // Claude gets the stored copies, which saveJpeg re-encoded without EXIF/GPS metadata.
