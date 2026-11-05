@@ -1,3 +1,19 @@
+# Current PR #16 review integration
+
+This review integrates main `3914c88`, preserving all merged backend/admin code,
+function settings, shared exports, generator and gateway checks. Root commands
+now validate both the design preview and every workspace suite exactly once.
+`pnpm sync-shared` runs the real generator; CI exports the root preview as well
+as the workspace app. Incoming backend and workspace sources remain unchanged.
+
+The root UI is explicitly demonstration-only even with backend env settings.
+Saved preview examples hydrate on Home and History after restart, and the demo
+sheet scrolls within the viewport for enlarged text. Existing project rules are
+preserved in AGENTS.md alongside the scoped preview guidance. Native devices,
+live service/model integration and operator policy review remain separate work.
+
+Earlier integration notes and evidence below refer to their recorded revisions.
+
 # Integration handoff
 
 The r4/ready-for-review branch contains the complete application work from

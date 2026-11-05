@@ -1,0 +1,63 @@
+# Role owners are verified repository collaborators.
+# Keep an alternate reviewer on role paths so authors cannot approve their own PRs.
+* @denis2224-dev
+
+# R4: App Foundation and Product Screens (@davidnenita22-arch).
+# Broad app ownership comes first; the specific exceptions below take precedence.
+/apps/mobile/app/ @davidnenita22-arch @denis2224-dev
+/apps/mobile/src/ @davidnenita22-arch @denis2224-dev
+
+# R2: Backend and Contract (@denis2224-dev)
+/supabase/ @denis2224-dev @stasikkk777
+/packages/shared/src/contract* @denis2224-dev @stasikkk777
+/scripts/sync-shared.mjs @denis2224-dev @stasikkk777
+/apps/mobile/app/admin/ @denis2224-dev @stasikkk777
+/apps/mobile/src/features/admin/ @denis2224-dev @stasikkk777
+/docs/ops/moderation.md @denis2224-dev @stasikkk777
+
+# R3: AI and Data (@SergiuTOP)
+/packages/shared/src/score/ @SergiuTOP @denis2224-dev
+/packages/shared/src/ean/ @SergiuTOP @denis2224-dev
+/packages/shared/src/allergens/ @SergiuTOP @denis2224-dev
+/supabase/functions/identify/ @SergiuTOP @denis2224-dev
+/supabase/functions/read-label/ @SergiuTOP @denis2224-dev
+/supabase/functions/_lib/claude.ts @SergiuTOP @denis2224-dev
+/data/ @SergiuTOP @denis2224-dev
+/scripts/check-data* @SergiuTOP @denis2224-dev
+/scripts/load-data.ts @SergiuTOP @denis2224-dev
+/scripts/import-off* @SergiuTOP @denis2224-dev
+
+# R5: Capture, Contribution and Field Testing (@itsjohnyoff)
+/apps/mobile/app/capture* @itsjohnyoff @denis2224-dev
+/apps/mobile/app/scan* @itsjohnyoff @denis2224-dev
+/apps/mobile/app/identify* @itsjohnyoff @denis2224-dev
+/apps/mobile/app/add/ @itsjohnyoff @denis2224-dev
+/apps/mobile/src/features/capture/ @itsjohnyoff @denis2224-dev
+/apps/mobile/src/features/scan/ @itsjohnyoff @denis2224-dev
+/apps/mobile/src/features/identify/ @itsjohnyoff @denis2224-dev
+/apps/mobile/src/features/add/ @itsjohnyoff @denis2224-dev
+
+# R1: Web, Quality and Product Details (verified: @stasikkk777).
+# Keep the repository owner too, so R1's author cannot approve their own PR.
+/*.json @denis2224-dev @stasikkk777
+/*.yaml @denis2224-dev @stasikkk777
+/*.js @denis2224-dev @stasikkk777
+/.gitignore @denis2224-dev @stasikkk777
+/.npmrc @denis2224-dev @stasikkk777
+/.nvmrc @denis2224-dev @stasikkk777
+/.prettier* @denis2224-dev @stasikkk777
+/.github/ @denis2224-dev @stasikkk777
+/AGENTS.md @denis2224-dev @stasikkk777
+/CLAUDE.md @denis2224-dev @stasikkk777
+/apps/mobile/app.config.ts @denis2224-dev @stasikkk777
+/apps/mobile/eas.json @denis2224-dev @stasikkk777
+/apps/mobile/public/ @denis2224-dev @stasikkk777
+/apps/mobile/app/+html.tsx @denis2224-dev @stasikkk777
+/apps/mobile/app/product/*/ingredients.tsx @denis2224-dev @stasikkk777
+/apps/mobile/app/product/*/label.tsx @denis2224-dev @stasikkk777
+/apps/mobile/app/(tabs)/compare.tsx @denis2224-dev @stasikkk777
+/apps/mobile/src/features/compare/ @denis2224-dev @stasikkk777
+/apps/mobile/src/lib/errorReporter* @denis2224-dev @stasikkk777
+/supabase/functions/client-error/ @denis2224-dev @stasikkk777
+/.maestro/ @denis2224-dev @stasikkk777
+/e2e-web/ @denis2224-dev @stasikkk777

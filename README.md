@@ -1,10 +1,10 @@
 # okBite
 
-The Expo application lives directly inside `PWA_Moldova`. It follows the supplied
+The Expo design preview lives at the repository root. It follows the supplied
 feature-oriented layout using TypeScript instead of Dart.
 
 ```text
-PWA_Moldova/
+OkBite/
 ├── design/                      Reference HTML and canvas metadata; not shipped
 ├── assets/
 │   ├── fonts/                   Local Bricolage Grotesque and Manrope files
@@ -62,8 +62,8 @@ beside their respective source files. Fonts are bundled locally without runtime 
 Dependencies are installed. To open the browser development version:
 
 ```sh
-cd /Users/davidnenita/Documents/PWA/PWA_Moldova
-npm run web
+# From the repository root:
+pnpm web
 ```
 
 Use `npm run dev` for the phone development server or `npm run web:awake` to
@@ -79,9 +79,12 @@ npx --yes pnpm@9.12.0 install --frozen-lockfile
 Combined checks: `npm run check` (app, browser, shared, scaffold, scripts and data).
 Browser export: `npm run build:web`. All platform bundles: `npx expo export --platform all`.
 
-Copy `.env.example` to `.env.local` for local settings. Without service settings,
-the app displays the demonstration workflow and does not upload photos. Live
-capture and backend integration remain pending. Operator details and final review
+The root application stays in demonstration mode even when Supabase settings
+are present; it does not upload photos or invoke unfinished live routes. Saved
+examples restore from local history, while sample flags reset on each launch.
+The service-integration workspace remains at `apps/mobile` and starts with
+`pnpm --filter mobile start`. Live camera and backend wiring into this design
+remain pending. Operator details and final review
 are still required for the draft policy pages.
 
 Earlier implementations are preserved on their existing branches and in the

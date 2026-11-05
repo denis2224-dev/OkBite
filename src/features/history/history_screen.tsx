@@ -1,41 +1,39 @@
-import { useCallback, useState } from "react";
-import { View, Modal, Pressable } from "react-native";
-import { router, useFocusEffect } from "expo-router";
-import {
-  Screen,
-  Body,
-  Heading,
-  Card,
-  Button,
-  Icon,
-} from "../../shared/widgets";
-import { HistoryRows } from "../../shared/widgets/history_rows";
-import { useTheme } from "../../core/theme/app_theme";
-import { ro, plural } from "../../core/constants/strings_ro";
-import {
-  isPreview,
-  useDemoState,
-  demoActions,
-} from "../../shared/state/app_state";
+import { useCallback, useState } from 'react';
+import { View, Modal, Pressable } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
+import { Screen, Body, Heading, Card, Button, Icon } from '../../shared/widgets';
+import { HistoryRows } from '../../shared/widgets/history_rows';
+import { useTheme } from '../../core/theme/app_theme';
+import { ro, plural } from '../../core/constants/strings_ro';
+import { isPreview, useDemoState, demoActions } from '../../shared/state/app_state';
 import {
   listHistory,
   clearHistory,
   removeFromHistory,
   type HistoryEntry,
-} from "../../data/repositories/history_repository";
-import { useToast } from "../../shared/widgets/toast";
+} from '../../data/repositories/history_repository';
+import { useToast } from '../../shared/widgets/toast';
 export default function History() {
   const { colors } = useTheme(),
     demo = useDemoState(),
     toast = useToast();
   const [rows, setRows] = useState<HistoryEntry[]>([]),
     [confirm, setConfirm] = useState(false),
-    [error, setError] = useState("");
+    [error, setError] = useState('');
   const load = useCallback(() => {
-    if (!isPreview)
-      void listHistory()
-        .then(setRows)
-        .catch(() => setError(ro.history.storageError));
+    let active = true;
+    void listHistory()
+      .then((saved) => {
+        if (!active) return;
+        if (isPreview) demoActions.hydrateHistory(saved);
+        else setRows(saved);
+      })
+      .catch(() => {
+        if (active) setError(ro.history.storageError);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
   useFocusEffect(load);
   const entries = isPreview ? demo.history : rows;
@@ -66,9 +64,9 @@ export default function History() {
         paddingHorizontal: 16,
         paddingTop: 12,
         paddingBottom: 6,
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
       }}
     >
       <Heading style={{ fontSize: 21 }}>{ro.history.title}</Heading>
@@ -81,13 +79,13 @@ export default function History() {
           paddingHorizontal: 12,
           borderRadius: 22,
           backgroundColor: colors.lowBg,
-          flexDirection: "row",
+          flexDirection: 'row',
           gap: 6,
-          alignItems: "center",
+          alignItems: 'center',
         }}
       >
         <Icon name="trash" size={16} color={colors.low} />
-        <Body style={{ fontSize: 12, fontWeight: "800", color: colors.low }}>
+        <Body style={{ fontSize: 12, fontWeight: '800', color: colors.low }}>
           {ro.history.clear}
         </Body>
       </Pressable>
@@ -95,9 +93,7 @@ export default function History() {
   );
   return (
     <Screen header={header}>
-      <Body style={{ fontSize: 13, color: colors.muted }}>
-        {ro.history.description}
-      </Body>
+      <Body style={{ fontSize: 13, color: colors.muted }}>{ro.history.description}</Body>
       {!!error && <Body accessibilityLiveRegion="polite">{error}</Body>}
       {entries.length ? (
         <HistoryRows
@@ -106,16 +102,12 @@ export default function History() {
           onRemove={(id) => void remove(id)}
         />
       ) : (
-        <Card style={{ paddingVertical: 30, alignItems: "center" }}>
+        <Card style={{ paddingVertical: 30, alignItems: 'center' }}>
           <Icon name="history" size={42} color={colors.muted} />
-          <Heading style={{ fontSize: 22, textAlign: "center" }}>
-            {ro.history.emptyTitle}
-          </Heading>
-          <Body style={{ color: colors.muted, textAlign: "center" }}>
-            {ro.history.empty}
-          </Body>
-          <Button icon="scan" onPress={() => router.push("/preview?step=scan")}>
-            {ro.app.design.primaryScan.replace("produsul", "un produs")}
+          <Heading style={{ fontSize: 22, textAlign: 'center' }}>{ro.history.emptyTitle}</Heading>
+          <Body style={{ color: colors.muted, textAlign: 'center' }}>{ro.history.empty}</Body>
+          <Button icon="scan" onPress={() => router.push('/preview?step=scan')}>
+            {ro.app.design.primaryScan.replace('produsul', 'un produs')}
           </Button>
         </Card>
       )}
@@ -129,15 +121,15 @@ export default function History() {
           style={{
             flex: 1,
             backgroundColor: colors.scrim,
-            justifyContent: "flex-end",
+            justifyContent: 'flex-end',
           }}
         >
           <View
             accessibilityViewIsModal
             style={{
-              width: "100%",
+              width: '100%',
               maxWidth: 390,
-              alignSelf: "center",
+              alignSelf: 'center',
               backgroundColor: colors.ground,
               padding: 20,
               borderTopLeftRadius: 24,
@@ -148,7 +140,7 @@ export default function History() {
             <Heading style={{ fontSize: 21 }}>{ro.history.clearTitle}</Heading>
             <Body>
               {ro.app.design.clearPrefix}
-              {plural(entries.length, "produs", "produse")}
+              {plural(entries.length, 'produs', 'produse')}
               {ro.app.design.clearSuffix}
             </Body>
             <Button onPress={() => void clear()}>{ro.history.clear}</Button>

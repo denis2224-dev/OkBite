@@ -1,23 +1,13 @@
-import { useCallback, useState } from "react";
-import { View, Pressable } from "react-native";
-import { router, useFocusEffect } from "expo-router";
-import { ro } from "../../core/constants/strings_ro";
-import {
-  Screen,
-  Body,
-  Heading,
-  Card,
-  Button,
-  Icon,
-} from "../../shared/widgets";
-import { HistoryRows } from "../../shared/widgets/history_rows";
-import { useTheme } from "../../core/theme/app_theme";
-import { isPreview, useDemoState } from "../../shared/state/app_state";
-import {
-  listHistory,
-  type HistoryEntry,
-} from "../../data/repositories/history_repository";
-import { DemoStatesSheet } from "./demo_states_sheet";
+import { useCallback, useState } from 'react';
+import { View, Pressable } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
+import { ro } from '../../core/constants/strings_ro';
+import { Screen, Body, Heading, Card, Button, Icon } from '../../shared/widgets';
+import { HistoryRows } from '../../shared/widgets/history_rows';
+import { useTheme } from '../../core/theme/app_theme';
+import { isPreview, useDemoState, demoActions } from '../../shared/state/app_state';
+import { listHistory, type HistoryEntry } from '../../data/repositories/history_repository';
+import { DemoStatesSheet } from './demo_states_sheet';
 export default function Home() {
   const { colors } = useTheme(),
     demo = useDemoState();
@@ -25,11 +15,13 @@ export default function Home() {
     [sheet, setSheet] = useState(false);
   useFocusEffect(
     useCallback(() => {
-      if (isPreview) return;
       let active = true;
       void listHistory()
         .then((rows) => {
-          if (active) setHistory(rows);
+          if (active) {
+            if (isPreview) demoActions.hydrateHistory(rows);
+            else setHistory(rows);
+          }
         })
         .catch(() => {});
       return () => {
@@ -38,7 +30,7 @@ export default function Home() {
     }, []),
   );
   const entries = (isPreview ? demo.history : history).slice(0, 3);
-  const tab = (path: "/" | "/compare" | "/history") => {
+  const tab = (path: '/' | '/compare' | '/history') => {
     if (router.canDismiss()) router.dismissAll();
     router.replace(path);
   };
@@ -48,14 +40,12 @@ export default function Home() {
         paddingTop: 12,
         paddingHorizontal: 16,
         paddingBottom: 6,
-        flexDirection: "row",
-        alignItems: "center",
+        flexDirection: 'row',
+        alignItems: 'center',
         gap: 10,
       }}
     >
-      <Heading
-        style={{ fontSize: 21, lineHeight: 26, color: colors.forest, flex: 1 }}
-      >
+      <Heading style={{ fontSize: 21, lineHeight: 26, color: colors.forest, flex: 1 }}>
         {ro.app.name}
       </Heading>
       <Pressable
@@ -64,18 +54,16 @@ export default function Home() {
         onPress={() => setSheet(true)}
         style={{
           minHeight: 44,
-          flexDirection: "row",
+          flexDirection: 'row',
           gap: 7,
           paddingHorizontal: 12,
-          alignItems: "center",
+          alignItems: 'center',
           borderRadius: 22,
           backgroundColor: colors.soft,
         }}
       >
         <Icon name="settings" size={18} color={colors.ink} />
-        <Body style={{ fontSize: 12, fontWeight: "700" }}>
-          {ro.app.design.demoTitle}
-        </Body>
+        <Body style={{ fontSize: 12, fontWeight: '700' }}>{ro.app.design.demoTitle}</Body>
       </Pressable>
     </View>
   );
@@ -85,9 +73,7 @@ export default function Home() {
       footer={
         <Button
           icon="scan"
-          onPress={() =>
-            router.push(isPreview ? "/preview?step=scan" : ("/scan" as never))
-          }
+          onPress={() => router.push(isPreview ? '/preview?step=scan' : ('/scan' as never))}
           style={{ minHeight: 62, borderRadius: 20 }}
         >
           {ro.app.design.primaryScan}
@@ -101,22 +87,20 @@ export default function Home() {
           paddingTop: 22,
           paddingHorizontal: 20,
           paddingBottom: 24,
-          overflow: "hidden",
+          overflow: 'hidden',
           marginTop: 0,
         }}
       >
-        <View
-          style={{ position: "absolute", right: -30, top: -26, opacity: 0.22 }}
-        >
+        <View style={{ position: 'absolute', right: -30, top: -26, opacity: 0.22 }}>
           <Icon name="tag" size={150} color={colors.accent} />
         </View>
         <Body
           style={{
             fontSize: 11,
             lineHeight: 16,
-            fontWeight: "800",
+            fontWeight: '800',
             letterSpacing: 0.8,
-            textTransform: "uppercase",
+            textTransform: 'uppercase',
             color: colors.accent,
           }}
         >
@@ -126,8 +110,8 @@ export default function Home() {
           style={{
             fontSize: 30,
             lineHeight: 32.4,
-            fontWeight: "800",
-            color: "#FFFFFF",
+            fontWeight: '800',
+            color: '#FFFFFF',
             maxWidth: 290,
             marginTop: 8,
             marginBottom: 10,
@@ -139,24 +123,20 @@ export default function Home() {
           {ro.home.description}
         </Body>
       </View>
-      <View style={{ flexDirection: "row", gap: 10 }}>
+      <View style={{ flexDirection: 'row', gap: 10 }}>
         {[
           {
-            icon: "camera" as const,
+            icon: 'camera' as const,
             title: ro.home.photoButton,
             hint: ro.app.design.photoHint,
             onPress: () =>
-              router.push(
-                isPreview
-                  ? "/preview?step=ingredientsPhoto"
-                  : ("/capture" as never),
-              ),
+              router.push(isPreview ? '/preview?step=ingredientsPhoto' : ('/capture' as never)),
           },
           {
-            icon: "compare" as const,
+            icon: 'compare' as const,
             title: ro.home.compare,
             hint: ro.home.compareHint,
-            onPress: () => tab("/compare"),
+            onPress: () => tab('/compare'),
           },
         ].map((action) => (
           <Pressable
@@ -173,21 +153,17 @@ export default function Home() {
                   height: 40,
                   borderRadius: 12,
                   backgroundColor: colors.mint,
-                  alignItems: "center",
-                  justifyContent: "center",
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
                 <Icon name={action.icon} color={colors.forest} />
               </View>
               <View>
-                <Body
-                  style={{ fontSize: 15, lineHeight: 20, fontWeight: "800" }}
-                >
+                <Body style={{ fontSize: 15, lineHeight: 20, fontWeight: '800' }}>
                   {action.title}
                 </Body>
-                <Body
-                  style={{ fontSize: 13, lineHeight: 18, color: colors.muted }}
-                >
+                <Body style={{ fontSize: 13, lineHeight: 18, color: colors.muted }}>
                   {action.hint}
                 </Body>
               </View>
@@ -197,27 +173,25 @@ export default function Home() {
       </View>
       <View
         style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
           marginTop: 0,
         }}
       >
-        <Heading style={{ fontSize: 18, lineHeight: 23 }}>
-          {ro.home.recent}
-        </Heading>
+        <Heading style={{ fontSize: 18, lineHeight: 23 }}>{ro.home.recent}</Heading>
         <Pressable
           accessibilityRole="link"
           accessibilityLabel={ro.home.allHistory}
-          onPress={() => tab("/history")}
-          style={{ minHeight: 44, justifyContent: "center" }}
+          onPress={() => tab('/history')}
+          style={{ minHeight: 44, justifyContent: 'center' }}
         >
           <Body
             style={{
               fontSize: 12,
               color: colors.forest,
-              fontWeight: "800",
-              textDecorationLine: "underline",
+              fontWeight: '800',
+              textDecorationLine: 'underline',
             }}
           >
             {ro.home.allHistory}
@@ -239,19 +213,16 @@ export default function Home() {
           style={{
             fontSize: 11,
             lineHeight: 16,
-            fontWeight: "800",
-            textTransform: "uppercase",
+            fontWeight: '800',
+            textTransform: 'uppercase',
             letterSpacing: 0.7,
           }}
         >
           {ro.home.legend}
         </Body>
         <View style={{ gap: 8 }}>
-          {(["good", "medium", "low"] as const).map((grade) => (
-            <View
-              key={grade}
-              style={{ flexDirection: "row", gap: 10, alignItems: "center" }}
-            >
+          {(['good', 'medium', 'low'] as const).map((grade) => (
+            <View key={grade} style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
               <View
                 style={{
                   minWidth: 76,
@@ -265,21 +236,19 @@ export default function Home() {
                   style={{
                     fontSize: 13,
                     lineHeight: 18,
-                    textAlign: "center",
-                    fontWeight: "800",
+                    textAlign: 'center',
+                    fontWeight: '800',
                     color: colors[grade],
                   }}
                 >
-                  {grade === "good"
+                  {grade === 'good'
                     ? ro.home.legendGood
-                    : grade === "medium"
+                    : grade === 'medium'
                       ? ro.home.legendMedium
                       : ro.home.legendLow}
                 </Body>
               </View>
-              <Body style={{ fontWeight: "600", flex: 1 }}>
-                {ro.home[grade]}
-              </Body>
+              <Body style={{ fontWeight: '600', flex: 1 }}>{ro.home[grade]}</Body>
             </View>
           ))}
         </View>

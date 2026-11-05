@@ -1,34 +1,40 @@
-const { defineConfig } = require("eslint/config");
-const expo = require("eslint-config-expo/flat");
+const { defineConfig } = require('eslint/config');
+const expo = require('eslint-config-expo/flat');
+const tseslint = require('typescript-eslint');
+
 module.exports = defineConfig([
-  expo,
-  // Zod schemas intentionally share names with their inferred TypeScript types.
-  {
-    files: ["src/data/models/*.ts", "packages/shared/src/contract.ts"],
-    rules: { "@typescript-eslint/no-redeclare": "off" },
-  },
   {
     ignores: [
-      "**/dist/**",
-      "**/coverage/**",
-      ".worktrees/**",
-      ".agents/**",
-      ".pnpm-store/**",
-      "design/**",
-      "docs/**",
-      "graphify-out/**",
-      ".superpowers/**",
-      "supabase/functions/_shared/**",
+      '**/.expo/**',
+      '.agents/**',
+      '.worktrees/**',
+      '.pnpm-store/**',
+      'design/**',
+      '**/dist/**',
+      '**/coverage/**',
+      'docs/**',
+      'graphify-out/**',
+      '.superpowers/**',
+      'supabase/functions/_shared/**',
     ],
   },
+  expo,
+  { files: ['**/*.{ts,tsx,mts,cts}'], extends: [tseslint.configs.recommended] },
   {
-    files: ["**/*.test.ts", "**/*.test.tsx"],
+    files: ['src/data/models/*.ts'],
+    rules: { '@typescript-eslint/no-redeclare': 'off' },
+  },
+  {
+    files: ['test/**/*.{js,jsx,ts,tsx}'],
     languageOptions: {
       globals: Object.fromEntries(
-        ["jest", "it", "expect", "beforeEach", "afterEach", "describe"].map(
-          (key) => [key, "readonly"],
-        ),
+        ['jest', 'test', 'it', 'expect', 'beforeEach', 'afterEach', 'beforeAll', 'afterAll', 'describe']
+          .map((name) => [name, 'readonly']),
       ),
     },
+  },
+  {
+    files: ['supabase/functions/**/*.ts', 'supabase/ops/**/*.ts'],
+    rules: { 'import/no-unresolved': ['error', { ignore: ['^npm:', '^@supabase/supabase-js$'] }] },
   },
 ]);
