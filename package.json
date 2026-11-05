@@ -16,6 +16,8 @@
     "test:sync-shared": "node --test scripts/sync-shared.test.mjs",
     "test:scripts": "vitest run scripts --exclude \"**/*.test.mjs\"",
     "data:check": "tsx scripts/check-data.ts",
+    "data:load": "tsx scripts/load-data.ts",
+    "data:off": "tsx scripts/import-off.ts",
     "test:local-gateway": "node --test supabase/tests/local-cors.test.mjs"
   },
   "devDependencies": {
