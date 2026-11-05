@@ -32,7 +32,7 @@ jest.mock('expo-file-system/legacy', () => ({
   makeDirectoryAsync: async (path: string) => mockFs.mkdir(path, { recursive: true }),
   copyAsync: async ({ from, to }: { from: string; to: string }) => mockFs.copyFile(from, to),
   readAsStringAsync: async (path: string) => (await mockFs.readFile(path)).toString('base64'),
-  deleteAsync: async (path: string) => mockFs.rm(path, { force: true }),
+  deleteAsync: jest.fn(async (path: string) => mockFs.rm(path, { force: true })),
 }));
 jest.mock('../../lib/api', () => ({ ...jest.requireActual('../../lib/api'), api: { lookup: jest.fn(), identify: jest.fn() } }));
 beforeEach(async () => {
@@ -115,6 +115,26 @@ it('resolveQueued removes the row and the photo file', async () => {
   jest.mocked(api.identify).mockResolvedValue(identifyCandidates);
   await flushQueue();
   const [item] = await listNeedsReview();
+  await resolveQueued(item!.id);
+  expect(await listQueued()).toEqual([]);
+  await expect(mockFs.stat(item!.payload)).rejects.toThrow();
+});
+
+it('keeps a photo review retryable when deleting the retained file fails', async () => {
+  const source = FileSystem.documentDirectory! + 'retry-cleanup.jpg';
+  await mockFs.writeFile(source, 'retained image');
+  await enqueue({ kind: 'photo', uri: source });
+  jest.mocked(api.identify).mockResolvedValue(identifyCandidates);
+  await flushQueue();
+  const [item] = await listNeedsReview();
+  jest.mocked(FileSystem.deleteAsync).mockRejectedValueOnce(new Error('file locked'));
+
+  await expect(resolveQueued(item!.id)).rejects.toThrow('file locked');
+  expect(await listNeedsReview()).toEqual([item]);
+  expect(await mockFs.readFile(item!.payload, 'utf8')).toBe('retained image');
+  await flushQueue();
+  expect(api.identify).toHaveBeenCalledTimes(1);
+
   await resolveQueued(item!.id);
   expect(await listQueued()).toEqual([]);
   await expect(mockFs.stat(item!.payload)).rejects.toThrow();
