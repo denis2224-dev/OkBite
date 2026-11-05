@@ -7,14 +7,15 @@
   },
   "scripts": {
     "dev": "pnpm --filter mobile start",
-    "test": "pnpm -r test && pnpm test:scripts",
+    "test": "pnpm test:sync-shared && pnpm -r test && pnpm test:scripts",
     "lint": "eslint .",
     "typecheck": "pnpm -r typecheck",
     "e2e": "echo \"set up in D6\" && exit 1",
-    "sync-shared": "echo \"set up in C3\" && exit 1",
+    "sync-shared": "node scripts/sync-shared.mjs",
     "format": "prettier --write .",
-    "test:scripts": "vitest run scripts",
-    "data:check": "tsx scripts/check-data.ts"
+    "test:scripts": "vitest run scripts --exclude \"**/*.test.mjs\"",
+    "data:check": "tsx scripts/check-data.ts",
+    "test:sync-shared": "node --test scripts/sync-shared.test.mjs"
   },
   "devDependencies": {
     "eslint": "^9.39.1",
