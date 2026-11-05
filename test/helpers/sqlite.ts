@@ -1,0 +1,18 @@
+jest.mock("expo-sqlite", () => {
+  const { DatabaseSync } = jest.requireActual("node:sqlite");
+  const db = new DatabaseSync(":memory:");
+  return {
+    openDatabaseAsync: async () => ({
+      execAsync: async (sql: string) => db.exec(sql),
+      runAsync: async (sql: string, ...params: unknown[]) =>
+        db.prepare(sql).run(...params),
+      getAllAsync: async (sql: string, ...params: unknown[]) =>
+        db.prepare(sql).all(...params),
+      getFirstAsync: async (sql: string, ...params: unknown[]) =>
+        db.prepare(sql).get(...params),
+    }),
+  };
+});
+jest.mock("expo-crypto", () => ({
+  randomUUID: () => jest.requireActual("node:crypto").randomUUID(),
+}));

@@ -1,0 +1,32 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-11-03T10:00:00Z"},
+  "title": "Pe Etichetă — prototip",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 390, "h": 844, "title": "1 · Acasă (prototip complet)", "is_interactive": true},
+    "Scanner.dc.html": {"x": 470, "y": 0, "w": 390, "h": 844, "title": "2 · Scanner", "is_interactive": true},
+    "Confirmare.dc.html": {"x": 940, "y": 0, "w": 390, "h": 844, "title": "2b · Confirmarea produsului", "is_interactive": true},
+    "Rezultat.dc.html": {"x": 1410, "y": 0, "w": 390, "h": 844, "title": "3 · Rezultat", "is_interactive": true},
+    "Ingrediente.dc.html": {"x": 1880, "y": 0, "w": 390, "h": 844, "title": "4 · Ingrediente", "is_interactive": true},
+    "Comparatie.dc.html": {"x": 2350, "y": 0, "w": 390, "h": 844, "title": "5 · Comparație", "is_interactive": true},
+    "Fotografiere.dc.html": {"x": 0, "y": 1300, "w": 390, "h": 844, "title": "6 · Fotografierea etichetei", "is_interactive": true},
+    "TextExtras.dc.html": {"x": 470, "y": 1300, "w": 390, "h": 844, "title": "6b · Confirmarea textului extras", "is_interactive": true},
+    "Istoric.dc.html": {"x": 940, "y": 1300, "w": 390, "h": 844, "title": "7 · Istoric", "is_interactive": true},
+    "Negasit.dc.html": {"x": 0, "y": 2600, "w": 390, "h": 844, "title": "Produs negăsit", "is_interactive": true},
+    "CameraRefuzata.dc.html": {"x": 470, "y": 2600, "w": 390, "h": 844, "title": "Cameră refuzată", "is_interactive": true},
+    "DateInsuficiente.dc.html": {"x": 940, "y": 2600, "w": 390, "h": 844, "title": "Date insuficiente", "is_interactive": true},
+    "OcrNeclar.dc.html": {"x": 1410, "y": 2600, "w": 390, "h": 844, "title": "OCR neclar", "is_interactive": true},
+    "FaraConexiune.dc.html": {"x": 1880, "y": 2600, "w": 390, "h": 844, "title": "Fără conexiune", "is_interactive": true}
+  },
+  "order": ["Main.dc.html", "Scanner.dc.html", "Confirmare.dc.html", "Rezultat.dc.html", "Ingrediente.dc.html", "Comparatie.dc.html", "Fotografiere.dc.html", "TextExtras.dc.html", "Istoric.dc.html", "Negasit.dc.html", "CameraRefuzata.dc.html", "DateInsuficiente.dc.html", "OcrNeclar.dc.html", "FaraConexiune.dc.html"],
+  "notes": {
+    "t1": {"x": 0, "y": -260, "text": "Flux principal: scanare → analiză → comparație", "kind": "title1", "maxW": 2740},
+    "t2": {"x": 0, "y": 1040, "text": "Produs lipsă și istoric", "kind": "title1", "maxW": 1330},
+    "t3": {"x": 0, "y": 2340, "text": "Stări importante", "kind": "title1", "maxW": 2270},
+    "n1": {"x": 1410, "y": 1300, "w": 520, "size": "m", "fill": "green", "text": "Cum se prezintă: apasă Play pe „1 · Acasă”, care conține tot fluxul. Restul ecranelor pornesc direct din pasul respectiv și sunt la fel de funcționale.\n\nButonul „Stări demo” de pe Acasă comută: fără conexiune, cameră refuzată, OCR neclar.\n\nCoduri demo: 4840001000017 (iaurt natural), 4840001000024 (iaurt cu căpșuni), 4840001000055 (suc — date insuficiente). Orice alt cod de 13 cifre = produs negăsit."},
+    "n2": {"x": 1410, "y": 2040, "w": 520, "size": "m", "fill": "orange", "text": "Toate produsele, mărcile și codurile sunt fictive. Scorurile sunt ilustrative: descriu calitatea nutrițională la 100 g, nu probabilitatea unei boli."}
+  },
+  "designSystems": []
+}
