@@ -5,6 +5,7 @@ import type { Product, ScoreResult } from '@okbite/shared';
 import { AllergenChip, Badge, Body, Button, Card, Heading, useToast } from '../../ui';
 import { ro } from '../../copy/ro';
 import { isPreview } from '../../lib/preview';
+import { displayScore } from './displayScore';
 import { ScoreCard } from './ScoreCard';
 import { PortionTable } from './PortionTable';
 import { SourceCard } from './SourceCard';
@@ -17,8 +18,7 @@ export function ResultView({ product, score }: { product: Product; score: ScoreR
   const [sharing, setSharing] = useState(false);
   const [shareFailed, setShareFailed] = useState(false);
   const toast = useToast();
-  const missing = (['kcal', 'sugar', 'sat', 'salt'] as const).filter(key => product.nutrients[key] === null);
-  const shownScore: ScoreResult = missing.length ? { score: null, letter: null, grade: 'unavailable', reasons: [], missing } : score;
+  const shownScore = displayScore(product, score);
   const share = async () => {
     setSharing(true);
     setShareFailed(false);

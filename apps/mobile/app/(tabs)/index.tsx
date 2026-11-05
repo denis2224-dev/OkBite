@@ -5,13 +5,14 @@ import { ro } from '../../src/copy/ro';
 import { Screen,Body,Heading,Card,Button,Icon,Badge } from '../../src/ui';
 import { useTheme } from '../../src/theme/useTheme';
 import { fonts } from '../../src/theme/tokens';
+import { displayScore } from '../../src/features/product/displayScore';
 import { isPreview } from '../../src/lib/preview';
 import { previewEntries } from '../../src/test/fixtures';
 import { listHistory,type HistoryEntry } from '../../src/features/history/store';
 export default function Home(){
  const {colors,preference,setPreference}=useTheme();const [history,setHistory]=useState<HistoryEntry[]>([]);
  useFocusEffect(useCallback(()=>{let active=true;listHistory().then(rows=>{if(active)setHistory(rows);}).catch(()=>{});return()=>{active=false;};},[]));
- const entries=history.length?history.slice(0,3):isPreview?previewEntries.slice(0,3):[];
+ const entries=(history.length?history.slice(0,3):isPreview?previewEntries.slice(0,3):[]).map(entry=>({...entry,score:displayScore(entry.product,entry.score)}));
  return <Screen>
  <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:10}}><View style={{flexDirection:'row',gap:10,alignItems:'center'}}><View style={{width:40,height:40,backgroundColor:colors.primary,borderRadius:13,alignItems:'center',justifyContent:'center'}}><Icon name="tag" color={colors.onPrimary}/></View><Heading style={{fontSize:25}}>{ro.app.name}</Heading></View><Pressable accessibilityRole="button" accessibilityLabel={ro.app.settings} onPress={()=>setPreference(preference==='dark'?'light':'dark')} style={{minWidth:48,minHeight:48,alignItems:'center',justifyContent:'center'}}><Icon name="sun" color={colors.ink}/></Pressable></View>
  {isPreview&&<Badge>{ro.app.demo}</Badge>}

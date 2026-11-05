@@ -32,3 +32,7 @@ it('announces a share failure for VoiceOver and lets the view display it', async
   expect(announce).toHaveBeenCalledWith(ro.share.error);
 });
 afterEach(() => jest.restoreAllMocks());
+
+it('does not share a numeric score when label data is insufficient', () => {
+  expect(productShareText({ ...product, nutrients: { ...product.nutrients, salt: null } }, score)).toContain(ro.result.scoreUnavailable);
+});
