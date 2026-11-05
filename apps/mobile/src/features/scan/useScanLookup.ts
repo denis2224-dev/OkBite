@@ -71,4 +71,3 @@ export function useScanLookup(onCameraAccept?: () => void) {
 
   return { state, onCameraCode, onManualCode, retry, dismiss };
 }
-

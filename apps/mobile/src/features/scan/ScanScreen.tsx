@@ -69,4 +69,3 @@ const styles = StyleSheet.create({
   frameHint: { position: 'absolute', bottom: 12, left: 12, right: 12, color: '#fff', textAlign: 'center' },
   status: { flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },
 });
-

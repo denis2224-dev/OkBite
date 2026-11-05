@@ -32,9 +32,9 @@ export function NotFound({
         ))}
       </View>
       <View style={styles.actions}>
-        <ActionButton label={ro.identify.addButton} onPress={onAdd} />
+        <ActionButton variant="primary" label={ro.identify.addButton} onPress={onAdd} />
         {onCheckCodeAgain ? (
-          <ActionButton label={ro.identify.checkCodeAgain} onPress={onCheckCodeAgain} />
+          <ActionButton variant="secondary" label={ro.identify.checkCodeAgain} onPress={onCheckCodeAgain} />
         ) : null}
       </View>
     </ScrollView>
@@ -60,4 +60,3 @@ const styles = StyleSheet.create({
   stepText: { flex: 1, fontSize: 15 },
   actions: { gap: 10 },
 });
-

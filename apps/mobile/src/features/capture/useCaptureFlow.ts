@@ -19,6 +19,7 @@ const IDLE: CaptureState = { status: 'idle' };
 export function useCaptureFlow() {
   const router = useRouter();
   const [state, setState] = useState<CaptureState>(IDLE);
+  const [canRetry, setCanRetry] = useState(false);
   const busy = useRef(false);
   const lastUri = useRef<string | null>(null);
 
@@ -32,6 +33,7 @@ export function useCaptureFlow() {
         const uri = await getUri();
         if (!uri) return setState(IDLE);
         lastUri.current = uri;
+        setCanRetry(true);
         const photo = await compressPhoto(uri);
         const code = await findBarcode(photo.uri);
         if (code) {
@@ -75,5 +77,5 @@ export function useCaptureFlow() {
   const retry = useCallback(() => run(async () => lastUri.current), [run]);
   const dismiss = useCallback(() => { if (!busy.current) setState(IDLE); }, []);
 
-  return { state, takePhoto, pickFromGallery, retry, dismiss, canRetry: lastUri.current !== null };
+  return { state, takePhoto, pickFromGallery, retry, dismiss, canRetry };
 }

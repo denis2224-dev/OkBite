@@ -31,8 +31,8 @@ export function ConfirmMatch({
       </View>
       <Text style={styles.hint}>{ro.identify.confirmHint}</Text>
       <View style={styles.actions}>
-        <ActionButton label={ro.identify.confirmYes} onPress={() => onConfirm(candidate.id)} />
-        <ActionButton label={ro.identify.confirmNo} onPress={onReject} />
+        <ActionButton variant="primary" label={ro.identify.confirmYes} onPress={() => onConfirm(candidate.id)} />
+        <ActionButton variant="secondary" label={ro.identify.confirmNo} onPress={onReject} />
       </View>
     </ScrollView>
   );
@@ -48,4 +48,3 @@ const styles = StyleSheet.create({
   hint: { fontSize: 14, color: '#56615A', textAlign: 'center' },
   actions: { gap: 10 },
 });
-

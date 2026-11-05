@@ -4,7 +4,7 @@ import { render, fireEvent, screen, act } from '@testing-library/react-native';
 import { Linking, StyleSheet } from 'react-native';
 import { ImageManipulator } from 'expo-image-manipulator';
 import { launchImageLibraryAsync } from 'expo-image-picker';
-import { api } from '../../lib/api';
+import { ApiError, api } from '../../lib/api';
 import { ro } from '../../copy/ro';
 import CaptureScreen from './CaptureScreen';
 import { PRODUCT_ID, identifyFound } from './__fixtures__/responses';
@@ -16,13 +16,16 @@ const mockTakePicture = jest.fn<() => Promise<unknown>>();
 jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }) }));
 jest.mock('expo-image-manipulator', () => ({ SaveFormat: { JPEG: 'jpeg' }, ImageManipulator: { manipulate: jest.fn() } }));
 jest.mock('expo-image-picker', () => ({ launchImageLibraryAsync: jest.fn() }));
-jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
+jest.mock('../../lib/api', () => {
+  const actual = jest.requireActual<typeof import('../../lib/api')>('../../lib/api');
+  return { ...actual, api: { ...actual.api, lookup: jest.fn(), identify: jest.fn() } };
+});
 jest.mock('expo-camera', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-  const CameraView = React.forwardRef((props: object, ref: React.Ref<unknown>) => {
-    React.useImperativeHandle(ref, () => ({ takePictureAsync: mockTakePicture }));
-    return React.createElement(View, { testID: 'camera', ...props });
+  const ReactActual = jest.requireActual<typeof import('react')>('react');
+  const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+  const CameraView = ReactActual.forwardRef(function MockCameraView(props: object, ref: React.Ref<unknown>) {
+    ReactActual.useImperativeHandle(ref, () => ({ takePictureAsync: mockTakePicture }));
+    return ReactActual.createElement(View, { testID: 'camera', ...props });
   });
   return { CameraView, scanFromURLAsync: jest.fn(async () => []), useCameraPermissions: () => [mockPermission.value, mockRequestPermission] };
 });
@@ -112,15 +115,23 @@ describe('CaptureScreen', () => {
   });
 
   it('shows the server error message and lets the user close it and shoot again', async () => {
-    identify.mockRejectedValueOnce(Object.assign(new Error('limit'), { code: 'rate_limited' }));
+    identify.mockRejectedValueOnce(new ApiError('rate_limited'));
     await render(<CaptureScreen />);
     await cameraReady();
     await fireEvent.press(shutter());
-    expect(await screen.findByText(ro.errors.rateLimited)).toBeTruthy();
+    expect(await screen.findByText(ro.errors.rate_limited)).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: ro.nav.close }));
-    expect(screen.queryByText(ro.errors.rateLimited)).toBeNull();
+    expect(screen.queryByText(ro.errors.rate_limited)).toBeNull();
     await fireEvent.press(shutter());
     expect(mockTakePicture).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows ro.errors.configuration when ApiError("configuration") is thrown', async () => {
+    identify.mockRejectedValueOnce(new ApiError('configuration'));
+    await render(<CaptureScreen />);
+    await cameraReady();
+    await fireEvent.press(shutter());
+    expect(await screen.findByText(ro.errors.configuration)).toBeTruthy();
   });
 
   it('catches a camera failure instead of crashing', async () => {

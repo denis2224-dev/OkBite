@@ -62,4 +62,3 @@ export default function IdentifyScreen() {
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', padding: 20 },
 });
-

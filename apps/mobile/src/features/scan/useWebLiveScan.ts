@@ -19,7 +19,7 @@ export async function startLiveScan(video: HTMLVideoElement, onCode: (code: stri
   if (!detector || !media?.getUserMedia) return null;
 
   const stream = await media.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-  let timer: ReturnType<typeof setInterval> | undefined;
+  let timer: ReturnType<typeof setInterval> | undefined = undefined;
   let stopped = false;
   const stop = () => {
     if (stopped) return;

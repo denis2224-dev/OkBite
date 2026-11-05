@@ -25,4 +25,3 @@ export const identifyCandidates: IdentifyResponse = {
   candidates: [{ id: PRODUCT_ID, name: product.name, brand: 'Zorel', quantity: '400 g', imageUrl: null, similarity: 0.71 }],
 };
 export const identifyNotFound: IdentifyResponse = { status: 'not_found', photoPath: 'uploads/dev/a.jpg', read };
-

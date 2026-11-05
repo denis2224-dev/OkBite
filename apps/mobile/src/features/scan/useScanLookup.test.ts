@@ -84,4 +84,3 @@ describe('useScanLookup', () => {
     expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
   });
 });
-

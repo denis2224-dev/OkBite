@@ -1,52 +1,84 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { ro } from '../../copy/ro';
+import { useTheme } from '../../theme/useTheme';
+import { Button } from '../../ui/Button';
 
 export const errorMessage = (code?: string): string => {
   switch (code) {
-    case 'rate_limited': return ro.errors.rateLimited;
-    case 'upstream_failed': return ro.errors.upstreamFailed;
-    case 'invalid_response': return ro.errors.invalidResponse;
+    case 'offline': return ro.errors.offline;
+    case 'invalid_response': return ro.errors.invalid_response;
+    case 'rate_limited': return ro.errors.rate_limited;
+    case 'bad_request': return ro.errors.bad_request;
+    case 'not_found': return ro.errors.not_found;
+    case 'unauthorized': return ro.errors.unauthorized;
+    case 'upstream_failed': return ro.errors.upstream_failed;
     case 'duplicate': return ro.errors.duplicate;
-    case 'not_found': return ro.errors.notFound;
+    case 'configuration': return ro.errors.configuration;
     default: return ro.errors.generic;
   }
 };
 
-export type PanelAction = { label: string; onPress: () => void };
+export type PanelAction = {
+  label: string;
+  onPress: () => void;
+  variant?: 'primary' | 'secondary' | 'ghost';
+};
 
-// shortcut: plain buttons until R4's B1 UI kit (Button) is merged; swap ActionButton for it then.
-export function ActionButton({ label, onPress, disabled }: PanelAction & { disabled?: boolean }) {
+export function ActionButton({
+  label,
+  onPress,
+  disabled,
+  variant = 'secondary',
+}: PanelAction & { disabled?: boolean }) {
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: !!disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      style={[styles.button, disabled && styles.disabled]}
-    >
-      <Text style={styles.buttonText}>{label}</Text>
-    </Pressable>
+    <Button variant={variant} disabled={disabled} onPress={onPress}>
+      {label}
+    </Button>
   );
 }
 
 /** A message with the actions that get the user out of it. */
-export function StatusPanel({ title, message, actions }: { title?: string; message: string; actions: PanelAction[] }) {
+export function StatusPanel({
+  title,
+  message,
+  actions,
+}: {
+  title?: string;
+  message: string;
+  actions: PanelAction[];
+}) {
+  const { colors } = useTheme();
   return (
-    <View style={styles.panel} accessibilityLiveRegion="polite">
-      {title ? <Text accessibilityRole="header" style={styles.title}>{title}</Text> : null}
-      <Text style={styles.message}>{message}</Text>
-      {actions.map((a) => <ActionButton key={a.label} {...a} />)}
+    <View
+      style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      accessibilityLiveRegion="polite"
+    >
+      {title ? (
+        <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
+          {title}
+        </Text>
+      ) : null}
+      <Text style={[styles.message, { color: colors.ink }]}>{message}</Text>
+      {actions.map((a, index) => (
+        <ActionButton
+          key={a.label}
+          variant={a.variant ?? (index === 0 ? 'primary' : 'secondary')}
+          {...a}
+        />
+      ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  panel: { gap: 12, padding: 20, alignItems: 'stretch', backgroundColor: '#fff', borderRadius: 16 },
+  panel: {
+    gap: 12,
+    padding: 20,
+    alignItems: 'stretch',
+    borderRadius: 16,
+    borderWidth: 1,
+  },
   title: { fontSize: 18, fontWeight: '700' },
   message: { fontSize: 16 },
-  button: { minHeight: 44, minWidth: 44, paddingHorizontal: 16, justifyContent: 'center', alignItems: 'center', borderRadius: 12, backgroundColor: '#e8e8e8' },
-  disabled: { opacity: 0.5 },
-  buttonText: { fontSize: 16, fontWeight: '600' },
 });

@@ -15,9 +15,9 @@ jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }) })
 jest.mock('expo-haptics', () => ({ notificationAsync: jest.fn(async () => undefined), NotificationFeedbackType: { Success: 'success' } }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
 jest.mock('expo-camera', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-  const CameraView = (props: object) => React.createElement(View, { testID: 'camera', ...props });
+  const ReactActual = jest.requireActual<typeof import('react')>('react');
+  const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+  const CameraView = (props: object) => ReactActual.createElement(View, { testID: 'camera', ...props });
   return { CameraView, useCameraPermissions: () => [mockPermission.value, mockRequestPermission] };
 });
 
@@ -121,4 +121,3 @@ describe('ScanScreen', () => {
     expect(screen.getByTestId('camera')).toBeTruthy();
   });
 });
-

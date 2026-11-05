@@ -56,4 +56,3 @@ describe('ScanScreen (web)', () => {
     expect(mockReplace).toHaveBeenCalledWith({ pathname: '/identify', params: { source: 'code', code: CODE } });
   });
 });
-
