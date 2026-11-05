@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
 import { Body, Button, Card, Heading, Screen } from '../../ui';
 import { ro } from '../../copy/ro';
-import { listQueue, retryQueued, completeQueued, subscribeQueue, subscribeQueueResults, resumeQueuedItem, flushQueue, type QueueEntry } from './queue';
-import { identifyCodeRoute, identifyPhotoRoute, productRoute } from '../identify/routes';
+import { listQueue, retryQueued, completeQueued, subscribeQueue, resumeQueuedItem, type QueueEntry } from './queue';
+import { productRoute } from '../identify/routes';
 
 export function OfflineScreen() {
   const [rows, setRows] = useState<QueueEntry[]>([]);
@@ -13,7 +13,6 @@ export function OfflineScreen() {
   const [confirm, setConfirm] = useState<string>();
   const revision = useRef(0);
   const mounted = useRef(true);
-  const navigating = useRef(false);
   const invalidate = useCallback(() => { revision.current++; }, []);
   const refresh = useCallback(() => {
     if (!mounted.current) return Promise.resolve();
@@ -30,18 +29,6 @@ export function OfflineScreen() {
     const unsubscribe = subscribeQueue(() => { void refresh(); });
     return () => { mounted.current = false; invalidate(); unsubscribe(); };
   }, [refresh, invalidate]);
-  useEffect(() => {
-    const stop = subscribeQueueResults(({ item, result }) => {
-      if (!mounted.current || navigating.current) return false;
-      const target = result.status === 'found' ? productRoute(result.product.id)
-        : 'photoPath' in result ? identifyPhotoRoute(result) : identifyCodeRoute(item.payload);
-      router.replace(typeof target === 'string' ? target : { ...target, params: { ...target.params, queueId: item.id } });
-      navigating.current = true;
-      return true;
-    });
-    void flushQueue().catch(() => { if (mounted.current) setError(ro.offline.queueError); });
-    return stop;
-  }, []);
   async function run(action: () => Promise<unknown>) {
     if (busy) return;
     setBusy(true); setError('');
@@ -58,6 +45,7 @@ export function OfflineScreen() {
       <Heading style={{ fontSize: 18 }}>{item.kind === 'photo' ? ro.offline.photo : ro.offline.code}</Heading>
       {item.kind === 'code' && <Body>{item.payload}</Body>}
       {item.outcome && <Body>{ro.offline.needsReview}</Body>}
+      {item.status === 'completed' && <Body>{ro.offline.cleanupPending}</Body>}
       {item.error && <Body>{item.error in ro.errors ? ro.errors[item.error as keyof typeof ro.errors] : ro.offline.queueError}</Body>}
       <Button disabled={busy} onPress={() => { void run(async () => {
         if (!item.outcome) return retryQueued(item.id);

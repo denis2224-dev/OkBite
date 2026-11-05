@@ -1,7 +1,7 @@
 import { randomUUID } from 'expo-crypto';
 import { Code, IdentifyResponse, LookupResponse } from '@okbite/shared';
 import { api, ApiError } from '../../lib/api';
-import { putQueued, listQueued, deleteQueued, markNeedsReview, saveQueuedError, resetQueued, type QueuedItem } from '../history/db';
+import { putQueued, listQueued, deleteQueued, markNeedsReview, saveQueuedError, resetQueued, markQueuedComplete, type QueuedItem } from '../history/db';
 import { saveToHistory } from '../history/store';
 import { keepPhoto, readPhoto, removePhoto, openPhoto } from './photos';
 import { MissingPhotoError } from './photo_errors';
@@ -57,13 +57,21 @@ export async function openQueuedPhoto(id: string) {
 export async function completeQueued(id: string): Promise<void> {
   const item = (await listQueued()).find(row => row.id === id);
   if (!item) return;
-  if (item.kind === 'photo') await removePhoto(item.payload);
-  await deleteQueued(id);
+  // Commit acknowledgement before cleanup; a cleanup failure must never reopen add/review.
+  if (item.status !== 'completed') await markQueuedComplete(id);
+  try {
+    if (item.kind === 'photo') await removePhoto(item.payload);
+    await deleteQueued(id);
+  } catch { await saveQueuedError(id, 'storage').catch(() => {}); }
   notifyQueue();
 }
 export async function retryQueued(id: string) {
   if (running) await running;
-  await resetQueued(id);
+  await withQueueLock(async () => {
+    const entry = (await listQueue()).find(item => item.id === id);
+    const raw = entry?.error === 'invalid_response' ? (await listQueued()).find(item => item.id === id) : undefined;
+    await resetQueued(id, raw?.result);
+  });
   notifyQueue();
   return flushQueue();
 }
@@ -81,6 +89,7 @@ async function drain() {
   // Cached review results must remain accessible when older network work fails.
   for (const item of items) if (item.outcome && stored.has(item.id)) handoff({ item: stored.get(item.id)!, result: item.outcome });
   for (const item of items) {
+    if (item.status === 'completed') { await completeQueued(item.id); continue; }
     // Human-review outcomes and failed work stay durable until explicit retry/acknowledgement.
     if (item.status !== 'pending' || (item.error && item.error !== 'offline')) continue;
     let photo: string | undefined;
@@ -90,7 +99,7 @@ async function drain() {
         if (error instanceof MissingPhotoError) { await deleteQueued(item.id); notifyQueue('missing_photo'); continue; }
         await saveQueuedError(item.id, 'storage');
         notifyQueue();
-        break;
+        continue;
       }
     }
     try {
@@ -127,6 +136,7 @@ export async function resumeQueuedItem(input: Pick<QueuedItem, 'id' | 'kind' | '
   return withQueueLock(async (): Promise<ResumeResult> => {
     const item = (await listQueue()).find(row => row.id === input.id);
     if (!item) throw new ApiError('not_found');
+    if (item.status === 'completed') throw new ApiError('bad_request');
     const result = item.outcome ?? (item.kind === 'code'
       ? await api.lookup({ code: item.payload }) : await api.identify(await readPhoto(item.payload)));
     if (!(await listQueued()).some(row => row.id === item.id)) throw new ApiError('not_found');

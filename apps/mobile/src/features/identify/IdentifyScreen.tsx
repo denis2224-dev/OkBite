@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ro } from '../../copy/ro';
@@ -14,10 +14,26 @@ export default function IdentifyScreen() {
   const rawParams = useLocalSearchParams();
   const state = parseIdentifyParams(rawParams);
   const queueId = typeof rawParams.queueId === 'string' ? rawParams.queueId : undefined;
-  const confirm = (id: string) => {
-    router.replace(productRoute(id));
-    if (queueId) void resolveQueued(queueId).catch(() => {});
+  const selected = useRef<string | null>(null);
+  const finishing = useRef(false);
+  const [cleanupPending, setCleanupPending] = useState(false);
+  const finishConfirmation = async () => {
+    if (!selected.current || finishing.current) return;
+    finishing.current = true;
+    try {
+      if (queueId) await resolveQueued(queueId);
+      router.replace(productRoute(selected.current));
+    } catch { setCleanupPending(true); }
+    finally { finishing.current = false; }
   };
+  const confirm = (id: string) => {
+    selected.current = id;
+    void finishConfirmation();
+  };
+
+  if (cleanupPending) return <View style={styles.center}><StatusPanel message={ro.review.savedPendingCleanup} actions={[
+    { label: ro.review.finishSave, onPress: () => { void finishConfirmation(); } },
+  ]} /></View>;
 
   if (state.kind === 'confirm') {
     return (

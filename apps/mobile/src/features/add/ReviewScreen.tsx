@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -16,10 +16,32 @@ import {
 } from './draftStore';
 import { ReviewForm } from './ReviewForm';
 import { resolveQueued } from '../offline/queue';
+import { saveToHistory } from '../history/store';
 
 export function ReviewScreen() {
   const router = useRouter();
   const activeDraft = getAddReviewDraft();
+  const saved = useRef<Extract<LookupResponse, { status: 'found' }> | null>(null);
+  const finishing = useRef(false);
+  const [cleanupPending, setCleanupPending] = useState(false);
+
+  const finishSaved = async () => {
+    if (!saved.current || !activeDraft || finishing.current) return;
+    finishing.current = true;
+    try {
+      await saveToHistory(saved.current);
+      if (activeDraft.initial.queueId) await resolveQueued(activeDraft.initial.queueId);
+      const id = saved.current.product.id;
+      clearAddReviewDraft();
+      router.replace(productRoute(id));
+    } finally { finishing.current = false; }
+  };
+
+  if (cleanupPending) {
+    return <View style={styles.emptyRoot}><StatusPanel message={ro.review.savedPendingCleanup} actions={[
+      { label: ro.review.finishSave, onPress: () => { void finishSaved().catch(() => {}); } },
+    ]} /></View>;
+  }
 
   if (!activeDraft) {
     return (
@@ -43,9 +65,9 @@ export function ReviewScreen() {
     if (!parsed.success || parsed.data.status !== 'found') {
       throw Object.assign(new Error('invalid_response'), { code: 'invalid_response' });
     }
-    if (activeDraft.initial.queueId) await resolveQueued(activeDraft.initial.queueId).catch(() => {});
-    clearAddReviewDraft();
-    router.replace(productRoute(parsed.data.product.id));
+    saved.current = parsed.data;
+    try { await finishSaved(); }
+    catch { setCleanupPending(true); }
   };
 
   const handleRetake = (currentIdentity: AddInitialValues) => {

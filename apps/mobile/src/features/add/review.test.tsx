@@ -14,6 +14,7 @@ import {
 import rawCategoriesJson from '../../../../../data/categories.json';
 import { ro } from '../../copy/ro';
 import { resolveQueued } from '../offline/queue';
+import { saveToHistory } from '../history/store';
 import { ApiError } from '../../lib/api';
 import { parseAddParams } from '../identify/routes';
 import ReviewRouteScreen from '../../../app/add/review';
@@ -29,6 +30,7 @@ import { ReviewForm } from './ReviewForm';
 
 const mockReplace = jest.fn<(href: unknown) => void>();
 jest.mock('../offline/queue', () => ({ resolveQueued: jest.fn() }));
+jest.mock('../history/store', () => ({ saveToHistory: jest.fn(async () => {}) }));
 const mockAddProduct = jest.fn<(req: AddProductRequestType) => Promise<LookupResponse>>();
 
 jest.mock('expo-router', () => ({
@@ -601,5 +603,21 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     expect(mockAddProduct).toHaveBeenCalledTimes(2);
     expect(mockAddProduct.mock.calls[1]?.[0]?.categorySlug).toBe('biscuiti');
     expect(mockReplace).toHaveBeenLastCalledWith(`/product/${savedProductB.product.id}`);
+  });
+  it('retries only local completion when the server saved a product but acknowledgement failed', async () => {
+    if (SAVED_LOOKUP.status !== 'found') throw new Error('Expected found fixture');
+    setAddReviewDraft({ initial: { ...BASE_INITIAL, queueId: 'ack-failed' }, label: BASE_LABEL });
+    mockAddProduct.mockResolvedValueOnce(SAVED_LOOKUP);
+    jest.mocked(resolveQueued).mockRejectedValueOnce(new Error('database busy')).mockResolvedValueOnce();
+    await render(<ReviewRouteScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurt` }));
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
+    expect(screen.getByText(ro.review.savedPendingCleanup)).toBeTruthy();
+    expect(getAddReviewDraft()).not.toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.finishSave }));
+    expect(mockAddProduct).toHaveBeenCalledTimes(1);
+    expect(resolveQueued).toHaveBeenCalledTimes(2);
+    expect(saveToHistory).toHaveBeenCalledWith(SAVED_LOOKUP);
+    expect(mockReplace).toHaveBeenCalledWith(`/product/${SAVED_LOOKUP.product.id}`);
   });
 });

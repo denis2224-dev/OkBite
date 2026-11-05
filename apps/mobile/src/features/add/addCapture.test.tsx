@@ -12,6 +12,7 @@ import {
 } from '@okbite/shared';
 import rawCategoriesJson from '../../../../../data/categories.json';
 import { ro } from '../../copy/ro';
+import { writeHistory } from '../history/db';
 import AddScreen from '../../../app/add/index';
 import ReviewRouteScreen from '../../../app/add/review';
 import { addProductRoute } from '../identify/routes';
@@ -24,6 +25,7 @@ import {
 
 const mockParams: { value: Record<string, string | string[] | undefined> } = { value: {} };
 const mockReplace = jest.fn<(href: unknown) => void>();
+jest.mock('../history/db', () => ({ writeHistory: jest.fn(async () => {}) }));
 const mockReadLabel = jest.fn<(req: ReadLabelRequestType) => Promise<ReadLabelResponse>>();
 const mockAddProduct = jest.fn<(req: AddProductRequestType) => Promise<LookupResponse>>();
 const mockCompressPhoto = jest.fn<
@@ -330,6 +332,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
       nutritionPhotoPath: null,
     });
     expect(mockReplace).toHaveBeenLastCalledWith(`/product/${savedResponse.product.id}`);
+    expect(writeHistory).toHaveBeenCalledWith(savedResponse.product.id, expect.any(String), expect.any(String));
     expect(getAddReviewDraft()).toBeNull();
   });
 

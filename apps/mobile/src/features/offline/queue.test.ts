@@ -12,6 +12,7 @@ import { getFromHistory, clearHistory } from '../history/store';
 import { api, ApiError } from '../../lib/api';
 import { foundYogurt } from '../../test/fixtures';
 import * as queueLocks from './queueLock';
+import * as queueDb from '../history/db';
 
 jest.mock('expo-sqlite', () => {
   const sqlite = new mockDatabaseSync(':memory:');
@@ -391,4 +392,52 @@ it('retains a readable capture when a transient storage read fails', async () =>
   jest.mocked(api.identify).mockResolvedValueOnce({ ...foundYogurt, photoPath: 'test/restored.jpg' });
   expect(await retryQueued(item.id)).toEqual({ resolved: 1 });
   expect(await listQueue()).toEqual([]);
+});
+it('preserves a review committed by an in-flight drain when Retry was already clicked', async () => {
+  const source = FileSystem.documentDirectory! + 'in-flight.jpg';
+  await mockFs.writeFile(source, 'pending photo');
+  await enqueue({ kind: 'photo', uri: source });
+  const item = (await listQueued())[0]!;
+  let started!: () => void, finish!: (value: typeof identifyCandidates) => void;
+  const requested = new Promise<void>(resolve => { started = resolve; });
+  const response = new Promise<typeof identifyCandidates>(resolve => { finish = resolve; });
+  jest.mocked(api.identify).mockImplementation(() => { started(); return response; });
+  const flushing = flushQueue();
+  await requested;
+  const retrying = retryQueued(item.id);
+  finish(identifyCandidates);
+  await Promise.all([flushing, retrying]);
+  expect(api.identify).toHaveBeenCalledTimes(1);
+  expect(await listNeedsReview()).toHaveLength(1);
+});
+it('continues with a healthy code after retaining an unreadable photo', async () => {
+  const source = FileSystem.documentDirectory! + 'one-busy.jpg';
+  await mockFs.writeFile(source, 'valid capture');
+  await enqueue({ kind: 'photo', uri: source });
+  await enqueue({ kind: 'code', code: '12345670' });
+  const read = jest.spyOn(FileSystem, 'readAsStringAsync').mockRejectedValueOnce(new Error('busy'));
+  try {
+    jest.mocked(api.lookup).mockResolvedValueOnce(foundYogurt);
+    expect(await flushQueue()).toEqual({ resolved: 1 });
+    expect((await listQueue()).map(row => row.kind)).toEqual(['photo']);
+  } finally { read.mockRestore(); }
+});
+it.each(['photo', 'row'])('records completion before a %s cleanup failure without reopening review', async boundary => {
+  const source = FileSystem.documentDirectory! + `cleanup-${boundary}.jpg`;
+  await mockFs.writeFile(source, 'completed capture');
+  await enqueue({ kind: 'photo', uri: source });
+  jest.mocked(api.identify).mockResolvedValueOnce(identifyCandidates);
+  await flushQueue();
+  const item = (await listQueued())[0]!;
+  const failed = boundary === 'photo'
+    ? jest.spyOn(FileSystem, 'deleteAsync').mockRejectedValueOnce(new Error('photo busy'))
+    : jest.spyOn(queueDb, 'deleteQueued').mockRejectedValueOnce(new Error('row busy'));
+  try {
+    await expect(resolveQueued(item.id)).resolves.toBeUndefined();
+    expect((await listQueued())[0]?.status).toBe('completed');
+    expect(await listNeedsReview()).toEqual([]);
+    await flushQueue();
+    expect(await listQueued()).toEqual([]);
+    expect(api.identify).toHaveBeenCalledTimes(1);
+  } finally { failed.mockRestore(); }
 });

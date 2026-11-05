@@ -29,7 +29,7 @@ export async function writeHistory(id: string, json: string, savedAt: string): P
 export async function deleteHistory(): Promise<void> {
   await (await getDatabase()).runAsync('DELETE FROM history');
 }
-export type QueuedItem = { id: string; kind: 'photo' | 'code'; payload: string; createdAt: string; status: 'pending' | 'needs_review'; result: string | null; error?: string };
+export type QueuedItem = { id: string; kind: 'photo' | 'code'; payload: string; createdAt: string; status: 'pending' | 'needs_review' | 'completed'; result: string | null; error?: string };
 export async function putQueued(item: Omit<QueuedItem, 'status' | 'result'>): Promise<void> {
   await (await getDatabase()).runAsync('INSERT INTO queue (id,kind,payload,created_at) VALUES (?,?,?,?)', item.id, item.kind, item.payload, item.createdAt);
 }
@@ -47,7 +47,10 @@ export async function deleteQueued(id: string): Promise<void> {
 export async function saveQueuedError(id: string, error: string): Promise<void> {
   await (await getDatabase()).runAsync('UPDATE queue SET error=? WHERE id=?', error, id);
 }
-export async function resetQueued(id: string): Promise<void> {
-  await (await getDatabase()).runAsync("UPDATE queue SET status='pending',result=NULL,error=NULL WHERE id=?", id);
+export async function resetQueued(id: string, corruptResult?: string | null): Promise<void> {
+  await (await getDatabase()).runAsync("UPDATE queue SET status='pending',result=NULL,error=NULL WHERE id=? AND (status='pending' OR (status='needs_review' AND ?=1 AND result IS ?))", id, corruptResult === undefined ? 0 : 1, corruptResult ?? null);
+}
+export async function markQueuedComplete(id: string): Promise<void> {
+  await (await getDatabase()).runAsync("UPDATE queue SET status='completed',result=NULL,error=NULL WHERE id=?", id);
 }
 export const setQueuedReview = markNeedsReview;

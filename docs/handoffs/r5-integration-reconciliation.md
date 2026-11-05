@@ -26,6 +26,7 @@ Source branches are preserved. The full integration diff includes existing publi
 - Native/web photos use the same missing-photo error type; browser drains/resumption serialize across tabs. R4's explicit cancellation and Blob URL release remain intact.
 - R4's queue list, error/retry controls, confirmed cancellation, safe history reload/clear, cached result navigation and actionable product toasts are retained. History also links back to queued work and refreshes on queue changes.
 - The mobile-specific Metro config remains, so the target routes resolve independently of the unchanged root preview.
+- Queue management requires explicit review selection and remains accessible for cancellation. Retry cannot erase a valid result committed by an active drain. Completed receipts precede cleanup, so photo/row deletion failures retry cleanup without repeating review/add; one unreadable photo does not block later healthy items.
 
 ## Test reconciliation
 
@@ -35,9 +36,19 @@ New regressions reproduced the failed-write deduplication bug and null/undefined
 
 The connected-path suite from #14 uses mocked HTTP/SDK boundaries. It checks client contracts and status transitions; it is not a hosted backend, live AI, or real two-phone acceptance test.
 
+The single fresh-context final review identified four issues: automatic queue redirection, a retry/reset race, unsafe acknowledgement/cleanup ordering, and a transient read blocking later work. Regression tests failed first, then passed after the fixes. Add/confirm tests also cover local acknowledgement failure and completion-only retry. The connected capture test now asserts the real history-store call at its mocked SQLite boundary.
+
+If a server save succeeds while all local persistent writes fail, the active review retains the response and offers completion-only retry. A process death before any local receipt can persist remains a live-acceptance/backend-idempotency question; no exactly-once provider guarantee is made.
+
 ## Validation
 
-Pending final full checks, all-platform exports and independent final review. The initial combined mobile run passed 378 tests across 42 suites, and strict mobile TypeScript passed. These initial counts precede the final browser error regression.
+- Frozen pnpm 9.12.0 install and `pnpm run check` pass: lint has 0 errors / 55 inherited warnings; root/mobile/shared strict types and data validation pass.
+- 651 local tests pass: mobile 387 (42 suites), shared 112, scripts 28, sync generator 6, gateway 5, root preview 104 (24 suites), web preview 9 (2 suites).
+- Windows managed-worktree Jest globs initially skipped root tests. Both root suites were explicitly executed with relative `--testMatch` globs and `--passWithNoTests=false`; the counts above include those actual runs. No root runner configuration was changed.
+- Shared regeneration produced no tracked or untracked generated-code drift.
+- Expo exports pass for web, iOS and Android in both apps/mobile and the root preview. The mobile export was repeated after the four final-review fixes; root preview source was unchanged.
+- Browser smoke check of the final mobile export: `/offline` loads its empty queue, opens `/history`, and returns through Căutări salvate; no captured browser warnings/errors. Persisted-data failure modes are covered by the SQLite/IndexedDB and UI regressions, not a live provider claim.
+- One fresh-context branch review was completed, and all four actionable findings were addressed with failing-then-passing regressions and the full suite. Claude cross-review, human approval and physical-device acceptance remain pending.
 
 ## R1/R4 integration sequence
 

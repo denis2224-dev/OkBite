@@ -77,6 +77,19 @@ describe('IdentifyScreen and B3 flow', () => {
     await fireEvent.press(screen.getByRole('button', { name: ro.identify.confirmYes }));
     expect(resolveQueued).toHaveBeenCalledWith('queued-id');
   });
+  it('retains the chosen product and retries local acknowledgement when storage fails', async () => {
+    const response = IdentifyResponse.parse({ status: 'candidates', photoPath: PHOTO_PATH, read: ORIGINAL_READ, candidates: [CAND_1] });
+    if (response.status === 'found') throw new Error('unexpected');
+    mockParams.value = { ...identifyPhotoRoute(response).params, queueId: 'ack-failed' };
+    jest.mocked(resolveQueued).mockRejectedValueOnce(new Error('database busy')).mockResolvedValueOnce();
+    await render(<IdentifyScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.identify.confirmYes }));
+    expect(screen.getByText(ro.review.savedPendingCleanup)).toBeTruthy();
+    expect(mockReplace).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.finishSave }));
+    expect(resolveQueued).toHaveBeenCalledTimes(2);
+    expect(mockReplace).toHaveBeenCalledWith(`/product/${CAND_1.id}`);
+  });
 
   it('shows ConfirmMatch when there is 1 candidate with similarity >= 0.6 and navigates to product on confirm', async () => {
     const response = IdentifyResponse.parse({

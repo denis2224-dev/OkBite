@@ -34,7 +34,13 @@ export async function deleteQueued(id: string): Promise<void> {
 export async function saveQueuedError(id: string, error: string): Promise<void> {
   await update<QueuedItem[]>('entries', rows => (rows ?? []).map(row => row.id === id ? { ...row, error } : row), queue);
 }
-export async function resetQueued(id: string): Promise<void> {
-  await update<QueuedItem[]>('entries', rows => (rows ?? []).map(row => row.id === id ? { ...row, status: 'pending', result: null, error: undefined } : row), queue);
+export async function resetQueued(id: string, corruptResult?: string | null): Promise<void> {
+  await update<QueuedItem[]>('entries', rows => (rows ?? []).map(row => row.id === id &&
+    ((row.status ?? 'pending') === 'pending' || (row.status === 'needs_review' && corruptResult !== undefined && row.result === corruptResult))
+    ? { ...row, status: 'pending', result: null, error: undefined } : row), queue);
+}
+export async function markQueuedComplete(id: string): Promise<void> {
+  await update<QueuedItem[]>('entries', rows => (rows ?? []).map(row => row.id === id
+    ? { ...row, status: 'completed', result: null, error: undefined } : row), queue);
 }
 export const setQueuedReview = markNeedsReview;
