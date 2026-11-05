@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { serialize, deserialize } from 'node:v8';
-import { writeHistory, readHistory, deleteHistory } from './db.web';
+import { writeHistory, readHistory, deleteHistory, putQueued, listQueued, deleteQueued } from './db.web';
 
 beforeAll(() => {
   if (!global.structuredClone) {
@@ -18,4 +18,13 @@ it('bounds the browser database and clears it', async () => {
   expect(await readHistory()).toHaveLength(200);
   await deleteHistory();
   expect(await readHistory()).toEqual([]);
+});
+it('retains FIFO order for queue items saved in the same millisecond', async () => {
+  const createdAt = '2026-11-05T00:00:00.000Z';
+  await putQueued({ id: 'z', kind: 'code', payload: '12345670', createdAt });
+  await putQueued({ id: 'a', kind: 'code', payload: '4840001000014', createdAt });
+  expect((await listQueued()).map(row => row.id)).toEqual(['z', 'a']);
+  await deleteQueued('z');
+  expect((await listQueued()).map(row => row.id)).toEqual(['a']);
+  await deleteQueued('a');
 });
