@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react-native';
 import { ScoreCard } from './ScoreCard';
 import { PortionTable } from './PortionTable';
-import { SourceCard } from './SourceCard';
+import { SourceCard, roDate } from './SourceCard';
 import { foundYogurt } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
 
@@ -26,4 +26,9 @@ it('does not claim verification for an unverified source', async () => {
   expect(screen.getByText(ro.result.unverified)).toBeTruthy();
   expect(screen.queryByText(ro.result.verified)).toBeNull();
   expect(screen.getByText(foundYogurt.product.source)).toBeTruthy();
+});
+it('shows source dates in Romanian day-month-year order', async () => {
+  expect(roDate('2026-11-04')).toBe('04.11.2026');
+  await render(<SourceCard product={{ ...foundYogurt.product, status: 'verified', addedAt: '2026-11-04', verifiedAt: '2026-11-05' }} />);
+  expect(screen.getByText(`${ro.result.checked}: 05.11.2026`)).toBeTruthy();
 });

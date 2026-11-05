@@ -34,8 +34,7 @@ export function ResultView({ product, score }: { product: Product; score: ScoreR
       <Body>{ro.result.allergyNote}</Body>
     </Card>
     <ScoreCard score={shownScore} /><PortionTable product={product} /><SourceCard product={product} />
-    <Button variant="secondary" onPress={() => router.push(`/product/${product.id}/ingredients`)}>{ro.result.ingredients}</Button>
-    <Button variant="secondary" onPress={() => router.push(`/product/${product.id}/label`)}>{ro.result.original}</Button>
+    {/* Ingredients and original-label buttons return with their routes in B5. */}
     <Button variant="secondary" onPress={() => router.push({ pathname: '/compare', params: { id: product.id } })}>{ro.result.compare}</Button>
     <Button variant="ghost" onPress={() => setReport(true)}>{ro.result.report}</Button>
     {report && <ReportSheet productId={product.id} onClose={() => setReport(false)} />}
