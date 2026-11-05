@@ -1,6 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { HttpError } from './http.ts';
 
+// Admission writes the usage event atomically. AI callers keep this event on
+// success; do not also logEvent('photo'/'read_label'). Release only a confirmed
+// failed operation, never an ambiguous outcome that may already have committed.
 export async function reserveUsage(
   db: SupabaseClient,
   device: string,
