@@ -1,0 +1,67 @@
+import type { NutrientKey, Nutrients, ScoreKind, ScoreReason } from '../contract';
+
+type Key = Exclude<NutrientKey, 'fat'>;
+type Component = 'energy' | 'sugar' | 'sat' | 'satRatio' | 'salt' | 'protein' | 'fiber' | 'fruitVeg';
+
+// For fats, "energy" is the energy from saturates, so it points at sat too.
+const nutrientOf = (c: Component, kind: ScoreKind): Key =>
+  ({ energy: kind === 'fat' ? 'sat' : 'kcal', sugar: 'sugar', sat: 'sat', satRatio: 'sat', salt: 'salt',
+    protein: 'protein', fiber: 'fiber', fruitVeg: 'fruitVegPct' } as const)[c];
+const NAME: Record<Key, string> = {
+  kcal: 'Energie', sugar: 'Zahăr', sat: 'Grăsimi saturate', salt: 'Sare',
+  protein: 'Proteine', fiber: 'Fibre', fruitVegPct: 'Fructe și legume',
+};
+const BAD: Partial<Record<Key, string>> = {
+  kcal: 'Multe calorii', sugar: 'Mult zahăr', sat: 'Multe grăsimi saturate', salt: 'Multă sare',
+};
+const GOOD: Partial<Record<Key, string>> = {
+  protein: 'Bogat în proteine', fiber: 'Bogat în fibre', fruitVegPct: 'Multe fructe și legume',
+};
+const NEGATIVE: Component[] = ['energy', 'sugar', 'sat', 'satRatio', 'salt'];
+const POSITIVE: Component[] = ['protein', 'fiber', 'fruitVeg'];
+
+// Maximum points per component, from the tables in nutriscore.ts.
+function maxPoints(c: Component, kind: ScoreKind): number {
+  if (c === 'salt') return 20;
+  if (c === 'sugar') return kind === 'beverage' ? 10 : 15;
+  if (c === 'protein') return kind === 'red_meat' ? 2 : 7;
+  if (c === 'fiber') return 5;
+  if (c === 'fruitVeg') return kind === 'beverage' ? 6 : 5;
+  return 10; // energy, sat, satRatio
+}
+
+const comma = (v: number) => String(Math.round(v * 10) / 10).replace('.', ',');
+
+function detail(key: Key, n: Nutrients, unit: string): string {
+  const v = n[key] ?? 0;
+  if (key === 'kcal') return `${comma(v)} kcal la 100 ${unit}`;
+  if (key === 'fruitVegPct') return `${comma(v)}% fructe, legume și leguminoase`;
+  return `${comma(v)} g la 100 ${unit}`;
+}
+
+/** Up to 3 Romanian reasons: ≤ 2 bad, ≤ 1 good, and a neutral one only when fewer than 2 exist. */
+export function scoreReasons(components: Record<string, number>, n: Nutrients, kind: ScoreKind): ScoreReason[] {
+  const unit = kind === 'beverage' || kind === 'water' ? 'ml' : 'g';
+  const pts = (c: Component) => components[c] ?? 0;
+  const share = (c: Component) => pts(c) / maxPoints(c, kind);
+  const negatives = NEGATIVE.filter((c) => pts(c) > 0).sort((x, y) => share(y) - share(x));
+  const used = new Set<Key>();
+  const reasons: ScoreReason[] = [];
+  const add = (tone: ScoreReason['tone'], key: Key, title: string) => {
+    used.add(key);
+    reasons.push({ tone, title, detail: detail(key, n, unit) });
+  };
+
+  for (const c of negatives) {
+    const key = nutrientOf(c, kind);
+    if (share(c) >= 0.5 && !used.has(key) && reasons.length < 2) add('bad', key, BAD[key] ?? NAME[key]);
+  }
+  const good = POSITIVE.filter((c) => pts(c) >= 2).sort((x, y) => pts(y) - pts(x))[0];
+  if (good) {
+    const key = nutrientOf(good, kind);
+    add('good', key, GOOD[key] ?? NAME[key]);
+  }
+  const medium = negatives.find((c) => !used.has(nutrientOf(c, kind)));
+  if (reasons.length < 2 && medium) add('neutral', nutrientOf(medium, kind), `${NAME[nutrientOf(medium, kind)]}: nivel mediu`);
+  return reasons;
+}
