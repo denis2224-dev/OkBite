@@ -9,6 +9,9 @@ set an explicit isolated project ID and free ports there, and pass its directory
 with `supabase --workdir <directory>`. Never overwrite the checked-in defaults or
 stop/reset existing `okbite-c2`, `okbite-c3-cd37` or `okbite-c6` services.
 The reconciliation uses only `okbite-r2-review` on ports 58430–58434.
+Photo recovery is also bound to the API port in that copied configuration; an
+allowlisted project name never authorizes another loopback stack. The database
+drill compares restored owners and grants as well as row counts before pgTAP.
 
 Current integration tests run with all three local SUPABASE_* variables; an extra
 opt-in flag is unnecessary. Partial/invalid configuration fails before I/O.

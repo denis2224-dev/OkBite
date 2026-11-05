@@ -34,6 +34,10 @@ records. The test account/product/report/photos were removed afterward.
 
 Admin sessions are in memory, public builds hold no privileged credentials, and
 web callback tokens are removed from the address fragment after consumption.
+Allow the exact native/browser callbacks used by the deployed build; do not use
+wildcard production redirects. A successful callback still requires a current
+moderator membership check. Revocation must block both the client and a direct
+`moderate` request; removing navigation alone does not revoke access.
 
 ## Daily routine
 
@@ -85,13 +89,16 @@ deno run -A --env-file=supabase/.env.c6-tests \
 
 Set `SUPABASE_CLI_BIN` when the CLI is not on PATH. Populate the ignored test env
 from **this local stack's** status; it is a server-only file and must never be
-loaded into an Expo build. The photo script refuses a hosted URL.
+loaded into an Expo build. The photo script requires the API port in the copied
+local configuration and an allowlisted local project. It refuses hosted URLs, other local stacks, URL
+credentials, paths, queries and fragments before creating fixtures.
 
 The database script dumps `public`, `auth`, `storage` and `extensions`, retaining
 owners and grants. It creates a fresh disposable database in the local cluster,
 restores pre-data, recreates the installed extensions from the captured list,
-then restores data and post-data. It compares source/restored counts and runs the
-full pgTAP suite against the restored copy before dropping only that copy.
+then restores data and post-data. It compares source/restored counts plus schema,
+relation, column, routine and default-privilege owners/ACLs, then runs the full
+pgTAP suite against the restored copy before dropping only that copy.
 The source database is not reset or replaced.
 
 A schema-scoped dump does not include extension definitions. Installing them

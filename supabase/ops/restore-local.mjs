@@ -39,9 +39,32 @@ const snapshot = (database) => sql(database, `select jsonb_build_object(
   'links',(select count(*) from public.product_ingredients),'reports',(select count(*) from public.reports),
   'moderators',(select count(*) from public.moderators),'events',(select count(*) from public.usage_events),
   'client_errors',(select count(*) from public.client_errors),'objects',(select count(*) from storage.objects),'users',(select count(*) from auth.users),'buckets',(select count(*) from storage.buckets));`);
+const accessSnapshot = (database) => sql(database, `
+  with namespaces as (
+    select oid, nspname, nspowner, nspacl from pg_namespace
+    where nspname in ('public','auth','storage','extensions')
+  ), access as (
+    select 'schema' kind, nspname identity, pg_get_userbyid(nspowner) owner, nspacl::text acl from namespaces
+    union all
+    select 'relation', n.nspname || '.' || c.relname, pg_get_userbyid(c.relowner), c.relacl::text
+      from pg_class c join namespaces n on n.oid=c.relnamespace
+    union all
+    select 'column', n.nspname || '.' || c.relname || '.' || a.attname, null, a.attacl::text
+      from pg_attribute a join pg_class c on c.oid=a.attrelid join namespaces n on n.oid=c.relnamespace
+      where a.attnum > 0 and not a.attisdropped and a.attacl is not null
+    union all
+    select 'routine', n.nspname || '.' || p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')',
+      pg_get_userbyid(p.proowner), p.proacl::text
+      from pg_proc p join namespaces n on n.oid=p.pronamespace
+    union all
+    select 'default', n.nspname || ':' || d.defaclobjtype::text || ':' || pg_get_userbyid(d.defaclrole),
+      pg_get_userbyid(d.defaclrole), d.defaclacl::text
+      from pg_default_acl d join namespaces n on n.oid=d.defaclnamespace
+  ) select jsonb_agg(to_jsonb(access) order by kind, identity)::text from access;`);
 let created = false;
 try {
   const before = snapshot('postgres');
+  const accessBefore = accessSnapshot('postgres');
   docker('pg_dump -U supabase_admin -d postgres --format=custom --schema=public --schema=auth --schema=storage --schema=extensions', { stdoutFile: archive });
   const extensions = sql('postgres', `select format('create extension if not exists %I with schema %I;',e.extname,n.nspname)
     from pg_extension e join pg_namespace n on n.oid=e.extnamespace
@@ -54,6 +77,7 @@ try {
   docker(`pg_restore -U supabase_admin -d ${target} --exit-on-error --section=data`, { stdinFile: archive });
   docker(`pg_restore -U supabase_admin -d ${target} --exit-on-error --section=post-data`, { stdinFile: archive });
   if (snapshot(target) !== before) throw new Error('Restored application/Auth/Storage counts differ');
+  if (accessSnapshot(target) !== accessBefore) throw new Error('Restored owners or grants differ');
   const tests = run(process.env.SUPABASE_CLI_BIN ?? 'supabase', ['test', 'db', '--db-url',
     `postgresql://postgres:postgres@127.0.0.1:${port}/${target}?sslmode=disable`],
     // CLI 2.65.5 drops URL sslmode while rebuilding connection options.
@@ -63,7 +87,7 @@ try {
   const report = { date: new Date().toISOString(), scope: 'Local application/Auth/Storage schemas; not hosted recovery',
     project, restoredDatabase: target, counts: JSON.parse(before), archive,
     archiveSha256: createHash('sha256').update(readFileSync(archive)).digest('hex'),
-    pgTap: 'passed', storageFiles: 'Separate binary round-trip required; SQL does not contain photo bytes',
+    pgTap: 'passed', ownersAndGrants: 'matched source schemas, relations, columns, routines and defaults', storageFiles: 'Separate binary round-trip required; SQL does not contain photo bytes',
     staging: 'pending: no hosted project configured' };
   writeFileSync(join(directory, 'report.json'), JSON.stringify(report, null, 2), { mode: 0o600 });
   console.log(`Local restore verified. Private evidence: ${directory}`);
