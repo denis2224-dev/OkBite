@@ -1,4 +1,4 @@
-import { Share } from 'react-native';
+import { AccessibilityInfo, Platform, Share } from 'react-native';
 import { foundYogurt } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
 import { productShareText } from './productShareText';
@@ -24,9 +24,12 @@ it('does not report native dismissal as a completed share', async () => {
   jest.spyOn(Share, 'share').mockResolvedValue({ action: Share.dismissedAction, activityType: undefined });
   await expect(shareProduct(product, score)).resolves.toBe('cancelled');
 });
-it('lets the result view display a native failure', async () => {
+it('announces a share failure for VoiceOver and lets the view display it', async () => {
+  jest.spyOn(Platform, 'select').mockImplementation((values) => values.ios);
+  const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => {});
   jest.spyOn(Share, 'share').mockRejectedValue(new Error('Unavailable'));
   await expect(shareProduct(product, score)).rejects.toThrow('Unavailable');
+  expect(announce).toHaveBeenCalledWith(ro.share.error);
 });
 afterEach(() => jest.restoreAllMocks());
 

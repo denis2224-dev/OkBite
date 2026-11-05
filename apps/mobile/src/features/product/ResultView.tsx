@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import type { Product, ScoreResult } from '@okbite/shared';
 import { AllergenChip, Badge, Body, Button, Card, Heading, useToast } from '../../ui';
 import { ro } from '../../copy/ro';
+import { isPreview } from '../../lib/preview';
 import { displayScore } from './displayScore';
 import { ScoreCard } from './ScoreCard';
 import { PortionTable } from './PortionTable';
@@ -52,7 +53,7 @@ export function ResultView({ product, score }: { product: Product; score: ScoreR
     <ScoreCard score={shownScore} /><PortionTable product={product} /><SourceCard product={product} />
     {/* Ingredients and original-label buttons return with their routes in B5. */}
     <Button variant="secondary" onPress={() => router.push({ pathname: '/compare', params: { id: product.id } })}>{ro.result.compare}</Button>
-    <Button variant="secondary" disabled={sharing} onPress={share}>{ro.share.button}</Button>
+    {!isPreview && <Button variant="secondary" disabled={sharing} onPress={share}>{ro.share.button}</Button>}
     {shareFailed && <View style={{ gap: 8 }}>
       <Body accessibilityLiveRegion="polite">{ro.share.error}</Body>
       <Body selectable>{productShareUrl(product)}</Body>
