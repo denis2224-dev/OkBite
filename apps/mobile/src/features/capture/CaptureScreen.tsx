@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
   center: { flex: 1, justifyContent: 'center', padding: 20 },
   hint: { position: 'absolute', top: 24, left: 16, right: 16, color: '#fff', fontSize: 16, textAlign: 'center' },
-  controls: { position: 'absolute', bottom: 32, left: 16, right: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  controls: { position: 'absolute', bottom: 32, left: 16, right: 16, flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'space-between' },
   shutter: { width: 72, height: 72, borderRadius: 36, borderWidth: 4, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   shutterOff: { opacity: 0.4 },
   shutterInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: '#fff' },

@@ -91,6 +91,11 @@ describe('CaptureScreen', () => {
     expect(mockTakePicture).toHaveBeenCalledTimes(1);
   });
 
+  it('lets gallery and shutter controls wrap when text is enlarged', async () => {
+    await render(<CaptureScreen />);
+    expect(flatten(shutter().parent!).flexWrap).toBe('wrap');
+  });
+
   it('shows the working state and sends one request for a double tap', async () => {
     let finish!: (v: unknown) => void;
     identify.mockReturnValue(new Promise((r) => { finish = r; }));

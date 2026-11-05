@@ -1,6 +1,8 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ro } from '../../copy/ro';
+import { useTheme } from '../../theme/useTheme';
+import type { Palette } from '../../theme/tokens';
 import { ActionButton } from '../capture/StatusPanel';
 
 export function NotFound({
@@ -12,6 +14,8 @@ export function NotFound({
   onAdd: () => void;
   onCheckCodeAgain?: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text accessibilityRole="header" style={styles.title}>
@@ -41,22 +45,24 @@ export function NotFound({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 16, gap: 16 },
-  title: { fontSize: 22, fontWeight: '700' },
-  subtitle: { fontSize: 15, color: '#56615A' },
-  card: { padding: 16, borderRadius: 16, backgroundColor: '#fff', gap: 12 },
-  nextTitle: { fontSize: 14, fontWeight: '700' },
+const createStyles = (colors: Palette) => StyleSheet.create({
+  container: { flexGrow: 1, padding: 16, gap: 16, backgroundColor: colors.ground },
+  title: { fontSize: 22, fontWeight: '700', color: colors.ink },
+  subtitle: { fontSize: 15, color: colors.muted },
+  card: { padding: 16, borderRadius: 16, backgroundColor: colors.surface, gap: 12 },
+  nextTitle: { fontSize: 14, fontWeight: '700', color: colors.ink },
   stepRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   badge: {
-    width: 32,
-    height: 32,
+    minWidth: 32,
+    minHeight: 32,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 16,
-    backgroundColor: '#E3EEDF',
+    backgroundColor: colors.goodBg,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeText: { fontSize: 14, fontWeight: '700', color: '#173A2A' },
-  stepText: { flex: 1, fontSize: 15 },
+  badgeText: { fontSize: 14, fontWeight: '700', color: colors.good },
+  stepText: { flex: 1, fontSize: 15, color: colors.ink },
   actions: { gap: 10 },
 });

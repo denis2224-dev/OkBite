@@ -3,12 +3,16 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-nat
 import { useRouter } from 'expo-router';
 import { Body, Heading } from '../../ui';
 import { ro } from '../../copy/ro';
+import { useTheme } from '../../theme/useTheme';
+import type { Palette } from '../../theme/tokens';
 import { StatusPanel, errorMessage } from '../capture/StatusPanel';
 import { ManualCode } from './ManualCode';
 import { useScanLookup } from './useScanLookup';
 import { useWebLiveScan } from './useWebLiveScan';
 
 export default function ScanScreenWeb() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const router = useRouter();
   const { state, onCameraCode, onManualCode, retry, dismiss } = useScanLookup();
   const { status: liveStatus, videoRef, retry: retryLive } = useWebLiveScan((code) => {
@@ -49,8 +53,8 @@ export default function ScanScreenWeb() {
   );
 }
 
-const styles = StyleSheet.create({
-  content: { padding: 16, gap: 16 },
+const createStyles = (colors: Palette) => StyleSheet.create({
+  content: { flexGrow: 1, padding: 16, gap: 16, backgroundColor: colors.ground },
   title: { fontSize: 22, fontWeight: '700' },
   preview: { height: 280, borderRadius: 16, overflow: 'hidden', backgroundColor: '#000', justifyContent: 'center' },
   frameHint: { position: 'absolute', bottom: 12, left: 12, right: 12, color: '#fff', textAlign: 'center' },

@@ -7,6 +7,7 @@ import {
   type AddProductRequest,
 } from '@okbite/shared';
 import { ro } from '../../copy/ro';
+import { useTheme } from '../../theme/useTheme';
 import { api } from '../../lib/api';
 import { StatusPanel } from '../capture/StatusPanel';
 import { addProductRoute, productRoute, type AddInitialValues } from '../identify/routes';
@@ -23,6 +24,7 @@ import { saveQueuedConfirmation } from '../history/db';
 import { saveToHistory } from '../history/store';
 
 export function ReviewScreen() {
+  const { colors } = useTheme();
   const router = useRouter();
   const activeDraft = getAddReviewDraft();
   const saved = useRef<Extract<LookupResponse, { status: 'found' }> | null>(activeDraft?.savedResult ?? null);
@@ -51,14 +53,14 @@ export function ReviewScreen() {
   };
 
   if (cleanupPending) {
-    return <View style={styles.emptyRoot}><StatusPanel message={ro.review.savedPendingCleanup} actions={[
+    return <View style={[styles.emptyRoot, { backgroundColor: colors.ground }]}><StatusPanel message={ro.review.savedPendingCleanup} actions={[
       { label: ro.review.finishSave, onPress: () => { void finishSaved().catch(() => { setCleanupPending(true); }); } },
     ]} /></View>;
   }
 
   if (!activeDraft) {
     return (
-      <View style={styles.emptyRoot}>
+      <View style={[styles.emptyRoot, { backgroundColor: colors.ground }]}>
         <StatusPanel
           message={ro.errors.generic}
           actions={[
@@ -120,5 +122,5 @@ export function ReviewScreen() {
 export default ReviewScreen;
 
 const styles = StyleSheet.create({
-  emptyRoot: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#F6F1E6' },
+  emptyRoot: { flex: 1, justifyContent: 'center', padding: 20 },
 });

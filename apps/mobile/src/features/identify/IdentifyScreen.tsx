@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ro } from '../../copy/ro';
+import { useTheme } from '../../theme/useTheme';
 import { StatusPanel } from '../capture/StatusPanel';
 import { CandidateList } from './CandidateList';
 import { ConfirmMatch } from './ConfirmMatch';
@@ -10,6 +11,7 @@ import { addProductRoute, parseIdentifyParams, productRoute } from './routes';
 import { resolveQueued } from '../offline/queue';
 
 export default function IdentifyScreen() {
+  const { colors } = useTheme();
   const router = useRouter();
   const rawParams = useLocalSearchParams();
   const state = parseIdentifyParams(rawParams);
@@ -31,7 +33,7 @@ export default function IdentifyScreen() {
     void finishConfirmation();
   };
 
-  if (cleanupPending) return <View style={styles.center}><StatusPanel message={ro.review.savedPendingCleanup} actions={[
+  if (cleanupPending) return <View style={[styles.center, { backgroundColor: colors.ground }]}><StatusPanel message={ro.review.savedPendingCleanup} actions={[
     { label: ro.review.finishSave, onPress: () => { void finishConfirmation(); } },
   ]} /></View>;
 
@@ -69,7 +71,7 @@ export default function IdentifyScreen() {
     );
   }
   return (
-    <View style={styles.center}>
+    <View style={[styles.center, { backgroundColor: colors.ground }]}>
       <StatusPanel
         message={ro.errors.generic}
         actions={[
