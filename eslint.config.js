@@ -16,4 +16,8 @@ module.exports = defineConfig([
   },
   expo,
   { files: ['**/*.{ts,tsx,mts,cts}'], extends: [tseslint.configs.recommended] },
+  {
+    files: ['supabase/functions/**/*.ts'],
+    rules: { 'import/no-unresolved': ['error', { ignore: ['^npm:', '^@supabase/supabase-js$'] }] },
+  },
 ]);
