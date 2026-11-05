@@ -18,7 +18,7 @@ Split: entries 1–35 R1, 36–70 R2, 71–104 R3, 105–138 R4, 139–172 R5.
 
 ## Score fixtures (A3)
 
-`score-fixtures.draft.json` holds 28 candidate products from Open Food Facts (Moldovan 484 codes), **not checked**. Each has the OFF revision it was copied from (`source.url` opens that exact revision), the declared values per 100 g/ml, and `offReference`: Open Food Facts' own Nutri-Score 2023 result. `offReference` is only a cross-check; it is not the official calculator and never goes into `expectedPoints`.
+`score-fixtures.draft.json` holds 28 candidate products from Open Food Facts (Moldovan 484 codes; data © Open Food Facts contributors, ODbL 1.0), **not checked**. Each has the OFF revision it was copied from (`source.url` opens that exact revision), the declared values per 100 g/ml, and `offReference`: Open Food Facts' own Nutri-Score 2023 result. `offReference` is only a cross-check; it is not the official calculator and never goes into `expectedPoints`.
 
 To check one (needs 30 in total: at least 5 per letter, 4 beverages, 3 cheeses, 3 fats/oils, 1 water; the draft still lacks 2 cheeses):
 
