@@ -2,10 +2,9 @@ import { strict as assert } from 'node:assert';
 import { askClaude, parseJsonObject, toBase64, UpstreamError } from './claude.ts';
 
 const KEY = 'test-key-not-real';
-const ok = (text: string, stop = 'end_turn') =>
+const ok = (text: string, stop = 'stop') =>
   new Response(JSON.stringify({
-    stop_reason: stop,
-    content: [{ type: 'thinking', thinking: '' }, { type: 'text', text }],
+    choices: [{ finish_reason: stop, message: { role: 'assistant', content: text } }],
   }));
 const fake = (responses: (Response | Error)[]) => {
   const calls: RequestInit[] = [];
@@ -21,20 +20,17 @@ Deno.test('askClaude sends the documented request and returns the text block', a
   const { calls, deps } = fake([ok('{"a":1}')]);
   assert.equal(await askClaude(['/9j/AA==', '/9j/BB=='], 'citește', deps), '{"a":1}');
   const headers = calls[0].headers as Record<string, string>;
-  assert.equal(headers['x-api-key'], KEY);
-  assert.equal(headers['anthropic-version'], '2026-10-21');
+  assert.equal(headers.authorization, `Bearer ${KEY}`);
   const body = JSON.parse(calls[0].body as string);
-  assert.equal(body.model, 'claude-haiku-5-5');
+  assert.equal(body.model, 'deepseek-v4.1-flash:free');
   assert.deepEqual(
     body.messages[0].content.map((b: { type: string }) => b.type),
-    ['image', 'image', 'text'],
+    ['image_url', 'image_url', 'text'],
   );
-  assert.deepEqual(body.messages[0].content[0].source, {
-    type: 'base64',
-    media_type: 'image/jpeg',
-    data: '/9j/AA==',
-  });
-  assert.equal('temperature' in body, false); // rejected on API version 2026-10-21
+  assert.deepEqual(body.messages[0].content[0].image_url, { url: 'data:image/jpeg;base64,/9j/AA==' });
+  const custom = fake([ok('x')]);
+  await askClaude(['x'], 'p', { ...custom.deps, model: 'other-model' });
+  assert.equal(JSON.parse(custom.calls[0].body as string).model, 'other-model');
 });
 
 Deno.test('askClaude retries 429/529/5xx and network errors, then gives up', async () => {
@@ -66,14 +62,14 @@ Deno.test('askClaude does not retry client errors and never leaks the key or pro
 });
 
 Deno.test('askClaude rejects refusals, truncation, empty answers, missing key and bad images', async () => {
-  for (const r of [ok('x', 'refusal'), ok('x', 'max_tokens'), ok(''), new Response('not json')]) {
+  for (const r of [ok('x', 'content_filter'), ok('x', 'length'), ok(''), new Response('not json')]) {
     await assert.rejects(askClaude(['x'], 'p', fake([r]).deps), UpstreamError);
   }
   const none = fake([]);
   await assert.rejects(askClaude(['x'], 'p', { ...none.deps, apiKey: '' }), UpstreamError);
   await assert.rejects(askClaude([], 'p', none.deps), UpstreamError);
   await assert.rejects(askClaude(['a', 'b', 'c'], 'p', none.deps), UpstreamError);
-  await assert.rejects(askClaude(['a'.repeat(2_000_001)], 'p', none.deps), UpstreamError);
+  await assert.rejects(askClaude(['a'.repeat(1_900_001)], 'p', none.deps), UpstreamError);
   assert.equal(none.calls.length, 0);
 });
 

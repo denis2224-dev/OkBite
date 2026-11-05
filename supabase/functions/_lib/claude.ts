@@ -1,13 +1,14 @@
-// Claude Messages API over raw HTTP, as planned in R3 D4/D5. Verified 2026-11-05 against
-// https://platform.claude.com/docs/en/api/versioning (version 2026-10-21) and
-// https://platform.claude.com/docs/en/build-with-claude/vision (base64 image blocks).
-const API_URL = 'https://api.anthropic.com/v1/messages';
-export const CLAUDE_MODEL = 'claude-haiku-5-5';
+// Vision model over TokenHarbor's OpenAI-compatible chat API (raw HTTP). Verified 2026-11-05
+// against https://tokenharbor.ai/docs/api/curl (Bearer thk_live_ key) and
+// https://tokenharbor.ai/docs/getting-started/quickstart (":free" ids cost nothing).
+// The file keeps its Claude names so the identify and read-label callers stay unchanged.
+const API_URL = 'https://tokenharbor.ai/v1/chat/completions';
+export const CLAUDE_MODEL = 'deepseek-v4.1-flash:free'; // override with the AI_MODEL secret
 const RETRYABLE = new Set([408, 429, 500, 502, 503, 504, 529]);
 const ATTEMPTS = 3;
 const TIMEOUT_MS = 20_000;
 const MAX_IMAGES = 2;
-const MAX_IMAGE_BASE64 = 2_000_000;
+const MAX_IMAGE_BASE64 = 1_900_000; // two photos stay under TokenHarbor's 4 MB request cap
 
 /** Claude could not give a usable answer. The message never contains the key or the provider's body. */
 export class UpstreamError extends Error {}
@@ -16,6 +17,7 @@ export type ClaudeDeps = {
   fetch?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
   apiKey?: string;
+  model?: string;
 };
 
 /** Sends JPEG images (base64, no data: prefix) and a prompt; returns Claude's text answer. */
@@ -24,7 +26,7 @@ export async function askClaude(
   prompt: string,
   deps: ClaudeDeps = {},
 ): Promise<string> {
-  const key = deps.apiKey ?? Deno.env.get('ANTHROPIC_API_KEY');
+  const key = deps.apiKey ?? Deno.env.get('AI_API_KEY');
   if (!key) throw new UpstreamError('Claude is not configured');
   if (
     !images.length || images.length > MAX_IMAGES ||
@@ -33,15 +35,14 @@ export async function askClaude(
   const doFetch = deps.fetch ?? fetch;
   const sleep = deps.sleep ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)));
   const body = JSON.stringify({
-    model: CLAUDE_MODEL,
-    max_tokens: 4000, // thinking is on by default on Haiku 5.5 and counts toward this cap
-    output_config: { effort: 'low' }, // reading printed text; low effort keeps latency down
+    model: deps.model ?? Deno.env.get('AI_MODEL') ?? CLAUDE_MODEL,
+    max_tokens: 4000, // room for the model's reasoning before the JSON answer
     messages: [{
       role: 'user',
       content: [
         ...images.map((data) => ({
-          type: 'image',
-          source: { type: 'base64', media_type: 'image/jpeg', data },
+          type: 'image_url',
+          image_url: { url: `data:image/jpeg;base64,${data}` },
         })),
         { type: 'text', text: prompt },
       ],
@@ -54,8 +55,7 @@ export async function askClaude(
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'x-api-key': key,
-          'anthropic-version': '2026-10-21',
+          authorization: `Bearer ${key}`,
         },
         body,
         signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -77,13 +77,13 @@ export async function askClaude(
 }
 
 function readText(message: unknown): string {
-  const m = message as
-    | { stop_reason?: string; content?: { type?: string; text?: string }[] }
-    | null;
-  if (!m || m.stop_reason !== 'end_turn' || !Array.isArray(m.content)) {
-    throw new UpstreamError('Claude gave no complete answer'); // refusal, max_tokens or malformed
+  const choice = (message as
+    | { choices?: { finish_reason?: string; message?: { content?: unknown } }[] }
+    | null)?.choices?.[0];
+  if (choice?.finish_reason !== 'stop' || typeof choice.message?.content !== 'string') {
+    throw new UpstreamError('Claude gave no complete answer'); // filtered, length cut or malformed
   }
-  const text = m.content.filter((b) => b.type === 'text').map((b) => b.text ?? '').join('').trim();
+  const text = choice.message.content.trim();
   if (!text) throw new UpstreamError('Claude gave an empty answer');
   return text;
 }
