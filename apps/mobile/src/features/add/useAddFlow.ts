@@ -4,6 +4,7 @@ import { launchImageLibraryAsync } from 'expo-image-picker';
 import { ReadLabelRequest, ReadLabelResponse } from '@okbite/shared';
 import { api } from '../../lib/api';
 import { compressPhoto } from '../capture/compressPhoto';
+import { useScreenActivity } from '../capture/useScreenActivity';
 import { parseAddParams } from '../identify/routes';
 import {
   getAvailableCategories,
@@ -37,6 +38,7 @@ export function useAddFlow() {
   const [step, setStep] = useState<1 | 2>(1);
   const [state, setState] = useState<AddFlowState>(IDLE);
   const [canRetry, setCanRetry] = useState(false);
+  const { start, isCurrent } = useScreenActivity(() => setState(IDLE));
   const busy = useRef(false);
   const mounted = useRef(true);
   useEffect(() => {
@@ -47,7 +49,8 @@ export function useAddFlow() {
   const lastAttemptRef = useRef<{ ingredientsUri: string; nutritionUri: string | null } | null>(null);
 
   const submitPair = useCallback(
-    async (ingredientsUri: string, nutritionUri: string | null) => {
+    async (ingredientsUri: string, nutritionUri: string | null, token: number) => {
+      if (!isCurrent(token)) return;
       lastAttemptRef.current = { ingredientsUri, nutritionUri };
       setCanRetry(true);
       const budget = nutritionUri === null ? SINGLE_PHOTO_MAX_BYTES : TWO_PHOTO_MAX_BYTES;
@@ -66,9 +69,9 @@ export function useAddFlow() {
         throw Object.assign(new Error('bad_request'), { code: 'bad_request' });
       }
 
-      if (!mounted.current) return;
+      if (!mounted.current || !isCurrent(token)) return;
       const rawResponse = await api.readLabel(parsedReq.data);
-      if (!mounted.current) return;
+      if (!mounted.current || !isCurrent(token)) return;
       const parsedRes = ReadLabelResponse.safeParse(rawResponse);
       if (
         !parsedRes.success ||
@@ -88,16 +91,17 @@ export function useAddFlow() {
       setState(IDLE);
       router.replace('/add/review');
     },
-    [rawParams, router],
+    [rawParams, router, isCurrent],
   );
 
   const handleCapturedUri = useCallback(
     async (getUri: () => Promise<string | null>) => {
-      if (busy.current) return;
+      const token = start();
+      if (busy.current || !isCurrent(token)) return;
       busy.current = true;
       try {
         const uri = await getUri();
-        if (!mounted.current) return;
+        if (!mounted.current || !isCurrent(token)) return;
         if (!uri) {
           setState(IDLE);
           return;
@@ -109,15 +113,16 @@ export function useAddFlow() {
           return;
         }
         setState({ status: 'working' });
-        await submitPair(ingredientsUriRef.current, uri);
+        await submitPair(ingredientsUriRef.current, uri, token);
       } catch (err) {
         const code = (err as { code?: string } | null)?.code;
-        setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
+        if (isCurrent(token)) setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
       } finally {
         busy.current = false;
+        if (isCurrent(start())) setState(previous => previous.status === 'working' ? IDLE : previous);
       }
     },
-    [step, submitPair],
+    [step, submitPair, start, isCurrent],
   );
 
   const takePhoto = useCallback(
@@ -137,33 +142,37 @@ export function useAddFlow() {
   );
 
   const submitSamePhoto = useCallback(async () => {
-    if (busy.current || !ingredientsUriRef.current) return;
+    const token = start();
+    if (busy.current || !ingredientsUriRef.current || !isCurrent(token)) return;
     busy.current = true;
     setState({ status: 'working' });
     try {
-      await submitPair(ingredientsUriRef.current, null);
+      await submitPair(ingredientsUriRef.current, null, token);
     } catch (err) {
       const code = (err as { code?: string } | null)?.code;
-      setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
+      if (isCurrent(token)) setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
     } finally {
       busy.current = false;
+      if (isCurrent(start())) setState(previous => previous.status === 'working' ? IDLE : previous);
     }
-  }, [submitPair]);
+  }, [submitPair, start, isCurrent]);
 
   const retry = useCallback(async () => {
+    const token = start();
     const attempt = lastAttemptRef.current;
-    if (busy.current || !attempt) return;
+    if (busy.current || !attempt || !isCurrent(token)) return;
     busy.current = true;
     setState({ status: 'working' });
     try {
-      await submitPair(attempt.ingredientsUri, attempt.nutritionUri);
+      await submitPair(attempt.ingredientsUri, attempt.nutritionUri, token);
     } catch (err) {
       const code = (err as { code?: string } | null)?.code;
-      setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
+      if (isCurrent(token)) setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
     } finally {
       busy.current = false;
+      if (isCurrent(start())) setState(previous => previous.status === 'working' ? IDLE : previous);
     }
-  }, [submitPair]);
+  }, [submitPair, start, isCurrent]);
 
   const dismiss = useCallback(() => {
     if (!busy.current) setState(IDLE);

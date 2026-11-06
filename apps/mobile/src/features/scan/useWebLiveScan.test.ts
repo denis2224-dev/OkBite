@@ -4,7 +4,7 @@ import { api } from '../../lib/api';
 import { useScanLookup } from './useScanLookup';
 import { startLiveScan, useWebLiveScan } from './useWebLiveScan';
 
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: jest.fn() }) }));
+jest.mock('expo-router', () => ({ useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof import('react')>('react').useEffect(callback, [callback]), useRouter: () => ({ replace: jest.fn() }) }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
 
 type G = Record<string, unknown>;

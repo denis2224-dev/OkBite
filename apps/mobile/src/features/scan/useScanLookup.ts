@@ -4,6 +4,7 @@ import { normalizeCode } from '@okbite/shared';
 import { api } from '../../lib/api';
 import { enqueue } from '../offline/queue';
 import { identifyCodeRoute, productRoute } from '../identify/routes';
+import { useScreenActivity } from '../capture/useScreenActivity';
 
 export type ScanState =
   | { status: 'idle' }
@@ -21,9 +22,12 @@ export function useScanLookup(onCameraAccept?: () => void) {
   const failed = useRef(false);
   const lastCode = useRef<string | null>(null);
   const enqueuedCode = useRef<string | null>(null);
+  const { start, isCurrent } = useScreenActivity(() => { failed.current = false; setState(IDLE); });
 
   const lookup = useCallback(
     async (code: string) => {
+      const token = start();
+      if (!isCurrent(token)) return;
       busy.current = true;
       failed.current = false;
       if (code !== lastCode.current) {
@@ -34,10 +38,11 @@ export function useScanLookup(onCameraAccept?: () => void) {
       try {
         const res = await api.lookup({ code });
         enqueuedCode.current = null;
+        if (!isCurrent(token)) return;
         setState(IDLE);
         router.replace(res.status === 'found' ? productRoute(res.product.id) : identifyCodeRoute(code));
       } catch (err) {
-        failed.current = true;
+        if (isCurrent(token)) failed.current = true;
         const errorCode = (err as { code?: string } | null)?.code;
         if (errorCode === 'offline') {
           if (enqueuedCode.current !== code) {
@@ -46,15 +51,16 @@ export function useScanLookup(onCameraAccept?: () => void) {
               enqueuedCode.current = code;
             } catch { /* Keep retry available until the code is durably saved. */ }
           }
-          setState({ status: 'offline' });
+          if (isCurrent(token)) setState({ status: 'offline' });
         } else {
-          setState({ status: 'error', code: errorCode });
+          if (isCurrent(token)) setState({ status: 'error', code: errorCode });
         }
       } finally {
         busy.current = false;
+        if (isCurrent(start())) setState(previous => previous.status === 'working' ? IDLE : previous);
       }
     },
-    [router],
+    [router, start, isCurrent],
   );
 
   const onCameraCode = useCallback(

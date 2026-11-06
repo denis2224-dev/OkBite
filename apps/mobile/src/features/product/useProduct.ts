@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Product, ScoreResult } from '@okbite/shared';
 import { api, ApiError } from '../../lib/api';
 import { saveToHistory, getFromHistory } from '../history/store';
+import { isPreview } from '../../lib/preview';
+import { previewEntries } from '../../test/fixtures';
 
 type State = { id: string; data?: { product: Product; score: ScoreResult }; error?: ApiError; loading: boolean; storageError?: boolean; cached?: boolean };
 export function useProduct(id: string, cachedOnly = false) {
@@ -12,6 +14,15 @@ export function useProduct(id: string, cachedOnly = false) {
     let active = true;
     async function load() {
       if (active) setState({ id, loading: true });
+      if (isPreview) {
+        const match = previewEntries.find(entry => entry.product.id === id);
+        if (match) {
+          if (active) setState({ id, data: match, loading: false });
+        } else {
+          if (active) setState({ id, loading: false, error: new ApiError('not_found') });
+        }
+        return;
+      }
       try {
         if (cachedOnly) {
           const cached = await getFromHistory(id);

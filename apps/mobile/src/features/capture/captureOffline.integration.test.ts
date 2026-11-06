@@ -15,7 +15,7 @@ import { useCaptureFlow } from './useCaptureFlow';
 import { identifyFound, PRODUCT_ID } from './__fixtures__/responses';
 
 const mockReplace = jest.fn();
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }) }));
+jest.mock('expo-router', () => ({ useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof import('react')>('react').useEffect(callback, [callback]), useRouter: () => ({ replace: mockReplace }) }));
 jest.mock('expo-camera', () => ({ scanFromURLAsync: jest.fn(async () => []) }));
 jest.mock('expo-image-picker', () => ({ launchImageLibraryAsync: jest.fn() }));
 jest.mock('expo-image-manipulator', () => ({ SaveFormat: { JPEG: 'jpeg' }, ImageManipulator: { manipulate: jest.fn() } }));

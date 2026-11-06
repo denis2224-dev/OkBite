@@ -11,7 +11,7 @@ import * as useScanLookupModule from './useScanLookup';
 const mockReplace = jest.fn();
 const mockPush = jest.fn();
 const mockLive = { status: 'unsupported' as string, videoRef: jest.fn(), retry: jest.fn() };
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace, push: mockPush }) }));
+jest.mock('expo-router', () => ({ useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof import('react')>('react').useEffect(callback, [callback]), useRouter: () => ({ replace: mockReplace, push: mockPush }) }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
 jest.mock('./useWebLiveScan', () => ({ useWebLiveScan: () => mockLive }));
 

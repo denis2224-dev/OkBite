@@ -14,7 +14,7 @@ const mockReplace = jest.fn();
 const mockPermission: { value: unknown } = { value: null };
 const mockRequestPermission = jest.fn();
 const mockTakePicture = jest.fn<() => Promise<unknown>>();
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }) }));
+jest.mock('expo-router', () => ({ useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof import('react')>('react').useEffect(callback, [callback]), useRouter: () => ({ replace: mockReplace }) }));
 jest.mock('expo-image-manipulator', () => ({ SaveFormat: { JPEG: 'jpeg' }, ImageManipulator: { manipulate: jest.fn() } }));
 jest.mock('expo-image-picker', () => ({ launchImageLibraryAsync: jest.fn() }));
 jest.mock('../offline/queue', () => ({ enqueue: jest.fn(async () => { throw new Error('storage unavailable'); }) }));

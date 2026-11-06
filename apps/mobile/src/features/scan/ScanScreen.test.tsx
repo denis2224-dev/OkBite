@@ -11,7 +11,7 @@ import { CODE, PRODUCT_ID, lookupFound, lookupNotFound } from '../capture/__fixt
 const mockReplace = jest.fn();
 const mockPermission: { value: unknown } = { value: null };
 const mockRequestPermission = jest.fn();
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }) }));
+jest.mock('expo-router', () => ({ useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof import('react')>('react').useEffect(callback, [callback]), useRouter: () => ({ replace: mockReplace }) }));
 jest.mock('expo-haptics', () => ({ notificationAsync: jest.fn(async () => undefined), NotificationFeedbackType: { Success: 'success' } }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
 jest.mock('expo-camera', () => {
