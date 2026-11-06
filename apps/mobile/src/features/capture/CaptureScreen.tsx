@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { ro } from '../../copy/ro';
 import { ActionButton, StatusPanel, errorMessage } from './StatusPanel';
@@ -41,7 +41,7 @@ export default function CaptureScreen() {
           </View>
         </>
       ) : state.status === 'idle' ? (
-        <View style={styles.center}>
+        <ScrollView testID="capture-permission-recovery" style={{ flex: 1 }} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
           {!permission.granted ? (
             <StatusPanel
               title={ro.capture.deniedTitle}
@@ -54,13 +54,13 @@ export default function CaptureScreen() {
               actions={[gallery, { label: ro.errors.retry, onPress: () => { setMountFailed(false); setReady(false); } }]}
             />
           )}
-        </View>
+        </ScrollView>
       ) : null}
       {working ? (
         <View style={[StyleSheet.absoluteFill, styles.overlay]}><ActivityIndicator size="large" color="#fff" /><Text style={styles.overlayText}>{ro.capture.working}</Text></View>
       ) : null}
       {state.status === 'error' || state.status === 'offline' ? (
-        <View style={[StyleSheet.absoluteFill, styles.overlay]}>
+        <ScrollView testID="capture-error-recovery" style={StyleSheet.absoluteFill} contentContainerStyle={[styles.overlay, { flexGrow: 1 }]} keyboardShouldPersistTaps="handled">
           <StatusPanel
             title={state.status === 'offline' ? ro.offline.title : undefined}
             message={state.status === 'offline' ? ro.offline.subtitle : errorMessage(state.code)}
@@ -70,7 +70,7 @@ export default function CaptureScreen() {
               { label: ro.nav.close, onPress: dismiss },
             ]}
           />
-        </View>
+        </ScrollView>
       ) : null}
     </View>
   );
@@ -78,7 +78,7 @@ export default function CaptureScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
-  center: { flex: 1, justifyContent: 'center', padding: 20 },
+  center: { flexGrow: 1, justifyContent: 'center', padding: 20 },
   hint: { position: 'absolute', top: 24, left: 16, right: 16, color: '#fff', fontSize: 16, textAlign: 'center' },
   controls: { position: 'absolute', bottom: 32, left: 16, right: 16, flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'space-between' },
   shutter: { width: 72, height: 72, borderRadius: 36, borderWidth: 4, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' },

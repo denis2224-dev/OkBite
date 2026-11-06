@@ -64,6 +64,7 @@ describe('CaptureScreen', () => {
     (launchImageLibraryAsync as unknown as AsyncMock).mockResolvedValue({ canceled: true, assets: null });
     await render(<CaptureScreen />);
     expect(screen.getByText(ro.capture.deniedTitle)).toBeTruthy();
+    expect(StyleSheet.flatten(screen.getByTestId('capture-permission-recovery').props.contentContainerStyle)).toMatchObject({ flexGrow: 1 });
     expect(screen.queryByTestId('camera')).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: ro.capture.openSettings }));
     expect(openSettings).toHaveBeenCalled();
@@ -200,6 +201,7 @@ describe('CaptureScreen', () => {
       });
       expect(await screen.findByText(ro.offline.title)).toBeTruthy();
       expect(screen.getByText(ro.offline.subtitle)).toBeTruthy();
+      expect(screen.getByTestId('capture-error-recovery')).toBeTruthy();
       await fireEvent.press(screen.getByRole('button', { name: ro.offline.retry }));
       expect(pick).toHaveBeenCalledTimes(2); // 1 cancelled + 1 selected (not re-opened on retry)
       expect(identify).toHaveBeenCalledTimes(2);

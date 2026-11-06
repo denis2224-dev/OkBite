@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { ro } from '../../copy/ro';
 import { ActionButton, StatusPanel, errorMessage } from '../capture/StatusPanel';
@@ -71,7 +71,7 @@ export function AddCaptureScreen() {
           </View>
         </View>
       ) : state.status === 'idle' ? (
-        <View style={styles.center}>
+        <ScrollView testID="add-permission-recovery" style={{ flex: 1 }} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
           {!permission.granted ? (
             <StatusPanel
               title={ro.capture.deniedTitle}
@@ -103,7 +103,7 @@ export function AddCaptureScreen() {
               ]}
             />
           )}
-        </View>
+        </ScrollView>
       ) : null}
 
       {working ? (
@@ -114,7 +114,7 @@ export function AddCaptureScreen() {
       ) : null}
 
       {state.status === 'error' || state.status === 'offline' ? (
-        <View style={[StyleSheet.absoluteFill, styles.overlay]}>
+        <ScrollView testID="add-error-recovery" style={StyleSheet.absoluteFill} contentContainerStyle={[styles.overlay, { flexGrow: 1 }]} keyboardShouldPersistTaps="handled">
           <StatusPanel
             title={state.status === 'offline' ? ro.offline.title : undefined}
             message={state.status === 'offline' ? ro.offline.subtitle : errorMessage(state.code)}
@@ -133,7 +133,7 @@ export function AddCaptureScreen() {
               { label: ro.nav.close, onPress: dismiss },
             ]}
           />
-        </View>
+        </ScrollView>
       ) : null}
     </View>
   );
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   hint: { color: '#D3E1D6', fontSize: 14 },
   doneNote: { color: '#C8E07A', fontSize: 13, fontWeight: '600' },
   cameraArea: { flex: 1 },
-  center: { flex: 1, justifyContent: 'center', padding: 20 },
+  center: { flexGrow: 1, justifyContent: 'center', padding: 20 },
   controls: {
     position: 'absolute',
     bottom: 28,
