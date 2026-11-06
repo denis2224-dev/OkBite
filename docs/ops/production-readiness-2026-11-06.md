@@ -1,6 +1,6 @@
 # Production readiness — 6 November 2026
 
-**Decision: NO-GO.** Two R2 changes are prepared for review. Reproduced defects
+**Decision: NO-GO.** Three R2 changes are prepared for review. Reproduced defects
 outside R2, incomplete checked content, connected acceptance and required human,
 Claude and physical-device gates remain open. No deployment, store submission,
 merge, purchase or hosted mutation was performed. Stanislav decides merge order.
@@ -10,8 +10,9 @@ merge, purchase or hosted mutation was performed. Stanislav decides merge order.
 | Label | Exact code SHA | Scope |
 | --- | --- | --- |
 | M | `efb3c6a591941af45d292a203dd967b60d4b1989` | Fetched `origin/main`; clean baseline; all inventory rows unless stated otherwise |
-| F | `7984a9f60909fc86a7a1d82d4c928b7f13d67906` | `C6-idempotent-photo-submissions`; private contribution receipts + recovery verification |
-| P | `a8aa7e87c050c45102361c7dc0d1ae9c0d8e5cd5` | `C8-scoped-staging-probes`; operator-run pinned probes, never run against hosted staging here |
+| F | `329ec57b3e7b3d71122af31d3d9bb5736bacb1e6` | [#73](https://github.com/denis2224-dev/OkBite/pull/73), `C6-idempotent-photo-submissions`; private receipts + mapping recovery |
+| R | `7503d4b59575a0309d4d307e2fb39eb687a074a3` | [#74](https://github.com/denis2224-dev/OkBite/pull/74), based on F; replay admission + sixth migration |
+| P | `3850ddc0571e366e56fdf0b1ede0552148a4bb78` | [#75](https://github.com/denis2224-dev/OkBite/pull/75), `C8-scoped-staging-probes`; no hosted execution |
 | H71 | `5394e8e944b88d483ddf897c39791034cf257551` | [#71](https://github.com/denis2224-dev/OkBite/pull/71), draft, main base, CI green, no submitted review |
 | H72 | `1e23e7c8a4e63ca4549e259b8bc3ee522543035e` | [#72](https://github.com/denis2224-dev/OkBite/pull/72), draft, stacked on #71, CI green, no submitted review |
 
@@ -42,14 +43,20 @@ M Deno unit-only run: **37 passed**; clean configured full run: **58 passed,
 checks pass in Chromium/WebKit phone profiles, using local demo fixtures only.
 They prove shell/history/manifest/cache/POST behavior, not connected photo flows.
 
-F's three new retry regressions were observed **RED (3 failures) → GREEN** against
-real local DB/Storage. Full configured Edge suite: **61 passed, 0 ignored**;
-DB: **103 assertions**, lint clean. A fresh restored database matched counts,
-owners, effective grants and passed all 103 assertions. Its receipt-count check
-was first RED (missing from report) and then GREEN with one known fixture. No
-hosted restore or new hosted/photo-binary recovery is claimed. P's network-denied
-guard/HTTP/schema tests were **3 RED → 3 GREEN**. Final-head check manifests and
-PR checks, rather than historical handoff totals, are authoritative.
+F's three retry regressions were **3 RED → GREEN** against real local DB/Storage;
+its full configured Edge suite passes **61**, zero ignored. R's two admission races
+and forged-upload control were also RED on the parent, then GREEN; R's full suite
+passes **64**, zero ignored. Both final database chains pass **103 assertions** and
+clean lint. Fresh restored copies match counts, ordered receipt-map SHA-256, owners
+and effective grants, and pass103. A same-count/wrong-product negative control
+passed the old verifier and is rejected by the fix. R's private/public synthetic
+photo bytes also round-trip with identical SHA-256; fixtures were removed.
+These are local component proofs, not hosted disaster recovery or real-food grading.
+P has **5** network-denied guards (including browser preflight and wrong-barcode
+controls), now in default CI discovery: **42 unit tests**, **63 configured local
+Edge tests**, zero ignored. The standalone5 overlap the42; do not add twice.
+All three exact code heads pass the full workspace/build matrix and8 fixture
+browser checks apiece. Final-head manifests/PR checks are authoritative.
 
 Harness failures retained in evidence: sandbox DNS blocked the first install;
 missing filesystem permission caused a Deno unit attempt to fail; local server
@@ -59,6 +66,8 @@ override initially failed two gateway checks; the documented workaround was appl
 only to the new audit container. A baseline DB attempt mistakenly selected the new
 receipt test before its migration; rerunning main's six SQL files passed 96.
 Recovery setup/path mistakes were corrected before the final verified drill.
+One escalation temporarily did not execute because approval review hit a usage
+limit; the resumed run used the same approval path successfully, with no bypass.
 Inherited runtime messages include NO_COLOR/FORCE_COLOR, Workbox update-store
 permissions, provider-failure test diagnostics and development-only `/sw.js`
 HTML/MIME failure. No warning was globally suppressed.
@@ -67,8 +76,9 @@ HTML/MIME failure. No warning was globally suppressed.
 
 | ID / owner / severity | Classification and reproduction at M | Concrete action / dependency |
 | --- | --- | --- |
-| R2-01 / R2 / P1 | **Defect fixed in F:** after a lost HTTP response, another no-barcode save creates a second product; concurrent attempts differ; recovery at full quota returns429. Existing lost-RPC recovery covered only the first invocation. | Private `(device_id, ingredients upload)` receipt is written atomically; retries return original data before quota admission; concurrent losers clean their own copies; hidden stays409. Apply migration before new handler. |
-| R2-02 / R2 / P1 | **Recovery verification fixed in F:** old count report omitted the newly introduced receipt data, despite green restored-schema/grant assertions. | Compare receipt counts too; real one-row restore regression passes. Fixtures removed; dumps stay private. |
+| R2-01 / R2 / P1 | **Fixed in F+R:** lost HTTP response followed by no-barcode retry created another product; persisted full-quota recovery returned429. Existing lost-RPC recovery covered only one invocation. | Atomic private upload receipt; original data/full-quota recovery; loser copies removed; hidden stays409. Deploy only combined F+R. |
+| R2-02 / R2 / P1 | **Fixed in F:** new receipt data was absent from recovery comparison, then review showed count-only comparison could accept a wrong product mapping. | Compare count plus ordered mapping SHA-256; real positive one-row restore and same-count corrupt-map negative control pass. Private dumps stay outside Git. |
+| R2-03 / R2 / P1 | **Fixed in R:** an existing barcode fast path omitted its receipt; clearing the code on retry created a product. A retry could also receive429 at the last slot just as its original committed. | Service-only atomic existing-product receipt requires a real owned upload. Bounded5 reads/four100ms pauses recover a just-committed result; unresolved work still429 until retried after settlement. Distinct-capture barcode contention remains tested. |
 | R3-01 / Serghei (R3) / P1 | **Reproduced defect:** identify stored-photo download/rejection/Blob body failure occurs outside pre-provider compensation. Nine cases reserve quota, leave upload, never call provider and never attempt either cleanup, including failed-compensation variants. | Review `identify-pre-provider.patch` + regressions; 9 RED on M, 9 GREEN on scratch proposal. Tracked R3 source untouched pending owner authorization, full-head checks and Claude review. |
 | R4-01 / R4 / P1 | **Reproduced defect:** actual preview module returns true in production with missing URL and no explicit preview flag. | Explicit preview opt-in proposal: 1 fail/1 pass on M → 2 pass on scratch copy. R4 owns implementation; R1 guard is complementary. |
 | R1-01 / R1 / P1 | **Reproduced defect:** production config accepts absent backend/project settings or explicit demo. Ten executable cases: 8 fail/2 pass on M, all10 pass on proposed config copy. | Review `release-config.owner.patch`; bind actual distinct prod/staging refs and production OTA marker. No R1 config applied by this audit. |
@@ -80,7 +90,7 @@ HTML/MIME failure. No warning was globally suppressed.
 | M-01 / R1 / P1 | **Missing implementation:** native known-by-photo/add-unknown Maestro files and connected Playwright photo/label/save cases are absent. Eight browser shell tests do not cover them. | Authorized R5 media/expected labels + R1 device selectors; implement actual connected tests, retaining local-host guards. |
 | E-01 / all owners / P1 | **Missing evidence:** real phones, 30-front/30-pair grading, hosted recovery, legal/content and beta gates below. | Owners execute checklist; record actual evidence. Green CI/merged PRs are insufficient. |
 
-F's deduplication is deliberately scoped to the same device and original label
+F+R deduplication is deliberately scoped to the same device and original label
 upload. It is not content/name deduplication, retroactive recovery of old products,
 provider idempotency, or a guarantee after a restart that loses all draft/upload
 identity and creates new uploads. R5/R4 must verify that interruption boundary.
@@ -108,9 +118,9 @@ was ticked because complete human/device/review acceptance is not established.
 | C1.1–4 request/response and data schemas / R2 | I shared231, Edge validation; no contract change in F/P. | E: new cross-review/human gate. | P2: preserve canonical exports; no invented source facts. |
 | C2.1–5 schema/RLS/search/seed / R2 | I DB96 at M; F103; hidden filtering, explicit grants, service-only RPCs, accent/trigram search. Seed explicitly demo-only. | Operator reports original four migrations applied; hosted grants not independently re-audited. | P1: owner compares actual migration/grant state; production never demo seed. |
 | C3.1–4 generator/helpers/lookup / R2 | I deterministic10 generated modules, checksum/query/body/CORS/error/storage tests; malformed query400, hidden/missing not_found, optional analytics nonfatal. | Operator reports200/not_found, allowed204/rejected403. | P1: run P smoke separately; known real product still needed. |
-| C6.1–3 matching/ownership/atomic quota/contribution/report / R2 | I local DB/Storage/HTTP tests; new F fixes no-code HTTP retries; barcode concurrency, allergen/traces, immediate unverified, lost-RPC, compensation tested. | E: real two-device unverified visibility, save/report/recovery. | P1: F migration→handler, then actual device suite. |
+| C6.1–3 matching/ownership/atomic quota/contribution/report / R2 | I local DB/Storage/HTTP tests; F+R cover no-code retries, existing-code receipts, quota admission, forged paths and distinct-capture barcode contention. | E: real two-device unverified visibility, save/report/recovery. | P1: F→R migrations→combined handler; actual device suite. |
 | C7.1–4 Auth/verify/hide/close/editor / R2 | I server getUser+DB membership recheck, revoked-write, private fields, empty-name validation, Edge/DB/mobile. | Operator reports staff sign-in only; E writes/revocation/native callbacks. | P1: actual authorized staff executes actions; no fabricated identity. |
-| C8.1–3 routine/backup/rota / R2+owner | I guarded local DB/photo components; F receipt-aware restore counts/ACL103, P smoke. M approved retention/rota names. | E: hosted photos/Auth/owners/grants/full-platform recovery and restore limits. | P1: named human primary/backup8Dec–8Jan and hosted drill. |
+| C8.1–3 routine/backup/rota / R2+owner | I guarded local DB/photo components; F+R receipt-map/count/ACL103 restore and binary round trips; P smoke. M retention/rota names. | E: hosted photos/Auth/owners/grants/full-platform recovery and limits. | P1: named primary/backup8Dec–8Jan and hosted drill. |
 | D3.1–3 checksum/UPC/allergen traces / R3 | I EAN8/13, leading-zero UPC-A,14 allergens/diacritics/trace exceptions, shared231. | E human-opened synonym/source review, language coverage. | P1: Serghei checks against cited source/actual labels. |
 | A3 human score fixtures / R3 | I31 engine fixture records;25 declare checked,6 explicitly unchecked. Checked subset A4/B4/C7/D5/E5; cheese1. | E minimum30, >=5 each letter, >=3 cheeses not met by checked subset. | P1: Serghei checks remaining6; do not invent checkedWith/approval. |
 | C4.1–4 scoring kinds/boundaries/bands/reasons/nulls / R3 | I shared231: six kinds, sweeteners, rounding, null/unavailable, <=3 reasons, comma formatting, disclaimer; Edge real-engine wiring. | E official calculator/source/human fixtures as above. | P1: source comments/test fixtures are not human approval. |
@@ -161,7 +171,7 @@ expected transcription, result/time, human role/name and restricted evidence pat
 Never put keys, staff identities, real photographs or raw dumps in public artifacts.
 
 1. **Owners/Stanislav:** obtain Claude cross-review + actual human approval of final F/P diffs; preserve H71→H72 hold. R3/R4/R5/R1 review the concrete owner packages. The user is arranging approvals; this is not approval received. Independent Codex review is additional, not Claude.
-2. **R2/operator:** from F reviewed checkout, `supabase link --project-ref vspdhdqaneofutsvavlc`; `supabase migration list --linked`; `supabase db push --dry-run`. Confirm only reviewed migration20261109000000 is pending, then owner runs `supabase db push` and `supabase functions deploy add-product --project-ref vspdhdqaneofutsvavlc`. Migration first; do not seed production or delete receipts on rollback.
+2. **R2/operator:** use the combined reviewed F+R checkout and the separated fail-closed blocks in `supabase/CONTRIBUTION-RETRIES.md`. Link to `vspdhdqaneofutsvavlc`, verify `supabase/.temp/project-ref`, list/dry-run and inspect only reviewed pending migrations20261109000000/20261110000000. In a separate approved step recheck the ref and sixth-migration file, apply migrations, and deploy add-product only if push succeeds. Never seed production or delete receipts on rollback. Mock-command negative controls prove failed relink/push stops deployment.
 3. **R2/operator:** from P run `supabase/STAGING-PROBES.md` command with existing public-only `.env.local`. It pins the exact project, refuses privileged keys/redirects, checks six safe gateway/schema cases; normal lookup can log telemetry. Set `OKBITE_STAGING_KNOWN_CODE` to a real accepted code to require `found`. Never run loopback integration fixtures on hosted staging.
 4. **R5/R3:** real known barcode/live/manual/front (including blurred barcode and Safari no-detector), correct/wrong candidate confirmation and rejection, gallery/settings/permission-denied recovery; record first-screen accuracy and <3s4G timing separately.
 5. **R5/R2/R3:** unknown→two label photos and same-photo variant→editable review; test0,3, blank=null, unclear fields and missing category; save Neverificat, record UUID and find the same UUID by photo from a second actual device. Complete30-front and30-pair grading against human expected transcriptions, recording errors/nulls rather than deleting failures.
@@ -177,6 +187,8 @@ Hosted backup/export preparation, **operator only**, in the staging-linked revie
 checkout (CLI2.65.5 flags verified via `--help`):
 
 ```sh
+set -e
+test "$(cat supabase/.temp/project-ref)" = vspdhdqaneofutsvavlc
 umask 077
 backup=$(mktemp -d "${TMPDIR:-/tmp}/okbite-staging-export.XXXXXX")
 supabase db dump --linked --role-only --file "$backup/roles.sql"
@@ -203,14 +215,28 @@ hosted URLs; do not relax them or restore the exports blindly into a running pro
 
 ## Review package and gate
 
-F and P are independent children of M; neither depends on H71/H72. F deployment
-requires its migration before its handler. H72 remains dependent on H71. Stanislav
+F and P are independent children of M; R depends on F. Merge order is F→R, with P
+independent; both migrations precede the combined handler. H72 still depends on H71.
+None depends on H71/H72 or waives those holds. Stanislav
 chooses all merges after required reviews; no history was rewritten. Claude CLI
 and real human/device approval are unavailable in this session. Concrete diff,
 tests, failure/green logs, instructions and owner proposals are prepared instead.
+Fresh Codex review found five Important issues; one author fix pass addressed them
+with the regressions above. That is not a Claude review or human approval. The
+wrong-barcode smoke finding was regraded Important because it could falsely accept
+an incorrect known-product response; its negative control now passes.
+
+Deferred minor: test teardown removes persisted product fixture copies, but a
+deliberately failing compensation regression could leave an unpersisted fixture
+copy in its disposable test stack. This is test-harness cleanup, not a production
+compensation claim. No production/UI minor was silently waived.
 
 Rulings: audit existing implemented work rather than replay old plans (cost if
 wrong: a missed inherited gap, tracked in inventory); leave other-role production
 patches unapplied until actual owner authorization (cost: known release blockers
-remain open). No minor finding was silently waived. **NO-GO remains until defects,
+remain open); reject a mismatched known barcode in the smoke (cost if wrong: an
+overly strict operator check, preferable to false acceptance); bound denied replay
+recovery to5 reads/four100ms pauses and retain429 if still unresolved (cost: a
+manual retry after settlement, rather than a guaranteed success for in-flight work).
+**NO-GO remains until defects,
 content/AI accuracy, connected/physical acceptance and legal/operational gates close.**
