@@ -45,3 +45,9 @@ Never run local destructive integration fixtures against staging.
 Local regressions: `supabase/functions/add-product/retry.integration.test.ts`;
 receipt grants/RLS: `supabase/tests/receipts.test.sql`. Independent score cases
 each upload their own label rather than retrying the same submission.
+
+The local recovery snapshot also compares receipt rows. Include a known,
+disposable receipt in the isolated source before its drill, then verify the
+recorded count with `node supabase/ops/check-recovery-receipts.mjs
+<outside-git-drill-directory>/report.json <known-positive-count>`. Remove only
+that fixture afterward. This checks restored DB data, not hosted photo bytes.
