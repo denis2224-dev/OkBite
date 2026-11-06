@@ -95,8 +95,16 @@ If a server save succeeds while all local persistent writes fail, the active rev
 
 ## R1/R4 integration sequence
 
-1. Review the combined PR and its source table. #38/#49 are closed without individual merges; replace the old handoff ordering with this integration branch.
-2. R4 reviews queue/history/Toast compatibility; R1 reviews app lifecycle/Metro and the final merge/toolchain. R5 owns capture/scan/identify/add behavior.
-3. Obtain the required Claude cross-review and human approval. R1 #40/#41 is now included from main. This branch preserves its declared pnpm 11.25.0, toolchain verification, package-policy settings and target-app entry commands.
-4. R1 merges the combined PR, then reconciles remaining source PRs/children without replaying included patches. Keep source branches until then.
-5. Hosted staging/provider, physical iPhone/Android and Safari/Chrome acceptance remain separate. No B2/B3/B7 acceptance box is ticked based solely on mocks or exports.
+Updated 6 November: #63 and follow-up recovery #68/#69/#70 are merged.
+#38/#49 remain closed without individual merges; do not replay their old sequence.
+R1's broader backend/app integration #67 is also included in current main.
+
+1. Review only the remaining theme/accessibility diff in #71 against current main;
+   preserve R1/R2/R3/R4 changes. Keep source branches as provenance.
+2. R4 owns queue/history/Toast compatibility; R1 owns lifecycle/toolchain and build
+   settings; R5 owns capture/scan/identify/add. No backend schema changes are proposed.
+3. Record Claude cross-review and the human merge decision, or an explicit owner
+   exception, alongside exact-head CI. Missing phone/provider checks stay pending.
+4. Use the [current status and setup pack](../ops/r5/delivery-status-2026-11-06.md)
+   for account-owner preparation, actual two-phone acceptance, A6/A7 and A8 drafts.
+   No B2/B3/B7 acceptance box is ticked based solely on mocks or exports.

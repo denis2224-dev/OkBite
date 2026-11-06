@@ -23,7 +23,9 @@ de mai jos nu este executat prin simpla existență a acestei fișe.
 | S15 | fotografiați un cod estompat/înclinat pe care dispozitivul nu îl citește | fotografia este trimisă la identify; eșecul detectorului singur nu deschide direct „produs negăsit” |
 | S16 | trimiteți fotografii reale de 12 MP prin captură/galerie la identify și read-label, cu una și două etichete | fiecare JPEG are latura maximă ≤1600 px și ≤1,5 MB; fiecare request JSON total ≤2.000.000 bytes; fotografiile rămân lizibile |
 
-S11 rămâne blocat până când R4 livrează coada/ruta offline și R5 le conectează.
+Implementarea cozii/rutei offline este integrată prin #63 și #68–#70.
+S11 rămâne neexecutat pe dispozitive până există staging și builduri configurate;
+testele automate de recuperare nu înlocuiesc această dovadă.
 S02/S04/S06–S10 cer funcțiile R3 reale; nu înlocuiți rezultatul cu un răspuns mock.
 R1 furnizează metoda autorizată pentru condițiile de eroare, fără atacarea serviciului.
 Pentru S16 R1/R2 ajută la măsurarea dimensiunilor și a numărului de bytes trimis;
