@@ -25,13 +25,30 @@ This also does not deduplicate repeated `identify`, `read-label` or report calls
 After Claude review, human approval and Stanislav's merge, from the reviewed
 checkout, against the existing authorized staging project:
 
+The replay-admission follow-up must be merged too; deploy only the combined
+reviewed checkout, including migration `20261110000000_replay_admission.sql`.
+
+Preflight only; stop if any command fails or the linked ref differs:
+
 ```sh
-supabase link --project-ref vspdhdqaneofutsvavlc
-supabase migration list --linked
-supabase db push --dry-run
-# Confirm only the reviewed 20261109000000 migration is pending.
-supabase db push
-supabase functions deploy add-product --project-ref vspdhdqaneofutsvavlc
+( set -eu
+  supabase link --project-ref vspdhdqaneofutsvavlc
+  test "$(cat supabase/.temp/project-ref)" = vspdhdqaneofutsvavlc
+  supabase migration list --linked
+  supabase db push --dry-run
+)
+```
+
+After inspecting the dry run, confirm only reviewed migrations are pending. In a
+separate step, apply and deploy; a failed push must prevent handler deployment:
+
+```sh
+( set -eu
+  test "$(cat supabase/.temp/project-ref)" = vspdhdqaneofutsvavlc
+  test -f supabase/migrations/20261110000000_replay_admission.sql
+  supabase db push
+  supabase functions deploy add-product --project-ref vspdhdqaneofutsvavlc
+)
 ```
 
 Apply the migration before deploying the new handler. Keep the receipt table
@@ -46,8 +63,8 @@ Local regressions: `supabase/functions/add-product/retry.integration.test.ts`;
 receipt grants/RLS: `supabase/tests/receipts.test.sql`. Independent score cases
 each upload their own label rather than retrying the same submission.
 
-The local recovery snapshot also compares receipt rows. Include a known,
+The local recovery snapshot compares receipt rows and an ordered mapping SHA-256. Include a known,
 disposable receipt in the isolated source before its drill, then verify the
 recorded count with `node supabase/ops/check-recovery-receipts.mjs
-<outside-git-drill-directory>/report.json <known-positive-count>`. Remove only
+<outside-git-drill-directory>/report.json <known-positive-count> <independent-map-sha256>`. Remove only
 that fixture afterward. This checks restored DB data, not hosted photo bytes.

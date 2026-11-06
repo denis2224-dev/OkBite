@@ -39,6 +39,7 @@ const snapshot = (database) => sql(database, `select jsonb_build_object(
   'links',(select count(*) from public.product_ingredients),'reports',(select count(*) from public.reports),
   'moderators',(select count(*) from public.moderators),'events',(select count(*) from public.usage_events),
   'receipts',(select count(*) from public.contribution_receipts),
+  'receiptMap',(select encode(sha256(convert_to(coalesce(string_agg(row_to_json(r)::text, E'\n' order by device_id,upload_path),''),'UTF8')),'hex') from public.contribution_receipts r),
   'client_errors',(select count(*) from public.client_errors),'objects',(select count(*) from storage.objects),'users',(select count(*) from auth.users),'buckets',(select count(*) from storage.buckets));`);
 const accessSnapshot = (database) => sql(database, `
   with namespaces as (
