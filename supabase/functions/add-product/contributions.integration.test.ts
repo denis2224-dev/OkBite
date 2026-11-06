@@ -82,6 +82,7 @@ integrationTest(
 const count = async (db: ReturnType<typeof adminClient>, table: string, column: string, value: string) => {
   const r = await db.from(table).select('*', { count: 'exact', head: true }).eq(column, value);
   assert.equal(r.error, null);
+  assert.ok(r.count !== null);
   return r.count;
 };
 async function fixture() {
@@ -141,10 +142,11 @@ async function fixture() {
 }
 integrationTest('add-product is immediately visible, derives allergens, publishes photos and resolves concurrent duplicate codes', async () => {
   const f = await fixture();
+  const other = await fixture();
   try {
     const responses = await Promise.all([
       post(addHandler, { ...f.input, code: '96385074' }, f.device),
-      post(addHandler, { ...f.input, code: '96385074' }, f.device),
+      post(addHandler, { ...other.input, code: '96385074' }, other.device),
     ]);
     for (const r of responses) assert.equal(r.status, 200, await r.clone().text());
     const values = await Promise.all(
@@ -161,19 +163,21 @@ integrationTest('add-product is immediately visible, derives allergens, publishe
       result.product.labelImageUrl?.includes(`/products/${result.product.id}/ingredients.jpg`),
     );
     assert.equal(await count(f.db, 'products', 'code', '96385074'), 1);
-    assert.equal(await count(f.db, 'usage_events', 'device_id', f.device), 1);
+    assert.equal((await count(f.db, 'usage_events', 'device_id', f.device)) +
+      (await count(other.db, 'usage_events', 'device_id', other.device)), 1);
     const photo = await fetch(result.product.labelImageUrl!);
     assert.equal(photo.status, 200);
     await photo.body?.cancel();
     assert.equal((await post(addHandler, { ...f.input, code: '96385074' }, f.device)).status, 200);
-    assert.equal(await count(f.db, 'usage_events', 'device_id', f.device), 1);
+    assert.equal((await count(f.db, 'usage_events', 'device_id', f.device)) +
+      (await count(other.db, 'usage_events', 'device_id', other.device)), 1);
     assert.equal(
       (await f.db.from('products').update({ status: 'hidden' }).eq('id', result.product.id)).error,
       null,
     );
     assert.equal((await post(addHandler, { ...f.input, code: '96385074' }, f.device)).status, 409);
   } finally {
-    await f.cleanup();
+    try { await f.cleanup(); } finally { await other.cleanup(); }
   }
 });
 integrationTest('foreign uploads, failed copies and rejected transactions leave no products, public photos or quota events', async () => {
