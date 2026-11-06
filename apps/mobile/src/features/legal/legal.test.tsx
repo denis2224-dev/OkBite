@@ -27,7 +27,8 @@ it('keeps the About entry to the authenticated administration route', async () =
 it('explains unavailable scores without implying demo scores are real', async () => {
   await render(<MethodPage />);
   expect(screen.getByText(ro.score.disclaimer)).toBeTruthy();
-  expect(screen.getByText(/numai după integrarea motorului/)).toBeTruthy();
+  expect(screen.getByText(/Motorul de calcul este integrat/)).toBeTruthy();
+  expect(screen.getByText(/verificarea umană.*rămâne în curs/)).toBeTruthy();
   expect(screen.getByText(/ilustrative/)).toBeTruthy();
 });
 it('discloses local queues, public contribution photos and incomplete provider setup', async () => {
@@ -35,6 +36,7 @@ it('discloses local queues, public contribution photos and incomplete provider s
   expect(screen.getByText(/identificator aleatoriu/)).toBeTruthy();
   expect(screen.getByText(/Ștergerea istoricului nu șterge/)).toBeTruthy();
   expect(screen.getByText(/publice/)).toBeTruthy();
-  expect(screen.getByText(/Anthropic/)).toBeTruthy();
+  expect(screen.getByText(/TokenHarbor.*DeepSeek/)).toBeTruthy();
+  expect(screen.queryByText(/funcții nu sunt încă integrate/)).toBeNull();
   expect(screen.getByText(ro.legal.contactPending)).toBeTruthy();
 });

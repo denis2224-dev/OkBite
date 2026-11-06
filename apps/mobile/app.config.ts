@@ -10,11 +10,15 @@ const config: ExpoConfig = {
   userInterfaceStyle: 'automatic',
   runtimeVersion: { policy: 'fingerprint' },
   ...(projectId ? { updates: { url: `https://u.expo.dev/${projectId}` } } : {}),
-  icon: './assets/icon.png',
+  icon: './assets/brand/app-icon.png',
   ios: { bundleIdentifier: 'md.okbite.app', supportsTablet: false },
   android: {
     package: 'md.okbite.app',
-    adaptiveIcon: { foregroundImage: './assets/icon.png', backgroundColor: '#1F4A35' },
+    adaptiveIcon: {
+      foregroundImage: './assets/brand/android-foreground.png',
+      backgroundImage: './assets/brand/android-background.png',
+      backgroundColor: '#F7F4EC',
+    },
   },
   plugins: [
     'expo-router',
@@ -37,12 +41,16 @@ const config: ExpoConfig = {
     ],
     [
       'expo-splash-screen',
-      { image: './assets/icon.png', imageWidth: 180, backgroundColor: '#1F4A35' },
+      {
+        image: './assets/brand/app-icon.png', imageWidth: 180,
+        backgroundColor: '#F7F4EC',
+        dark: { image: './assets/brand/app-icon.png', backgroundColor: '#F7F4EC' },
+      },
     ],
     'expo-sqlite',
     'expo-secure-store',
   ],
-  web: { bundler: 'metro', output: 'single', favicon: './assets/favicon.png' },
+  web: { bundler: 'metro', output: 'single', favicon: './assets/brand/app-icon.png' },
   extra: {
     ...(projectId ? { eas: { projectId } } : {}),
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,

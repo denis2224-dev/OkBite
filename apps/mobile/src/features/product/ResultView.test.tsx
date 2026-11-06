@@ -4,6 +4,9 @@ import { ReportSheet } from './ReportSheet';
 import { foundYogurt } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
 import { api, ApiError } from '../../lib/api';
+import { router } from 'expo-router';
+
+jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 
 jest.mock('../../lib/api', () => ({ ...jest.requireActual('../../lib/api'), api: { report: jest.fn() } }));
 it('shows allergens, unverified provenance and the disclaimer', async () => {
@@ -32,4 +35,24 @@ it('retains a failed report for retry and closes only after success', async () =
   await fireEvent.press(screen.getByRole('button', { name: ro.result.reportSend }));
   await waitFor(() => expect(close).toHaveBeenCalledTimes(1));
   expect(api.report).toHaveBeenLastCalledWith({ productId: foundYogurt.product.id, message: 'Etichetă diferită' });
+});
+
+it('preserves a supplied water score when label nutrients are absent', async () => {
+  const product = { ...foundYogurt.product, category: { ...foundYogurt.product.category, scoreKind: 'water' as const }, nutrients: { ...foundYogurt.product.nutrients, kcal: null, salt: null, sugar: null, sat: null } };
+  await render(<ResultView product={product} score={{ ...foundYogurt.score, score: 100, letter: 'A', grade: 'good' }} />);
+  expect(screen.getByLabelText(ro.score.ringLabel(100, 'good'))).toBeTruthy();
+});
+it('withholds a fat-category score when total fat is missing', async () => {
+  const product = { ...foundYogurt.product, category: { ...foundYogurt.product.category, scoreKind: 'fat' as const }, nutrients: { ...foundYogurt.product.nutrients, fat: null } };
+  await render(<ResultView product={product} score={foundYogurt.score} />);
+  expect(screen.getByText(ro.result.scoreUnavailable)).toBeTruthy();
+});
+
+
+it('opens the real ingredient and original-label routes for the displayed product', async () => {
+  await render(<ResultView {...foundYogurt} />);
+  await fireEvent.press(screen.getByRole('button', { name: ro.ingredients.title }));
+  expect(router.push).toHaveBeenLastCalledWith({ pathname: '/product/[id]/ingredients', params: { id: foundYogurt.product.id } });
+  await fireEvent.press(screen.getByRole('button', { name: ro.result.original }));
+  expect(router.push).toHaveBeenLastCalledWith({ pathname: '/product/[id]/label', params: { id: foundYogurt.product.id } });
 });

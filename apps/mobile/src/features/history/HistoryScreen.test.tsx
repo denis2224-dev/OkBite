@@ -110,3 +110,10 @@ it('does not restore deleted rows when an earlier read finishes after clear', as
   await act(() => pending.resolve([entry]));
   expect(screen.queryByText(entry.product.name)).toBeNull();
 });
+
+it('withholds a cached score when required nutrition data is missing', async () => {
+  jest.mocked(listHistory).mockResolvedValue([{ ...entry, product: { ...entry.product, nutrients: { ...entry.product.nutrients, salt: null } } }]);
+  await render(<HistoryScreen />);
+  await waitFor(() => expect(screen.getByText(ro.result.scoreUnavailable)).toBeTruthy());
+  expect(screen.queryByText(ro.history.score(entry.score.score!))).toBeNull();
+});

@@ -24,7 +24,7 @@ integrationTest('lookup resolves seeded code/id, label order, nulls and usage ev
     assert.equal(found.status, 'found');
     if (found.status !== 'found') throw new Error('Expected seeded product');
     assert.equal(found.product.status, 'verified');
-    assert.equal(found.score.grade, 'unavailable');
+    assert.equal(found.score.grade, 'good'); // C4: seeded yogurt is 1 Nutri-Score point → B
     assert.deepEqual(found.product.ingredients.map((i) => i.name), [
       'Lapte normalizat',
       'Culturi lactice vii',

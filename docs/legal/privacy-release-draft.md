@@ -24,13 +24,18 @@ rendered by `src/features/legal/texts.ts` and the `/privacy` Expo route.
 - C7 moderation uses Supabase Auth and moderator email accounts; shoppers do not
   need accounts. Preserve the real AdminGate, callback cleanup and About long-press
   entry. A hidden entry is not an authorization boundary.
-- The API client has photo/label request methods, but this baseline contains no
-  `identify` or `read-label` function implementation. Anthropic/Claude is planned,
-  not verified live. Do not assert that every image is sent to Claude or that
-  every identification image is stored with a product.
-- `packages/shared/src/score/index.ts` is the C3 unavailable placeholder here.
-  `origin/C4-score-engine` was read for the intended six-category R3 behavior;
-  legal copy must be refreshed when that engine and its validation are integrated.
+- The integrated `identify` and `read-label` functions send stored, metadata-free
+  JPEGs through TokenHarbor's API when configured. The default model is
+  `deepseek-v4.1-flash:free`; `AI_MODEL` can override it. TokenHarbor is a separate
+  intermediary. Live provider grading and processor/region/retention confirmation
+  are still pending. Missing server credentials fail without sending a request.
+- The six-category C4 score engine is integrated. The fixture file records 25
+  human rechecks and six remaining unchecked entries; this integration does not
+  establish complete human content or release approval.
+- The mounted best-effort diagnostics reporter sends bounded error message/stack,
+  route without query/fragment, application version/platform and device ID to the
+  private, quota-limited `client-error` endpoint. Error text may itself contain
+  user input; do not claim these diagnostics contain no personal information.
 
 ## Decisions required before release
 

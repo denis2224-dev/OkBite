@@ -72,6 +72,6 @@ export async function loadProduct(by: { id: string } | { code: string }): Promis
   });
   return {
     product,
-    score: ScoreResult.parse(computeScore(product.nutrients, product.category.scoreKind)),
+    score: ScoreResult.parse(computeScore(product.nutrients, product.category.scoreKind, product.ingredientsText)),
   };
 }
