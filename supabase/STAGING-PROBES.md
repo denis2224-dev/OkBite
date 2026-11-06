@@ -18,8 +18,11 @@ deno run --config supabase/functions/deno.json \
 
 Six checks cover exact allowed localhost preflight, rejected origin without an
 allow-origin header, missing device ID, malformed code, unauthenticated moderation
-and a schema-valid lookup. The moderation body is deliberately empty and there
-is no staff token. No provider, contribution, authorized moderation, fixture setup,
+and a schema-valid lookup. The moderation body is empty and has no staff token.
+There is no key/token on OPTIONS: its requested method/header names match the app, and
+the response must allow GET plus all four requested headers. Other requests match
+the app's public-key/Bearer/JSON headers. A known-code check matches the returned barcode.
+No provider, contribution, authorized moderation, fixture setup,
 cleanup or configuration mutation is attempted. A successful lookup may append
 ordinary usage telemetry; this is not a zero-write database audit.
 

@@ -2,10 +2,10 @@ import {
   Code,
   ErrorBody,
   LookupResponse,
-} from "../functions/_shared/contract.ts";
+} from '../functions/_shared/contract.ts';
 
-type Result = { check: string; status: "passed"; httpStatus: number };
-const staging = "https://vspdhdqaneofutsvavlc.supabase.co";
+type Result = { check: string; status: 'passed'; httpStatus: number };
+const staging = 'https://vspdhdqaneofutsvavlc.supabase.co';
 
 function publicKey(value: string | undefined): string {
   let valid = false;
@@ -15,15 +15,15 @@ function publicKey(value: string | undefined): string {
       !valid && /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(value)
     ) {
       try {
-        const payload = value.split(".")[1].replace(/-/g, "+").replace(
+        const payload = value.split('.')[1].replace(/-/g, '+').replace(
           /_/g,
-          "/",
+          '/',
         );
-        valid = JSON.parse(atob(payload)).role === "anon";
+        valid = JSON.parse(atob(payload)).role === 'anon';
       } catch { /* Reject without disclosing any credential. */ }
     }
   }
-  if (!valid) throw new Error("Use only a public anon/publishable key.");
+  if (!valid) throw new Error('Use only a public anon/publishable key.');
   return value!;
 }
 
@@ -33,21 +33,21 @@ export async function runStagingSmoke(
   read: (name: string) => string | undefined = (name) => Deno.env.get(name),
   network: typeof fetch = fetch,
 ): Promise<Result[]> {
-  if (read("EXPO_PUBLIC_SUPABASE_URL") !== staging) {
-    throw new Error("Probes require the exact authorized staging origin.");
+  if (read('EXPO_PUBLIC_SUPABASE_URL') !== staging) {
+    throw new Error('Probes require the exact authorized staging origin.');
   }
-  const key = publicKey(read("EXPO_PUBLIC_SUPABASE_ANON_KEY"));
-  const knownCode = read("OKBITE_STAGING_KNOWN_CODE");
+  const key = publicKey(read('EXPO_PUBLIC_SUPABASE_ANON_KEY'));
+  const knownCode = read('OKBITE_STAGING_KNOWN_CODE');
   if (knownCode !== undefined && !Code.safeParse(knownCode).success) {
-    throw new Error("Known code must be EAN-8 or EAN-13.");
+    throw new Error('Known code must be EAN-8 or EAN-13.');
   }
   const results: Result[] = [];
   const headers = {
     apikey: key,
-    ...(key.startsWith("sb_publishable_")
-      ? {}
-      : { authorization: `Bearer ${key}` }),
+    authorization: `Bearer ${key}`,
+    'content-type': 'application/json',
   };
+  const browserHeaders = 'apikey, authorization, content-type, x-device-id';
   const check = async (
     name: string,
     path: string,
@@ -58,16 +58,20 @@ export async function runStagingSmoke(
     try {
       const response = await network(`${staging}/functions/v1/${path}`, {
         ...init,
-        redirect: "error",
+        redirect: 'error',
         signal: AbortSignal.timeout(15_000),
-        headers: { ...headers, ...init.headers },
+        // Browsers send header NAMES, never these credentials, in a preflight.
+        headers: {
+          ...(init.method === 'OPTIONS' ? {} : headers),
+          ...init.headers,
+        },
       });
       if (response.status !== status || !await validate(response)) {
         throw new Error();
       }
       results.push({
         check: name,
-        status: "passed",
+        status: 'passed',
         httpStatus: response.status,
       });
     } catch {
@@ -81,74 +85,84 @@ export async function runStagingSmoke(
     return body.error === code;
   };
   await check(
-    "allowed-preflight",
-    "lookup",
+    'allowed-preflight',
+    'lookup',
     {
-      method: "OPTIONS",
+      method: 'OPTIONS',
       headers: {
-        origin: "http://localhost:8081",
-        "access-control-request-method": "GET",
-        "access-control-request-headers": "x-device-id",
+        origin: 'http://localhost:8081',
+        'access-control-request-method': 'GET',
+        'access-control-request-headers': browserHeaders,
       },
     },
     204,
     async (response) => {
       await response.body?.cancel();
-      return response.headers.get("access-control-allow-origin") ===
-        "http://localhost:8081";
+      const methods =
+        (response.headers.get('access-control-allow-methods') ?? '')
+          .split(',').map((value) => value.trim().toUpperCase());
+      const allowed =
+        (response.headers.get('access-control-allow-headers') ?? '')
+          .split(',').map((value) => value.trim().toLowerCase());
+      return response.headers.get('access-control-allow-origin') ===
+          'http://localhost:8081' &&
+        methods.includes('GET') &&
+        browserHeaders.split(', ').every((name) => allowed.includes(name));
     },
   );
   await check(
-    "rejected-origin",
-    "lookup",
+    'rejected-origin',
+    'lookup',
     {
-      method: "OPTIONS",
+      method: 'OPTIONS',
       headers: {
-        origin: "https://unapproved.invalid",
-        "access-control-request-method": "GET",
+        origin: 'https://unapproved.invalid',
+        'access-control-request-method': 'GET',
+        'access-control-request-headers': browserHeaders,
       },
     },
     403,
     async (response) =>
-      !response.headers.has("access-control-allow-origin") &&
-      await error("bad_request")(response),
+      !response.headers.has('access-control-allow-origin') &&
+      await error('bad_request')(response),
   );
   await check(
-    "missing-device",
-    "lookup?code=00000000",
+    'missing-device',
+    'lookup?code=00000000',
     {},
     400,
-    error("bad_request"),
+    error('bad_request'),
   );
   const device = crypto.randomUUID();
   await check(
-    "invalid-code",
-    "lookup?code=abc",
+    'invalid-code',
+    'lookup?code=abc',
     {
-      headers: { "x-device-id": device },
+      headers: { 'x-device-id': device },
     },
     400,
-    error("bad_request"),
+    error('bad_request'),
   );
   await check(
-    "moderator-denied",
-    "moderate",
+    'moderator-denied',
+    'moderate',
     {
-      method: "POST",
-      body: "{}",
-      headers: { "content-type": "application/json" },
+      method: 'POST',
+      body: '{}',
+      headers: { 'content-type': 'application/json' },
     },
     401,
-    error("unauthorized"),
+    error('unauthorized'),
   );
   await check(
-    knownCode ? "known-product" : "lookup-schema",
-    `lookup?code=${knownCode ?? "00000000"}`,
-    { headers: { "x-device-id": device } },
+    knownCode ? 'known-product' : 'lookup-schema',
+    `lookup?code=${knownCode ?? '00000000'}`,
+    { headers: { 'x-device-id': device } },
     200,
     async (response) => {
       const body = LookupResponse.parse(await response.json());
-      return knownCode === undefined || body.status === "found";
+      return knownCode === undefined ||
+        (body.status === 'found' && body.product.code === knownCode);
     },
   );
   return results;
@@ -159,7 +173,7 @@ if (import.meta.main) {
     console.log(JSON.stringify(await runStagingSmoke(), null, 2));
   } catch (error) {
     console.error(
-      error instanceof Error ? error.message : "Staging probe failed.",
+      error instanceof Error ? error.message : 'Staging probe failed.',
     );
     Deno.exitCode = 1;
   }
