@@ -61,6 +61,9 @@ failing before their implementation, then passing.
 4. Add staging Supabase URL/anon key to EAS `preview`; add production values to
    EAS `production`. `development` builds intentionally use the staging
    `preview` environment. Never use the Supabase service-role key in the app.
+   Set `EXPO_PUBLIC_PREVIEW=0` in EAS `preview` for both builds and updates.
+   The development/preview build profiles also explicitly disable demo mode;
+   the examples default to `0`. A demonstration requires an explicit `1`.
 5. In GitHub Settings → Secrets and variables → Actions, add the secret
    `EXPO_TOKEN` and the variable `EXPO_PUBLIC_EAS_PROJECT_ID`.
 6. Build the development client from `apps/mobile`:
@@ -103,6 +106,17 @@ Connect `denis2224-dev/OkBite` to a Pages project. Set:
 - Public `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, and
   `EXPO_PUBLIC_EAS_PROJECT_ID`, with staging values for previews and production
   values for `main`.
+- Set `EXPO_PUBLIC_PREVIEW=0` in the **preview** environment. Expo embeds public
+  values during export; rebuild the preview after changing them.
+
+For the R5 staging round, use the existing Pages project `okbite` if confirmed
+by the account owner: the backend currently allows preview origins matching
+`https://<deployment>.okbite.pages.dev`. Confirm CORS for the actual HTTPS origin
+with R2; other Pages project names need an R2-owned allowlist change first.
+Publish a branch preview and retain its full Git SHA and deployment ID. Do not
+change the production branch, connect a production domain, or publish to `main`
+for this round. R2/R3 must confirm the approved staging project and a real
+known barcode before recording connected-flow acceptance.
 
 Pages should post its preview deployment link on the PR. The exported
 `_redirects` file routes missing paths to `index.html`, so Expo Router can handle
