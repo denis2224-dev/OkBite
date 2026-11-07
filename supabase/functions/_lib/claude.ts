@@ -7,6 +7,10 @@ export const CLAUDE_MODEL = 'deepseek-v4.1-flash:free'; // override with the AI_
 const RETRYABLE = new Set([408, 429, 500, 502, 503, 504, 529]);
 const ATTEMPTS = 3;
 const TIMEOUT_MS = 20_000;
+// All attempts together; the app waits AI_DEADLINE_MS + 15 s (apps/mobile/src/lib/api.ts),
+// so a server still retrying never outlives the shopper's request and gets queued twice.
+export const AI_DEADLINE_MS = 40_000;
+const MIN_ATTEMPT_MS = 10_000; // a shorter window is not worth another provider call
 const MAX_IMAGES = 2;
 const MAX_IMAGE_BASE64 = 2_000_000; // 1.5 MB stored JPEG after base64 encoding
 const MAX_TOTAL_IMAGE_BASE64 = 3_800_000; // leave room for JSON within the 4 MB request cap
@@ -17,6 +21,7 @@ export class UpstreamError extends Error {}
 export type ClaudeDeps = {
   fetch?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
+  now?: () => number;
   apiKey?: string;
   model?: string;
 };
@@ -54,6 +59,8 @@ export async function askClaude(
       ],
     }],
   });
+  const now = deps.now ?? Date.now;
+  const deadline = now() + AI_DEADLINE_MS;
   for (let attempt = 1;; attempt++) {
     let res: Response | null = null;
     try {
@@ -64,7 +71,7 @@ export async function askClaude(
           authorization: `Bearer ${key}`,
         },
         body,
-        signal: AbortSignal.timeout(TIMEOUT_MS),
+        signal: AbortSignal.timeout(Math.min(TIMEOUT_MS, Math.max(1, deadline - now()))),
       });
     } catch {
       res = null; // network failure or timeout: retried like a 5xx
@@ -76,9 +83,14 @@ export async function askClaude(
       throw new UpstreamError('Claude request failed');
     }
     const after = Number(res?.headers.get('retry-after'));
-    await sleep(
-      Number.isFinite(after) && after > 0 ? Math.min(after, 5) * 1000 : 500 * 2 ** attempt,
-    );
+    const wait = Number.isFinite(after) && after > 0
+      ? Math.min(after, 5) * 1000
+      : 500 * 2 ** attempt;
+    if (deadline - now() - wait < MIN_ATTEMPT_MS) {
+      console.warn('Claude request failed: deadline reached');
+      throw new UpstreamError('Claude request failed');
+    }
+    await sleep(wait);
   }
 }
 
