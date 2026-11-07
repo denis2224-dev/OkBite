@@ -38,15 +38,15 @@ it('shows loading before an empty saved history', async () => {
   jest.mocked(listHistory).mockReturnValue(pending.promise);
   await render(<HistoryScreen />);
   expect(screen.getByText(ro.app.loading)).toBeTruthy();
-  expect(screen.queryByText(ro.history.emptyTitle)).toBeNull();
+  expect(screen.queryByText(ro.history.design.emptyTitle)).toBeNull();
   await act(() => pending.resolve([]));
-  expect(screen.getByText(ro.history.emptyTitle)).toBeTruthy();
+  expect(screen.getByText(ro.history.design.emptyTitle)).toBeTruthy();
 });
 it('retries storage failures and opens the saved record through the cached route', async () => {
   jest.mocked(listHistory).mockRejectedValueOnce(new Error('disk')).mockResolvedValueOnce([entry]);
   await render(<HistoryScreen />);
   await waitFor(() => expect(screen.getByText(ro.history.loadError)).toBeTruthy());
-  expect(screen.queryByText(ro.history.emptyTitle)).toBeNull();
+  expect(screen.queryByText(ro.history.design.emptyTitle)).toBeNull();
   await fireEvent.press(screen.getByRole('button', { name: ro.app.retry }));
   await waitFor(() => expect(screen.getByText(entry.product.name)).toBeTruthy());
   await fireEvent.press(screen.getByRole('button', { name: ro.history.open(entry.product.name) }));
@@ -73,7 +73,7 @@ it('keeps the list when deletion is canceled or fails, and clears only on confir
   await waitFor(() => expect(screen.getByText(ro.history.clearError)).toBeTruthy());
   expect(screen.getByText(entry.product.name)).toBeTruthy();
   await fireEvent.press(screen.getByRole('button', { name: ro.history.clearConfirm }));
-  await waitFor(() => expect(screen.getByText(ro.history.emptyTitle)).toBeTruthy());
+  await waitFor(() => expect(screen.getByText(ro.history.design.emptyTitle)).toBeTruthy());
   expect(screen.queryByText(entry.product.name)).toBeNull();
 });
 it('refreshes on focus and ignores older reads', async () => {
@@ -88,7 +88,7 @@ it('refreshes on focus and ignores older reads', async () => {
   await act(() => newRead.resolve([updated]));
   await act(() => oldRead.resolve([]));
   expect(screen.getByText(updated.product.name)).toBeTruthy();
-  expect(screen.queryByText(ro.history.emptyTitle)).toBeNull();
+  expect(screen.queryByText(ro.history.design.emptyTitle)).toBeNull();
 });
 it('retains saved rows when a focus refresh fails', async () => {
   await render(<HistoryScreen />);
@@ -106,7 +106,7 @@ it('does not restore deleted rows when an earlier read finishes after clear', as
   await refocus();
   await fireEvent.press(screen.getByRole('button', { name: ro.history.clear }));
   await fireEvent.press(screen.getByRole('button', { name: ro.history.clearConfirm }));
-  await waitFor(() => expect(screen.getByText(ro.history.emptyTitle)).toBeTruthy());
+  await waitFor(() => expect(screen.getByText(ro.history.design.emptyTitle)).toBeTruthy());
   await act(() => pending.resolve([entry]));
   expect(screen.queryByText(entry.product.name)).toBeNull();
 });
