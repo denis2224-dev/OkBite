@@ -42,7 +42,8 @@ export function useScanLookup(onCameraAccept?: () => void) {
         setState(IDLE);
         router.replace(res.status === 'found' ? productRoute(res.product.id) : identifyCodeRoute(code));
       } catch (err) {
-        failed.current = true;
+        // Latch only a failure the screen shows; a stale one would silently block the camera on return.
+        if (activity.isCurrent(token)) failed.current = true;
         const errorCode = (err as { code?: string } | null)?.code;
         if (errorCode === 'offline') {
           if (enqueuedCode.current !== code) {
