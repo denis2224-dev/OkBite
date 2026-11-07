@@ -75,7 +75,7 @@ See the overall plan. Role-specific: the graph puts your flows in the least cohe
 
 ---
 
-### Task A6: Shop photo runs (human, all four people, 12–29 Nov)
+### Task A6: Shop photo runs (human, all five people, 12–29 Nov)
 
 - [ ] **Step 1:** Shared list of the 300 best-selling packaged products across the categories, 60 per person, skipping codes already imported from Open Food Facts.
 - [ ] **Step 2:** First run (by 18 Nov): photograph front, ingredients and nutrition table of each product; enter them through the admin screens if B7 is not merged yet.

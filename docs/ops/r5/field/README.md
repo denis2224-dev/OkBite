@@ -3,6 +3,7 @@
 Responsabil: R5; contribuie R1–R5. Plan: 12–29 noiembrie 2026.
 Stare: **materiale de lucru, nicio colectare sau verificare declarată**.
 Acest dosar nu conține produse inventate, fotografii private sau acces la conturi.
+Pentru conturi și cele două telefoane, urmați [pregătirea ownerului](../account-owner-setup.md).
 
 ## Ce trebuie obținut
 
@@ -19,8 +20,8 @@ Surse de lucru: [plan R5](../../../superpowers/plans/2026-11-04-okbite-r5-captur
 
 ## Repartizare și calendar
 
-Planul general are cinci oameni × 60 produse. Titlul vechi „all four people”
-din A6 este inconsistent cu această repartizare; R5 confirmă numele înaintea ieșirii.
+Planul general și A6 au cinci oameni × 60 produse.
+R5 confirmă numele înaintea ieșirii.
 Intervalele sunt locuri rezervate, nu produse deja colectate.
 
 | Responsabil | Locuri | Număr | Nume confirmat de echipă |

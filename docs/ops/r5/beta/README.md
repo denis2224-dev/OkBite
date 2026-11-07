@@ -3,6 +3,7 @@
 Responsabil: R5; interval din plan: 23 noiembrie–1 decembrie 2026.
 Stare: **materiale pregătite; niciun tester recrutat și nicio sesiune declarată**.
 Ținta este 25 de persoane distincte, nu 25 de instalări sau rulări automate.
+Conturile și buildurile se pregătesc prin [ghidul ownerului](../account-owner-setup.md).
 
 Surse: [plan R5](../../../superpowers/plans/2026-11-04-okbite-r5-capture-field.md),
 [specificație](../../../superpowers/specs/2026-11-03-okbite-design.md).
