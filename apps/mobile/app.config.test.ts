@@ -13,7 +13,7 @@ const load = (env: Record<string, string | undefined>) => {
   }
   try {
     let config: unknown;
-    jest.isolateModules(() => { config = require('./app.config').default; });
+    jest.isolateModules(() => { config = jest.requireActual<{ default: unknown }>('./app.config').default; });
     return config;
   } finally {
     process.env = saved;

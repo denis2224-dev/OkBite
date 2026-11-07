@@ -3,7 +3,7 @@ const load = (env: Record<string, string | undefined>) => {
   Object.assign(process.env, env);
   for (const [key, value] of Object.entries(env)) if (value === undefined) delete process.env[key];
   let value = false;
-  jest.isolateModules(() => { value = require('./preview').isPreview; });
+  jest.isolateModules(() => { value = jest.requireActual<{ isPreview: boolean }>('./preview').isPreview; });
   process.env = saved;
   return value;
 };

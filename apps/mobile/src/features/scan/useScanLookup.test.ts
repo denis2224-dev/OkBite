@@ -6,7 +6,7 @@ import { CODE, PRODUCT_ID, lookupFound, lookupNotFound } from '../capture/__fixt
 
 const mockReplace = jest.fn();
 const mockEnqueue = jest.fn<(...args: unknown[]) => Promise<unknown>>(async () => {});
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }) }));
+jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }), useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof import('react')>('react').useEffect(callback, [callback]) }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
 jest.mock('../offline/queue', () => ({ enqueue: (arg: unknown) => mockEnqueue(arg) }));
 

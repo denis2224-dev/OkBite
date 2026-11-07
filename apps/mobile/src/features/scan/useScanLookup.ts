@@ -4,6 +4,7 @@ import { normalizeCode } from '@okbite/shared';
 import { api } from '../../lib/api';
 import { enqueue } from '../offline/queue';
 import { identifyCodeRoute, productRoute } from '../identify/routes';
+import { useScreenActivity } from '../capture/useScreenActivity';
 
 export type ScanState =
   | { status: 'idle' }
@@ -21,10 +22,13 @@ export function useScanLookup(onCameraAccept?: () => void) {
   const failed = useRef(false);
   const lastCode = useRef<string | null>(null);
   const enqueuedCode = useRef<string | null>(null);
+  // Only the screen that started a lookup, still focused, may act on its answer.
+  const activity = useScreenActivity();
 
   const lookup = useCallback(
     async (code: string) => {
       busy.current = true;
+      const token = activity.start();
       failed.current = false;
       if (code !== lastCode.current) {
         enqueuedCode.current = null;
@@ -34,6 +38,7 @@ export function useScanLookup(onCameraAccept?: () => void) {
       try {
         const res = await api.lookup({ code });
         enqueuedCode.current = null;
+        if (!activity.isCurrent(token)) return;
         setState(IDLE);
         router.replace(res.status === 'found' ? productRoute(res.product.id) : identifyCodeRoute(code));
       } catch (err) {
@@ -46,15 +51,15 @@ export function useScanLookup(onCameraAccept?: () => void) {
               enqueuedCode.current = code;
             } catch { /* Keep retry available until the code is durably saved. */ }
           }
-          setState({ status: 'offline' });
-        } else {
+          if (activity.isCurrent(token)) setState({ status: 'offline' });
+        } else if (activity.isCurrent(token)) {
           setState({ status: 'error', code: errorCode });
         }
       } finally {
         busy.current = false;
       }
     },
-    [router],
+    [activity, router],
   );
 
   const onCameraCode = useCallback(
