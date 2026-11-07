@@ -38,6 +38,8 @@ const snapshot = (database) => sql(database, `select jsonb_build_object(
   'categories',(select count(*) from public.categories),'products',(select count(*) from public.products),'ingredients',(select count(*) from public.ingredients),
   'links',(select count(*) from public.product_ingredients),'reports',(select count(*) from public.reports),
   'moderators',(select count(*) from public.moderators),'events',(select count(*) from public.usage_events),
+  'receipts',(select count(*) from public.contribution_receipts),
+  'receiptMap',(select encode(sha256(convert_to(coalesce(string_agg(row_to_json(r)::text, E'\n' order by device_id,upload_path),''),'UTF8')),'hex') from public.contribution_receipts r),
   'client_errors',(select count(*) from public.client_errors),'objects',(select count(*) from storage.objects),'users',(select count(*) from auth.users),'buckets',(select count(*) from storage.buckets));`);
 const accessSnapshot = (database) => sql(database, `
   with namespaces as (
@@ -117,7 +119,7 @@ try {
     project, databaseOwner, restoredDatabase: target, counts: JSON.parse(before), archive,
     archiveSha256: createHash('sha256').update(readFileSync(archive)).digest('hex'),
     pgTap: 'passed', ownersAndGrants: 'matched source schemas, relations, columns, routines and defaults', storageFiles: 'Separate binary round-trip required; SQL does not contain photo bytes',
-    staging: 'pending: no hosted project configured' };
+    staging: 'pending: local-only drill does not establish hosted recovery' };
   writeFileSync(join(directory, 'report.json'), JSON.stringify(report, null, 2), { mode: 0o600 });
   console.log(`Local restore verified. Private evidence: ${directory}`);
 } finally {

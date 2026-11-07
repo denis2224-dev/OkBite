@@ -15,30 +15,34 @@ integrationTest(
     const db = adminClient();
     const device = crypto.randomUUID();
     const productIds = new Set<string>();
-    let photo: string | undefined;
+    const photos: string[] = [];
     try {
       const seed = await loadProduct({ id: 'c2000000-0000-4000-8000-000000000001' });
       assert.ok(seed);
       assert.equal(seed.score.letter, 'B');
       assert.equal(seed.score.grade, 'good');
       assert.equal(seed.score.score, 79);
-      const pixel =
-        jpeg.encode({ width: 1, height: 1, data: new Uint8Array([255, 0, 0, 255]) }, 80).data;
-      photo = await saveJpeg(btoa(String.fromCharCode(...pixel)), device, 'ingredients');
-      const input = AddProductRequest.parse({
-        code: null,
-        name: 'Test integrare C4',
-        brand: seed.product.brand,
-        quantity: seed.product.quantity,
-        unit: seed.product.unit,
-        categorySlug: seed.product.category.slug,
-        nutrients: seed.product.nutrients,
-        ingredientsText: seed.product.ingredientsText,
-        photoPath: null,
-        ingredientsPhotoPath: photo,
-        nutritionPhotoPath: null,
-      });
+      const pixel = jpeg.encode(
+        { width: 1, height: 1, data: new Uint8Array([255, 0, 0, 255]) },
+        80,
+      ).data;
       for (const missing of [null, 'kcal', 'sat', 'sugar', 'salt'] as const) {
+        // Each independent score case is a new capture, not a retry of one upload.
+        const photo = await saveJpeg(btoa(String.fromCharCode(...pixel)), device, 'ingredients');
+        photos.push(photo);
+        const input = AddProductRequest.parse({
+          code: null,
+          name: 'Test integrare C4',
+          brand: seed.product.brand,
+          quantity: seed.product.quantity,
+          unit: seed.product.unit,
+          categorySlug: seed.product.category.slug,
+          nutrients: seed.product.nutrients,
+          ingredientsText: seed.product.ingredientsText,
+          photoPath: null,
+          ingredientsPhotoPath: photo,
+          nutritionPhotoPath: null,
+        });
         const response = await addProduct(
           new Request('http://local/add-product', {
             method: 'POST',
@@ -86,7 +90,8 @@ integrationTest(
           null,
         );
       }
-      if (photo) assert.equal((await db.storage.from('uploads').remove([photo])).error, null);
+      if (photos.length)
+        assert.equal((await db.storage.from('uploads').remove(photos)).error, null);
       assert.equal((await db.from('usage_events').delete().eq('device_id', device)).error, null);
     }
   },

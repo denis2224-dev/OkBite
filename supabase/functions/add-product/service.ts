@@ -33,6 +33,15 @@ export function createService(
       if (!found) throw new HttpError(409, 'Codul este deja utilizat.', 'duplicate');
       return LookupResponse.parse({ status: 'found', ...found });
     };
+    // A new HTTP attempt must recover a committed barcode-free submission too.
+    const receipt = await db
+      .from('contribution_receipts')
+      .select('product_id')
+      .eq('device_id', device)
+      .eq('upload_path', input.ingredientsPhotoPath)
+      .maybeSingle();
+    if (receipt.error) throw new Error('Submission receipt lookup failed');
+    if (receipt.data) return await foundResponse(Uuid.parse(receipt.data.product_id));
     if (input.code) {
       const existing = await db.from('products').select('id').eq('code', input.code).maybeSingle();
       if (existing.error) throw new Error('Duplicate lookup failed');
@@ -80,6 +89,7 @@ export function createService(
           ingredients_photo_path: paths.ingredients,
           nutrition_photo_path: paths.nutrition,
           added_by_device: device,
+          ingredients_upload_path: input.ingredientsPhotoPath,
         },
         p_links: matchIngredients(input.ingredientsText, kb.data ?? []),
         p_event: event,
