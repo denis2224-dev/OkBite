@@ -49,6 +49,7 @@ describe('responses after leaving the screen', () => {
     await act(async () => { run = result.current.takePhoto(camera); });
     await act(async () => { mockLeave?.(); pending.resolve(identifyFound); await run; });
     expect(mockReplace).not.toHaveBeenCalled();
+    expect(result.current.state.status).toBe('idle'); // no stuck spinner when the shopper returns
   });
 
   it('a label read still opens review while the screen stays focused (control)', async () => {
@@ -70,6 +71,7 @@ describe('responses after leaving the screen', () => {
     await act(async () => { mockLeave?.(); pending.resolve(label); await run; });
     expect(getAddReviewDraft()).toBe(before);
     expect(mockReplace).not.toHaveBeenCalled();
+    expect(result.current.state.status).toBe('idle');
   });
 
   it('a manual lookup does not navigate after unmount', async () => {

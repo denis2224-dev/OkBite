@@ -57,6 +57,7 @@ export function useScanLookup(onCameraAccept?: () => void) {
         }
       } finally {
         busy.current = false;
+        if (!activity.isCurrent(token)) setState(IDLE); // no spinner left behind
       }
     },
     [activity, router],

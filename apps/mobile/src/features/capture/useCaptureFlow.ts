@@ -77,6 +77,7 @@ export function useCaptureFlow() {
         if (current()) setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
       } finally {
         busy.current = false;
+        if (!current()) setState(IDLE); // a stale answer leaves no spinner behind
       }
     },
     [activity, router],

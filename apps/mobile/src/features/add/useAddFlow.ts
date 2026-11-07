@@ -114,6 +114,7 @@ export function useAddFlow() {
         if (activity.isCurrent(token)) setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
       } finally {
         busy.current = false;
+        if (!activity.isCurrent(token)) setState(IDLE); // no spinner left behind
       }
     },
     [activity, step, submitPair],
@@ -147,6 +148,7 @@ export function useAddFlow() {
       if (activity.isCurrent(token)) setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
     } finally {
       busy.current = false;
+      if (!activity.isCurrent(token)) setState(IDLE); // no spinner left behind
     }
   }, [activity, submitPair]);
 
@@ -163,6 +165,7 @@ export function useAddFlow() {
       if (activity.isCurrent(token)) setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
     } finally {
       busy.current = false;
+      if (!activity.isCurrent(token)) setState(IDLE); // no spinner left behind
     }
   }, [activity, submitPair]);
 
