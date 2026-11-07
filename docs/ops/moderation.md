@@ -1,12 +1,17 @@
 # Moderation and recovery
 
-R2 handoff, 2026-11-05. Review was waived by the user; no approvals, deployment or
-real-phone verification are claimed. There is no hosted Supabase project yet.
+R2 handoff, updated 2026-11-06. Historical review waivers do not approve new
+changes. Authorized staging is `vspdhdqaneofutsvavlc`. The owner reports four
+migrations, seven functions, 18 categories, Auth redirects, moderator sign-in,
+CORS/unauthenticated denial and one front-photo smoke. These are operator reports,
+not independent acceptance. Label/save, second-device visibility, moderation
+writes/revocation, lost-response recovery and hosted restore remain open. See
+[readiness inventory](production-readiness-2026-11-06.md) for current heads/gates.
 
 ## Before a hosted rollout
 
-1. The project owner creates `okbite-staging`, keeps credentials in environment
-   settings, and applies the reviewed migration chain. Demo seed data is for local
+1. Use the existing authorized staging project; do not create a duplicate. Keep
+   credentials in settings and apply reviewed migrations. Demo seed data is for local
    or staging only; R3 owns production content and human source checks.
 2. Configure only the Supabase URL and public anon/publishable key in the app's
    `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY`. Never put a service
@@ -75,7 +80,7 @@ Use the stable team `okbite` defaults, API 54321 / DB 54322. For isolated
 reconciliation tests, use the separate `okbite-r2-review` configuration, API 58431 /
 DB 58432, and run the copied scripts from that configuration directory. Existing
 C2/C3/C6 services are never reset. Maintenance scripts accept only the explicit
-local IDs in `supabase/local-project.mjs`; arbitrary project IDs are refused. Required versions used: Node 22.23.4, pnpm 9.12.0, Deno 2.9.6,
+local IDs in `supabase/local-project.mjs`; arbitrary project IDs are refused. Current audit versions: Node 22.23.4, pnpm 11.25.0, Deno 2.9.6,
 Supabase CLI 2.65.5 and local PostgreSQL 15.
 
 ```sh
@@ -124,10 +129,11 @@ temporary local evidence is not a standing backup service.
 
 ## Remaining acceptance
 
-- R3/C4's real score engine and human-checked A3 fixtures are absent. C6 currently
-  returns the approved C3 `unavailable` score response. Do not call scoring complete.
-- Hosted project setup, a staging restore drill, hosted CORS/Auth checks and native
-  magic-link checks remain pending. No staging success is claimed.
+- C4's real engine is integrated and locally tested. Of 31 A3 fixtures, six still
+  explicitly await human checking; the checked subset misses count/letter/cheese
+  coverage. Checked ingredients remain empty; keep the 172 drafts out of production.
+- Staging setup/CORS/Auth/front-photo smoke are operator-reported. Connected label,
+  save/moderation/recovery, a hosted restore drill and native callbacks remain pending.
 - The rota needs human names and the owner must confirm recovery access and backup
   retention. Never fill these with invented confirmations.
 
