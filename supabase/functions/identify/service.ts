@@ -6,7 +6,7 @@ import {
   IdentifyResponse,
   Uuid,
 } from '../_shared/contract.ts';
-import { askClaude, toBase64 } from '../_lib/claude.ts';
+import { askClaude, toBase64, validateProviderImages } from '../_lib/claude.ts';
 import { loadProduct } from '../_lib/db.ts';
 import { adminClient, logEvent } from '../_lib/http.ts';
 import { releaseUsage, reserveUsage } from '../_lib/quota.ts';
@@ -48,18 +48,27 @@ export function createService(deps = { adminClient, loadProduct, saveJpeg, askCl
   return async ({ photo }: IdentifyRequest, device: string) => {
     const db = deps.adminClient();
     const event = await reserveUsage(db, device, 'photo'); // 40 per device per 24 h (C6 migration)
-    let photoPath: string;
+    let photoPath: string | undefined;
+    let image: string;
     try {
       photoPath = await deps.saveJpeg(photo, device, 'front');
+      // Claude gets the stored copy, which saveJpeg re-encoded without EXIF/GPS metadata.
+      const stored = await db.storage.from('uploads').download(photoPath);
+      if (stored.error) throw new Error('Private photo read failed');
+      image = toBase64(new Uint8Array(await stored.data.arrayBuffer()));
+      validateProviderImages([image]);
     } catch (error) {
-      // Nothing was sent to Claude, so the attempt does not count against the quota.
-      await releaseUsage(db, event);
+      // Nothing reached Claude: undo the upload and the quota use (same as read-label).
+      try {
+        if (photoPath) {
+          const { error } = await db.storage.from('uploads').remove([photoPath]);
+          if (error) throw new Error('Private photo cleanup failed');
+        }
+      } finally {
+        await releaseUsage(db, event);
+      }
       throw error;
     }
-    // Claude gets the stored copy, which saveJpeg re-encoded without EXIF/GPS metadata.
-    const stored = await db.storage.from('uploads').download(photoPath);
-    if (stored.error) throw new Error('Private photo read failed');
-    const image = toBase64(new Uint8Array(await stored.data.arrayBuffer()));
     const read = parseFront(await deps.askClaude([image], FRONT_PROMPT));
     const found = read.code ? await deps.loadProduct({ code: read.code }) : null;
     const candidates = found ? [] : await findCandidates(db, read);
