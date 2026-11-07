@@ -2,6 +2,8 @@ import React from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { NUTRIENT_KEYS, type NutrientKey, type ReadLabelResponse } from '@okbite/shared';
 import { ro } from '../../copy/ro';
+import { useTheme } from '../../theme/useTheme';
+import type { Palette } from '../../theme/tokens';
 import { unitForNutrient } from './parseAmount';
 
 export interface NutritionFieldsProps {
@@ -33,6 +35,8 @@ export function NutritionFields({
   invalid,
   onChange,
 }: NutritionFieldsProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const labels = getCompleteNutrientLabels();
 
   return (
@@ -91,29 +95,32 @@ export function NutritionFields({
   );
 }
 
-const styles = StyleSheet.create({
-  card: { padding: 14, borderRadius: 16, backgroundColor: '#FFFDF6', gap: 8 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: { fontSize: 15, fontWeight: '700', color: '#1C2420' },
-  muted: { fontSize: 13, color: '#56615A' },
-  unavailableBox: { padding: 12, borderRadius: 12, backgroundColor: '#F6F1E6', gap: 4 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  labelCol: { flex: 1 },
-  labelText: { fontSize: 14, fontWeight: '600', color: '#1C2420' },
-  unclearMark: { fontSize: 12, fontWeight: '800', color: '#7A4E00' },
-  errorText: { fontSize: 12, fontWeight: '700', color: '#8E3417' },
+const createStyles = (colors: Palette) => StyleSheet.create({
+  card: { padding: 14, borderRadius: 16, backgroundColor: colors.surface, gap: 8 },
+  header: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between', alignItems: 'center' },
+  title: { fontSize: 15, fontWeight: '700', color: colors.ink },
+  muted: { fontSize: 13, color: colors.muted },
+  unavailableBox: { padding: 12, borderRadius: 12, backgroundColor: colors.ground, gap: 4 },
+  row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
+  labelCol: { flexGrow: 1, flexShrink: 1, flexBasis: 160, minWidth: 0 },
+  labelText: { fontSize: 14, fontWeight: '600', color: colors.ink },
+  unclearMark: { fontSize: 12, fontWeight: '800', color: colors.medium },
+  errorText: { fontSize: 12, fontWeight: '700', color: colors.low },
   input: {
-    width: 108,
+    minWidth: 108,
+    flexGrow: 1,
+    flexBasis: 108,
     minHeight: 46,
     paddingHorizontal: 10,
+    paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: '#CFC8B8',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.muted,
+    backgroundColor: colors.surface,
     textAlign: 'right',
     fontSize: 15,
-    color: '#1C2420',
+    color: colors.ink,
   },
-  inputInvalid: { borderColor: '#8E3417' },
-  unitSuffix: { width: 36, fontSize: 13, color: '#56615A' },
+  inputInvalid: { borderColor: colors.low },
+  unitSuffix: { minWidth: 36, fontSize: 13, color: colors.muted },
 });

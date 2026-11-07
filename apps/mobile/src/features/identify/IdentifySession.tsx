@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ro } from '../../copy/ro';
+import { useTheme } from '../../theme/useTheme';
 import { StatusPanel } from '../capture/StatusPanel';
 import { useScreenActivity } from '../capture/useScreenActivity';
 import { CandidateList } from './CandidateList';
@@ -11,6 +12,7 @@ import { addProductRoute, parseIdentifyParams, productRoute } from './routes';
 import { resolveQueued } from '../offline/queue';
 
 export function IdentifySession({ rawParams }: { rawParams: Record<string, string | string[] | undefined> }) {
+  const { colors } = useTheme();
   const router = useRouter();
   const activity = useScreenActivity();
   const state = parseIdentifyParams(rawParams);
@@ -34,7 +36,7 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
     void finishConfirmation();
   };
 
-  if (cleanupPending) return <View style={styles.center}><StatusPanel message={ro.review.savedPendingCleanup} actions={[
+  if (cleanupPending) return <View style={[styles.center, { backgroundColor: colors.ground }]}><StatusPanel message={ro.review.savedPendingCleanup} actions={[
     { label: ro.review.finishSave, onPress: () => { void finishConfirmation(); } },
   ]} /></View>;
 
@@ -72,7 +74,7 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
     );
   }
   return (
-    <View style={styles.center}>
+    <View style={[styles.center, { backgroundColor: colors.ground }]}>
       <StatusPanel
         message={ro.errors.generic}
         actions={[

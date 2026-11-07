@@ -2,6 +2,8 @@ import React from 'react';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { Candidate } from '@okbite/shared';
 import { ro } from '../../copy/ro';
+import { useTheme } from '../../theme/useTheme';
+import type { Palette } from '../../theme/tokens';
 import { ActionButton } from '../capture/StatusPanel';
 
 export function ConfirmMatch({
@@ -13,6 +15,8 @@ export function ConfirmMatch({
   onConfirm: (id: string) => void;
   onReject: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text accessibilityRole="header" style={styles.title}>
@@ -38,13 +42,13 @@ export function ConfirmMatch({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 16, gap: 16 },
-  title: { fontSize: 22, fontWeight: '700' },
-  card: { padding: 20, borderRadius: 16, backgroundColor: '#fff', alignItems: 'center', gap: 8 },
+const createStyles = (colors: Palette) => StyleSheet.create({
+  container: { flexGrow: 1, padding: 16, gap: 16, backgroundColor: colors.ground },
+  title: { fontSize: 22, fontWeight: '700', color: colors.ink },
+  card: { padding: 20, borderRadius: 16, backgroundColor: colors.surface, alignItems: 'center', gap: 8 },
   hero: { width: 160, height: 160, borderRadius: 12 },
-  name: { fontSize: 20, fontWeight: '700', textAlign: 'center' },
-  meta: { fontSize: 15, color: '#56615A', textAlign: 'center' },
-  hint: { fontSize: 14, color: '#56615A', textAlign: 'center' },
+  name: { maxWidth: '100%', fontSize: 20, fontWeight: '700', color: colors.ink, textAlign: 'center' },
+  meta: { maxWidth: '100%', fontSize: 15, color: colors.muted, textAlign: 'center' },
+  hint: { fontSize: 14, color: colors.muted, textAlign: 'center' },
   actions: { gap: 10 },
 });

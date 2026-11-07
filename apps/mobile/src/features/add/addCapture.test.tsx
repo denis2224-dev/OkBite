@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { describe, it, expect, jest, beforeAll, beforeEach, afterEach } from '@jest/globals';
 import { render, renderHook, fireEvent, screen, act } from '@testing-library/react-native';
 import {
@@ -429,6 +429,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
     await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
 
     expect(await screen.findByText(ro.errors.upstreamFailed)).toBeTruthy();
+    expect(screen.getByTestId('add-error-recovery')).toBeTruthy();
     expect(mockReplace).not.toHaveBeenCalled();
 
     await fireEvent.press(screen.getByRole('button', { name: ro.errors.retry }));
@@ -481,9 +482,14 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
     await render(<AddScreen />);
 
     expect(screen.getByText(ro.capture.deniedTitle)).toBeTruthy();
+    expect(StyleSheet.flatten(screen.getByTestId('add-permission-recovery').props.contentContainerStyle)).toMatchObject({ flexGrow: 1 });
 
     await fireEvent.press(screen.getByRole('button', { name: ro.add.gallery }));
     expect(screen.getByText(ro.add.stepOf(2))).toBeTruthy();
+    expect(screen.getByTestId('add-permission-recovery')).toBeTruthy();
+    expect(screen.getByRole('button', { name: ro.add.samePhoto })).toBeTruthy();
+    expect(screen.getByRole('button', { name: ro.capture.openSettings })).toBeTruthy();
+    expect(screen.getByRole('button', { name: ro.capture.retry })).toBeTruthy();
 
     await fireEvent.press(screen.getByRole('button', { name: ro.add.gallery }));
     expect(await screen.findByText(ro.errors.rateLimited)).toBeTruthy();

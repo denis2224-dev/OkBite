@@ -2,6 +2,8 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { Category } from '@okbite/shared';
 import { ro } from '../../copy/ro';
+import { useTheme } from '../../theme/useTheme';
+import type { Palette } from '../../theme/tokens';
 
 export interface CategoryPickerProps {
   categories: readonly Category[];
@@ -16,6 +18,8 @@ export function CategoryPicker({
   onSelect,
   disabled = false,
 }: CategoryPickerProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{ro.review.category}</Text>
@@ -50,33 +54,34 @@ export function CategoryPicker({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: Palette) => StyleSheet.create({
   container: { gap: 8 },
-  label: { fontSize: 15, fontWeight: '700', color: '#1C2420' },
+  label: { fontSize: 15, fontWeight: '700', color: colors.ink },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     minHeight: 44,
+    maxWidth: '100%',
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#CFC8B8',
-    backgroundColor: '#FFFDF6',
+    borderColor: colors.muted,
+    backgroundColor: colors.surface,
     justifyContent: 'center',
   },
   chipSelected: {
-    borderColor: '#173A2A',
-    backgroundColor: '#173A2A',
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
   },
   chipDisabled: { opacity: 0.55 },
-  chipText: { fontSize: 14, fontWeight: '600', color: '#1C2420' },
-  chipTextSelected: { color: '#FFFFFF' },
+  chipText: { flexShrink: 1, fontSize: 14, fontWeight: '600', color: colors.ink },
+  chipTextSelected: { color: colors.onPrimary },
   emptyBox: {
     padding: 12,
     borderRadius: 12,
-    backgroundColor: '#FBE3D8',
+    backgroundColor: colors.lowBg,
     gap: 4,
   },
-  emptyTitle: { fontSize: 14, fontWeight: '700', color: '#8E3417' },
-  emptyText: { fontSize: 13, color: '#8E3417' },
+  emptyTitle: { fontSize: 14, fontWeight: '700', color: colors.low },
+  emptyText: { fontSize: 13, color: colors.low },
 });
