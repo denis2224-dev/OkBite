@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { api } from '../../lib/api';
@@ -6,6 +6,7 @@ import { identifyPhotoRoute, productRoute } from '../identify/routes';
 import { enqueue } from '../offline/queue';
 import { compressPhoto } from './compressPhoto';
 import { findBarcode } from './findBarcode';
+import { useScreenActivity } from './useScreenActivity';
 
 export type CaptureState =
   | { status: 'idle' }
@@ -24,11 +25,8 @@ export function useCaptureFlow() {
   const [state, setState] = useState<CaptureState>(IDLE);
   const [canRetry, setCanRetry] = useState(false);
   const busy = useRef(false);
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => { mounted.current = false; };
-  }, []);
+  // Only the screen that started a request, still focused, may act on its answer.
+  const activity = useScreenActivity();
   const lastUri = useRef<string | null>(null);
 
   // One request at a time: camera, gallery and retry all go through here.
@@ -36,21 +34,23 @@ export function useCaptureFlow() {
     async (getUri: () => Promise<string | null>) => {
       if (busy.current) return;
       busy.current = true;
+      const token = activity.start();
+      const current = () => activity.isCurrent(token);
       setState({ status: 'working' });
       let compressedUri: string | undefined;
       try {
         const uri = await getUri();
-        if (!mounted.current) return;
+        if (!current()) return;
         if (!uri) return setState(IDLE);
         lastUri.current = uri;
         setCanRetry(true);
         const photo = await compressPhoto(uri, IDENTIFY_PHOTO_MAX_BYTES);
         compressedUri = photo.uri;
         const code = await findBarcode(photo.uri);
-        if (!mounted.current) return;
+        if (!current()) return;
         if (code) {
           const hit = await api.lookup({ code });
-          if (!mounted.current) return;
+          if (!current()) return;
           if (hit.status === 'found') {
             setState(IDLE);
             return router.replace(productRoute(hit.product.id));
@@ -58,7 +58,7 @@ export function useCaptureFlow() {
         }
         // No readable barcode, or an unknown one: the photo itself decides.
         const result = await api.identify(photo.base64);
-        if (!mounted.current) return;
+        if (!current()) return;
         setState(IDLE);
         router.replace(result.status === 'found' ? productRoute(result.product.id) : identifyPhotoRoute(result));
       } catch (err) {
@@ -66,7 +66,7 @@ export function useCaptureFlow() {
         if (code === 'offline' && compressedUri) {
           try {
             await enqueue({ kind: 'photo', uri: compressedUri });
-            if (!mounted.current) return;
+            if (!current()) return;
             lastUri.current = null;
             setCanRetry(false);
             setState(IDLE);
@@ -74,12 +74,13 @@ export function useCaptureFlow() {
             return;
           } catch { /* Keep the original photo available for retry if durable storage fails. */ }
         }
-        if (mounted.current) setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
+        if (current()) setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
       } finally {
         busy.current = false;
+        if (!current()) setState(IDLE); // a stale answer leaves no spinner behind
       }
     },
-    [router],
+    [activity, router],
   );
 
   const takePhoto = useCallback(

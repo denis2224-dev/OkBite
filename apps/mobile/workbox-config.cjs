@@ -11,7 +11,7 @@ module.exports = {
   runtimeCaching: [{
     urlPattern: /^https?:\/\/[^/]+\/functions\/v1\/lookup(?:\?|$)/,
     handler: 'NetworkFirst', method: 'GET',
-    options: { cacheName: 'okbite-lookup', networkTimeoutSeconds: 3,
+    options: { cacheName: 'okbite-lookup',
       cacheableResponse: { statuses: [200] },
       expiration: { maxEntries: 200, maxAgeSeconds: 86400 } },
   }],

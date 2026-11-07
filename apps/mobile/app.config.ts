@@ -2,6 +2,19 @@ import type { ExpoConfig } from 'expo/config';
 
 const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
 
+// A store build must reach the real backend and receive OTA updates; never ship demo data.
+if (process.env.EAS_BUILD_PROFILE === 'production') {
+  const url = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+  const problems = [
+    !/^https:\/\/[^/]+$/.test(url) && 'EXPO_PUBLIC_SUPABASE_URL must be an https origin',
+    /localhost|127\.0\.0\.1/.test(url) && 'EXPO_PUBLIC_SUPABASE_URL points at a local backend',
+    !process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY && 'EXPO_PUBLIC_SUPABASE_ANON_KEY is missing',
+    !projectId && 'EXPO_PUBLIC_EAS_PROJECT_ID is missing',
+    process.env.EXPO_PUBLIC_PREVIEW === '1' && 'EXPO_PUBLIC_PREVIEW=1 enables demo data',
+  ].filter(Boolean);
+  if (problems.length) throw new Error(`Invalid production config: ${problems.join('; ')}`);
+}
+
 const config: ExpoConfig = {
   name: 'OkBite',
   slug: 'okbite',

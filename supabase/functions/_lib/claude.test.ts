@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { askClaude, parseJsonObject, toBase64, UpstreamError } from './claude.ts';
+import { AI_DEADLINE_MS, askClaude, parseJsonObject, toBase64, UpstreamError } from './claude.ts';
 
 const KEY = 'test-key-not-real';
 const ok = (text: string, stop = 'stop') =>
@@ -88,4 +88,24 @@ Deno.test('parseJsonObject reads fenced JSON; toBase64 round-trips large inputs'
   assert.throws(() => parseJsonObject('null'), UpstreamError);
   const bytes = new Uint8Array(100_000).map((_, i) => i % 256);
   assert.deepEqual(Uint8Array.from(atob(toBase64(bytes)), (c) => c.charCodeAt(0)), bytes);
+});
+
+Deno.test('askClaude stops retrying before the app gives up on the request', async () => {
+  let clock = 0;
+  const slow = fake([
+    new Response('', { status: 503 }),
+    new Response('', { status: 503 }),
+    new Response('', { status: 503 }),
+  ]);
+  const fetch = ((url: string, init: RequestInit) => {
+    clock += 15_000; // each provider attempt takes 15 s
+    return slow.deps.fetch(url, init);
+  }) as unknown as typeof globalThis.fetch;
+  const sleep = (ms: number) => (clock += ms, Promise.resolve());
+  await assert.rejects(
+    askClaude(['x'], 'p', { ...slow.deps, fetch, sleep, now: () => clock }),
+    UpstreamError,
+  );
+  assert.equal(slow.calls.length, 2); // a third attempt would end after AI_DEADLINE_MS
+  assert.ok(clock <= AI_DEADLINE_MS);
 });
