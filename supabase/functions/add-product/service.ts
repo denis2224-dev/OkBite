@@ -34,20 +34,52 @@ export function createService(
       return LookupResponse.parse({ status: 'found', ...found });
     };
     // A new HTTP attempt must recover a committed barcode-free submission too.
-    const receipt = await db
-      .from('contribution_receipts')
-      .select('product_id')
-      .eq('device_id', device)
-      .eq('upload_path', input.ingredientsPhotoPath)
-      .maybeSingle();
-    if (receipt.error) throw new Error('Submission receipt lookup failed');
-    if (receipt.data) return await foundResponse(Uuid.parse(receipt.data.product_id));
+    const recover = async () => {
+      const receipt = await db
+        .from('contribution_receipts')
+        .select('product_id')
+        .eq('device_id', device)
+        .eq('upload_path', input.ingredientsPhotoPath)
+        .maybeSingle();
+      if (receipt.error) throw new Error('Submission receipt lookup failed');
+      return receipt.data ? await foundResponse(Uuid.parse(receipt.data.product_id)) : null;
+    };
+    const recovered = await recover();
+    if (recovered) return recovered;
     if (input.code) {
       const existing = await db.from('products').select('id').eq('code', input.code).maybeSingle();
       if (existing.error) throw new Error('Duplicate lookup failed');
-      if (existing.data) return await foundResponse(existing.data.id);
+      if (existing.data) {
+        const { data, error } = await db.rpc('commit_product', {
+          p_product: {
+            code: input.code,
+            added_by_device: device,
+            ingredients_upload_path: input.ingredientsPhotoPath,
+          },
+          p_links: [],
+          p_event: null,
+        });
+        if (error?.code === 'P0003')
+          throw new HttpError(409, 'Codul este deja utilizat.', 'duplicate');
+        if (error?.code === 'P0004') throw new HttpError(400, 'Fotografie indisponibilă.');
+        if (error) throw new Error('Existing submission receipt failed');
+        return await foundResponse(resultSchema.parse(data).id);
+      }
     }
-    const event = await reserveUsage(db, device, 'added');
+    let event: number;
+    try {
+      event = await reserveUsage(db, device, 'added');
+    } catch (error) {
+      if (error instanceof HttpError && error.status === 429) {
+        // The last slot may belong to this same upload's still-running request.
+        for (let attempt = 0; attempt < 5; attempt++) {
+          const result = await recover();
+          if (result) return result;
+          if (attempt < 4) await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+      }
+      throw error;
+    }
     const id = deps.newId();
     const published: string[] = [];
     const cleanup = async () => {
