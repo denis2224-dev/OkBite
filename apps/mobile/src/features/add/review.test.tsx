@@ -725,4 +725,44 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     expect(saveToHistory).toHaveBeenCalledWith(SAVED_LOOKUP);
     expect(completeQueued).toHaveBeenCalledWith('draft-a');
   });
+
+  it('OKB-SW-02: prefills extracted ingredients in an editable field and submits corrected text', async () => {
+    const onSubmit = jest.fn<(req: AddProductRequestType) => void>();
+
+    await render(
+      <ReviewForm
+        label={{
+          ...BASE_LABEL,
+          ingredientsText: 'lapfe',
+        }}
+        initial={BASE_INITIAL}
+        categories={getAvailableCategories()}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    const ingInput = screen.getByLabelText(ro.review.ingredients);
+    expect(ingInput).toBeTruthy();
+    expect(ingInput.props.value).toBe('lapfe');
+    expect(screen.getByDisplayValue('lapfe')).toBeTruthy();
+    expect(ingInput.props.editable).not.toBe(false);
+    expect(ingInput.props.accessibilityState?.disabled).not.toBe(true);
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    await fireEvent.changeText(ingInput, 'lapte');
+
+    expect(ingInput.props.value).toBe('lapte');
+    expect(screen.getByDisplayValue('lapte')).toBeTruthy();
+    expect(screen.queryByDisplayValue('lapfe')).toBeNull();
+    expect(screen.queryByText('lapfe')).toBeNull();
+
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Iaurt` }));
+
+    const saveButton = screen.getByRole('button', { name: ro.review.save });
+    expect(saveButton.props.accessibilityState?.disabled).toBe(false);
+    await fireEvent.press(saveButton);
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0]?.[0]?.ingredientsText).toBe('lapte');
+  });
 });
