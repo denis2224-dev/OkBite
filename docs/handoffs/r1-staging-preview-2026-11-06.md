@@ -5,11 +5,12 @@ acceptarea cu backendul real sunt în așteptarea accesului și confirmărilor.
 
 ## Ramură și reconciliere
 
-- Ramură R1: `D2-staging-preview`, pornită din `codex/r5-preview-staging` la
-  `564f60ad31354efc5b1dcac37abf0164b7eea1f0`.
-- R5 include deja main remote `efb3c6a591941af45d292a203dd967b60d4b1989`
-  și integrarea `c7c4a92533b74b6f6b4fbaa70e01e5588052c33e`.
-  Nu a fost necesar un merge; #71/#72 rămân deschise.
+- Ramură R1 mutată pe 7 noiembrie direct pe main după #78 (`c9629742`).
+  Commitul R1 original (`7584833d`) pornea din `codex/r5-preview-staging` la
+  `564f60ad`; corecțiile acelui commit R5 (flag preview explicit, gardă la
+  pierderea focusului) sunt deja în main prin #78, iar singura parte lipsă
+  (scanarea după o eroare în fundal) este în #79.
+- #71/#72 rămân deschise separat; această ramură nu le mai include.
 - Interfața și fluxurile din R5 sunt păstrate. Aplicația exportată rămâne
   `apps/mobile`; sursele preview-ului de la rădăcină nu au fost mutate.
 - SHA-ul candidatului R1 se obține cu `git rev-parse D2-staging-preview`.
