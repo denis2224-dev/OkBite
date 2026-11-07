@@ -37,7 +37,8 @@ export async function runStagingSmoke(
     throw new Error('Probes require the exact authorized staging origin.');
   }
   const key = publicKey(read('EXPO_PUBLIC_SUPABASE_ANON_KEY'));
-  const knownCode = read('OKBITE_STAGING_KNOWN_CODE');
+  // A blank line in the copied .env file means "not set", not an invalid code.
+  const knownCode = read('OKBITE_STAGING_KNOWN_CODE') || undefined;
   if (knownCode !== undefined && !Code.safeParse(knownCode).success) {
     throw new Error('Known code must be EAN-8 or EAN-13.');
   }
