@@ -5,6 +5,14 @@ outside R2, incomplete checked content, connected acceptance and required human,
 Claude and physical-device gates remain open. No deployment, store submission,
 merge, purchase or hosted mutation was performed. Stanislav decides merge order.
 
+> **Update 7 November (Claude cross-review).** The code defects R3-01, X-01,
+> R1-01, R4-01, X-02, R4-02, R4-03 and R5-01 in the table below were fixed in
+> [#78](https://github.com/denis2224-dev/OkBite/pull/78), merged as `c9629742`.
+> One remaining R5-01 case (camera ignored after a background lookup failure) is
+> fixed in [#79](https://github.com/denis2224-dev/OkBite/pull/79). The table keeps
+> the 6 November evidence as recorded. The decision stays NO-GO: the content,
+> connected-staging, human and physical-device gates are unchanged.
+
 ## Revisions, scope and evidence
 
 | Label | Exact code SHA | Scope |
