@@ -4,6 +4,7 @@ import Compare from '../../../app/(tabs)/compare';
 import { previewEntries } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
 import { ProductPicker } from './ProductPicker';
+import { router } from 'expo-router';
 const mockEntries = previewEntries.map(entry => ({ ...entry, savedAt: '2026-11-05T00:00:00.000Z' }));
 let mockId: string | undefined;
 let mockPending: Promise<typeof mockEntries> | undefined;
@@ -28,6 +29,12 @@ test('renders the same-category comparison from history and announces picker exp
   expect(screen.getByText('4,1 g')).toBeTruthy();
   expect(screen.getByText('13,2 g')).toBeTruthy();
   expect(screen.getAllByText(ro.score.disclaimer)).toHaveLength(2);
+});
+test('can photograph another product after completing a compatible comparison', async () => {
+  await render(<Compare />);
+  await choose(0); await choose(1);
+  await fireEvent.press(screen.getByRole('button', { name: ro.compare.photo }));
+  expect(router.push).toHaveBeenCalledWith('/capture');
 });
 test('different categories show guidance and no nutrient comparison table', async () => {
   await render(<Compare />);

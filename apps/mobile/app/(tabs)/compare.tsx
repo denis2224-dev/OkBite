@@ -87,6 +87,7 @@ export default function Compare() {
           {products.map(({entry,label}) => entry.product.mayContain.length > 0 && <View key={label}><Text style={styles.allergenText}>{label} · <Text>{ro.result.mayContain}</Text></Text><Text style={styles.allergenText}>{entry.product.mayContain.join(', ')}</Text></View>)}
           <Text style={styles.footnote}>{ro.result.allergyNote}</Text>
           <Text style={styles.footnote}>{copy.footnote}</Text>
+          <Button variant="secondary" onPress={() => router.push('/capture')}>{ro.compare.photo}</Button>
         </ScrollView>
       </View>
       <Modal visible={picker !== null} transparent animationType="none" onRequestClose={() => setPicker(null)}>
