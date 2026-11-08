@@ -33,7 +33,7 @@ it('defers installation until an offer, consumes it once across rapid/repeated c
   let event!: ReturnType<typeof offer>;
   await act(() => { event = offer(prompt, 'accepted'); });
   expect(event.defaultPrevented).toBe(true); expect(result.current.canInstall).toBe(true);
-  let first!: Promise<boolean>;
+  let first!: Promise<boolean | null>;
   await act(async () => {
     first = result.current.install();
     expect(await result.current.install()).toBe(false);
@@ -48,10 +48,10 @@ it('handles rejected prompts and keeps a newer offer after an older promise sett
   const { result } = await renderHook(useInstallPrompt, { wrapper: InstallPromptProvider });
   let reject!: (error: Error) => void;
   await act(() => { offer(() => new Promise((_resolve, fail) => { reject = fail; })); });
-  let pending!: Promise<boolean>;
+  let pending!: Promise<boolean | null>;
   await act(() => { pending = result.current.install(); });
   await act(() => { offer(); });
-  await act(async () => { reject(new Error('blocked')); expect(await pending).toBe(false); });
+  await act(async () => { reject(new Error('blocked')); expect(await pending).toBeNull(); });
   expect(result.current.canInstall).toBe(true);
   await act(async () => { expect(await result.current.install()).toBe(false); });
   expect(result.current.canInstall).toBe(false);
@@ -99,7 +99,7 @@ it('does not revive installation when an outstanding browser choice settles afte
       userChoice: new Promise(resolve => { finish = resolve; }),
     }));
   });
-  let pending!: Promise<boolean>;
+  let pending!: Promise<boolean | null>;
   await act(() => { pending = result.current.install(); browser.dispatchEvent(new Event('appinstalled')); });
   await act(async () => { finish({ outcome: 'dismissed' }); await pending; });
   expect(result.current).toMatchObject({ isStandalone: true, canInstall: false });

@@ -15,7 +15,7 @@ export function InstallPrompt() {
     <Body>{ro.pwa.install.description}</Body>
     {isIos && <Body>{ro.pwa.install.iosHint}</Body>}
     {failed && <Body accessibilityRole="alert">{ro.pwa.install.failed}</Body>}
-    {canInstall && <Button onPress={async () => { setFailed(!(await install())); }}>{ro.pwa.install.title}</Button>}
+    {canInstall && <Button onPress={async () => { setFailed((await install()) === null); }}>{ro.pwa.install.title}</Button>}
     <Button variant="ghost" onPress={dismiss}>{ro.app.close}</Button>
   </Card>;
 }

@@ -52,7 +52,7 @@ function useBrowserInstallPrompt() {
     try {
       const [, choice] = await Promise.all([event.prompt(), event.userChoice]);
       return choice?.outcome === 'accepted';
-    } catch { return false; }
+    } catch { return null; } // null = the browser refused to show the prompt; false = user declined
   }, []);
   return { canInstall, isIos, isStandalone, install };
 }

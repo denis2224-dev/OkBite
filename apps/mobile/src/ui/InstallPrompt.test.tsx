@@ -22,6 +22,16 @@ it('hides unsupported browsers, offers one explicit install action, then reports
   expect(screen.getByText(ro.pwa.install.failed)).toBeTruthy();
   expect(screen.queryByRole('button', { name: ro.pwa.install.title })).toBeNull();
 });
+it('does not report a failure when the user declines the browser dialog', async () => {
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { platform: 'Linux', maxTouchPoints: 0 } });
+  Object.defineProperty(browser, 'localStorage', { configurable: true, value: { getItem: () => null, setItem: () => {} } });
+  await render(<InstallPrompt />, { wrapper: InstallPromptProvider });
+  await act(() => { browser.dispatchEvent(Object.assign(new Event('beforeinstallprompt', { cancelable: true }), {
+    prompt: jest.fn(async () => undefined), userChoice: Promise.resolve({ outcome: 'dismissed' }),
+  })); });
+  await fireEvent.press(screen.getByRole('button', { name: ro.pwa.install.title }));
+  expect(screen.queryByText(ro.pwa.install.failed)).toBeNull();
+});
 it('shows only iOS guidance, hides installed apps, and remembers dismissal on remount even with blocked storage', async () => {
   Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { platform: 'MacIntel', maxTouchPoints: 5 } });
   Object.defineProperty(browser, 'localStorage', { configurable: true, get: () => { throw new Error('blocked'); } });
