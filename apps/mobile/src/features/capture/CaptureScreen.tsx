@@ -1,11 +1,16 @@
+import { useTheme } from '../../theme/useTheme';
+import type { Palette } from '../../theme/tokens';
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { ro } from '../../copy/ro';
 import { ActionButton, StatusPanel, errorMessage } from './StatusPanel';
 import { useCaptureFlow } from './useCaptureFlow';
 
 export default function CaptureScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [permission, requestPermission] = useCameraPermissions({ request: true });
   const camera = useRef<CameraView>(null);
   const [ready, setReady] = useState(false);
@@ -57,7 +62,7 @@ export default function CaptureScreen() {
         </ScrollView>
       ) : null}
       {working ? (
-        <View style={[StyleSheet.absoluteFill, styles.overlay]}><ActivityIndicator size="large" color="#fff" /><Text style={styles.overlayText}>{ro.capture.working}</Text></View>
+        <View style={[StyleSheet.absoluteFill, styles.overlay]}><ActivityIndicator size="large" color={colors.cameraInk} /><Text style={styles.overlayText}>{ro.capture.working}</Text></View>
       ) : null}
       {state.status === 'error' || state.status === 'offline' ? (
         <ScrollView testID="capture-error-recovery" style={StyleSheet.absoluteFill} contentContainerStyle={[styles.overlay, { flexGrow: 1 }]} keyboardShouldPersistTaps="handled">
@@ -76,14 +81,14 @@ export default function CaptureScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#000' },
+const createStyles = (colors: Palette) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.cameraBackground },
   center: { flexGrow: 1, justifyContent: 'center', padding: 20 },
-  hint: { position: 'absolute', top: 24, left: 16, right: 16, color: '#fff', fontSize: 16, textAlign: 'center' },
+  hint: { position: 'absolute', top: 24, left: 16, right: 16, color: colors.cameraInk, fontSize: 16, textAlign: 'center' },
   controls: { position: 'absolute', bottom: 32, left: 16, right: 16, flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'space-between' },
-  shutter: { width: 72, height: 72, borderRadius: 36, borderWidth: 4, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  shutter: { width: 72, height: 72, borderRadius: 36, borderWidth: 4, borderColor: colors.cameraInk, alignItems: 'center', justifyContent: 'center' },
   shutterOff: { opacity: 0.4 },
-  shutterInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: '#fff' },
-  overlay: { backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20, gap: 12 },
-  overlayText: { color: '#fff', fontSize: 16 },
+  shutterInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.cameraInk },
+  overlay: { backgroundColor: colors.cameraOverlay, justifyContent: 'center', alignItems: 'center', padding: 20, gap: 12 },
+  overlayText: { color: colors.cameraInk, fontSize: 16 },
 });

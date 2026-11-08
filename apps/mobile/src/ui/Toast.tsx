@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useRef, useEffect, useCallback, type PropsWithChildren } from 'react';
-import { View, Pressable } from 'react-native';
+import { View } from 'react-native';
+import { PressableOpacity as Pressable } from '../shared/PressableOpacity';
 import { Body } from './Typography';
 import { useTheme } from '../theme/useTheme';
 type Action = { label: string; onPress: () => void };
