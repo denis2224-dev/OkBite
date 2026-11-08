@@ -90,7 +90,7 @@ export default function Home() {
               <Text style={s.appearanceLabel}>{ro.app.settings}</Text>
               <View style={s.appearanceButtons}>{(['light', 'dark'] as const).map(mode => {
                 const selected = mode === (isDark ? 'dark' : 'light');
-                return <HomePressable key={mode} label={copy.themeLabels[mode]} accessibilityRole="radio" accessibilityState={{ checked: selected, selected }} onPress={() => setPreference(mode)} style={s.iconHit}>
+                return <HomePressable key={mode} label={copy.themeLabels[mode]} accessibilityRole="radio" aria-checked={selected} accessibilityState={{ checked: selected, selected }} onPress={() => setPreference(mode)} style={s.iconHit}>
                   <View style={[s.themeVisual, { backgroundColor: selected ? t.colors.themeSelected : t.colors.themeButton }]}><HomeIcon name={mode === 'light' ? 'sun' : 'moon'} size={20} color={selected ? t.colors.themeSelectedIcon : t.colors.themeIcon}/></View>
                 </HomePressable>;
               })}</View>
