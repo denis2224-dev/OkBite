@@ -74,6 +74,7 @@ export default function Home() {
         <HomeCard style={s.legend}>
           <Text style={s.label}>{ro.home.legend}</Text>
           <View style={s.legendRows}>{legend.map(item => <View key={item.grade} style={s.legendRow}><HomeChip background={t.colors[`${item.grade}Bg`]} color={t.colors[item.grade]} minWidth={76}>{item.range}</HomeChip><Text style={s.legendText}>{item.label}</Text></View>)}</View>
+          <Text style={s.footnote}>{ro.score.disclaimer}</Text>
           <Text style={s.footnote}>{copy.footnote}</Text>
         </HomeCard>
       </ScrollView>
@@ -95,6 +96,7 @@ export default function Home() {
               })}</View>
             </View>
             {(['online', 'offline', 'empty'] as const).map(mode => <HomePressable key={mode} label={copy.states[mode]} onPress={() => { setDemo(mode); setShowDemo(false); }} style={s.demoOption}><Text style={s.productName}>{copy.states[mode]}</Text></HomePressable>)}
+            {(['about', 'method', 'privacy', 'terms'] as const).map(path => <HomePressable key={path} label={ro.nav[path]} onPress={() => { setShowDemo(false); router.push(`/${path}`); }} style={s.demoOption}><Text style={s.productName}>{ro.nav[path]}</Text></HomePressable>)}
           </ScrollView>
         </HomeCard>
       </View>
