@@ -43,9 +43,9 @@ Files: src/lib/installPrompt.web.ts and installPrompt.ts; src/ui/InstallPrompt.t
 
 Interface: useInstallPrompt() returns {canInstall,isIos,isStandalone,install}. Native exports the same hook with inert behavior.
 
-- [ ] Test deferred event, repeated/failed prompt, installed/standalone changes, iOS/iPad detection, unsupported API and listener cleanup.
-- [ ] Test Home card actions, iOS hint and dismiss behavior.
-- [ ] Implement using browser APIs, existing Card/Body/Button and copy; add no dependencies.
+- [x] Test deferred event, repeated/failed prompt, installed/standalone changes, iOS/iPad detection, unsupported API and listener cleanup.
+- [x] Test Home card actions, iOS hint and dismiss behavior.
+- [x] Implement using browser APIs, existing Card/Body/Button and copy; add no dependencies.
 
 ## R4-W3: update banner
 
