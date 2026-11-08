@@ -11,7 +11,7 @@ test.each([
 
 test('preserves the team-approved install and update wording', () => {
   expect(ro).toHaveProperty('pwa.install.title', 'Instalează OkBite');
-  expect(ro).toHaveProperty('pwa.install.iosHint', 'Apăsă Partajează, apoi Adaugă pe ecranul principal.');
+  expect(ro).toHaveProperty('pwa.install.iosHint', 'Apasă Partajează, apoi Adaugă pe ecranul principal.');
   expect(ro).toHaveProperty('pwa.update.title', 'Versiune nouă disponibilă');
   expect(ro).toHaveProperty('pwa.update.apply', 'Actualizează');
 });

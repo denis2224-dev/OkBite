@@ -62,7 +62,7 @@ export const ro = {
   install: {
    title: 'Instalează OkBite',
    description: 'Adaugă aplicația pe ecranul principal pentru acces mai ușor.',
-   iosHint: 'Apăsă Partajează, apoi Adaugă pe ecranul principal.',
+   iosHint: 'Apasă Partajează, apoi Adaugă pe ecranul principal.',
    failed: 'Instalarea nu a pornit. Poți reîncerca din meniul browserului.',
   },
   update: { title: 'Versiune nouă disponibilă', apply: 'Actualizează' },
