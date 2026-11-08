@@ -1,4 +1,5 @@
 import { normalizeCode } from '@okbite/shared';
+import { createZxingReader } from './zxing.web';
 
 type Detector = { detect(source: ImageBitmapSource): Promise<{ rawValue?: string }[]> };
 type DetectorClass = {
@@ -31,7 +32,19 @@ export async function firstValidCode(detector: Detector, source: ImageBitmapSour
 
 export async function findBarcode(uri: string): Promise<string | null> {
   const detector = await createDetector();
-  if (!detector || typeof createImageBitmap !== 'function') return null;
+  if (!detector) {
+    try {
+      const reader = await createZxingReader();
+      try {
+        return await reader.readCode(uri);
+      } finally {
+        reader.reset();
+      }
+    } catch {
+      return null; // No readable barcode: the existing photo-identification flow continues.
+    }
+  }
+  if (typeof createImageBitmap !== 'function') return null;
   let bitmap: ImageBitmap | undefined;
   try {
     // detect() takes an image object, not a URL; fetch() reads blob: and data: URLs alike.

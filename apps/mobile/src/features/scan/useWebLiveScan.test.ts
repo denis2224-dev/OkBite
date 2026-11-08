@@ -7,6 +7,7 @@ import { startLiveScan, useWebLiveScan } from './useWebLiveScan';
 jest.mock('expo-router', () => ({ useRouter: () => ({ replace: jest.fn() }), useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof import('react')>('react').useEffect(callback, [callback]) }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
 
+
 type G = Record<string, unknown>;
 const g = globalThis as unknown as G;
 
@@ -114,10 +115,10 @@ describe('startLiveScan', () => {
     expect(s.tracks.every((t) => t.stop.mock.calls.length === 1)).toBe(true);
   });
 
-  it('resolves null and never opens the camera without BarcodeDetector', async () => {
+  it('resolves null and never opens the camera without getUserMedia', async () => {
     const getUserMedia = jest.fn(async () => stream());
     install(getUserMedia);
-    delete g.BarcodeDetector;
+    Object.defineProperty(navigator, 'mediaDevices', { value: undefined, configurable: true });
     await expect(startLiveScan(fakeVideo(), jest.fn())).resolves.toBeNull();
     expect(getUserMedia).not.toHaveBeenCalled();
   });
@@ -128,10 +129,10 @@ describe('useWebLiveScan', () => {
   beforeEach(() => { detect.mockClear(); nextHits = []; });
   afterEach(() => { Object.assign(g, saved); });
 
-  it('is unsupported, and opens no camera, when the browser lacks BarcodeDetector', async () => {
+  it('is unsupported, and opens no camera, when the browser lacks getUserMedia', async () => {
     const getUserMedia = jest.fn();
     install(getUserMedia);
-    delete g.BarcodeDetector;
+    Object.defineProperty(navigator, 'mediaDevices', { value: undefined, configurable: true });
     const { result } = await renderHook(() => useWebLiveScan(jest.fn()));
     await act(async () => { result.current.videoRef(fakeVideo()); });
     expect(result.current.status).toBe('unsupported');
