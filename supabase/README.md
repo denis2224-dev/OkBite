@@ -4,6 +4,8 @@ The checked-in team project is `okbite` (API 54321, DB 54322, shadow 54320,
 Studio 54323, inbox 54324). C1/#4 and D3/A2/B1 are merged; The original R2 stack is merged; this follow-up corrects local defaults.
 Review remains waived by the user; no AI review or human approval is claimed.
 
+For the current checkout, use Supabase CLI 2.122.1 with `npx --yes supabase@2.122.1`.
+
 For parallel tests, copy `supabase/` into a separate temporary project directory,
 set an explicit isolated project ID and free ports there, and pass its directory
 with `supabase --workdir <directory>`. Never overwrite the checked-in defaults or

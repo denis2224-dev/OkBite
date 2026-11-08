@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Linking, Pressable, View } from 'react-native';
+import { Linking, View } from 'react-native';
+import { PressableOpacity as Pressable } from '../../../src/shared/PressableOpacity';
 import { useLocalSearchParams } from 'expo-router';
 import { AllergenChip, Badge, Body, Button, Card, Heading, Screen, useToast } from '../../../src/ui';
 import { ro } from '../../../src/copy/ro';
