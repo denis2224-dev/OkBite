@@ -1,6 +1,6 @@
 import { spacing } from '../../theme/tokens';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ScreenSafeArea as SafeAreaView } from '../../shared/ScreenSafeArea';
 import { useHomeTheme, type HomeTheme } from '../../theme/home';
 import { TabPageHeader } from '../../shared/TabPageHeader';
@@ -73,7 +73,7 @@ export function HistoryScreen() {
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         {loading && <Body accessibilityLiveRegion="polite">{ro.app.loading}</Body>}
-        {error && <Card><Body accessibilityRole="alert">{error === 'load' ? ro.history.loadError : ro.history.clearError}</Body>{error === 'load' && <Button variant="secondary" onPress={() => void load()}>{ro.app.retry}</Button>}</Card>}
+        {error && !confirming && <Card><Body accessibilityRole="alert">{error === 'load' ? ro.history.loadError : ro.history.clearError}</Body>{error === 'load' && <Button variant="secondary" onPress={() => void load()}>{ro.app.retry}</Button>}</Card>}
         {!loading && !error && entries.length === 0 && <View style={styles.empty}>
           <View style={styles.emptyIcon}><HomeIcon name="clock" size={30} color={t.colors.primary}/></View>
           <Text accessibilityRole="header" style={styles.emptyTitle}>{copy.emptyTitle}</Text><Text style={styles.emptyText}>{copy.empty}</Text>
@@ -83,21 +83,36 @@ export function HistoryScreen() {
           {entries.map(({product,score:storedScore,savedAt}, index) => {
             const score=displayScore(product,storedScore);
             const grade=score.grade==='unavailable'?'neutral':score.grade;
-            return <HomePressable key={product.id} label={ro.history.open(product.name)} onPress={() => router.push({pathname:'/product/[id]',params:{id:product.id,cached:'1'}})} style={[styles.row,index>0&&styles.separator]}>
+            const verification = product.status === 'verified' && product.verifiedAt
+              ? `${ro.result.checked}: ${roDate(product.verifiedAt)}` : ro.result.unverified;
+            const scoreLabel = score.score === null ? ro.result.scoreUnavailable : `${ro.history.score(score.score)} · ${ro.score[score.grade]}`;
+            const label = [ro.history.open(product.name), product.brand, scoreLabel, ro.score.disclaimer, product.source, `${ro.result.added}: ${roDate(product.addedAt)}`, verification, ro.history.savedAt(roDate(savedAt.slice(0,10)))].join('. ');
+            return <HomePressable key={product.id} label={label} onPress={() => router.push({pathname:'/product/[id]',params:{id:product.id,cached:'1'}})} style={[styles.row,index>0&&styles.separator]}>
               <View style={[styles.tile,{backgroundColor:t.colors.neutralBg}]}><Text style={styles.initials}>{product.name.split(/\s+/).slice(0,2).map(word=>word[0]).join('').toLocaleUpperCase('ro')}</Text></View>
-              <View style={styles.product}><Text style={styles.name}>{product.name}</Text><Text style={styles.meta}>{product.brand} · {new Date(savedAt).toLocaleDateString('ro-RO')}</Text><Text style={styles.meta}>{product.source}</Text><Text style={styles.meta}>{ro.result.added}: {roDate(product.addedAt)}</Text>{score.score === null && <Text style={styles.meta}>{ro.result.scoreUnavailable}</Text>}</View>
+              <View style={styles.product}><Text style={styles.name}>{product.name}</Text><Text style={styles.meta}>{product.brand} · {new Date(savedAt).toLocaleDateString('ro-RO')}</Text><Text style={styles.meta}>{product.source}</Text><Text style={styles.meta}>{ro.result.added}: {roDate(product.addedAt)}</Text><Text style={styles.meta}>{verification}</Text><Text style={styles.meta}>{ro.score.disclaimer}</Text>{score.score === null && <Text style={styles.meta}>{ro.result.scoreUnavailable}</Text>}</View>
               <HomeChip background={t.colors[`${grade}Bg`]} color={t.colors[grade]}>{score.score===null?'—':String(score.score)}</HomeChip>
             </HomePressable>;
           })}
         </HomeCard>}
-        {confirming && <Card><Heading style={{fontSize:20,lineHeight:27}}>{ro.history.clearTitle}</Heading><Body>{ro.history.clearBody}</Body><Button disabled={clearing} onPress={() => void confirmClear()}>{ro.history.clearConfirm}</Button><Button variant="secondary" disabled={clearing} onPress={() => {setConfirming(false);setError(null);}}>{ro.app.cancel}</Button></Card>}
         <Button variant="ghost" onPress={() => router.push('/offline')}>{ro.offline.queueTitle}</Button>
       </ScrollView>
     </View>
+    <Modal visible={confirming} transparent animationType="none" onRequestClose={() => { if (!clearing) { setConfirming(false); setError(null); } }}>
+      <SafeAreaView edges={['top','bottom','left','right']} style={styles.confirmation}>
+        <ScrollView contentContainerStyle={styles.confirmationContent}>
+          <Card accessibilityLabel={ro.history.clearTitle} accessibilityViewIsModal>
+            <Heading style={{fontSize:20,lineHeight:27}}>{ro.history.clearTitle}</Heading><Body>{ro.history.clearBody}</Body>
+            {error === 'clear' && <Body accessibilityLiveRegion="polite">{ro.history.clearError}</Body>}
+            <Button disabled={clearing} onPress={() => void confirmClear()}>{ro.history.clearConfirm}</Button><Button variant="secondary" disabled={clearing} onPress={() => {setConfirming(false);setError(null);}}>{ro.app.cancel}</Button>
+          </Card>
+        </ScrollView>
+      </SafeAreaView>
+    </Modal>
   </SafeAreaView>;
 }
 const createStyles=(t:HomeTheme)=>StyleSheet.create({
  safe:{flex:1,backgroundColor:t.colors.ground},frame:{flex:1,width:'100%',maxWidth:430,alignSelf:'center'},
+ confirmation:{flex:1,backgroundColor:t.colors.scrim},confirmationContent:{flexGrow:1,justifyContent:'center',padding:16,width:'100%',maxWidth:430,alignSelf:'center'},
  header:{minHeight:64,paddingTop:spacing.headerTop,paddingHorizontal:16,paddingBottom:8,flexDirection:'row',flexWrap:'wrap',alignItems:'center',gap:8},
  title:{flex:1,fontFamily:t.fonts.heading,fontSize:22,lineHeight:31.9,letterSpacing:-0.22,color:t.colors.ink},
  clear:{minHeight:44,paddingVertical:4,paddingHorizontal:12,borderRadius:999,backgroundColor:t.colors.lowBg,flexDirection:'row',alignItems:'center',gap:6},clearText:{fontFamily:t.fonts.bold,fontSize:13,lineHeight:18.85,color:t.colors.low,flexShrink:1},
