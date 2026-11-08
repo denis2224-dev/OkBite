@@ -23,8 +23,11 @@ describe('mapOffProduct', () => {
     expect(r).toMatchObject({ name: 'Suc de mere', ingredientsText: 'suc de mere 100%', unit: 'ml' });
   });
 
+  it('keeps imported products sold in Moldova, not only 484 codes', () => {
+    expect(mapOffProduct({ ...off, code: '5901234123457' })?.code).toBe('5901234123457');
+  });
+
   it.each([
-    ['a non-Moldovan code', { code: '5901234123457' }],
     ['a failing checksum', { code: '4840001000017' }],
     ['no name', { product_name: ' ' }],
     ['no brand', { brands: undefined }],
@@ -93,29 +96,22 @@ describe('importOff and loadData against stubbed services', () => {
     expect(pages).toEqual(Array.from({ length: 10 }, (_, page) => page + 1));
   });
 
-  it('splits a code prefix with more than 1000 results, because OFF refuses deeper pages', async () => {
-    const asked: string[] = [];
-    vi.stubGlobal('fetch', async (url: string) => {
-      if (!url.includes('openfoodfacts')) return Response.json([{}]);
-      const tag = new URL(url).searchParams.get('codes_tags')!;
-      asked.push(tag);
-      if (tag === '484xxxxxxxxxx') return Response.json({ count: 1726, products: [off] });
-      return Response.json({ count: tag === '4840xxxxxxxxx' ? 1 : 0, products: tag === '4840xxxxxxxxx' ? [off] : [] });
-    });
-    expect(await importOff(async () => {})).toEqual({ mapped: 1, inserted: 1 });
-    expect(asked).toEqual(['484xxxxxxxxxx', ...Array.from({ length: 10 }, (_, d) => `484${d}xxxxxxxxx`)]);
+  it('asks OFF for products sold in Moldova with Romanian data', async () => {
+    stubFetch([off]);
+    await importOff(async () => {});
+    const q = new URL(calls[0]!.url).searchParams;
+    expect([q.get('countries_tags'), q.get('languages_tags'), q.get('codes_tags')]).toEqual(['en:moldova', 'en:romanian', null]);
   });
 
-  it('keeps importing other prefixes when OFF stays down for one, then reports it', async () => {
+  it('reports what it saved when OFF stays down, so a re-run can resume', async () => {
+    let n = 0;
     vi.stubGlobal('fetch', async (url: string) => {
       if (!url.includes('openfoodfacts')) return Response.json([{}]);
-      const tag = new URL(url).searchParams.get('codes_tags')!;
-      if (tag === '484xxxxxxxxxx') return Response.json({ count: 1726, products: [] });
-      if (tag === '4841xxxxxxxxx') return new Response('busy', { status: 503 });
-      return Response.json({ count: 1, products: tag === '4840xxxxxxxxx' ? [off] : [] });
+      return n++ === 0 ? Response.json({ count: 150, products: Array.from({ length: 100 }, () => off) })
+        : new Response('busy', { status: 503 });
     });
     await expect(importOff(async () => {})).rejects.toThrow(
-      'Open Food Facts import incomplete (1 usable, 1 new; re-run to resume): 4841xxxxxxxxx page 1: HTTP 503');
+      'Open Food Facts import incomplete (100 usable, 1 new; re-run to resume): page 2: HTTP 503');
   });
 
   it('retries OFF when it is busy', async () => {
