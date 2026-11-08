@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import {
   AddProductRequest,
   NUTRIENT_KEYS,
