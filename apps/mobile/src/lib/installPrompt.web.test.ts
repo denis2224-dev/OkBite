@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react-native';
-import { useInstallPrompt } from './installPrompt.web';
+import { InstallPromptProvider, useInstallPrompt } from './installPrompt.web';
 import { useInstallPrompt as useNative } from './installPrompt';
 
 let browser: EventTarget, media: EventTarget & { matches: boolean };
@@ -26,7 +26,7 @@ function offer(prompt: () => Promise<unknown> = jest.fn(async () => undefined), 
 }
 
 it('defers installation until an offer, consumes it once across rapid/repeated calls', async () => {
-  const { result } = await renderHook(useInstallPrompt);
+  const { result } = await renderHook(useInstallPrompt, { wrapper: InstallPromptProvider });
   expect(result.current.canInstall).toBe(false);
   let finish!: () => void;
   const prompt = jest.fn(() => new Promise<void>(resolve => { finish = resolve; }));
@@ -45,7 +45,7 @@ it('defers installation until an offer, consumes it once across rapid/repeated c
   expect(await result.current.install()).toBe(false); expect(prompt).toHaveBeenCalledTimes(1);
 });
 it('handles rejected prompts and keeps a newer offer after an older promise settles', async () => {
-  const { result } = await renderHook(useInstallPrompt);
+  const { result } = await renderHook(useInstallPrompt, { wrapper: InstallPromptProvider });
   let reject!: (error: Error) => void;
   await act(() => { offer(() => new Promise((_resolve, fail) => { reject = fail; })); });
   let pending!: Promise<boolean>;
@@ -58,7 +58,7 @@ it('handles rejected prompts and keeps a newer offer after an older promise sett
 });
 it('clears stale offers on standalone change and installation, then removes browser listeners', async () => {
   const remove = jest.spyOn(browser, 'removeEventListener'), removeMedia = jest.spyOn(media, 'removeEventListener');
-  const { result, unmount } = await renderHook(useInstallPrompt);
+  const { result, unmount } = await renderHook(useInstallPrompt, { wrapper: InstallPromptProvider });
   await act(() => { offer(); media.matches = true; media.dispatchEvent(new Event('change')); });
   expect(result.current.isStandalone).toBe(true); expect(result.current.canInstall).toBe(false);
   expect(await result.current.install()).toBe(false);
@@ -73,25 +73,25 @@ it('clears stale offers on standalone change and installation, then removes brow
 it.each([['iPhone', 1, true], ['iPad', 5, true], ['MacIntel', 5, true], ['MacIntel', 0, false]])(
   'identifies %s with %i touch points', async (platform, maxTouchPoints, expected) => {
     Object.assign(navigatorValue, { platform, maxTouchPoints });
-    const { result } = await renderHook(useInstallPrompt);
+    const { result } = await renderHook(useInstallPrompt, { wrapper: InstallPromptProvider });
     expect(result.current.isIos).toBe(expected);
   },
 );
 it('recognizes legacy iOS standalone mode and safe unsupported browser/native defaults', async () => {
   navigatorValue.standalone = true;
   Object.assign(window, { matchMedia: undefined });
-  const { result, unmount } = await renderHook(useInstallPrompt);
+  const { result, unmount } = await renderHook(useInstallPrompt, { wrapper: InstallPromptProvider });
   expect(result.current.isStandalone).toBe(true); expect(await result.current.install()).toBe(false);
   await unmount();
   Reflect.deleteProperty(globalThis, 'window'); Reflect.deleteProperty(globalThis, 'navigator');
-  const unsupported = await renderHook(useInstallPrompt), native = await renderHook(useNative);
+  const unsupported = await renderHook(useInstallPrompt, { wrapper: InstallPromptProvider }), native = await renderHook(useNative);
   for (const hook of [unsupported, native]) {
     expect(hook.result.current).toMatchObject({ canInstall: false, isIos: false, isStandalone: false });
     expect(await hook.result.current.install()).toBe(false);
   }
 });
 it('does not revive installation when an outstanding browser choice settles after appinstalled', async () => {
-  const { result } = await renderHook(useInstallPrompt);
+  const { result } = await renderHook(useInstallPrompt, { wrapper: InstallPromptProvider });
   let finish!: (value: { outcome: string }) => void;
   await act(() => {
     browser.dispatchEvent(Object.assign(new Event('beforeinstallprompt', { cancelable: true }), {

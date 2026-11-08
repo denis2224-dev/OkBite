@@ -1,3 +1,5 @@
+import type { PropsWithChildren } from 'react';
+export function InstallPromptProvider({ children }: PropsWithChildren) { return children; }
 export function useInstallPrompt() {
   return { canInstall: false, isIos: false, isStandalone: false, install: async () => false };
 }

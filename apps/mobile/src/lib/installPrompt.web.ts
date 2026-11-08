@@ -1,10 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { createContext, createElement, useContext, useCallback, useEffect, useRef, useState, type PropsWithChildren } from 'react';
 
 type InstallEvent = Event & {
   prompt(): Promise<unknown>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 };
-export function useInstallPrompt() {
+const InstallContext = createContext<ReturnType<typeof useBrowserInstallPrompt>>({ canInstall: false, isIos: false, isStandalone: false, install: async () => false });
+export function InstallPromptProvider({ children }: PropsWithChildren) {
+  return createElement(InstallContext.Provider, { value: useBrowserInstallPrompt() }, children);
+}
+export function useInstallPrompt() { return useContext(InstallContext); }
+function useBrowserInstallPrompt() {
   const [canInstall, setCanInstall] = useState(false);
   const [isIos] = useState(() => typeof navigator !== 'undefined' && (['iPhone', 'iPad', 'iPod'].includes(navigator.platform) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)));
   const [isStandalone, setStandalone] = useState(false);
