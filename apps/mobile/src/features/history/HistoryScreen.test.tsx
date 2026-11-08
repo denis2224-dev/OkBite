@@ -19,6 +19,7 @@ jest.mock('expo-router', () => ({
 }));
 jest.mock('./store', () => ({ listHistory: jest.fn(), clearHistory: jest.fn() }));
 jest.mock('../offline/queue', () => ({ subscribeQueue: () => jest.fn() }));
+jest.mock('../../lib/storagePersistence', () => ({ showStorageWarning: true }));
 const entry: HistoryEntry = { ...foundYogurt, savedAt: '2026-11-05T09:00:00.000Z' };
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -30,6 +31,7 @@ async function refocus() {
 }
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.requireMock('../../lib/storagePersistence').showStorageWarning = true;
   jest.mocked(listHistory).mockResolvedValue([entry]);
   jest.mocked(clearHistory).mockResolvedValue();
 });
@@ -58,6 +60,17 @@ it('opens a clear confirmation dialog even with a long history', async () => {
   await fireEvent.press(within(dialog).getByRole('button', { name: ro.app.cancel }));
   expect(screen.queryByLabelText(ro.history.clearTitle)).toBeNull();
   expect(clearHistory).not.toHaveBeenCalled();
+});
+it('explains browser storage retention in History', async () => {
+  await render(<HistoryScreen />);
+  expect(screen.getByText(ro.pwa.storageWarning)).toBeTruthy();
+});
+it('omits the browser warning and persistence request on native', async () => {
+  const native = jest.requireActual<typeof import('../../lib/storagePersistence')>('../../lib/storagePersistence');
+  jest.requireMock('../../lib/storagePersistence').showStorageWarning = native.showStorageWarning;
+  await native.requestPersistentStorage();
+  await render(<HistoryScreen />);
+  expect(screen.queryByText(ro.pwa.storageWarning)).toBeNull();
 });
 it('shows loading before an empty saved history', async () => {
   const pending = deferred<HistoryEntry[]>();
