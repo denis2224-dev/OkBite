@@ -58,5 +58,28 @@ export const ro = {
    { title: 'Referințe și porții', body: 'Procentele pe porție folosesc referințe pentru un adult: 2 000 kcal, 90 g zaharuri, 20 g grăsimi saturate și 6 g sare. Nevoile tale pot fi diferite; acestea nu sunt recomandări personalizate.' },
   ],
  },
+ pwa: {
+  install: {
+   title: 'Instalează OkBite',
+   description: 'Adaugă aplicația pe ecranul principal pentru acces mai ușor.',
+   iosHint: 'Apăsă Partajează, apoi Adaugă pe ecranul principal.',
+   failed: 'Instalarea nu a pornit. Poți reîncerca din meniul browserului.',
+  },
+  update: { title: 'Versiune nouă disponibilă', apply: 'Actualizează' },
+  camera: {
+   iosDenied: 'Pe iPhone, permite accesul din Setări > Safari > Cameră, apoi reîncearcă.',
+   androidDenied: 'În Chrome, apasă lacătul de lângă adresă > Permisiuni > Cameră, apoi reîncearcă.',
+   httpsRequired: 'Camera funcționează doar pe o conexiune securizată HTTPS.',
+   unavailable: 'Nu am găsit o cameră disponibilă. Alege o fotografie sau introdu codul manual.',
+   busy: 'Camera este folosită de altă aplicație. Închide-o și reîncearcă.',
+  },
+  scannerUnavailable: 'Scanarea nu este disponibilă în acest browser. Introdu codul manual.',
+  storageWarning: 'Browserul poate șterge datele locale. Istoricul se păstrează doar pe acest dispozitiv; poți pierde datele dacă ștergi datele site-ului.',
+  analysis: {
+   title: 'Rezultatul nu este încă confirmat',
+   unknown: 'Cererea a durat prea mult. Procesarea pe server poate continua; rezultatul nu este confirmat.',
+   retry: 'O nouă încercare poate porni o nouă procesare. Reîncearcă doar când ești pregătit.',
+  },
+ },
 } as const;
 export type Copy = typeof ro;
