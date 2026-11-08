@@ -1,4 +1,4 @@
-// Supabase CLI 2.65.5's local Kong cors plugin replaces Edge Function CORS.
+// The local Kong CORS plugin replaces Edge Function CORS.
 // Let the handler answer preflights and response headers on this C3 stack only.
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -16,7 +16,8 @@ const service = original.slice(start, end);
 const updated = service.replace('\n      - name: cors\n', '\n');
 if (updated !== service) {
   const patched = original.slice(0, start) + updated + original.slice(end);
-  execFileSync('docker', ['exec', '-i', container, 'sh', '-c', 'cat > /home/kong/kong.yml'], {
+  // The runtime user cannot rewrite the generated config.
+  execFileSync('docker', ['exec', '--user', '0', '-i', container, 'sh', '-c', 'cat > /home/kong/kong.yml'], {
     input: patched,
   });
   command('exec', container, 'kong', 'reload');

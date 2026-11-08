@@ -149,7 +149,7 @@ The repository owner must configure protection/rules for `main`:
 
 ## Database and Edge verification in CI
 
-When migrations exist, `ci` starts a disposable Supabase 2.65.5 stack on the
+When migrations exist, `ci` starts a disposable Supabase 2.122.1 stack on the
 fresh GitHub runner, runs pgTAP and strict database lint, and stops only that
 runner's stack. It never links to a hosted project or resets a developer database.
 Edge unit tests run without service credentials. `*.integration.test.ts` files
