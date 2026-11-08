@@ -26,7 +26,7 @@ export default function ScanScreenWeb() {
       {liveStatus === 'starting' || liveStatus === 'live' ? (
         <View style={styles.preview}>
           <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          {liveStatus === 'live' ? <Text style={styles.frameHint}>{ro.scan.frameHint}</Text> : <ActivityIndicator style={StyleSheet.absoluteFill} color="#fff" />}
+          {liveStatus === 'live' ? <Text style={styles.frameHint}>{ro.scan.frameHint}</Text> : <ActivityIndicator style={StyleSheet.absoluteFill} color={colors.cameraInk} />}
         </View>
       ) : (
         <StatusPanel
@@ -56,7 +56,7 @@ export default function ScanScreenWeb() {
 const createStyles = (colors: Palette) => StyleSheet.create({
   content: { flexGrow: 1, padding: 16, gap: 16, backgroundColor: colors.ground },
   title: { fontSize: 22, fontWeight: '700' },
-  preview: { height: 280, borderRadius: 16, overflow: 'hidden', backgroundColor: '#000', justifyContent: 'center' },
-  frameHint: { position: 'absolute', bottom: 12, left: 12, right: 12, color: '#fff', textAlign: 'center' },
+  preview: { height: 280, borderRadius: 16, overflow: 'hidden', backgroundColor: colors.cameraBackground, justifyContent: 'center' },
+  frameHint: { position: 'absolute', bottom: 12, left: 12, right: 12, color: colors.cameraInk, textAlign: 'center' },
   status: { flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },
 });
