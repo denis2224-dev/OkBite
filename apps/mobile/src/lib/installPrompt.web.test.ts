@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { InstallPromptProvider, useInstallPrompt } from './installPrompt.web';
-import { useInstallPrompt as useNative } from './installPrompt';
+const { useInstallPrompt: useNative } = jest.requireActual<typeof import('./installPrompt')>('./installPrompt');
 
 let browser: EventTarget, media: EventTarget & { matches: boolean };
 const navigatorValue = { platform: 'Linux', maxTouchPoints: 0, standalone: false };
