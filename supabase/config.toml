@@ -20,25 +20,32 @@ enabled = false
 
 [functions.lookup]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.add-product]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.report]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.identify]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.read-label]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 [functions.client-error]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 # Auth and moderator membership are checked by the handler via Auth.getUser.
 [functions.moderate]
 verify_jwt = false
+import_map = "./functions/deno.json"
 
 # Local C7 browser callback. Hosted allowlists are configured separately.
 [auth]
