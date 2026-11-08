@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { importOff, mapOffProduct, toRow, type OffProduct } from './import-off';
+import { importOff as runImportOff, mapOffProduct, toRow, type OffProduct } from './import-off';
 import { loadData } from './load-data';
+const importOff = (pause?: (ms: number) => Promise<void>) => runImportOff(pause, null);
 
 const off: OffProduct = {
   code: '4840001000014',
@@ -112,7 +113,9 @@ describe('importOff and loadData against stubbed services', () => {
     traces_tags: ['en:nuts'],
   };
   const answer = (content: string, finish_reason = 'stop') =>
-    Response.json({ choices: [{ finish_reason, message: { content } }] });
+    Response.json({
+      choices: [{ finish_reason, message: { content: JSON.stringify(content.split(', ')) } }],
+    });
 
   // OFF returns the given products for the Romanian query only; the fake database keeps codes it has seen,
   // echoes only new rows like ignore-duplicates, and answers code lookups; the AI answers with `ai`.
@@ -201,7 +204,8 @@ describe('importOff and loadData against stubbed services', () => {
     expect(new Headers(req.init?.headers).get('authorization')).toBe('Bearer thk_live_test');
     const body = JSON.parse(String(req.init?.body));
     expect(body.model).toBe('deepseek-v4.1-flash:free');
-    expect(JSON.stringify(body.messages)).toContain('молоко, сахар');
+    expect(JSON.stringify(body.messages)).toContain('молоко');
+    expect(JSON.stringify(body.messages)).toContain('сахар');
     expect(JSON.parse(String(inserts()[0]!.init?.body))[0]).toMatchObject({
       code: '4840001000021',
       ingredients_text: 'lapte, zahăr',
@@ -287,7 +291,7 @@ describe('importOff and loadData against stubbed services', () => {
       if (page > 10) return new Response(null, { status: 401 });
       return Response.json({ count: 1000, products: Array.from({ length: 100 }, () => off) });
     });
-    expect(await importOff(noPause)).toMatchObject({ mapped: 1000, inserted: 0 });
+    expect(await importOff(noPause)).toMatchObject({ mapped: 1, inserted: 0 });
     expect(pages).toEqual(Array.from({ length: 10 }, (_, page) => page + 1));
   });
 
@@ -300,7 +304,7 @@ describe('importOff and loadData against stubbed services', () => {
         : new Response('busy', { status: 503 });
     });
     await expect(importOff(noPause)).rejects.toThrow(
-      'Open Food Facts import incomplete (100 usable, 1 new, 0 translated; re-run to resume): en:romanian page 2: HTTP 503',
+      'Open Food Facts import incomplete (1 usable, 1 new, 0 translated; re-run to resume): en:romanian page 2: HTTP 503',
     );
   });
 
