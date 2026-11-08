@@ -71,13 +71,13 @@ jobs:
       - name: Verify isolated local database
         if: hashFiles('supabase/migrations/*.sql') != ''
         run: |
-          npx --yes supabase@2.65.5 start
-          npx --yes supabase@2.65.5 test db --local
-          npx --yes supabase@2.65.5 db lint --local --schema public --fail-on warning
+          npx --yes supabase@2.122.1 start
+          npx --yes supabase@2.122.1 test db --local
+          npx --yes supabase@2.122.1 db lint --local --schema public --fail-on warning
       - name: Test Edge Functions against local services
         if: hashFiles('supabase/functions/**/*.integration.test.ts') != ''
         run: |
-          npx --yes supabase@2.65.5 status -o env > "$RUNNER_TEMP/supabase.env"
+          npx --yes supabase@2.122.1 status -o env > "$RUNNER_TEMP/supabase.env"
           set -a
           source "$RUNNER_TEMP/supabase.env"
           set +a
@@ -89,7 +89,7 @@ jobs:
             node supabase/tests/local-cors.mjs
           fi
           if [ -f supabase/functions/lookup/index.ts ]; then
-            npx --yes supabase@2.65.5 functions serve > "$RUNNER_TEMP/edge-functions.log" 2>&1 &
+            npx --yes supabase@2.122.1 functions serve > "$RUNNER_TEMP/edge-functions.log" 2>&1 &
             ready=false
             for attempt in {1..60}; do
               status=$(curl --silent --output /dev/null --write-out '%{http_code}' "$API_URL/functions/v1/lookup" || true)
@@ -101,4 +101,4 @@ jobs:
           deno test --config supabase/functions/deno.json --allow-all --ignore=supabase/functions/_shared supabase/functions/
       - name: Stop isolated local services
         if: always() && hashFiles('supabase/migrations/*.sql') != ''
-        run: npx --yes supabase@2.65.5 stop --no-backup
+        run: npx --yes supabase@2.122.1 stop --no-backup

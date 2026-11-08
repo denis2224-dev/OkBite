@@ -81,7 +81,7 @@ reconciliation tests, use the separate `okbite-r2-review` configuration, API 584
 DB 58432, and run the copied scripts from that configuration directory. Existing
 C2/C3/C6 services are never reset. Maintenance scripts accept only the explicit
 local IDs in `supabase/local-project.mjs`; arbitrary project IDs are refused. Current audit versions: Node 22.23.4, pnpm 11.25.0, Deno 2.9.6,
-Supabase CLI 2.65.5 and local PostgreSQL 15.
+Supabase CLI 2.122.1 and local PostgreSQL 15.
 
 ```sh
 pnpm install --frozen-lockfile
