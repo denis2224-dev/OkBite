@@ -37,7 +37,7 @@ for (const [project, newline] of [['okbite-c3-cd37', '\n'], ['okbite-c3-cd37', '
     assert.equal(error, undefined);
     assert.equal(calls.length, 3);
     assert.equal(calls[0].args[1], `supabase_kong_${project}`);
-    assert.equal(calls[1].args[2], `supabase_kong_${project}`);
+    assert.deepEqual(calls[1].args, ['exec', '--user', '0', '-i', `supabase_kong_${project}`, 'sh', '-c', 'cat > /home/kong/kong.yml']);
     const patched = calls[1].input;
     assert.equal(patched.split('  - name: storage-v1')[0].includes('- name: cors'), false);
     assert.equal(patched.split('  - name: storage-v1')[1].includes('- name: cors'), true);

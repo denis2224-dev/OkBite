@@ -4,6 +4,8 @@ The checked-in team project is `okbite` (API 54321, DB 54322, shadow 54320,
 Studio 54323, inbox 54324). C1/#4 and D3/A2/B1 are merged; The original R2 stack is merged; this follow-up corrects local defaults.
 Review remains waived by the user; no AI review or human approval is claimed.
 
+For the current checkout, use Supabase CLI 2.122.1 with `npx --yes supabase@2.122.1`.
+
 For parallel tests, copy `supabase/` into a separate temporary project directory,
 set an explicit isolated project ID and free ports there, and pass its directory
 with `supabase --workdir <directory>`. Never overwrite the checked-in defaults or
@@ -27,16 +29,16 @@ No merge, deployment, remote reset or cloud configuration was performed.
 
 ## Reproduce locally
 
-Prerequisites used: Docker Desktop Engine 29.7.2, Supabase CLI 2.122.1,
+Prerequisites used: Docker Desktop Engine 29.7.2, Supabase CLI 2.65.5,
 PostgreSQL 15, Node 22.23.4 and pnpm 9.12.0. CLI obtained with
-`npx supabase@2.122.1`; Node/pnpm and graphify SQL parser were installed in temporary tools directories.
+`npx supabase@2.65.5`; Node/pnpm and graphify SQL parser were installed in temporary tools directories.
 The Superpowers execution skill was unavailable; the R2 execution companion's fallback workflow was followed.
 
 ```sh
-npx supabase@2.122.1 start
-npx supabase@2.122.1 db reset --local
-npx supabase@2.122.1 test db --local
-npx supabase@2.122.1 db lint --local --schema public --fail-on warning
+npx supabase@2.65.5 start
+npx supabase@2.65.5 db reset --local
+npx supabase@2.65.5 test db --local
+npx supabase@2.65.5 db lint --local --schema public --fail-on warning
 pnpm lint && pnpm typecheck && pnpm test
 ```
 
@@ -90,7 +92,7 @@ C6 still requires the real C4 engine and D3 allergen matcher.
 
 ### C3 reproduction and evidence (2026-11-04)
 
-Use Node 22.23.4/pnpm 9.12.0, Deno 2.9.6, Supabase CLI 2.122.1 and Docker.
+Use Node 22.23.4/pnpm 9.12.0, Deno 2.9.6, Supabase CLI 2.65.5 and Docker.
 The planned SDK alias `npm:@supabase/supabase-js@2` resolved to 2.118.0;
 JPEG decoding uses pinned `jpeg-js@0.4.4`. Root `deno.json` bridges the function
 import map and avoids Deno treating pnpm's node_modules as its npm installation.
@@ -100,17 +102,17 @@ SDK/configuration references: [Supabase dependencies](https://supabase.com/docs/
 ```sh
 pnpm install --frozen-lockfile
 pnpm sync-shared
-npx supabase@2.122.1 start
+npx supabase@2.65.5 start
 # In a second terminal (leave running):
-npx supabase@2.122.1 functions serve lookup
+npx supabase@2.65.5 functions serve lookup
 # Back in this terminal, after start/serve:
 node supabase/tests/local-cors.mjs
 # Supply local-only SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
 # in ignored supabase/.env.c3-tests (values from supabase status -o env).
 deno check supabase/functions/_shared/index.ts supabase/functions/_lib/*.ts supabase/functions/lookup/*.ts
 deno test -A --env-file=supabase/.env.c3-tests supabase/functions/_lib/ supabase/functions/lookup/
-npx supabase@2.122.1 test db --local
-npx supabase@2.122.1 db lint --local --schema public --fail-on warning
+npx supabase@2.65.5 test db --local
+npx supabase@2.65.5 db lint --local --schema public --fail-on warning
 pnpm lint && pnpm typecheck && pnpm test
 ```
 
