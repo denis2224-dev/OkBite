@@ -14,7 +14,7 @@ it('words R5 errors the same as the API client', () => {
  expect(ro.errors.invalidResponse).toBe(ro.errors.invalid_response);
 });
 it('exposes the agreed sections and score disclaimer', () => {
- expect(Object.keys(ro)).toEqual(['app','nav','home','capture','identify','scan','result','score','ingredients','compare','add','review','history','offline','errors','share','legal']);
+ expect(Object.keys(ro)).toEqual(['app','nav','home','capture','identify','scan','result','score','ingredients','compare','add','review','history','offline','errors','share','legal','pwa']);
  expect(ro.score.disclaimer).toBe('Calculat la 100 g; nu indică riscul unei boli.');
  expect(JSON.stringify(ro)).not.toMatch(/[şţŞŢ]/);
 });
