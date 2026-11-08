@@ -87,3 +87,7 @@ checks, connected staging verification, screenshots and store review are pending
   iOS and Android. Output is local at `/private/tmp/okbite-legal-export`.
 - No browser visual check, physical-device validation, public deployment,
   store submission or legal approval is claimed by these automated checks.
+
+## Required publication facts
+
+Use [the operator fact checklist](privacy-facts-checklist.md) before approving or hosting this draft. No approval or deployment is implied.
