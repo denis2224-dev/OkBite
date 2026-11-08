@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { HistoryScreen } from './HistoryScreen';
 import { clearHistory, listHistory, type HistoryEntry } from './store';
@@ -35,6 +35,32 @@ beforeEach(() => {
   jest.mocked(listHistory).mockResolvedValue([entry]);
   jest.mocked(clearHistory).mockResolvedValue();
 });
+it.each(['verified', 'unverified'] as const)('keeps score context and %s status visible and announced', async (status) => {
+  const product = { ...entry.product, status, verifiedAt: status === 'verified' ? '2026-11-06' : null };
+  jest.mocked(listHistory).mockResolvedValue([{ ...entry, product }]);
+  await render(<HistoryScreen />);
+  await screen.findByText(product.name);
+  const verification = status === 'verified' ? `${ro.result.checked}: 06.11.2026` : ro.result.unverified;
+  expect(screen.getByText(verification)).toBeTruthy();
+  expect(screen.getByText(ro.score.disclaimer)).toBeTruthy();
+  const row = screen.getByRole('button', { name: new RegExp(ro.history.open(product.name)) });
+  expect(row.props.accessibilityLabel).toContain(product.brand);
+  expect(row.props.accessibilityLabel).toContain(ro.history.score(entry.score.score!));
+  expect(row.props.accessibilityLabel).toContain(product.source);
+  expect(row.props.accessibilityLabel).toContain(verification);
+  expect(row.props.accessibilityLabel).toContain(ro.score.disclaimer);
+});
+it('opens a clear confirmation dialog even with a long history', async () => {
+  jest.mocked(listHistory).mockResolvedValue(Array.from({ length: 30 }, (_, index) => ({ ...entry, product: { ...entry.product, id: `record-${index}`, name: `Produs ${index}` } })));
+  await render(<HistoryScreen />);
+  await screen.findByText('Produs 29');
+  await fireEvent.press(screen.getByRole('button', { name: ro.history.clear }));
+  const dialog = screen.getByLabelText(ro.history.clearTitle);
+  expect(dialog.props.accessibilityViewIsModal).toBe(true);
+  await fireEvent.press(within(dialog).getByRole('button', { name: ro.app.cancel }));
+  expect(screen.queryByLabelText(ro.history.clearTitle)).toBeNull();
+  expect(clearHistory).not.toHaveBeenCalled();
+});
 it('explains browser storage retention in History', async () => {
   await render(<HistoryScreen />);
   expect(screen.getByText(ro.pwa.storageWarning)).toBeTruthy();
@@ -51,18 +77,18 @@ it('shows loading before an empty saved history', async () => {
   jest.mocked(listHistory).mockReturnValue(pending.promise);
   await render(<HistoryScreen />);
   expect(screen.getByText(ro.app.loading)).toBeTruthy();
-  expect(screen.queryByText(ro.history.emptyTitle)).toBeNull();
+  expect(screen.queryByText(ro.history.design.emptyTitle)).toBeNull();
   await act(() => pending.resolve([]));
-  expect(screen.getByText(ro.history.emptyTitle)).toBeTruthy();
+  expect(screen.getByText(ro.history.design.emptyTitle)).toBeTruthy();
 });
 it('retries storage failures and opens the saved record through the cached route', async () => {
   jest.mocked(listHistory).mockRejectedValueOnce(new Error('disk')).mockResolvedValueOnce([entry]);
   await render(<HistoryScreen />);
   await waitFor(() => expect(screen.getByText(ro.history.loadError)).toBeTruthy());
-  expect(screen.queryByText(ro.history.emptyTitle)).toBeNull();
+  expect(screen.queryByText(ro.history.design.emptyTitle)).toBeNull();
   await fireEvent.press(screen.getByRole('button', { name: ro.app.retry }));
   await waitFor(() => expect(screen.getByText(entry.product.name)).toBeTruthy());
-  await fireEvent.press(screen.getByRole('button', { name: ro.history.open(entry.product.name) }));
+  await fireEvent.press(screen.getByRole('button', { name: new RegExp(ro.history.open(entry.product.name)) }));
   expect(router.push).toHaveBeenCalledWith({ pathname: '/product/[id]', params: { id: entry.product.id, cached: '1' } });
 });
 it('shows source dates and an unavailable score without inventing zero', async () => {
@@ -86,7 +112,7 @@ it('keeps the list when deletion is canceled or fails, and clears only on confir
   await waitFor(() => expect(screen.getByText(ro.history.clearError)).toBeTruthy());
   expect(screen.getByText(entry.product.name)).toBeTruthy();
   await fireEvent.press(screen.getByRole('button', { name: ro.history.clearConfirm }));
-  await waitFor(() => expect(screen.getByText(ro.history.emptyTitle)).toBeTruthy());
+  await waitFor(() => expect(screen.getByText(ro.history.design.emptyTitle)).toBeTruthy());
   expect(screen.queryByText(entry.product.name)).toBeNull();
 });
 it('refreshes on focus and ignores older reads', async () => {
@@ -101,7 +127,7 @@ it('refreshes on focus and ignores older reads', async () => {
   await act(() => newRead.resolve([updated]));
   await act(() => oldRead.resolve([]));
   expect(screen.getByText(updated.product.name)).toBeTruthy();
-  expect(screen.queryByText(ro.history.emptyTitle)).toBeNull();
+  expect(screen.queryByText(ro.history.design.emptyTitle)).toBeNull();
 });
 it('retains saved rows when a focus refresh fails', async () => {
   await render(<HistoryScreen />);
@@ -119,7 +145,7 @@ it('does not restore deleted rows when an earlier read finishes after clear', as
   await refocus();
   await fireEvent.press(screen.getByRole('button', { name: ro.history.clear }));
   await fireEvent.press(screen.getByRole('button', { name: ro.history.clearConfirm }));
-  await waitFor(() => expect(screen.getByText(ro.history.emptyTitle)).toBeTruthy());
+  await waitFor(() => expect(screen.getByText(ro.history.design.emptyTitle)).toBeTruthy());
   await act(() => pending.resolve([entry]));
   expect(screen.queryByText(entry.product.name)).toBeNull();
 });

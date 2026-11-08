@@ -1,4 +1,5 @@
-import { Pressable } from 'react-native';
+
+import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { Body } from '../../ui';

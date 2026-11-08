@@ -1,11 +1,16 @@
+import { useTheme } from '../../theme/useTheme';
+import type { Palette } from '../../theme/tokens';
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { ro } from '../../copy/ro';
 import { ActionButton, StatusPanel, errorMessage } from '../capture/StatusPanel';
 import { useAddFlow } from './useAddFlow';
 
 export function AddCaptureScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [permission, requestPermission] = useCameraPermissions({ request: true });
   const camera = useRef<CameraView>(null);
   const [ready, setReady] = useState(false);
@@ -108,7 +113,7 @@ export function AddCaptureScreen() {
 
       {working ? (
         <View style={[StyleSheet.absoluteFill, styles.overlay]}>
-          <ActivityIndicator size="large" color="#fff" />
+          <ActivityIndicator size="large" color={colors.cameraInk} />
           <Text style={styles.overlayText}>{ro.add.reading}</Text>
         </View>
       ) : null}
@@ -141,13 +146,13 @@ export function AddCaptureScreen() {
 
 export default AddCaptureScreen;
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#000' },
-  header: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 12, gap: 4, backgroundColor: '#111' },
-  stepBadge: { color: '#C8E07A', fontSize: 13, fontWeight: '700' },
-  title: { color: '#fff', fontSize: 18, fontWeight: '800' },
-  hint: { color: '#D3E1D6', fontSize: 14 },
-  doneNote: { color: '#C8E07A', fontSize: 13, fontWeight: '600' },
+const createStyles = (colors: Palette) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.cameraBackground },
+  header: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 12, gap: 4, backgroundColor: colors.cameraPanel },
+  stepBadge: { color: colors.accent, fontSize: 13, fontWeight: '700' },
+  title: { color: colors.cameraInk, fontSize: 18, fontWeight: '800' },
+  hint: { color: colors.heroMuted, fontSize: 14 },
+  doneNote: { color: colors.accent, fontSize: 13, fontWeight: '600' },
   cameraArea: { flex: 1 },
   center: { flexGrow: 1, justifyContent: 'center', padding: 20 },
   controls: {
@@ -166,18 +171,18 @@ const styles = StyleSheet.create({
     height: 72,
     borderRadius: 36,
     borderWidth: 4,
-    borderColor: '#fff',
+    borderColor: colors.cameraInk,
     alignItems: 'center',
     justifyContent: 'center',
   },
   shutterOff: { opacity: 0.4 },
-  shutterInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: '#fff' },
+  shutterInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.cameraInk },
   overlay: {
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    backgroundColor: colors.cameraOverlayStrong,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
     gap: 12,
   },
-  overlayText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  overlayText: { color: colors.cameraInk, fontSize: 16, fontWeight: '600' },
 });
