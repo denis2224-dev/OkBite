@@ -13,7 +13,7 @@ main `1be7a24` using normal merges, with no history rewrite or main merge by thi
 - [#94](https://github.com/denis2224-dev/OkBite/pull/94): R4-W4 browser storage persistence and History retention warning.
 - [#95](https://github.com/denis2224-dev/OkBite/pull/95): P-R4-2 production-client port of existing pending-analysis preparation.
 - [#96](https://github.com/denis2224-dev/OkBite/pull/96): reuse legal/accessibility/store preparation, with production paths reconciled.
-- [#97](https://github.com/denis2224-dev/OkBite/pull/97): R4-W4 safe-area correction for the Home settings sheet.
+- [#97](https://github.com/denis2224-dev/OkBite/pull/97): R4-W4 Home settings safe-area and accessible theme-radio correction.
 
 Merge #91 before retargeting #92–#95 to main. #96 and #97 are independent main-base
 PRs. Keep #93 on hold until the R1 event bridge is available and hosted replacement
@@ -29,8 +29,12 @@ reviewed again, including the final combined merge resolutions.
 
 The separate local integration/r4-pwa-20261108 combines all new work with the
 merged UI: 76 mobile suites / 596 tests, root104, root-web9, shared231 and remaining
-script/data checks pass. Its web/iOS/Android exports pass. All eight existing
+script/data checks pass. Its web/iOS/Android exports pass. All ten committed
 browser tests pass using exact Chromium/WebKit versions and local fixtures.
+Six additional local interaction checks cover deferred install capture, iOS
+guidance, protected update routes and landscape settings. iPhone platform identity
+was explicitly emulated because desktop WebKit reports MacIntel. Browser testing
+found a missing theme-radio checked state; #97 fixes it with a RED-to-GREEN test.
 These emulated profiles are not real phone acceptance or live AI accuracy proof.
 
 ## Remaining acceptance
