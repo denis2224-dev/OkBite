@@ -81,7 +81,7 @@ export default function Home() {
       <View style={s.dock}><HomePressable label={copy.scan} onPress={() => router.push('/scan')} style={s.scan}><HomeIcon name="scan" color={t.colors.onPrimary} /><Text style={s.scanText}>{copy.scan}</Text></HomePressable></View>
     </View>
     <Modal visible={showDemo} transparent animationType="none" onRequestClose={() => setShowDemo(false)}>
-      <View style={s.modal}>
+      <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={s.modal}>
         <HomePressable label={ro.app.close} onPress={() => setShowDemo(false)} style={s.dismiss} />
         <HomeCard accessibilityViewIsModal style={s.sheet}>
           <ScrollView contentContainerStyle={s.sheetContent} keyboardShouldPersistTaps="handled">
@@ -99,7 +99,7 @@ export default function Home() {
             {(['about', 'method', 'privacy', 'terms'] as const).map(path => <HomePressable key={path} label={ro.nav[path]} onPress={() => { setShowDemo(false); router.push(`/${path}`); }} style={s.demoOption}><Text style={s.productName}>{ro.nav[path]}</Text></HomePressable>)}
           </ScrollView>
         </HomeCard>
-      </View>
+      </SafeAreaView>
     </Modal>
   </SafeAreaView>;
 }
