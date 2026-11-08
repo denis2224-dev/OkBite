@@ -16,8 +16,11 @@ Prepared on 8 November 2026 from main 212597e, branch R5-W1-zxing-fallback.
 
 - Regression tests: 30 pass across three scanner/photo files; fallback and
   startup-cancellation tests were observed failing before their implementation.
-- Full mobile suite: 531 pass. Shared package: 231 pass.
+- Full mobile suite: 533 pass, including the cache regressions. Shared package: 231 pass.
 - Root app: 104 pass; web storage: 9 pass; scripts: 31 pass.
+- Cache regressions were observed RED, then GREEN. In desktop Chrome 156,
+  generated service-worker installation requested no ZXing chunk; its first
+  request downloaded once, and reopening offline returned the same 540,000 bytes.
 - Types pass. Lint: zero errors, 57 existing warnings.
 - Desktop Chrome: real ZXing decoded a synthetic fixture from photo and live
   canvas video; tracks ended on stop. Native-detector path requested no ZXing
@@ -41,11 +44,13 @@ Same local toolchain and Expo web export, no production credentials:
 Pinned @zxing/browser 0.1.5 (22 May 2024): newer releases pull a peer requiring
 Node 24, while this repository targets Node 22. Lockfile pins its peer too.
 
+The cache adjustment was approved by Ion on 8 November. Workbox excludes the
+decoder chunk from precache and caches successful same-origin requests on demand.
+Initial precache decreased from 68 URLs / 5.86 MB to 67 URLs / 5.32 MB.
+Independent review found no actionable issues in the cache adjustment.
+
 ## Remaining acceptance
 
-- R1 cache coordination: Workbox currently precaches every JavaScript chunk.
-  Exclude zxingReader-*.js from precache and cache it on demand before claiming
-  Android never downloads the fallback. Awaiting permission to edit R1's file.
 - Test a real iPhone in Safari and installed mode, then Android Chrome and
   installed mode: live barcode, photo, invalid/no code, permission refusal,
   exit during startup, camera indicator off after exit, and offline relaunch.
