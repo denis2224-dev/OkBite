@@ -8,12 +8,12 @@ export type OffProduct = {
   nutriments?: Record<string, unknown>;
 };
 
-// Open Food Facts search API v2: products sold in Moldova (local and imported) that carry Romanian data.
-// The barcode-prefix search (codes_tags=484x...) was dropped: OFF answers it with 503 most of the time.
+// Open Food Facts search API v2; codes_tags "484xxxxxxxxxx" = EAN-13 codes with the Moldovan 484 prefix.
 const PAGE_SIZE = 100;
 const FIELDS = 'code,product_name,product_name_ro,brands,quantity,ingredients_text,ingredients_text_ro,lang,nutrition_data_per,nutriments';
-const SEARCH = `https://world.openfoodfacts.org/api/v2/search?fields=${FIELDS}&page_size=${PAGE_SIZE}` +
-  '&countries_tags=en:moldova&languages_tags=en:romanian';
+const SEARCH = `https://world.openfoodfacts.org/api/v2/search?fields=${FIELDS}&page_size=${PAGE_SIZE}`;
+// OFF answers 401 past the first 1000 results of a search, so bigger code prefixes are split into ten.
+const MAX_RESULTS = 1000;
 const USER_AGENT = 'OkBite/0.1 (product import)'; // OFF asks every client to name itself
 const PAUSE_MS = 6500; // OFF allows 10 search requests a minute
 
@@ -21,13 +21,13 @@ const amount = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v
 const text = (...values: (string | undefined)[]) => values.map((v) => v?.trim()).find((v) => v) ?? '';
 
 /**
- * Maps one OFF product to an unverified OkBite product, or null when it has no name,
+ * Maps one OFF product to an unverified OkBite product, or null when it is not Moldovan (484), has no name,
  * fails the barcode checksum, or lacks what the contract requires (a brand, ingredients text of 3+ characters).
  * Only Romanian ingredients text is taken: the allergen matcher reads Romanian, so English or Russian text would
  * show "no allergens" for a product that has them.
  */
 export function mapOffProduct(off: OffProduct): AddProductRequest | null {
-  const code = off.code ? normalizeCode(off.code.trim()) : null;
+  const code = off.code?.trim().startsWith('484') ? normalizeCode(off.code) : null;
   const name = text(off.product_name_ro, off.product_name);
   if (!code || !name) return null;
   const n = off.nutriments ?? {};
@@ -64,25 +64,42 @@ export function toRow(p: AddProductRequest) {
 export async function importOff(pause = (ms: number) => new Promise((r) => setTimeout(r, ms))) {
   let mapped = 0;
   let inserted = 0;
-  // shortcut: OFF answers 401 past 1000 results of one search (577 today); split the query if it ever grows past that.
-  for (let page = 1; ; page++) {
-    if (page > 1) await pause(PAUSE_MS);
-    const get = () => fetch(`${SEARCH}&page=${page}`, { headers: { 'user-agent': USER_AGENT } });
-    let res = await get();
-    // OFF often answers 503/429 under load; wait longer each time, then give up (a re-run resumes safely).
-    for (let tries = 1; (res.status === 503 || res.status === 429) && tries < 4; tries++) {
-      await pause(PAUSE_MS * tries);
-      res = await get();
+  const prefixes = ['484'];
+  const failed: string[] = [];
+  let first = true;
+  while (prefixes.length) {
+    const prefix = prefixes.shift()!;
+    const tag = prefix.padEnd(13, 'x');
+    for (let page = 1; ; page++) {
+      if (!first) await pause(PAUSE_MS);
+      first = false;
+      const get = () => fetch(`${SEARCH}&codes_tags=${tag}&page=${page}`, { headers: { 'user-agent': USER_AGENT } });
+      let res = await get();
+      // OFF often answers 503/429 under load; wait longer each time, then give up (a re-run resumes safely).
+      for (let tries = 1; (res.status === 503 || res.status === 429) && tries < 4; tries++) {
+        await pause(PAUSE_MS * tries);
+        res = await get();
+      }
+      if (!res.ok) {
+        // Keep importing the other prefixes; this one is reported and picked up by a re-run.
+        failed.push(`${tag} page ${page}: HTTP ${res.status}`);
+        break;
+      }
+      const { products = [], count = 0 } = (await res.json()) as { products?: OffProduct[]; count?: number };
+      if (page === 1 && count > MAX_RESULTS && prefix.length < 12) {
+        prefixes.push(...Array.from({ length: 10 }, (_, d) => `${prefix}${d}`));
+        break;
+      }
+      const rows = products.flatMap((p) => { const m = mapOffProduct(p); return m ? [toRow(m)] : []; });
+      mapped += rows.length;
+      inserted += await upsert('products', rows, 'code', true);
+      if (products.length < PAGE_SIZE || (count > 0 && page * PAGE_SIZE >= count)) break;
     }
-    if (!res.ok) {
-      throw new Error(`Open Food Facts import incomplete (${mapped} usable, ${inserted} new; re-run to resume): page ${page}: HTTP ${res.status}`);
-    }
-    const { products = [], count = 0 } = (await res.json()) as { products?: OffProduct[]; count?: number };
-    const rows = products.flatMap((p) => { const m = mapOffProduct(p); return m ? [toRow(m)] : []; });
-    mapped += rows.length;
-    inserted += await upsert('products', rows, 'code', true);
-    if (products.length < PAGE_SIZE || (count > 0 && page * PAGE_SIZE >= count)) return { mapped, inserted };
   }
+  if (failed.length) {
+    throw new Error(`Open Food Facts import incomplete (${mapped} usable, ${inserted} new; re-run to resume): ${failed.join(', ')}`);
+  }
+  return { mapped, inserted };
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
