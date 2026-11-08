@@ -9,7 +9,7 @@ let mockId: string | undefined;
 let mockPending: Promise<typeof mockEntries> | undefined;
 beforeEach(() => { mockId = undefined; mockPending = undefined; });
 jest.mock('../history/store', () => ({ listHistory: async () => mockPending ?? mockEntries }));
-jest.mock('expo-router', () => ({ useLocalSearchParams: () => ({ id: mockId }), router: { push: jest.fn() },
+jest.mock('expo-router', () => ({ useLocalSearchParams: () => ({ id: mockId }), router: { push: jest.fn(), canGoBack: () => true, back: jest.fn() },
   useFocusEffect: (effect: () => void | (() => void)) => mockUseEffect(effect, [effect]) }));
 
 async function choose(index: number) {
@@ -55,4 +55,15 @@ test('an unverified selection keeps its status visible', async () => {
   await render(<ProductPicker entries={mockEntries} selected={{ ...selected,
     product: { ...selected.product, status: 'unverified' } }} onSelect={() => {}} />);
   expect(screen.getAllByText(ro.result.unverified)).toHaveLength(2);
+});
+
+test('compatible comparison withholds a stale score for an incomplete label', async () => {
+  const original = mockEntries[0]!;
+  mockEntries[0] = { ...original, product: { ...original.product, nutrients: { ...original.product.nutrients, salt: null } } };
+  try {
+    await render(<Compare />);
+    await choose(0); await choose(1);
+    expect(screen.getByText(ro.result.scoreUnavailable)).toBeTruthy();
+    expect(screen.getByText(ro.result.missing)).toBeTruthy();
+  } finally { mockEntries[0] = original; }
 });
