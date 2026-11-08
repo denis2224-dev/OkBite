@@ -12,6 +12,7 @@ import { roDate } from '../product/SourceCard';
 import { displayScore } from '../product/displayScore';
 import { clearHistory, listHistory, type HistoryEntry } from './store';
 import { subscribeQueue } from '../offline/queue';
+import { showStorageWarning } from '../../lib/storagePersistence';
 
 const copy = ro.history.design;
 export function HistoryScreen() {
@@ -72,6 +73,7 @@ export function HistoryScreen() {
       <TabPageHeader title={copy.title} subtitle={copy.note} action={entries.length > 0 ? <HomePressable label={ro.history.clear} disabled={clearing} onPress={() => setConfirming(true)} style={styles.clear}><HomeIcon name="trash" size={18} color={t.colors.low}/><Text style={styles.clearText}>{ro.history.clear}</Text></HomePressable> : undefined}/>
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        {showStorageWarning ? <Card><Body>{ro.pwa.storageWarning}</Body></Card> : null}
         {loading && <Body accessibilityLiveRegion="polite">{ro.app.loading}</Body>}
         {error && !confirming && <Card><Body accessibilityRole="alert">{error === 'load' ? ro.history.loadError : ro.history.clearError}</Body>{error === 'load' && <Button variant="secondary" onPress={() => void load()}>{ro.app.retry}</Button>}</Card>}
         {!loading && !error && entries.length === 0 && <View style={styles.empty}>

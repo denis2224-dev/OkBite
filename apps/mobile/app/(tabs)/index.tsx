@@ -1,3 +1,4 @@
+import { InstallPrompt } from '../../src/ui/InstallPrompt';
 import { spacing } from '../../src/theme/tokens';
 import { useCallback, useMemo, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -55,6 +56,7 @@ export default function Home() {
           <Text accessibilityRole="header" style={s.title}>{ro.home.title}</Text>
           <Text style={s.heroDescription}>{copy.description}</Text>
         </View>
+        <InstallPrompt/>
         <View style={s.actions}>
           <HomePressable label={copy.photo} onPress={() => router.push('/capture')} style={s.action}><View style={s.actionIcon}><HomeIcon name="camera" size={22} /></View><View style={s.actionCopy}><Text style={s.actionTitle}>{copy.photo}</Text><Text style={s.caption}>{copy.photoHint}</Text></View></HomePressable>
           <HomePressable label={ro.home.compare} onPress={() => router.navigate('/compare')} style={s.action}><View style={s.actionIcon}><HomeIcon name="bars" size={22} /></View><View style={s.actionCopy}><Text style={s.actionTitle}>{ro.home.compare}</Text><Text style={s.caption}>{copy.compareHint}</Text></View></HomePressable>
