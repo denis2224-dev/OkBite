@@ -7,6 +7,7 @@ import { displayScore } from '../product/displayScore';
 import { roDate } from '../product/SourceCard';
 import { clearHistory, listHistory, type HistoryEntry } from './store';
 import { subscribeQueue } from '../offline/queue';
+import { showStorageWarning } from '../../lib/storagePersistence';
 
 export function HistoryScreen() {
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
@@ -62,6 +63,7 @@ export function HistoryScreen() {
   return (
     <Screen title={ro.history.title}>
       <Body>{ro.history.description}</Body>
+      {showStorageWarning ? <Card><Body>{ro.pwa.storageWarning}</Body></Card> : null}
       <Button variant="secondary" onPress={() => router.push('/offline')}>{ro.offline.queueTitle}</Button>
       {loading ? <Body accessibilityLiveRegion="polite">{ro.app.loading}</Body> : null}
       {error ? <Card>
