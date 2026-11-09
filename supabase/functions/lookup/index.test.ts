@@ -11,6 +11,43 @@ const req = (query = '?code=4840001000014', device: string | null = id, method =
       ...(device === null ? {} : { 'x-device-id': device }),
     },
   });
+Deno.test('lookup rejects invalid barcode check digits before database or telemetry I/O', async () => {
+  let calls = 0;
+  const handler = createHandler({
+    loadProduct: async () => {
+      calls++;
+      return null;
+    },
+    logEvent: async () => {
+      calls++;
+    },
+  });
+  for (const code of ['4840001000017', '96385075', '4840001009995']) {
+    const response = await handler(req(`?code=${code}`));
+    assert.equal(response.status, 400);
+    assert.equal(ErrorBody.parse(await response.json()).error, 'bad_request');
+    assert.equal(response.headers.get('access-control-allow-origin'), 'https://okbite.md');
+  }
+  assert.equal(calls, 0);
+});
+
+Deno.test('lookup accepts checksum-valid EAN-8 and EAN-13 codes without changing selectors', async () => {
+  const selectors: unknown[] = [];
+  const handler = createHandler({
+    loadProduct: async (by) => {
+      selectors.push(by);
+      return null;
+    },
+    logEvent: async () => {},
+  });
+  for (const code of ['96385074', '4840001000014']) {
+    const response = await handler(req(`?code=${code}`));
+    assert.equal(response.status, 200);
+    assert.deepEqual(LookupResponse.parse(await response.json()), { status: 'not_found' });
+  }
+  assert.deepEqual(selectors, [{ code: '96385074' }, { code: '4840001000014' }]);
+});
+
 Deno.test('lookup rejects malformed, conflicting, duplicate and missing selectors before I/O', async () => {
   let calls = 0;
   const handler = createHandler({
@@ -69,19 +106,27 @@ Deno.test('lookup validates responses and safely wraps product loading failures'
 
 Deno.test('optional analytics failures preserve found and not_found lookup responses', async () => {
   // Reuse the existing prototype fixture, not a new nutrition/source contract.
-  const records = JSON.parse(await Deno.readTextFile(
-    new URL('../../../apps/mobile/src/test/preview-data.json', import.meta.url),
-  ));
+  const records = JSON.parse(
+    await Deno.readTextFile(
+      new URL('../../../apps/mobile/src/test/preview-data.json', import.meta.url),
+    ),
+  );
   const found = LookupResponse.parse({ status: 'found', ...records[0] });
   if (found.status !== 'found') throw new Error('Expected found fixture');
   for (const result of [null, { product: found.product, score: found.score }]) {
     let logged = 0;
     const res = await createHandler({
       loadProduct: async () => result,
-      logEvent: async () => { logged++; throw new Error('analytics unavailable'); },
+      logEvent: async () => {
+        logged++;
+        throw new Error('analytics unavailable');
+      },
     })(req());
     assert.equal(res.status, 200);
-    assert.deepEqual(LookupResponse.parse(await res.json()), result ? found : { status: 'not_found' });
+    assert.deepEqual(
+      LookupResponse.parse(await res.json()),
+      result ? found : { status: 'not_found' },
+    );
     assert.equal(logged, 1);
     assert.equal(res.headers.get('access-control-allow-origin'), 'https://okbite.md');
   }
@@ -90,11 +135,15 @@ Deno.test('optional analytics failures preserve found and not_found lookup respo
 Deno.test('lookup telemetry diagnostics exclude exception details and device identifiers', async () => {
   const messages: unknown[][] = [];
   const original = console.warn;
-  console.warn = (...args: unknown[]) => { messages.push(args); };
+  console.warn = (...args: unknown[]) => {
+    messages.push(args);
+  };
   try {
     const response = await createHandler({
       loadProduct: async () => null,
-      logEvent: async () => { throw new Error(`private credential ${id}`); },
+      logEvent: async () => {
+        throw new Error(`private credential ${id}`);
+      },
     })(req());
     assert.equal(response.status, 200);
     assert.equal(messages.length, 1);
