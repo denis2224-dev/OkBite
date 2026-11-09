@@ -1,6 +1,6 @@
 # D7/C8 operations — 9 November 2026
 
-Source implementation: `6e8e572b0cee3b834ad2fd33579ff03c0f1d6149`, based on
+Source implementation: `98af897b62542b8c3c4bed2a983cf4fb8c0a4513`, based on
 `9704b38` (C2 guards and C3 lookup). Work was confined to
 `okbite-c8-operations`, branch `C8-operations-followup`.
 
@@ -69,7 +69,7 @@ Executed checks:
 - `pnpm check`: lint (zero errors, 57 existing warnings), all typechecks, repository
   tests and data validation passed. No application/root/CI files changed.
 - Shared generation was byte-for-byte unchanged. Deno type checking passed.
-- 49 Edge unit tests; six diagnostics handler tests; five network-denied staging
+- 50 Edge unit tests; seven diagnostics handler tests; five network-denied staging
   probe guard tests; twelve Node backup/restore/local-target guard tests passed.
 - Five live diagnostics/HTTP/storage tests passed. They exercise quota concurrency,
   rollover, gateway redaction, strict CORS and private/public storage access.
@@ -89,13 +89,15 @@ Executed checks:
 
 A receipt run overlapped mutating integration fixtures and correctly refused with
 `Source changed during backup`. It was rerun successfully after all writers ended.
-Temporary recovery databases were dropped by `finally`; archives are local private
-artifacts, not a durable off-site backup or an approved retention destination.
+Temporary recovery databases were dropped by `finally`. After the last tests,
+only this task's exact project was stopped with `--no-backup`; its containers and
+volumes were verified absent. Private archives/logs remain outside Git; they are
+not a durable off-site backup or an approved retention destination.
 
 Restricted logs/artifacts: `/private/tmp/okbite-c8-{check-final,live,db,dblint,advisors,values,ops-all,probes}.log`,
 `/private/tmp/okbite-c8-restore-final/report.json`,
 `/private/tmp/okbite-c8-photo-evidence/photo-report.json`, and
-`/private/tmp/okbite-c8-bundle.json`. They are machine-local and not committed.
+`/private/tmp/okbite-c8-bundle-reviewed.json`. They are machine-local and not committed.
 
 ## Hosted inventory and limitations
 
@@ -130,7 +132,7 @@ orphan reconciliation; do not delete photos referenced by live products.
 Two independent `git archive --format=tar` runs at the source SHA above, for
 `supabase/functions supabase/migrations supabase/config.toml`, produced identical
 266240-byte archives with SHA-256
-`cdf36f1f0b80b366ef75fe44432d0aef87356dd992bd1a7ed0f373d27f861482`.
+`fb3484f6eea51ec05564af14c1af28fa17bd654d00deef95fbcfbca85d3de75b`.
 No seed, environment files or link metadata was included. SDK imports are pinned;
 generated code matches source. This proves reproducible checked-in deployment
 inputs, not reproducible hosted ESZIP/transitive dependency resolution: the Deno
@@ -141,3 +143,20 @@ inventory in the final approved deployment record; no hosted build was performed
 other tracks merge.** This branch's synthetic local proof cannot release the app.
 The exact pending deployment, rollback and account decisions are in
 [the operations checklist](../docs/ops/c8-release-checklist-2026-11-09.md).
+
+## Independent technical review
+
+A fresh Codex reviewer inspected `9704b38..56a474a` read-only and independently
+reproduced the original archive checksum. It found one Important privacy defect:
+quoted credential keys/multiword values survived redaction. A new handler test
+failed before the fix and all seven handler tests passed afterward; JSON escapes
+and single/double quotes are covered. Commit `98af897` fixes the finding. The
+complete `pnpm check` and 50-test Edge suite passed again after that change.
+The reviewer did not provide Claude or human approval. Hosted runtime/build,
+complete anonymization/retention, integrated recovery and real shopper photo
+associations remain the explicit gates above, rather than implicit acceptance.
+
+The first post-review gateway repeat returned 503 after the task's own Edge
+runtime had exited during the usage-limit interruption. Restarting only that
+project's function server restored service; the repeat result is recorded in
+`/private/tmp/okbite-c8-live-reviewed.log` (two tests passed).
