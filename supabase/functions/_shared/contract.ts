@@ -59,22 +59,42 @@ export const IdentifyResponse = z.discriminatedUnion('status', [
   z.object({ status: z.literal('not_found'), read: FrontRead, photoPath: z.string() }),
 ]);
 
+export const NutritionMode = z.enum(['separate', 'same_photo', 'none', 'skipped']);
+export const FieldReason = z.enum(['read', 'not_printed', 'not_photographed', 'unreadable', 'no_per_100', 'failed']);
+export const LABEL_FIELDS = [...NUTRIENT_KEYS, 'ingredientsText'] as const;
+export const LabelField = z.enum(LABEL_FIELDS);
+// No nutrition = an old client: a null nutritionImage meant "both on one photo".
 export const ReadLabelRequest = z.object({
-  ingredientsImage: z.string().min(1), nutritionImage: z.string().min(1).nullable(), // null = both on one photo
+  ingredientsImage: z.string().min(1), nutritionImage: z.string().min(1).nullable(), nutrition: NutritionMode.optional(),
+}).refine((r) => r.nutrition === undefined || (r.nutrition === 'separate') === (r.nutritionImage !== null), {
+  message: 'nutritionImage must match the nutrition mode', path: ['nutritionImage'],
+});
+// Adding nutrition later to a saved product: the nutrition photo alone.
+export const EnrichReadLabelRequest = z.object({
+  ingredientsImage: z.null(), nutritionImage: z.string().min(1), nutrition: z.literal('separate'),
 });
 export const ReadLabelResponse = z.object({
   ingredientsText: z.string().nullable(), unit: Unit.nullable(), nutrients: Nutrients,
-  unclear: z.array(z.union([NutrientKey, z.literal('ingredientsText')])),
+  unclear: z.array(LabelField), // kept for old clients; reasons says why a field is null
+  reasons: z.object(Object.fromEntries(LABEL_FIELDS.map((k) => [k, FieldReason])) as Record<LabelField, typeof FieldReason>)
+    .optional(), // shortcut: optional while servers without U3 still answer; make required once U3 is deployed
   ingredientsPhotoPath: z.string(), nutritionPhotoPath: z.string().nullable(),
 });
+export const EnrichReadLabelResponse = ReadLabelResponse.extend({
+  ingredientsPhotoPath: z.null(), nutritionPhotoPath: z.string().min(1),
+});
 export const AddProductRequest = z.object({
-  code: Code.nullable(), name: z.string().min(1).max(120), brand: z.string().min(1).max(80),
-  quantity: z.string().max(30), unit: Unit, categorySlug: z.string(),
+  code: Code.nullable(), name: z.string().min(1).max(120), brand: z.string().max(80), // '' = unreadable on the pack
+  quantity: z.string().max(30), unit: Unit, categorySlug: z.string().optional(), // absent = add-product saves 'necunoscut'
   ingredientsText: z.string().min(3).max(3000), nutrients: Nutrients,
   photoPath: z.string().nullable(), ingredientsPhotoPath: z.string(), nutritionPhotoPath: z.string().nullable(),
 });
+export const EnrichProductRequest = z.object({
+  productId: Uuid, unit: Unit, nutrients: Nutrients, nutritionPhotoPath: z.string().min(1),
+});
 export const ReportRequest = z.object({ productId: Uuid, message: z.string().min(3).max(1000) });
-export const ProductInput = AddProductRequest.omit({ photoPath: true, ingredientsPhotoPath: true, nutritionPhotoPath: true });
+export const ProductInput = AddProductRequest.omit({ photoPath: true, ingredientsPhotoPath: true, nutritionPhotoPath: true })
+  .extend({ brand: z.string().min(1).max(80), categorySlug: z.string() }); // a verified product names both
 export const ModerateRequest = z.discriminatedUnion('action', [
   z.object({ action: z.literal('verify'), productId: Uuid, product: ProductInput }),
   z.object({ action: z.literal('hide'), productId: Uuid, reason: z.string().min(3) }),
@@ -127,6 +147,12 @@ export type IdentifyRequest = z.infer<typeof IdentifyRequest>;
 export type IdentifyResponse = z.infer<typeof IdentifyResponse>;
 export type ReadLabelRequest = z.infer<typeof ReadLabelRequest>;
 export type ReadLabelResponse = z.infer<typeof ReadLabelResponse>;
+export type NutritionMode = z.infer<typeof NutritionMode>;
+export type FieldReason = z.infer<typeof FieldReason>;
+export type LabelField = z.infer<typeof LabelField>;
+export type EnrichReadLabelRequest = z.infer<typeof EnrichReadLabelRequest>;
+export type EnrichReadLabelResponse = z.infer<typeof EnrichReadLabelResponse>;
+export type EnrichProductRequest = z.infer<typeof EnrichProductRequest>;
 export type AddProductRequest = z.infer<typeof AddProductRequest>;
 export type ReportRequest = z.infer<typeof ReportRequest>;
 export type ProductInput = z.infer<typeof ProductInput>;

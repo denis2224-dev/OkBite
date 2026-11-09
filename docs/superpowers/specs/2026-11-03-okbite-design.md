@@ -96,12 +96,16 @@ Exact types live in `packages/shared/src/contract.ts` (R2, Task C1).
 |---|---|---|---|
 | `lookup` | GET `?code=` or `?id=` | — | `LookupResponse` |
 | `identify` | POST | `IdentifyRequest` | `IdentifyResponse` |
-| `read-label` | POST | `ReadLabelRequest` | `ReadLabelResponse` |
-| `add-product` | POST | `AddProductRequest` | `LookupResponse` (status `found`, product `unverified`) |
+| `read-label` | POST | `ReadLabelRequest` (`nutrition`: `separate` \| `same_photo` \| `none` \| `skipped`; absent = old client) | `ReadLabelResponse` (`reasons`: one `FieldReason` per nutrient and `ingredientsText`) |
+| `read-label` (enrich read) | POST | `EnrichReadLabelRequest` (nutrition photo only, `ingredientsImage: null`) | `EnrichReadLabelResponse` (`ingredientsPhotoPath: null`) |
+| `add-product` | POST | `AddProductRequest` (`categorySlug` optional, defaults to `necunoscut`; `brand` may be `''`) | `LookupResponse` (status `found`, product `unverified`) |
+| `enrich-product` | POST | `EnrichProductRequest` (`productId`, `unit`, `nutrients`, `nutritionPhotoPath`) | `LookupResponse` |
 | `report` | POST | `ReportRequest` | `{ status: 'ok' }` |
 | `moderate` | POST (moderator JWT) | `ModerateRequest` | `{ status: 'ok' }` |
 
 Errors: HTTP 4xx/5xx with `{ error: 'bad_request' | 'rate_limited' | 'not_found' | 'unauthorized' | 'upstream_failed' | 'duplicate', message }`.
+
+`FieldReason`: `read`, `not_printed`, `not_photographed`, `unreadable`, `no_per_100`, `failed`. A field that is not `read` is `null`, never `0`. `unclear` stays in `ReadLabelResponse` for old clients.
 
 ## 8. Store and non-functional requirements
 
