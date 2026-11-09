@@ -100,7 +100,7 @@ export function UnknownProductConfirmation({ initial, label, photos, categories,
           onPress={() => { change({ ...value, unit }); setUnitOpen(false); }} />) : null}
         {visibleNutrients.map(key => {
           const amount = value.nutrients[key];
-          return <UnknownConfirmationField key={key} label={ro.review.nutrients[key]} disabled={pending} numeric
+          return <UnknownConfirmationField key={key} label={ro.review.nutrients[key]} disabled={pending} numeric invalid={invalid[key]}
             value={amount === null ? '' : `${String(amount).replace('.', ',')} ${unitForNutrient(key)}`} onChange={text => {
               const amount = text.trim() ? parseAmount(text, unitForNutrient(key)) : null;
               const valid = !text.trim() || (amount !== null && Nutrients.shape[key].safeParse(amount).success);
