@@ -141,7 +141,7 @@ describe('useCaptureFlow', () => {
     const { result } = await renderHook(() => useCaptureFlow());
     let run!: Promise<void>;
     await act(async () => { run = result.current.takePhoto(photo); });
-    expect(result.current.state).toEqual({ status: 'working', uri: 'file:///shot.jpg' });
+    expect(result.current.state).toEqual({ status: 'working' });
     await act(async () => { pending.resolve(identifyFound); await run; });
     expect(result.current.state).toEqual({ status: 'idle' });
   });

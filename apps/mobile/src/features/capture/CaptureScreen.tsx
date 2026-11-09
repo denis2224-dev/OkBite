@@ -1,7 +1,7 @@
 import { useTheme } from '../../theme/useTheme';
 import type { Palette } from '../../theme/tokens';
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Image, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { ro } from '../../copy/ro';
@@ -28,7 +28,7 @@ export default function CaptureScreen() {
   return (
     <View style={styles.root}>
       {cameraActive ? (
-        <View style={StyleSheet.absoluteFill} aria-hidden={working}>
+        <>
           <CameraView ref={camera} style={StyleSheet.absoluteFill} facing="back" onCameraReady={() => setReady(true)} onMountError={() => setMountFailed(true)} />
           <Text style={styles.hint}>{ro.capture.hint}</Text>
           <View style={styles.controls}>
@@ -44,7 +44,7 @@ export default function CaptureScreen() {
               <View style={styles.shutterInner} />
             </Pressable>
           </View>
-        </View>
+        </>
       ) : state.status === 'idle' ? (
         <ScrollView testID="capture-permission-recovery" style={{ flex: 1 }} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
           {!permission.granted ? (
@@ -62,22 +62,7 @@ export default function CaptureScreen() {
         </ScrollView>
       ) : null}
       {working ? (
-        <ScrollView
-          style={[StyleSheet.absoluteFill, state.uri && styles.previewBackground]}
-          contentContainerStyle={[styles.overlay, { flexGrow: 1 }]}
-        >
-          {state.uri ? (
-            <Image
-              source={{ uri: state.uri }}
-              accessibilityLabel={ro.app.admin.front}
-              accessible
-              resizeMode="contain"
-              style={styles.photo}
-            />
-          ) : null}
-          <ActivityIndicator size="large" color={colors.cameraInk} />
-          <Text accessibilityLiveRegion="polite" style={styles.overlayText}>{ro.capture.working}</Text>
-        </ScrollView>
+        <View style={[StyleSheet.absoluteFill, styles.overlay]}><ActivityIndicator size="large" color={colors.cameraInk} /><Text style={styles.overlayText}>{ro.capture.working}</Text></View>
       ) : null}
       {state.status === 'error' || state.status === 'offline' ? (
         <ScrollView testID="capture-error-recovery" style={StyleSheet.absoluteFill} contentContainerStyle={[styles.overlay, { flexGrow: 1 }]} keyboardShouldPersistTaps="handled">
@@ -105,7 +90,5 @@ const createStyles = (colors: Palette) => StyleSheet.create({
   shutterOff: { opacity: 0.4 },
   shutterInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.cameraInk },
   overlay: { backgroundColor: colors.cameraOverlay, justifyContent: 'center', alignItems: 'center', padding: 20, gap: 12 },
-  previewBackground: { backgroundColor: colors.cameraBackground },
-  photo: { width: '100%', maxWidth: 440, aspectRatio: 4 / 3 },
-  overlayText: { color: colors.cameraInk, fontSize: 16, textAlign: 'center' },
+  overlayText: { color: colors.cameraInk, fontSize: 16 },
 });

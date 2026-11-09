@@ -97,20 +97,15 @@ describe('CaptureScreen', () => {
     expect(flatten(shutter().parent!).flexWrap).toBe('wrap');
   });
 
-  it('shows the camera photo while working and sends one request for a double tap', async () => {
+  it('shows the working state and sends one request for a double tap', async () => {
     let finish!: (v: unknown) => void;
     identify.mockReturnValue(new Promise((r) => { finish = r; }));
     await render(<CaptureScreen />);
     await cameraReady();
-    const shutterButton = shutter();
-    await act(async () => {
-      await fireEvent.press(shutterButton);
-      await fireEvent.press(shutterButton);
-    });
+    await fireEvent.press(shutter());
+    await fireEvent.press(shutter());
     expect(await screen.findByText(ro.capture.working)).toBeTruthy();
-    expect(screen.getByLabelText(ro.app.admin.front).props.source).toEqual({ uri: 'file:///shot.jpg' });
     await act(async () => { finish(identifyFound); });
-    expect(screen.queryByLabelText(ro.app.admin.front)).toBeNull();
     expect(mockTakePicture).toHaveBeenCalledTimes(1);
     expect(identify).toHaveBeenCalledTimes(1);
     expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
@@ -189,7 +184,6 @@ describe('CaptureScreen', () => {
       pick.mockResolvedValueOnce({ canceled: true, assets: null });
       await fireEvent.press(screen.getByRole('button', { name: ro.capture.gallery }));
       assertFallbackVisible();
-      expect(screen.queryByLabelText(ro.app.admin.front)).toBeNull();
       expect(identify).not.toHaveBeenCalled();
 
       // 2. Pending gallery photo shows working feedback and hides fallback buttons to prevent duplicate requests.
@@ -198,22 +192,17 @@ describe('CaptureScreen', () => {
       identify.mockReturnValueOnce(new Promise((_r, rej) => { rejectWorking = rej; }));
       await fireEvent.press(screen.getByRole('button', { name: ro.capture.gallery }));
       expect(await screen.findByText(ro.capture.working)).toBeTruthy();
-      expect(screen.getByLabelText(ro.app.admin.front).props.source).toEqual({ uri: 'file:///gal-1.jpg' });
       expect(screen.queryByRole('button', { name: ro.capture.gallery })).toBeNull();
 
       // 3. Rejecting with offline surfaces the offline panel; retry reuses the same gallery photo.
-      let finishRetry!: (result: unknown) => void;
-      identify.mockReturnValueOnce(new Promise((resolve) => { finishRetry = resolve; }));
+      identify.mockResolvedValueOnce(identifyFound);
       await act(async () => {
         rejectWorking(Object.assign(new Error('offline'), { code: 'offline' }));
       });
       expect(await screen.findByText(ro.offline.title)).toBeTruthy();
-      expect(screen.queryByLabelText(ro.app.admin.front)).toBeNull();
       expect(screen.getByText(ro.offline.subtitle)).toBeTruthy();
       expect(screen.getByTestId('capture-error-recovery')).toBeTruthy();
       await fireEvent.press(screen.getByRole('button', { name: ro.offline.retry }));
-      expect(screen.getByLabelText(ro.app.admin.front).props.source).toEqual({ uri: 'file:///gal-1.jpg' });
-      await act(async () => { finishRetry(identifyFound); });
       expect(pick).toHaveBeenCalledTimes(2); // 1 cancelled + 1 selected (not re-opened on retry)
       expect(identify).toHaveBeenCalledTimes(2);
       expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
