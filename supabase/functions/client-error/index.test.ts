@@ -76,3 +76,17 @@ Deno.test('redaction preserves schema bounds when replacement text expands', asy
   })(request({ ...payload, message: 'a@b.co'.repeat(166) }));
   assert.equal(response.status, 200);
 });
+
+Deno.test('quoted credential fields and quoted multiword values are fully redacted', async () => {
+  for (const message of [
+    '{"password":"my-private-password","refresh_token":"my-private-refresh-token"}',
+    'password="two word secret"', "api_key='two word secret'",
+    '{"password":"escaped \\\"word secret"}',
+  ]) {
+    const response = await createHandler(async (_id, report) => {
+      assert.equal(/private|word|secret/.test(report.message), false, report.message);
+      return true;
+    })(request({ ...payload, message }));
+    assert.equal(response.status, 200, message);
+  }
+});
