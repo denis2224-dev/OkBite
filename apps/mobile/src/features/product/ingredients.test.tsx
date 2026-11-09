@@ -29,6 +29,10 @@ test('expands source-backed test content and opens only a web source', async () 
   await fireEvent.press(screen.getByRole('button', { name: 'Ingredient pentru test' }));
   expect(screen.getByText('Rol pentru test')).toBeTruthy();
   expect(screen.getByText('Explicație pentru test')).toBeTruthy();
+  expect(screen.getByText(ro.result.explainedWithSource)).toBeTruthy();
+  expect(screen.getByText(ro.result.transcribedLabel)).toBeTruthy();
+  expect(screen.getByText(mockProduct.ingredientsText)).toBeTruthy();
+  expect(screen.getByText(ro.result.missingAllergenNote)).toBeTruthy();
   await fireEvent.press(screen.getByRole('button', { name: ro.ingredients.source }));
   expect(open).toHaveBeenCalledWith('https://example.invalid/source');
   open.mockRestore();
