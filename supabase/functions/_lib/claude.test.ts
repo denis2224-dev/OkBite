@@ -69,8 +69,51 @@ Deno.test('askClaude switches once to the fallback key when the first is out of 
     assert.deepEqual(auth, [`Bearer ${KEY}`, 'Bearer second-key']);
   }
   const both = fake([new Response('', { status: 402 }), new Response('', { status: 402 })]);
-  await assert.rejects(askClaude(['x'], 'p', { ...both.deps, fallbackKey: 'second-key' }), UpstreamError);
+  await assert.rejects(
+    askClaude(['x'], 'p', { ...both.deps, fallbackKey: 'second-key' }),
+    UpstreamError,
+  );
   assert.equal(both.calls.length, 2);
+});
+
+Deno.test('askClaude does not use a fallback after the third attempt', async () => {
+  const { calls, deps } = fake([
+    new Response('', { status: 503 }),
+    new Response('', { status: 503 }),
+    new Response('', { status: 429 }),
+    ok('gata'),
+  ]);
+  await assert.rejects(
+    askClaude(['x'], 'p', { ...deps, fallbackKey: 'second-key' }),
+    UpstreamError,
+  );
+  assert.equal(calls.length, 3);
+});
+
+Deno.test('askClaude skips the fallback when less than 10 seconds remain', async () => {
+  const { calls, deps } = fake([new Response('', { status: 402 }), ok('gata')]);
+  await assert.rejects(
+    askClaude(['x'], 'p', {
+      ...deps,
+      fallbackKey: 'second-key',
+      now: () => calls.length === 0 ? 0 : AI_DEADLINE_MS - 9_000,
+    }),
+    UpstreamError,
+  );
+  assert.equal(calls.length, 1);
+});
+
+Deno.test('askClaude makes only one request with the fallback key', async () => {
+  const { calls, deps } = fake([
+    new Response('', { status: 402 }),
+    new Response('', { status: 429 }),
+    ok('gata'),
+  ]);
+  await assert.rejects(
+    askClaude(['x'], 'p', { ...deps, fallbackKey: 'second-key' }),
+    UpstreamError,
+  );
+  assert.equal(calls.length, 2);
 });
 
 Deno.test('askClaude does not retry client errors and never leaks the key or provider body', async () => {

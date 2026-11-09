@@ -41,10 +41,11 @@ export async function askClaude(
   prompt: string,
   deps: ClaudeDeps = {},
 ): Promise<string> {
-  let key = deps.apiKey ?? Deno.env.get('AI_API_KEY');
-  if (!key) throw new UpstreamError('Claude is not configured');
+  const primaryKey = deps.apiKey ?? Deno.env.get('AI_API_KEY');
+  if (!primaryKey) throw new UpstreamError('Claude is not configured');
+  let key = primaryKey;
   // A second account's key, used once the first answers "quota used up" (402) or "rate limited" (429).
-  let fallback = deps.fallbackKey ?? Deno.env.get('AI_API_KEY_FALLBACK');
+  const fallback = deps.fallbackKey ?? Deno.env.get('AI_API_KEY_FALLBACK');
   validateProviderImages(images);
   const doFetch = deps.fetch ?? fetch;
   const sleep = deps.sleep ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)));
@@ -81,24 +82,31 @@ export async function askClaude(
     }
     if (res?.ok) return readText(await res.json().catch(() => null));
     await res?.body?.cancel();
-    if (res && (res.status === 402 || res.status === 429) && fallback) {
-      console.warn(`Claude request failed: HTTP ${res.status}, switching to the fallback key`);
-      [key, fallback] = [fallback, undefined];
-      continue;
-    }
-    if ((res && !RETRYABLE.has(res.status)) || attempt >= ATTEMPTS) {
+    const fallbackKey = fallback !== primaryKey && (res?.status === 402 || res?.status === 429)
+      ? fallback
+      : undefined;
+    if (
+      attempt >= ATTEMPTS || key !== primaryKey ||
+      (res && !fallbackKey && !RETRYABLE.has(res.status))
+    ) {
       console.warn(`Claude request failed: ${res ? `HTTP ${res.status}` : 'no response'}`);
       throw new UpstreamError('Claude request failed');
     }
     const after = Number(res?.headers.get('retry-after'));
-    const wait = Number.isFinite(after) && after > 0
+    const backoff = Number.isFinite(after) && after > 0
       ? Math.min(after, 5) * 1000
       : 500 * 2 ** attempt;
+    const wait = fallbackKey ? 0 : backoff;
     if (deadline - now() - wait < MIN_ATTEMPT_MS) {
       console.warn('Claude request failed: deadline reached');
       throw new UpstreamError('Claude request failed');
     }
-    await sleep(wait);
+    if (fallbackKey) {
+      console.warn(`Claude request failed: HTTP ${res?.status}, switching to the fallback key`);
+      key = fallbackKey;
+    } else {
+      await sleep(wait);
+    }
   }
 }
 

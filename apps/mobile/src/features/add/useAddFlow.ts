@@ -96,6 +96,7 @@ export function useAddFlow() {
     async (getUri: () => Promise<string | null>) => {
       if (busy.current) return;
       busy.current = true;
+      setPhotoUri(null);
       const token = activity.start();
       try {
         const uri = await getUri();
