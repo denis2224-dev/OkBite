@@ -1,13 +1,12 @@
 # OkBite — Design Spec
 
-Date: 2026-11-04 (revised: 2026-11-09, Task U0 draft proposal for Denis/Sergiu/David/Stas approval; backend contracts not yet merged) · Status: draft proposal for review
+Date: 2026-11-04 (revised: 2026-11-09, Task U0 draft proposal for Denis/Sergiu/David/Stas approval; U1 contract merged in #115) · Status: draft proposal for review
 Prototype (source of truth for look, copy and states): `docs/prototype/Main.dc.html` · https://claude.ai/artifact/5rY8DhLtDRH67SQzXMyP8s
 Team plan (roles, timeline): https://claude.ai/artifact/XQm9DtD4aXXZBCi6sJfGQ4
 
 > **Revision note (9 Nov 2026 — Task U0 draft proposal)**:
 > - **Summary**: Specifies the unknown product flow improvements. Front photo is required (reusing identify photo or prompting on barcode entry), ingredients photo is required, followed by four explicit answers to the nutrition question (separate photo, same photo, no table, skip for now). Added draft lifecycle rules, null nutrient semantics, idempotency on save, enrichment constraints for unverified products, U1 contract proposals for R2 confirmation, and eight comprehensive acceptance criteria.
-> - **Status**: Draft proposal submitted for review and approval by Denis, Sergiu, David, and Stas. Backend contracts (U1/R2) are proposed and not yet merged.
-> - **Uncertainties for R2/Backend review**: Exact JSON schema representation of partial saves, `NutritionMode` enum naming, nutrient reason codes, and enrichment endpoint authentication/rate limits are subject to final definition by R2 in `packages/shared/src/contract.ts`.
+> - **Status**: Draft proposal submitted for review and approval by Denis, Sergiu, David, and Stas. The U1 contract (§7) merged in #115; `unit` stays required (9 Nov), so a flow without a nutrition table asks g/ml with one tap.
 
 ## 1. What OkBite is
 
@@ -110,22 +109,16 @@ Exact types live in `packages/shared/src/contract.ts` (R2, Task C1).
 |---|---|---|---|
 | `lookup` | GET `?code=` or `?id=` | — | `LookupResponse` |
 | `identify` | POST | `IdentifyRequest` | `IdentifyResponse` |
-| `read-label` | POST | `ReadLabelRequest` | `ReadLabelResponse` |
-| `add-product` | POST | `AddProductRequest` | `LookupResponse` (status `found`, product `unverified`) |
-| `enrich-product` (proposed) | POST | `EnrichProductRequest` (TO BE DEFINED/CONFIRMED BY R2) | `LookupResponse` (product updated, status preserved) |
+| `read-label` | POST | `ReadLabelRequest` (`nutrition`: `separate` \| `same_photo` \| `none` \| `skipped`; absent = old client) | `ReadLabelResponse` (`reasons`: one `FieldReason` per nutrient and `ingredientsText`) |
+| `read-label` (enrich read) | POST | `EnrichReadLabelRequest` (nutrition photo only, `ingredientsImage: null`) | `EnrichReadLabelResponse` (`ingredientsPhotoPath: null`) |
+| `add-product` | POST | `AddProductRequest` (`categorySlug` optional, defaults to `necunoscut`; `brand` may be `''`) | `LookupResponse` (status `found`, product `unverified`) |
+| `enrich-product` | POST | `EnrichProductRequest` (`productId`, `unit`, `nutrients`, `nutritionPhotoPath`) | `LookupResponse` |
 | `report` | POST | `ReportRequest` | `{ status: 'ok' }` |
 | `moderate` | POST (moderator JWT) | `ModerateRequest` | `{ status: 'ok' }` |
 
 Errors: HTTP 4xx/5xx with `{ error: 'bad_request' | 'rate_limited' | 'not_found' | 'unauthorized' | 'upstream_failed' | 'duplicate', message }`.
 
-### Proposed U1 contract additions (TO BE DEFINED/CONFIRMED BY R2, not already implemented)
-
-- `NutritionMode`: proposed enum `separate` | `same_photo` | `none` | `skipped` representing shopper choice during addition.
-- Extraction reason codes: proposed field reason enum (`read`, `not_printed`, `not_photographed`, `unreadable`, `no_per_100`, `failed`) indicating the source of extracted nutrient values or reasons for `null`.
-- Backward compatibility: `nutritionImage: null` continues to signify same-photo mode for older clients.
-- Partial saves: request schemas accommodate optional category and empty/unreadable brand without validation failures.
-- Nutrition-only enrichment: proposed payload allowing a contributing device to supply nutrition data for an existing unverified product where all nutrient fields are currently null.
-- Note: Exact nullable semantics, unit schemas, and final TypeScript types are to be formally defined by R2.
+`FieldReason`: `read`, `not_printed`, `not_photographed`, `unreadable`, `no_per_100`, `failed`. A field that is not `read` is `null`, never `0`. `unclear` stays in `ReadLabelResponse` for old clients.
 
 ## 8. Store and non-functional requirements
 
