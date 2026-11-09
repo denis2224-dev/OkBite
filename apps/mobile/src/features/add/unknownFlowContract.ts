@@ -2,7 +2,8 @@
 import { z } from 'zod';
 import { NUTRIENT_KEYS, ReadLabelRequest, ReadLabelResponse } from '@okbite/shared';
 
-// Provisional U1 adapter. Replace with canonical shared exports after R2 merges U1.
+// shortcut: temporary U1 shim until Denis's U1 contract PR merges into @okbite/shared;
+// then import NutritionMode, FieldReason, and the updated ReadLabel schemas from @okbite/shared and delete this file.
 export const NutritionMode = z.enum(['separate', 'same_photo', 'none', 'skipped']);
 export type NutritionMode = z.infer<typeof NutritionMode>;
 export const FieldReason = z.enum(['read', 'not_printed', 'not_photographed', 'unreadable', 'no_per_100', 'failed']);

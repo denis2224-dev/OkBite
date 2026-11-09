@@ -4,14 +4,19 @@ import { describe, it, expect, jest, beforeAll, beforeEach } from '@jest/globals
 import { render, fireEvent, screen, act } from '@testing-library/react-native';
 import { IdentifyResponse } from '@okbite/shared';
 import { ro } from '../../copy/ro';
+import { loadUnknownDraft } from '../add/unknownDraft';
+import { keepPhoto } from '../offline/photos';
 import { resolveQueued } from '../offline/queue';
+import AddScreen from '../../../app/add/index';
 import IdentifyScreen from '../../../app/identify';
 import {
+  GUIDED_ADD_ENABLED,
   addProductRoute,
   identifyCodeRoute,
   identifyPhotoRoute,
   parseAddParams,
   parseIdentifyParams,
+  setGuidedAddEnabled,
 } from './routes';
 
 type ReplaceArg = string | { pathname: string; params: Record<string, string | undefined> };
@@ -56,6 +61,16 @@ const ORIGINAL_READ = {
 };
 const PHOTO_PATH = 'uploads/dev-1/front-1.jpg';
 jest.mock('../offline/queue', () => ({ resolveQueued: jest.fn() }));
+jest.mock('../offline/photos', () => ({
+  keepPhoto: jest.fn(async (uri: string) => `kept:${uri}`),
+  openPhoto: jest.fn(async (id: string) => ({ uri: id.replace(/^kept:/, ''), release() {} })),
+  removePhoto: jest.fn(async () => {}),
+}));
+jest.mock('../add/unknownDraft', () => ({
+  loadUnknownDraft: jest.fn(async () => null),
+  saveUnknownDraft: jest.fn(async () => {}),
+  clearUnknownDraft: jest.fn(async () => {}),
+}));
 
 describe('IdentifyScreen and B3 flow', () => {
   beforeAll(() => {
@@ -64,6 +79,9 @@ describe('IdentifyScreen and B3 flow', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
+    setGuidedAddEnabled?.(null);
+    jest.mocked(keepPhoto).mockImplementation(async (uri: string) => `kept:${uri}`);
+    jest.mocked(loadUnknownDraft).mockResolvedValue(null);
     mockParams.value = {};
   });
   it('keeps queued work until a shopper confirms a candidate', async () => {
@@ -334,5 +352,66 @@ describe('IdentifyScreen and B3 flow', () => {
       frontPhotoId: 'kept-front-1',
       unknownDraftId: 'draft-123',
     });
+  });
+
+  it('keeps the front photo via keepPhoto and reaches GuidedAddScreen at the ingredients step for identify not_found and "Nu e niciunul" when guided add is enabled', async () => {
+    expect(GUIDED_ADD_ENABLED).toBe(false);
+    setGuidedAddEnabled(true);
+
+    const notFound = IdentifyResponse.parse({
+      status: 'not_found',
+      photoPath: PHOTO_PATH,
+      read: ORIGINAL_READ,
+    });
+    if (notFound.status === 'found') throw new Error('unexpected');
+    mockParams.value = identifyPhotoRoute(notFound).params;
+
+    const first = await render(<IdentifyScreen />);
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: ro.identify.addButton }));
+    });
+    expect(keepPhoto).toHaveBeenCalledWith(PHOTO_PATH);
+    const notFoundParams = requireReplacedParams();
+    expect(notFoundParams).toEqual({
+      brand: ORIGINAL_READ.brand,
+      name: ORIGINAL_READ.name,
+      quantity: ORIGINAL_READ.quantity,
+      photoPath: PHOTO_PATH,
+      frontPhotoId: `kept:${PHOTO_PATH}`,
+      flow: 'guided',
+    });
+    await first.unmount();
+
+    mockReplace.mockClear();
+    const candidates = IdentifyResponse.parse({
+      status: 'candidates',
+      photoPath: PHOTO_PATH,
+      read: { ...ORIGINAL_READ, code: '4840001000014' },
+      candidates: [CAND_1, CAND_2],
+    });
+    if (candidates.status === 'found') throw new Error('unexpected');
+    mockParams.value = identifyPhotoRoute(candidates).params;
+
+    const second = await render(<IdentifyScreen />);
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: ro.identify.noneOfThem }));
+    });
+    const noneParams = requireReplacedParams();
+    expect(noneParams).toEqual({
+      code: '4840001000014',
+      brand: ORIGINAL_READ.brand,
+      name: ORIGINAL_READ.name,
+      quantity: ORIGINAL_READ.quantity,
+      photoPath: PHOTO_PATH,
+      frontPhotoId: `kept:${PHOTO_PATH}`,
+      flow: 'guided',
+    });
+    await second.unmount();
+
+    mockParams.value = noneParams;
+    await render(<AddScreen />);
+    await act(async () => {});
+    expect(screen.getByText(ro.add.ingredientsTitle)).toBeTruthy();
+    expect(screen.getByText(ro.add.stepOf(1, 3))).toBeTruthy();
   });
 });

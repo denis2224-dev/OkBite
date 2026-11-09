@@ -3,8 +3,8 @@ import { ErrorBody } from '@okbite/shared';
 import { ApiError } from '../../lib/api';
 import { getDeviceId } from '../../lib/device';
 
-// Keep provisional U1 fields intact: the legacy api.readLabel strips unknown keys.
-// Move to the canonical API methods once R2's U1 contract and R4's client land.
+// shortcut: temporary U1 transport shim until Denis's U1 contract PR merges into @okbite/shared;
+// then switch to the shared api client and delete this file.
 export async function requestUnknownFlow<Input, Output>(
   name: 'read-label' | 'add-product' | 'enrich-product',
   inputSchema: z.ZodType<Input>, outputSchema: z.ZodType<Output>, payload: unknown,

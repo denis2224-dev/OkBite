@@ -21,6 +21,15 @@ export type AddRouteParams = {
   photoPath?: string;
   frontPhotoId?: string;
   unknownDraftId?: string;
+  flow?: 'guided' | 'manual';
+};
+
+// Flip to true after Denis's U1 and U2a merge on main.
+export const GUIDED_ADD_ENABLED = false;
+let guidedAddOverride: boolean | null = null;
+export const isGuidedAddEnabled = (): boolean => guidedAddOverride ?? GUIDED_ADD_ENABLED;
+export const setGuidedAddEnabled = (enabled: boolean | null): void => {
+  guidedAddOverride = enabled;
 };
 
 export type AddInitialValues = {
@@ -67,12 +76,14 @@ export function addProductRoute({
   queueId,
   frontPhotoId,
   unknownDraftId,
+  flow,
 }: {
   read: FrontRead;
   photoPath: string | null;
   queueId?: string;
   frontPhotoId?: string;
   unknownDraftId?: string;
+  flow?: 'guided' | 'manual';
 }): { pathname: '/add'; params: AddRouteParams } {
   const params: AddRouteParams = {};
   const code = read.code ? normalizeCode(read.code) : null;
@@ -82,6 +93,7 @@ export function addProductRoute({
   const cleanPhoto = cleanParam(photoPath ?? undefined);
   const cleanFrontPhotoId = cleanParam(frontPhotoId);
   const cleanUnknownDraftId = cleanParam(unknownDraftId);
+  const resolvedFlow = flow ?? (isGuidedAddEnabled() ? 'guided' : undefined);
 
   if (code) params.code = code;
   if (brand) params.brand = brand;
@@ -91,6 +103,7 @@ export function addProductRoute({
   if (queueId) params.queueId = queueId;
   if (cleanFrontPhotoId) params.frontPhotoId = cleanFrontPhotoId;
   if (cleanUnknownDraftId) params.unknownDraftId = cleanUnknownDraftId;
+  if (resolvedFlow) params.flow = resolvedFlow;
   return { pathname: '/add', params };
 }
 

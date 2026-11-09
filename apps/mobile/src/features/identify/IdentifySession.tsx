@@ -8,8 +8,10 @@ import { useScreenActivity } from '../capture/useScreenActivity';
 import { CandidateList } from './CandidateList';
 import { ConfirmMatch } from './ConfirmMatch';
 import { NotFound } from './NotFound';
-import { addProductRoute, parseIdentifyParams, productRoute } from './routes';
+import { addProductRoute, isGuidedAddEnabled, parseIdentifyParams, productRoute } from './routes';
+import { keepPhoto } from '../offline/photos';
 import { resolveQueued } from '../offline/queue';
+import type { FrontRead } from '@okbite/shared';
 
 export function IdentifySession({ rawParams }: { rawParams: Record<string, string | string[] | undefined> }) {
   const { colors } = useTheme();
@@ -21,8 +23,36 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
   const unknownDraftId = typeof rawParams.unknownDraftId === 'string' ? rawParams.unknownDraftId : undefined;
   const selected = useRef<string | null>(null);
   const finishing = useRef(false);
+  const adding = useRef(false);
   const [cleanupPending, setCleanupPending] = useState(false);
   const navigate = (href: Parameters<typeof router.replace>[0]) => { activity.leave(); router.replace(href); };
+  const openAdd = async (read: FrontRead, photoPath: string | null) => {
+    const guided = isGuidedAddEnabled();
+    if (!guided && !frontPhotoId && !unknownDraftId) {
+      navigate(addProductRoute({ read, photoPath, queueId }));
+      return;
+    }
+    if (adding.current) return;
+    adding.current = true;
+    const token = activity.start();
+    try {
+      const keptFrontId = frontPhotoId ?? (guided && photoPath ? await keepPhoto(photoPath) : undefined);
+      if (activity.isCurrent(token)) {
+        navigate(
+          addProductRoute({
+            read,
+            photoPath,
+            queueId,
+            frontPhotoId: keptFrontId,
+            unknownDraftId,
+            flow: guided ? 'guided' : undefined,
+          }),
+        );
+      }
+    } finally {
+      adding.current = false;
+    }
+  };
   const finishConfirmation = async () => {
     if (!selected.current || finishing.current) return;
     finishing.current = true;
@@ -47,9 +77,9 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
       <ConfirmMatch
         candidate={state.candidate}
         onConfirm={confirm}
-        onReject={() =>
-          navigate(addProductRoute({ read: state.read, photoPath: state.photoPath, queueId, frontPhotoId, unknownDraftId }))
-        }
+        onReject={() => {
+          void openAdd(state.read, state.photoPath);
+        }}
       />
     );
   }
@@ -58,9 +88,9 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
       <CandidateList
         candidates={state.candidates}
         onSelect={confirm}
-        onNone={() =>
-          navigate(addProductRoute({ read: state.read, photoPath: state.photoPath, queueId, frontPhotoId, unknownDraftId }))
-        }
+        onNone={() => {
+          void openAdd(state.read, state.photoPath);
+        }}
       />
     );
   }
@@ -68,9 +98,9 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
     return (
       <NotFound
         code={state.read.code}
-        onAdd={() =>
-          navigate(addProductRoute({ read: state.read, photoPath: state.photoPath, queueId, frontPhotoId, unknownDraftId }))
-        }
+        onAdd={() => {
+          void openAdd(state.read, state.photoPath);
+        }}
         onCheckCodeAgain={state.fromCode ? () => navigate('/scan') : undefined}
       />
     );
