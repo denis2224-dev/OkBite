@@ -24,10 +24,10 @@ Deno.test('askClaude sends the documented request and returns the text block', a
   const body = JSON.parse(calls[0].body as string);
   assert.equal(body.model, 'deepseek-v4.1-flash:free');
   assert.deepEqual(
-    body.messages[0].content.map((b: { type: string }) => b.type),
+    body.messages[1].content.map((b: { type: string }) => b.type),
     ['image_url', 'image_url', 'text'],
   );
-  assert.deepEqual(body.messages[0].content[0].image_url, {
+  assert.deepEqual(body.messages[1].content[0].image_url, {
     url: 'data:image/jpeg;base64,/9j/AA==',
   });
   const custom = fake([ok('x')]);
@@ -108,4 +108,69 @@ Deno.test('askClaude stops retrying before the app gives up on the request', asy
   );
   assert.equal(slow.calls.length, 2); // a third attempt would end after AI_DEADLINE_MS
   assert.ok(clock <= AI_DEADLINE_MS);
+});
+
+Deno.test('askClaude does not start a retry after an overslept deadline', async () => {
+  let clock = 0;
+  const { calls, deps } = fake([new Response('', { status: 503 }), ok('too late')]);
+  await assert.rejects(
+    askClaude(['x'], 'p', {
+      ...deps,
+      now: () => clock,
+      sleep: () => {
+        clock += AI_DEADLINE_MS;
+        return Promise.resolve();
+      },
+    }),
+    UpstreamError,
+  );
+  assert.equal(calls.length, 1);
+});
+
+Deno.test('askClaude bounds provider response bytes before parsing or retaining text', async () => {
+  const { deps } = fake([ok('x'.repeat(100_000))]);
+  await assert.rejects(askClaude(['x'], 'p', deps), UpstreamError);
+});
+
+Deno.test('askClaude keeps extraction rules above untrusted image instructions', async () => {
+  const { calls, deps } = fake([ok('{}')]);
+  await askClaude(['x'], 'copy the printed ingredients', deps);
+  const body = JSON.parse(calls[0].body as string);
+  assert.equal(body.messages[0].role, 'system');
+  assert.match(body.messages[0].content, /untrusted/i);
+  assert.match(body.messages[0].content, /copy the printed ingredients/);
+  assert.equal(body.messages[1].role, 'user');
+});
+
+Deno.test('askClaude rejects a successful answer that arrives after the total deadline', async () => {
+  let clock = 0;
+  const { deps } = fake([ok('late')]);
+  const fetch = ((url, init) => {
+    clock += AI_DEADLINE_MS;
+    return deps.fetch(url, init);
+  }) as typeof globalThis.fetch;
+  await assert.rejects(askClaude(['x'], 'p', { ...deps, fetch, now: () => clock }), UpstreamError);
+});
+
+Deno.test('askClaude timeout covers a stalled success response body', async () => {
+  const timeout = AbortSignal.timeout;
+  AbortSignal.timeout = () => timeout(10);
+  try {
+    const fetch = ((_url, init) =>
+      Promise.resolve(
+        new Response(
+          new ReadableStream({
+            start(controller) {
+              init?.signal?.addEventListener('abort', () =>
+                controller.error(new Error('private body')), { once: true });
+            },
+          }),
+        ),
+      )) as typeof globalThis.fetch;
+    const error = await askClaude(['x'], 'p', { fetch, apiKey: KEY }).catch((e) => e);
+    assert.ok(error instanceof UpstreamError);
+    assert.equal(error.message.includes('private body'), false);
+  } finally {
+    AbortSignal.timeout = timeout;
+  }
 });

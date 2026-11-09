@@ -37,11 +37,12 @@ export function parseLabel(raw: string): LabelRead {
     if (v === null) unclear.push(key);
     return [key, v];
   }));
-  const text = typeof o.ingredientsText === 'string' ? o.ingredientsText.trim().slice(0, 3000) : '';
-  if (text.length < 3) unclear.push('ingredientsText'); // add-product needs at least 3 characters
+  const text = typeof o.ingredientsText === 'string' ? o.ingredientsText.trim() : '';
+  const readable = text.length >= 3 && text.length <= 3000; // never hide a truncated allergen
+  if (!readable) unclear.push('ingredientsText');
   const unit = typeof o.unit === 'string' ? o.unit.trim().toLowerCase() : '';
   return ReadLabelResponse.omit({ ingredientsPhotoPath: true, nutritionPhotoPath: true }).parse({
-    ingredientsText: text.length >= 3 ? text : null,
+    ingredientsText: readable ? text : null,
     unit: unit === 'g' || unit === 'ml' ? unit : null,
     nutrients,
     unclear,
