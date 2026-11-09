@@ -41,3 +41,38 @@ Deno.test('storage failures expose no diagnostics and preflight writes nothing',
     method: 'OPTIONS', headers: { origin: 'https://okbite.md' },
   }))).status, 204);
 });
+
+Deno.test('diagnostics redact callback credentials in messages and stacks before storage', async () => {
+  const secrets = ['callback-secret', 'stack-secret', 'person@example.test', 'sb_secret_privatekey', 'sk-ant-privatekey'];
+  const response = await createHandler(async (_id, report) => {
+    const stored = JSON.stringify(report);
+    for (const secret of secrets) assert.equal(stored.includes(secret), false, secret);
+    assert.ok(report.stack?.includes('at capture'));
+    assert.ok(report.message.includes('Failure'));
+    return true;
+  })(request({ ...payload,
+    message: 'Failure https://okbite.md/admin#access_token=callback-secret person@example.test',
+    stack: 'at capture https://okbite.md/capture?token=stack-secret\nAuthorization: Bearer sb_secret_privatekey\nsk-ant-privatekey',
+  }));
+  assert.equal(response.status, 200);
+});
+
+Deno.test('body byte limits and malformed UTF-8 fail before diagnostics admission', async () => {
+  let writes = 0;
+  const handler = createHandler(async () => { writes++; return true; });
+  const headers = { 'x-device-id': device, 'content-type': 'application/json' };
+  for (const body of [' '.repeat(16001), new Uint8Array([0xff]), '{', JSON.stringify({ ...payload, message: '' })]) {
+    const result = await handler(new Request('https://local/client-error', { method: 'POST', headers, body }));
+    assert.equal(result.status, 400);
+  }
+  assert.equal(writes, 0);
+});
+
+Deno.test('redaction preserves schema bounds when replacement text expands', async () => {
+  const response = await createHandler(async (_id, report) => {
+    assert.ok(report.message.length <= 1000);
+    assert.equal(report.message.includes('a@b.co'), false);
+    return true;
+  })(request({ ...payload, message: 'a@b.co'.repeat(166) }));
+  assert.equal(response.status, 200);
+});

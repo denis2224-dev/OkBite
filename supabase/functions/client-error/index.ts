@@ -1,5 +1,6 @@
 import { ClientErrorRequest, ClientErrorResponse } from '../_shared/contract.ts';
 import { adminClient, cors, fail, HttpError, json, readDeviceId, readJsonBody, withCors } from '../_lib/http.ts';
+import { redactDiagnostic } from './redact.ts';
 
 type RecordError = (device: string, report: ClientErrorRequest) => Promise<boolean>;
 
@@ -20,7 +21,12 @@ export function createHandler(record: RecordError = recordError) {
     try {
       if (req.method !== 'POST') throw new HttpError(405);
       const device = readDeviceId(req);
-      const report = await readJsonBody(req, ClientErrorRequest, 16_000);
+      const parsed = await readJsonBody(req, ClientErrorRequest, 16_000);
+      const report = ClientErrorRequest.parse({ ...parsed,
+        message: redactDiagnostic(parsed.message).slice(0, 1000),
+        stack: parsed.stack === null ? null : redactDiagnostic(parsed.stack).slice(0, 2000),
+        screen: redactDiagnostic(parsed.screen).slice(0, 200), appVersion: redactDiagnostic(parsed.appVersion).slice(0, 50),
+      });
       response = await record(device, report) ? json(ClientErrorResponse.parse({ status: 'ok' })) :
         fail('rate_limited', 'Prea multe cereri. Încearcă mâine.', 429);
     } catch (error) {
