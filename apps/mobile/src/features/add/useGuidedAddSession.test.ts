@@ -6,7 +6,7 @@ import { api } from '../../lib/api';
 import { NUTRIENT_KEYS } from '@okbite/shared';
 const mockReplace = jest.fn();
 let mockDelayFocus = false;
-let mockFocus: (() => void) | undefined;
+let mockFocus: (() => void | (() => void)) | undefined;
 jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }), useFocusEffect: (fn: () => void) => jest.requireActual<typeof import('react')>('react').useEffect(() => {
   if (mockDelayFocus) { mockFocus = fn; return; }
   return fn();
@@ -22,15 +22,30 @@ const initial = { code: '4840001000014', name: 'Test product', brand: null, quan
 const label = { ingredientsText: 'ingredient test', unit: null, nutrients: Object.fromEntries(NUTRIENT_KEYS.map(key => [key, null])), unclear: [], ingredientsPhotoPath: 'device/ingredients.jpg', nutritionPhotoPath: null, reasons: Object.fromEntries([...NUTRIENT_KEYS, 'ingredientsText'].map(key => [key, key === 'ingredientsText' ? 'read' : 'not_printed'])) };
 beforeEach(() => { jest.clearAllMocks(); mockDelayFocus = false; mockFocus = undefined; jest.mocked(loadUnknownDraft).mockResolvedValue(null); jest.mocked(requestUnknownFlow).mockResolvedValue(label); });
 
-test('opens confirmation when navigation gains focus during draft restoration', async () => {
+test.each(['before', 'after'])('opens confirmation when first focus arrives %s draft restoration', async ordering => {
   mockDelayFocus = true;
   let finish!: (draft: null) => void;
   jest.mocked(loadUnknownDraft).mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
   const { result } = await renderHook(() => useGuidedAddSession(initial));
-  await act(async () => { mockFocus!(); finish(null); });
+  if (ordering === 'before') await act(async () => { mockFocus!(); finish(null); });
+  else { await act(async () => { finish(null); }); await act(async () => { mockFocus!(); }); }
   await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
   await act(async () => { await result.current.controller!.chooseNutrition('none'); });
   expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'draft-id' } });
+});
+
+test('does not navigate when a read finishes after blur and refocus', async () => {
+  mockDelayFocus = true;
+  const { result } = await renderHook(() => useGuidedAddSession(initial));
+  let blur: void | (() => void);
+  await act(async () => { blur = mockFocus!(); });
+  await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
+  let finish!: (value: typeof label) => void;
+  jest.mocked(requestUnknownFlow).mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+  let reading!: Promise<void>;
+  await act(async () => { reading = result.current.controller!.chooseNutrition('none'); });
+  await act(async () => { blur!(); mockFocus!(); await result.current.controller!.retry(); finish(label); await reading; });
+  expect(mockReplace).not.toHaveBeenCalled();
 });
 
 test('asks after ingredients and reads only after an explicit answer', async () => {

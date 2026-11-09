@@ -38,8 +38,14 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
     void loadUnknownDraft()
       .then(stored => {
         if (!active) return;
-        // Navigation may gain focus while IndexedDB restores the draft.
-        const token = runtimeRef.current.activity.start();
+        let token = runtimeRef.current.activity.start();
+        let running = false;
+        const runFocused = async (action: () => Promise<void>) => {
+          if (running) return;
+          running = true;
+          token = runtimeRef.current.activity.start();
+          try { await action(); } finally { running = false; }
+        };
         const nextDraftId = stored?.id ?? randomUUID();
         draftIdRef.current = nextDraftId;
         setDraftId(nextDraftId);
@@ -89,7 +95,12 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
           if (active) setState(next);
         });
         if (retakeRef.current) flow.retake(retakeRef.current);
-        setController(flow);
+        setController({ ...flow,
+          capturePhoto: uri => runFocused(() => flow.capturePhoto(uri)),
+          chooseNutrition: mode => runFocused(() => flow.chooseNutrition(mode)),
+          continueIngredientsOnly: () => runFocused(flow.continueIngredientsOnly),
+          retry: () => runFocused(flow.retry),
+        });
         setState(flow.getState());
       })
       .catch(err => {
