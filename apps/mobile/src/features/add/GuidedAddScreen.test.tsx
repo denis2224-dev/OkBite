@@ -48,7 +48,8 @@ jest.mock('./GuidedPhotoCapture', () => {
 });
 
 const emptyNutrients = Object.fromEntries(NUTRIENT_KEYS.map(key => [key, null]));
-const readReasons = Object.fromEntries([...NUTRIENT_KEYS, 'ingredientsText'].map(key => [key, 'read']));
+// U1: a field is 'read' exactly when it has a value; these nutrients are null.
+const readReasons = { ...Object.fromEntries(NUTRIENT_KEYS.map(key => [key, 'not_printed'])), ingredientsText: 'read' };
 const baseLabel = {
   ingredientsText: 'făină, apă, sare',
   unit: 'g' as const,
@@ -109,6 +110,33 @@ test('starts at front photo step when barcode entry has no front photoPath', asy
 
   expect(screen.getByText(ro.add.frontTitle)).toBeTruthy();
   expect(screen.getByText(ro.add.frontHint)).toBeTruthy();
+  expect(screen.getByText(ro.add.stepOf(1, 4))).toBeTruthy();
+  expect(ro.add.stepOf(1, 3)).toBe('Pasul 1 din 3');
+  expect(ro.add.stepOf(2, 4)).toBe('Pasul 2 din 4');
+});
+
+test('keeps manual entry fallback ("Scriu eu textul") reachable from a failed or interrupted guided read', async () => {
+  jest.mocked(loadUnknownDraft).mockResolvedValueOnce({
+    version: 1,
+    id: 'draft-id',
+    initial: { code: '4840001000014', name: 'Pâine', brand: null, quantity: null, photoPath: 'device/front.jpg' },
+    stage: 'reading',
+    nutritionMode: 'none',
+    photos: { front: null, ingredients: 'kept:ing', nutrition: null },
+    label: null,
+    readStatus: 'interrupted',
+  });
+  await render(<GuidedAddScreen />);
+  await act(async () => {});
+
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: ro.add.manualEntry }));
+  });
+
+  expect(mockReplace).toHaveBeenCalledWith({
+    pathname: '/add',
+    params: expect.objectContaining({ code: '4840001000014', flow: 'manual' }),
+  });
 });
 
 test('shows explicit retry when a restored draft was interrupted mid-read', async () => {

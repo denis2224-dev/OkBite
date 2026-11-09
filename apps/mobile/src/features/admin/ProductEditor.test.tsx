@@ -49,3 +49,13 @@ it('rejects a barcode with the wrong check digit before saving', async () => {
   await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
   expect(save).not.toHaveBeenCalled();
 });
+it('makes the moderator name a brand left blank by the shopper before verifying', async () => {
+  const save = jest.fn().mockResolvedValue(undefined);
+  await render(<ProductEditor initial={{ ...initial, brand: '' }} onSave={save} />);
+  await fireEvent.press(screen.getByText('Verifică și salvează'));
+  await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
+  expect(save).not.toHaveBeenCalled();
+  await fireEvent.changeText(screen.getByLabelText(ro.review.brand), 'Zorel');
+  await fireEvent.press(screen.getByText('Verifică și salvează'));
+  await waitFor(() => expect(save).toHaveBeenCalledWith({ ...initial, brand: 'Zorel' }));
+});

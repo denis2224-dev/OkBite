@@ -2,7 +2,8 @@ import { createGuidedFlow } from './guidedFlow';
 
 const initial = { code: null, brand: null, name: null, quantity: null, photoPath: 'uploads/front' };
 const nutrients = { kcal: null, fat: null, sat: null, sugar: null, salt: null, protein: null, fiber: null, fruitVegPct: null };
-const reasons = { kcal: 'read', fat: 'read', sat: 'read', sugar: 'read', salt: 'read', protein: 'read', fiber: 'read', fruitVegPct: 'read', ingredientsText: 'read' };
+// U1: a field is 'read' exactly when it has a value, so null nutrients carry another reason.
+const reasons = { kcal: 'not_printed', fat: 'not_printed', sat: 'not_printed', sugar: 'not_printed', salt: 'not_printed', protein: 'not_printed', fiber: 'not_printed', fruitVegPct: 'not_printed', ingredientsText: 'read' };
 const label = { ingredientsText: 'text from label', unit: null, nutrients, reasons, unclear: [], ingredientsPhotoPath: 'uploads/ingredients', nutritionPhotoPath: null };
 function setup(response: unknown = label) {
   const deps = {
@@ -40,7 +41,7 @@ test.each(['separate', 'same_photo', 'none', 'skipped'] as const)('%s explicitly
 });
 
 test('unreadable optional nutrition continues without another AI request and retains photos', async () => {
-  const { flow, deps } = setup({ ...label, nutrients: { ...nutrients, salt: 2 }, reasons: { ...reasons, salt: 'no_per_100' }, unclear: ['salt'] });
+  const { flow, deps } = setup({ ...label, reasons: { ...reasons, salt: 'no_per_100' }, unclear: ['salt'] });
   await flow.capturePhoto('ingredients'); await flow.chooseNutrition('separate'); await flow.capturePhoto('nutrition');
   expect(flow.getState().stage).toBe('nutrition_unreadable');
   const photos = flow.getState().photos;
@@ -128,7 +129,7 @@ test('an oversized request fails before calling the provider', async () => {
 });
 
 test('nutrition is cleared explicitly even if the provider returns guessed values', async () => {
-  const { flow } = setup({ ...label, nutrients: { ...nutrients, kcal: 123, salt: 2 }, unclear: ['kcal', 'ingredientsText'] });
+  const { flow } = setup({ ...label, nutrients: { ...nutrients, kcal: 123, salt: 2 }, reasons: { ...reasons, kcal: 'read', salt: 'read' }, unclear: ['kcal', 'ingredientsText'] });
   await flow.capturePhoto('ingredients'); await flow.chooseNutrition('none');
   expect(flow.getState().label).toMatchObject({ nutrients, reasons: { kcal: 'not_printed', salt: 'not_printed' }, unclear: ['ingredientsText'] });
 });

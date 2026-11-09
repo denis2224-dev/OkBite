@@ -3,8 +3,10 @@ import { renderHook, act } from '@testing-library/react-native';
 import { ImageManipulator } from 'expo-image-manipulator';
 import { scanFromURLAsync } from 'expo-camera';
 import { launchImageLibraryAsync } from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { LookupResponse, IdentifyResponse } from '@okbite/shared';
 import { api } from '../../lib/api';
+import { setGuidedAddEnabled } from '../identify/routes';
 import { enqueue } from '../offline/queue';
 import { useCaptureFlow } from './useCaptureFlow';
 import { CODE, PRODUCT_ID, identifyCandidates, identifyFound, identifyNotFound, lookupFound, lookupNotFound } from './__fixtures__/responses';
@@ -14,6 +16,18 @@ jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }), u
 jest.mock('expo-image-manipulator', () => ({ SaveFormat: { JPEG: 'jpeg' }, ImageManipulator: { manipulate: jest.fn() } }));
 jest.mock('expo-camera', () => ({ scanFromURLAsync: jest.fn() }));
 jest.mock('expo-image-picker', () => ({ launchImageLibraryAsync: jest.fn() }));
+jest.mock('expo-crypto', () => ({ randomUUID: () => 'front-capture-uuid' }));
+jest.mock('expo-file-system/legacy', () => ({
+  documentDirectory: 'file:///doc/',
+  EncodingType: { Base64: 'base64' },
+  makeDirectoryAsync: jest.fn(async () => {}),
+  copyAsync: jest.fn(async ({ from }: { from: string; to: string }) => {
+    if (!from.startsWith('file://')) {
+      throw new Error(`Refusing non-local URI in keepPhoto: ${from}`);
+    }
+  }),
+  deleteAsync: jest.fn(async () => {}),
+}));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
 jest.mock('../offline/queue', () => ({ enqueue: jest.fn() }));
 
@@ -42,6 +56,14 @@ describe('fixtures', () => {
 describe('useCaptureFlow', () => {
   beforeEach(() => {
     jest.resetAllMocks();
+    setGuidedAddEnabled(null);
+    jest.mocked(FileSystem.copyAsync).mockImplementation(async ({ from }: { from: string; to: string }) => {
+      if (!from.startsWith('file://')) {
+        throw new Error(`Refusing non-local URI in keepPhoto: ${from}`);
+      }
+    });
+    jest.mocked(FileSystem.makeDirectoryAsync).mockResolvedValue(undefined);
+    jest.mocked(FileSystem.deleteAsync).mockResolvedValue(undefined);
     jest.mocked(enqueue).mockRejectedValue(new Error('storage unavailable'));
     photo.takePictureAsync.mockResolvedValue({ uri: 'file:///shot.jpg' });
     const image = { width: 1200, height: 900, saveAsync: async () => ({ uri: 'file:///c.jpg', base64: Buffer.from('jpeg-bytes').toString('base64') }) };
@@ -243,5 +265,32 @@ describe('useCaptureFlow', () => {
     identify.mockResolvedValue(identifyFound);
     await act(async () => { await result.current.retry(); });
     expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+  });
+
+  it('keeps the compressed front photo locally before upload and passes frontPhotoId to /identify when guided add is enabled', async () => {
+    setGuidedAddEnabled(true);
+    const callOrder: string[] = [];
+    jest.mocked(FileSystem.copyAsync).mockImplementation(async ({ from }: { from: string; to: string }) => {
+      if (!from.startsWith('file://')) {
+        throw new Error(`Refusing non-local URI in keepPhoto: ${from}`);
+      }
+      callOrder.push(`keepPhoto:${from}`);
+    });
+    identify.mockImplementation(async () => {
+      callOrder.push('identify');
+      return identifyNotFound;
+    });
+
+    await capture();
+
+    expect(callOrder).toEqual(['keepPhoto:file:///c.jpg', 'identify']);
+    expect(mockReplace).toHaveBeenCalledWith({
+      pathname: '/identify',
+      params: {
+        source: 'photo',
+        payload: JSON.stringify(identifyNotFound),
+        frontPhotoId: 'file:///doc/okbite-queue/front-capture-uuid.jpg',
+      },
+    });
   });
 });

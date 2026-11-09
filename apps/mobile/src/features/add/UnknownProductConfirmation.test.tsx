@@ -8,20 +8,24 @@ jest.mock('../offline/photos', () => ({ openPhoto: jest.fn() }));
 const mockOpen = jest.mocked(openPhoto);
 const initial = { code: null, brand: null, name: 'Produs test', quantity: null, photoPath: 'uploads/front.jpg' };
 const nutrients = { kcal: null, fat: null, sat: null, sugar: null, salt: null, protein: null, fiber: null, fruitVegPct: null };
-const label = { ingredientsText: 'ingrediente test', unit: null, nutrients, unclear: [], ingredientsPhotoPath: 'uploads/ingredients.jpg', nutritionPhotoPath: null };
+const label = { ingredientsText: 'ingrediente test', unit: 'g' as const, nutrients, unclear: [], ingredientsPhotoPath: 'uploads/ingredients.jpg', nutritionPhotoPath: null };
 const photos = { front: 'front-id', ingredients: 'ingredients-id', nutrition: null };
 function props(overrides: Partial<UnknownProductConfirmationProps> = {}): UnknownProductConfirmationProps {
   return { initial, label, photos, categories: [], onConfirm: jest.fn(async () => {}), onRetake: jest.fn(), ...overrides };
 }
 beforeEach(() => { mockOpen.mockReset(); mockOpen.mockImplementation(async id => ({ uri: `blob:${id}`, release: jest.fn() })); });
 
-it('confirms ingredients without keyboard, category, brand or invented unit', async () => {
-  const input = props();
+it('confirms ingredients without keyboard, category or brand; the unit is one tap, never guessed', async () => {
+  const input = props({ label: { ...label, unit: null }, onChange: jest.fn() });
   await render(<UnknownProductConfirmation {...input} />);
   expect(screen.queryAllByRole('textbox')).toHaveLength(0);
   expect(screen.queryByRole('button', { name: /^Categorie:/ })).toBeNull();
+  expect(screen.getByText(ro.add.unitQuestion)).toBeTruthy();
+  expect(screen.getByRole('button', { name: ro.add.confirmSave })).toBeDisabled();
+  await act(async () => { await fireEvent.press(screen.getByRole('button', { name: ro.add.unitMl })); });
+  expect(input.onChange).toHaveBeenLastCalledWith(expect.objectContaining({ unit: 'ml' }));
   await act(async () => { await fireEvent.press(screen.getByRole('button', { name: ro.add.confirmSave })); });
-  expect(input.onConfirm).toHaveBeenCalledWith(expect.objectContaining({ name: 'Produs test', brand: '', unit: null, nutrients }));
+  expect(input.onConfirm).toHaveBeenCalledWith(expect.objectContaining({ name: 'Produs test', brand: '', unit: 'ml', nutrients }));
   expect(jest.mocked(input.onConfirm).mock.calls[0]?.[0].categorySlug).toBeUndefined();
 });
 
