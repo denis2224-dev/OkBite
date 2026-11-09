@@ -28,7 +28,7 @@ for (const mode of ['light', 'dark'] as const) {
     await expect(page.getByText(ro.result.portion, {exact:true})).toHaveCount(0);
     await expect(page.getByText(product.ingredientsText, {exact:true})).toBeAttached();
     await expect(page.getByText(ro.result.unverifiedNote, {exact:true})).toBeAttached();
-    await expect(page.getByRole('button', {name:ro.result.addNutrition, exact:true})).toHaveCount(0);
+    await expect(page.getByRole('button', {name:ro.result.addNutrition, exact:true})).toHaveCount(process.env.EXPO_PUBLIC_NUTRITION_ENRICHMENT === '1' ? 1 : 0);
     await expect(page.getByRole('progressbar', {name:ro.app.loading})).toHaveCount(0);
     await doubledText(page);
     const note = page.getByText(ro.result.missingAllergenNote, {exact:true});
@@ -45,6 +45,7 @@ for (const mode of ['light', 'dark'] as const) {
     shown = {...shown, nutrients:{...product.nutrients, ...empty, sugar:0, salt:.5}};
     await page.reload();
     await expect(page.getByText(ro.result.insufficientNutrition, {exact:true})).toBeAttached();
+    await expect(page.getByRole('button', {name:ro.result.addNutrition, exact:true})).toHaveCount(0);
     await expect(page.getByText('0 g', {exact:true})).toBeAttached();
     await expect(page.getByText('0,5 g', {exact:true})).toBeAttached();
     await expect(page.getByText(ro.result.per100(product.unit), {exact:true})).toBeAttached();
