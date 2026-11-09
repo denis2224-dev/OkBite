@@ -19,7 +19,7 @@ export const UnknownDraftSnapshotSchema = z.object({
     ingredients: photoReference.nullable(),
     nutrition: photoReference.nullable(),
   }),
-  label: ReadLabelResponse.passthrough().nullable(),
+  label: ReadLabelResponse.innerType().passthrough().nullable(),
   readStatus: z.enum(['idle', 'pending', 'interrupted', 'complete']),
   savedResult: LookupResponse.options[0].nullable().optional(),
 });

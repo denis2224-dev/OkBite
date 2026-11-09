@@ -48,7 +48,8 @@ jest.mock('./GuidedPhotoCapture', () => {
 });
 
 const emptyNutrients = Object.fromEntries(NUTRIENT_KEYS.map(key => [key, null]));
-const readReasons = Object.fromEntries([...NUTRIENT_KEYS, 'ingredientsText'].map(key => [key, 'read']));
+// U1: a field is 'read' exactly when it has a value; these nutrients are null.
+const readReasons = { ...Object.fromEntries(NUTRIENT_KEYS.map(key => [key, 'not_printed'])), ingredientsText: 'read' };
 const baseLabel = {
   ingredientsText: 'făină, apă, sare',
   unit: 'g' as const,
