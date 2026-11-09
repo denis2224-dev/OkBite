@@ -8,6 +8,8 @@ import { requestUnknownFlow } from './unknownFlowTransport';
 import { completeUnknownDraft } from './completeUnknownDraft';
 import { UnknownReviewScreen } from './UnknownReviewScreen';
 
+type Reasons = NonNullable<NonNullable<UnknownDraftSnapshot['label']>['reasons']>;
+
 const mockReplace = jest.fn();
 const mockParams: { value: Record<string, string | string[] | undefined> } = { value: {} };
 
@@ -51,7 +53,7 @@ const storedDraft: UnknownDraftSnapshot = {
     unclear: [],
     ingredientsPhotoPath: 'uploads/ing-receipt-1.jpg',
     nutritionPhotoPath: null,
-    reasons: Object.fromEntries([...NUTRIENT_KEYS, 'ingredientsText'].map(k => [k, k === 'ingredientsText' ? 'read' : 'not_printed'])),
+    reasons: Object.fromEntries([...NUTRIENT_KEYS, 'ingredientsText'].map(k => [k, k === 'ingredientsText' ? 'read' : 'not_printed'])) as Reasons,
   },
   readStatus: 'complete',
 };
@@ -86,6 +88,10 @@ test('double tap creates one add-product request, reuses ingredientsPhotoPath on
 
   await render(<UnknownReviewScreen />);
   await act(async () => {});
+
+  // No nutrition table: the unit is asked with one tap and kept in the draft for a reload.
+  await act(async () => { await fireEvent.press(screen.getByRole('button', { name: ro.add.unitGram })); });
+  expect(saveUnknownDraftIfCurrent).toHaveBeenLastCalledWith(expect.objectContaining({ label: expect.objectContaining({ unit: 'g' }) }));
 
   const saveBtn = screen.getByRole('button', { name: ro.add.confirmSave });
   await fireEvent.press(saveBtn);
@@ -124,7 +130,7 @@ test('per-photo retake navigates to /add with retake kind while keeping draft ed
     label: {
       ...storedDraft.label!,
       unclear: ['kcal'],
-      reasons: { ...(storedDraft.label!.reasons as Record<string, string>), kcal: 'unreadable' },
+      reasons: { ...storedDraft.label!.reasons!, kcal: 'unreadable' },
     },
   });
   await render(<UnknownReviewScreen />);

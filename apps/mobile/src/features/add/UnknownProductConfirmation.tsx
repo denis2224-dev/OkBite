@@ -16,7 +16,7 @@ export type UnknownProductProposal = Omit<AddProductRequest, 'unit' | 'categoryS
 export type UnknownPhotoKind = 'front' | 'ingredients' | 'nutrition';
 export interface UnknownProductConfirmationProps {
   initial: AddInitialValues & { frontPhotoId?: string; categorySlug?: string };
-  label: ReadLabelResponse & { reasons?: Record<string, string> | null };
+  label: Omit<ReadLabelResponse, 'reasons'> & { reasons?: Partial<Record<string, string>> | null };
   photos: Record<UnknownPhotoKind, string | null>;
   categories: readonly Category[];
   onConfirm(proposal: UnknownProductProposal): Promise<void>;
@@ -47,7 +47,8 @@ export function UnknownProductConfirmation({ initial, label, photos, categories,
   const essentialMissing = !value.ingredientsText.trim();
   const numericInvalid = Object.values(invalid).some(Boolean) ||
     (value.nutrients.sat !== null && value.nutrients.fat !== null && value.nutrients.sat > value.nutrients.fat);
-  const canConfirm = !pending && !numericInvalid && value.name.trim().length > 0 && value.name.trim().length <= 120 &&
+  // U1 option A: unit is required on save, so ask g/ml with one tap instead of guessing it.
+  const canConfirm = !pending && !numericInvalid && value.unit !== null && value.name.trim().length > 0 && value.name.trim().length <= 120 &&
     value.brand.trim().length <= 80 && value.quantity.trim().length <= 30 && value.ingredientsText.trim().length >= 3 && value.ingredientsText.trim().length <= 3000;
   const submit = async () => {
     if (busy.current || !canConfirm) return;
@@ -86,7 +87,7 @@ export function UnknownProductConfirmation({ initial, label, photos, categories,
         <Text style={textStyle}>{ro.add.unreadableText}</Text>
         <ActionButton label={`${ro.add.retakePhoto}: ${ro.review.ingredients}`} onPress={() => onRetake('ingredients')} disabled={pending} />
       </> : null}
-      {onManual && (essentialMissing || label.reasons?.ingredientsText === 'processing_failed') ?
+      {onManual && (essentialMissing || label.reasons?.ingredientsText === 'failed') ?
         <ActionButton label={ro.add.manualEntry} onPress={onManual} disabled={pending} /> : null}
     </View>
     <View style={card}>
@@ -109,6 +110,11 @@ export function UnknownProductConfirmation({ initial, label, photos, categories,
             }} />;
         })}
       </> : <><Text style={textStyle}>{ro.add.ingredientsOnly}</Text><Text style={textStyle}>{ro.add.nutritionUnavailable}</Text></>}
+      {visibleNutrients.length === 0 || value.unit === null ? <>
+        <Text style={textStyle}>{ro.add.unitQuestion}</Text>
+        {(['g', 'ml'] as const).map(unit => <ActionButton key={unit} label={unit === 'g' ? ro.add.unitGram : ro.add.unitMl}
+          variant={value.unit === unit ? 'primary' : undefined} disabled={pending} onPress={() => change({ ...value, unit })} />)}
+      </> : null}
       {nutritionUnreadable ? <>
         <Text style={textStyle}>{ro.add.nutritionUnreadable}</Text>
         <ActionButton label={`${ro.add.retakePhoto}: ${ro.review.nutritionTitle}`} onPress={() => onRetake('nutrition')} disabled={pending} />
