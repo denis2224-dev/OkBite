@@ -13,6 +13,7 @@ import {
 export type IdentifyPayload = Exclude<IdentifyResponse, { status: 'found' }>;
 
 export type AddRouteParams = {
+  flow?: 'guided';
   queueId?: string;
   code?: string;
   brand?: string;
@@ -67,14 +68,16 @@ export function addProductRoute({
   queueId,
   frontPhotoId,
   unknownDraftId,
+  flow,
 }: {
   read: FrontRead;
   photoPath: string | null;
   queueId?: string;
   frontPhotoId?: string;
   unknownDraftId?: string;
+  flow?: 'guided';
 }): { pathname: '/add'; params: AddRouteParams } {
-  const params: AddRouteParams = {};
+  const params: AddRouteParams = flow ? { flow } : {};
   const code = read.code ? normalizeCode(read.code) : null;
   const brand = cleanParam(read.brand ?? undefined);
   const name = cleanParam(read.name ?? undefined);

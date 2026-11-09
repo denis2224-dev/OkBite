@@ -5,7 +5,12 @@ import { requestUnknownFlow } from './unknownFlowTransport';
 import { api } from '../../lib/api';
 import { NUTRIENT_KEYS } from '@okbite/shared';
 const mockReplace = jest.fn();
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }), useFocusEffect: (fn: () => void) => jest.requireActual<typeof import('react')>('react').useEffect(fn, [fn]) }));
+let mockDelayFocus = false;
+let mockFocus: (() => void) | undefined;
+jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }), useFocusEffect: (fn: () => void) => jest.requireActual<typeof import('react')>('react').useEffect(() => {
+  if (mockDelayFocus) { mockFocus = fn; return; }
+  return fn();
+}, [fn]) }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'draft-id' }));
 jest.mock('./unknownDraft', () => ({ ...jest.requireActual('./unknownDraftRepository'), loadUnknownDraft: jest.fn(), saveUnknownDraft: jest.fn(), saveUnknownDraftIfCurrent: jest.fn(async () => true), clearUnknownDraft: jest.fn() }));
 jest.mock('./unknownFlowTransport', () => ({ requestUnknownFlow: jest.fn() }));
@@ -15,7 +20,18 @@ jest.mock('../capture/compressPhoto', () => ({ compressPhoto: async (uri: string
 jest.mock('../offline/photos', () => ({ keepPhoto: async (uri: string) => 'kept-' + uri, openPhoto: async (id: string) => ({ uri: id, release() {} }), removePhoto: jest.fn() }));
 const initial = { code: '4840001000014', name: 'Test product', brand: null, quantity: null, photoPath: 'device/front.jpg' };
 const label = { ingredientsText: 'ingredient test', unit: null, nutrients: Object.fromEntries(NUTRIENT_KEYS.map(key => [key, null])), unclear: [], ingredientsPhotoPath: 'device/ingredients.jpg', nutritionPhotoPath: null, reasons: Object.fromEntries([...NUTRIENT_KEYS, 'ingredientsText'].map(key => [key, key === 'ingredientsText' ? 'read' : 'not_printed'])) };
-beforeEach(() => { jest.clearAllMocks(); jest.mocked(loadUnknownDraft).mockResolvedValue(null); jest.mocked(requestUnknownFlow).mockResolvedValue(label); });
+beforeEach(() => { jest.clearAllMocks(); mockDelayFocus = false; mockFocus = undefined; jest.mocked(loadUnknownDraft).mockResolvedValue(null); jest.mocked(requestUnknownFlow).mockResolvedValue(label); });
+
+test('opens confirmation when navigation gains focus during draft restoration', async () => {
+  mockDelayFocus = true;
+  let finish!: (draft: null) => void;
+  jest.mocked(loadUnknownDraft).mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+  const { result } = await renderHook(() => useGuidedAddSession(initial));
+  await act(async () => { mockFocus!(); finish(null); });
+  await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
+  await act(async () => { await result.current.controller!.chooseNutrition('none'); });
+  expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'draft-id' } });
+});
 
 test('asks after ingredients and reads only after an explicit answer', async () => {
   const { result } = await renderHook(() => useGuidedAddSession(initial));

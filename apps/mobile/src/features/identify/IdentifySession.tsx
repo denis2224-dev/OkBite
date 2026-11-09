@@ -48,7 +48,7 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
         candidate={state.candidate}
         onConfirm={confirm}
         onReject={() =>
-          navigate(addProductRoute({ read: state.read, photoPath: state.photoPath, queueId, frontPhotoId, unknownDraftId }))
+          navigate(addProductRoute({ read: state.read, photoPath: state.photoPath, queueId, frontPhotoId, unknownDraftId, flow: 'guided' }))
         }
       />
     );
@@ -59,7 +59,7 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
         candidates={state.candidates}
         onSelect={confirm}
         onNone={() =>
-          navigate(addProductRoute({ read: state.read, photoPath: state.photoPath, queueId, frontPhotoId, unknownDraftId }))
+          navigate(addProductRoute({ read: state.read, photoPath: state.photoPath, queueId, frontPhotoId, unknownDraftId, flow: 'guided' }))
         }
       />
     );
@@ -69,7 +69,7 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
       <NotFound
         code={state.read.code}
         onAdd={() =>
-          navigate(addProductRoute({ read: state.read, photoPath: state.photoPath, queueId, frontPhotoId, unknownDraftId }))
+          navigate(addProductRoute({ read: state.read, photoPath: state.photoPath, queueId, frontPhotoId, unknownDraftId, flow: 'guided' }))
         }
         onCheckCodeAgain={state.fromCode ? () => navigate('/scan') : undefined}
       />

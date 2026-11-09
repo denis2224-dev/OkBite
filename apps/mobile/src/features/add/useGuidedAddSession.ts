@@ -34,11 +34,12 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
     let active = true;
     let unsubscribe: (() => void) | undefined;
     let activeFlow: ReturnType<typeof createGuidedFlow> | null = null;
-    const token = runtimeRef.current.activity.start();
 
     void loadUnknownDraft()
       .then(stored => {
         if (!active) return;
+        // Navigation may gain focus while IndexedDB restores the draft.
+        const token = runtimeRef.current.activity.start();
         const nextDraftId = stored?.id ?? randomUUID();
         draftIdRef.current = nextDraftId;
         setDraftId(nextDraftId);

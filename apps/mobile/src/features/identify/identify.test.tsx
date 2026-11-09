@@ -130,6 +130,7 @@ describe('IdentifyScreen and B3 flow', () => {
     expect(mockReplace).toHaveBeenCalledWith({
       pathname: '/add',
       params: {
+        flow: 'guided',
         brand: ORIGINAL_READ.brand,
         name: ORIGINAL_READ.name,
         quantity: ORIGINAL_READ.quantity,
@@ -180,6 +181,7 @@ describe('IdentifyScreen and B3 flow', () => {
     expect(mockReplace).toHaveBeenCalledWith({
       pathname: '/add',
       params: {
+        flow: 'guided',
         code: '4840001000014',
         brand: ORIGINAL_READ.brand,
         name: ORIGINAL_READ.name,
@@ -211,6 +213,7 @@ describe('IdentifyScreen and B3 flow', () => {
     expect(mockReplace).toHaveBeenCalledWith({
       pathname: '/add',
       params: {
+        flow: 'guided',
         brand: 'Bucuria',
         quantity: '100 g',
         photoPath: PHOTO_PATH,
@@ -229,7 +232,7 @@ describe('IdentifyScreen and B3 flow', () => {
     await fireEvent.press(screen.getByRole('button', { name: ro.identify.addButton }));
     expect(mockReplace).toHaveBeenCalledWith({
       pathname: '/add',
-      params: { code: '0036000291452' },
+      params: { flow: 'guided', code: '0036000291452' },
     });
     const sentParams = requireReplacedParams();
     expect('photoPath' in sentParams).toBe(false);
@@ -305,6 +308,11 @@ describe('IdentifyScreen and B3 flow', () => {
       quantity: null,
       photoPath: null,
     });
+  });
+
+  it('opens the guided flow when an unknown barcode has no front photo or draft', () => {
+    expect(addProductRoute({ read: { code: '4840001000014', brand: null, name: null, quantity: null }, photoPath: null, flow: 'guided' }))
+      .toMatchObject({ pathname: '/add', params: { flow: 'guided', code: '4840001000014' } });
   });
 
   it('preserves frontPhotoId, unknownDraftId, and scanned code when "Nu e niciunul" returns to /add', async () => {
