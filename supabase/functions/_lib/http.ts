@@ -32,7 +32,8 @@ export function fail(error: ErrorCode, message: string, status: number): Respons
 const allowedHeaders = ['content-type', 'x-device-id', 'authorization', 'apikey', 'x-client-info'];
 const exactOrigins = [
   'https://okbite.md',
-  'https://www.okbite.md',
+  'https://okbite.app',
+  'https://www.okbite.app',
   'https://okbite.pages.dev',
   'http://localhost:8081',
 ];
