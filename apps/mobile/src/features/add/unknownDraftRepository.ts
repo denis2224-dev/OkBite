@@ -10,6 +10,7 @@ export const UnknownDraftSnapshotSchema = z.object({
     photoPath: photoReference.nullable(),
     queueId: z.string().min(1).optional(),
     frontPhotoId: photoReference.optional(),
+    categorySlug: z.string().min(1).optional(),
   }),
   stage: z.enum(['front', 'ingredients', 'nutrition_question', 'nutrition', 'reading', 'review']),
   nutritionMode: z.enum(['separate', 'same_photo', 'none', 'skipped']).nullable(),
@@ -57,6 +58,15 @@ export function createUnknownDraftRepository(storage: UnknownDraftStorage) {
     async saveUnknownDraft(snapshot: UnknownDraftSnapshot): Promise<void> {
       const json = JSON.stringify(UnknownDraftSnapshotSchema.parse(snapshot));
       await serialize(() => storage.write(json));
+    },
+    async saveUnknownDraftIfCurrent(snapshot: UnknownDraftSnapshot): Promise<boolean> {
+      const json = JSON.stringify(UnknownDraftSnapshotSchema.parse(snapshot));
+      const id = snapshot.id;
+      return serialize(async () => {
+        if (decode(await storage.read())?.id !== id) return false;
+        await storage.write(json);
+        return true;
+      });
     },
     clearUnknownDraft(id: string): Promise<void> {
       return serialize(async () => {
