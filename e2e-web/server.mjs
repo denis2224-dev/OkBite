@@ -2,13 +2,16 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
+import { unknownStub } from './unknown-stubs.mjs';
 const root = resolve('apps/mobile/dist-e2e');
 const entries = JSON.parse(await readFile('apps/mobile/src/test/preview-data.json', 'utf8'));
+const categories = JSON.parse(await readFile('data/categories.json', 'utf8'));
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
   '.png': 'image/png', '.ico': 'image/x-icon', '.ttf': 'font/ttf', '.woff': 'font/woff', '.webmanifest': 'application/manifest+json' };
 const serve = async (req, res) => {
   try {
     const url = new URL(req.url, 'http://127.0.0.1:18766');
+    if (await unknownStub(req, res, url, entries[0], categories)) return;
     if (url.pathname === '/functions/v1/lookup') {
       const entry = entries.find(item => item.product.id === url.searchParams.get('id'));
       res.setHeader('Content-Type', 'application/json');
