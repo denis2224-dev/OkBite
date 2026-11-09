@@ -17,6 +17,8 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
   const activity = useScreenActivity();
   const state = parseIdentifyParams(rawParams);
   const queueId = typeof rawParams.queueId === 'string' ? rawParams.queueId : undefined;
+  const frontPhotoId = typeof rawParams.frontPhotoId === 'string' ? rawParams.frontPhotoId : undefined;
+  const unknownDraftId = typeof rawParams.unknownDraftId === 'string' ? rawParams.unknownDraftId : undefined;
   const selected = useRef<string | null>(null);
   const finishing = useRef(false);
   const [cleanupPending, setCleanupPending] = useState(false);
@@ -46,7 +48,7 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
         candidate={state.candidate}
         onConfirm={confirm}
         onReject={() =>
-          navigate(addProductRoute({ read: state.read, photoPath: state.photoPath, queueId }))
+          navigate(addProductRoute({ read: state.read, photoPath: state.photoPath, queueId, frontPhotoId, unknownDraftId }))
         }
       />
     );
@@ -57,7 +59,7 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
         candidates={state.candidates}
         onSelect={confirm}
         onNone={() =>
-          navigate(addProductRoute({ read: state.read, photoPath: state.photoPath, queueId }))
+          navigate(addProductRoute({ read: state.read, photoPath: state.photoPath, queueId, frontPhotoId, unknownDraftId }))
         }
       />
     );
@@ -67,7 +69,7 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
       <NotFound
         code={state.read.code}
         onAdd={() =>
-          navigate(addProductRoute({ read: state.read, photoPath: state.photoPath, queueId }))
+          navigate(addProductRoute({ read: state.read, photoPath: state.photoPath, queueId, frontPhotoId, unknownDraftId }))
         }
         onCheckCodeAgain={state.fromCode ? () => navigate('/scan') : undefined}
       />
