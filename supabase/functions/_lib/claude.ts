@@ -23,6 +23,7 @@ export type ClaudeDeps = {
   sleep?: (ms: number) => Promise<void>;
   now?: () => number;
   apiKey?: string;
+  fallbackKey?: string;
   model?: string;
 };
 
@@ -40,8 +41,10 @@ export async function askClaude(
   prompt: string,
   deps: ClaudeDeps = {},
 ): Promise<string> {
-  const key = deps.apiKey ?? Deno.env.get('AI_API_KEY');
+  let key = deps.apiKey ?? Deno.env.get('AI_API_KEY');
   if (!key) throw new UpstreamError('Claude is not configured');
+  // A second account's key, used once the first answers "quota used up" (402) or "rate limited" (429).
+  let fallback = deps.fallbackKey ?? Deno.env.get('AI_API_KEY_FALLBACK');
   validateProviderImages(images);
   const doFetch = deps.fetch ?? fetch;
   const sleep = deps.sleep ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)));
@@ -78,6 +81,11 @@ export async function askClaude(
     }
     if (res?.ok) return readText(await res.json().catch(() => null));
     await res?.body?.cancel();
+    if (res && (res.status === 402 || res.status === 429) && fallback) {
+      console.warn(`Claude request failed: HTTP ${res.status}, switching to the fallback key`);
+      [key, fallback] = [fallback, undefined];
+      continue;
+    }
     if ((res && !RETRYABLE.has(res.status)) || attempt >= ATTEMPTS) {
       console.warn(`Claude request failed: ${res ? `HTTP ${res.status}` : 'no response'}`);
       throw new UpstreamError('Claude request failed');
