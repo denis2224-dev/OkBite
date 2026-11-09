@@ -6,7 +6,6 @@ const API_URL = 'https://tokenharbor.ai/v1/chat/completions';
 export const CLAUDE_MODEL = 'deepseek-v4.1-flash:free'; // override with the AI_MODEL secret
 const RETRYABLE = new Set([408, 429, 500, 502, 503, 504, 529]);
 const ATTEMPTS = 3;
-const TIMEOUT_MS = 20_000;
 // All provider attempts together. The app waits AI_DEADLINE_MS + 15 s, but storage,
 // database work and cleanup are outside this budget; it is not a handler deadline.
 export const AI_DEADLINE_MS = 40_000;
@@ -86,10 +85,18 @@ export async function askClaude(
           authorization: `Bearer ${key}`,
         },
         body,
-        signal: AbortSignal.timeout(Math.min(TIMEOUT_MS, Math.max(1, deadline - now()))),
+        signal: AbortSignal.timeout(Math.max(1, deadline - now())),
       });
-    } catch {
-      res = null; // network failure or timeout: retried like a 5xx
+    } catch (error) {
+      // An attempt still pending at the deadline may yet be answered and billed: never resend it.
+      if (
+        error instanceof DOMException &&
+        (error.name === 'TimeoutError' || error.name === 'AbortError')
+      ) {
+        console.warn('Claude request failed: no answer before the deadline');
+        throw new UpstreamError('Claude deadline reached');
+      }
+      res = null; // network failure before an answer: retried like a 5xx
     }
     if (res?.ok) {
       const answer = readText(await readResponse(res));

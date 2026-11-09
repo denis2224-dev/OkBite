@@ -38,9 +38,11 @@ Tests failed before each fix, then passed:
 
 ## Actual limits and remaining shared dependencies
 
-The helper budgets 40 seconds for provider attempts, at most three, each at most
-20 seconds including native-fetch response-body reading. Retryable statuses are
-408/429/500/502/503/504/529; network failures also retry. Backoff is exponential
+The helper budgets 40 seconds for provider attempts, at most three, each bounded by
+the time left in that budget including native-fetch response-body reading. An attempt
+still pending when the budget ends is never resent (U3); read-label returns reason
+`failed`. Retryable statuses are 408/429/500/502/503/504/529; network failures before
+an answer also retry. Backoff is exponential
 or numeric Retry-After capped at 5 seconds; no retry with less than 10 seconds
 remaining after the wait. Retrying uncertain calls may cause multiple provider
 executions; quota admission is once per endpoint request, not once per retry.
