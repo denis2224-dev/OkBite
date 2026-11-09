@@ -457,3 +457,8 @@ describe('IdentifyScreen and B3 flow', () => {
     expect(mockReplace).toHaveBeenCalledTimes(2);
   });
 });
+
+it('opens the guided flow when an unknown barcode has no front photo or draft', () => {
+  expect(addProductRoute({ read: { code: '4840001000014', brand: null, name: null, quantity: null }, photoPath: null, flow: 'guided' }))
+    .toMatchObject({ pathname: '/add', params: { flow: 'guided', code: '4840001000014' } });
+});
