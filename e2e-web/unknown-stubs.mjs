@@ -39,13 +39,17 @@ export async function unknownStub(req, res, url, example, categories) {
   if (name === 'read-label') {
     const absent = input.nutrition === 'none' || input.nutrition === 'skipped';
     const unreadable = session.scenario === 'unreadable';
-    const reason = unreadable ? 'unreadable' : absent ? input.nutrition === 'none' ? 'not_printed' : 'not_photographed' : 'read';
+    const nutrients = absent || unreadable ? empty : product.nutrients;
+    // U1: a field is 'read' exactly when it has a value.
+    const why = unreadable ? 'unreadable' : input.nutrition === 'skipped' ? 'not_photographed' : 'not_printed';
+    const reason = key => nutrients[key] === null ? why : 'read';
     json(res, { ingredientsText: input.ingredientsImage === null ? null : product.ingredientsText, unit: 'g',
-      nutrients: absent || unreadable ? empty : product.nutrients,
+      nutrients,
       unclear: unreadable ? Object.keys(empty) : [],
       ingredientsPhotoPath: input.ingredientsImage === null ? null : `${id}/ingredients.jpg`,
       nutritionPhotoPath: absent ? null : `${id}/nutrition.jpg`,
-      reasons: { ...Object.fromEntries(Object.keys(empty).map(key => [key, reason])), ingredientsText: 'read' } });
+      reasons: { ...Object.fromEntries(Object.keys(empty).map(key => [key, reason(key)])),
+        ingredientsText: input.ingredientsImage === null ? 'not_photographed' : 'read' } });
   }
   if (name === 'add-product' || name === 'enrich-product') {
     if (name === 'enrich-product' && (!session.result || input.productId !== id)) {
