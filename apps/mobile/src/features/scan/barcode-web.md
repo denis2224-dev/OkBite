@@ -20,7 +20,7 @@ Review fixes verified on 9 November 2026 at code commit `ba7633c` (documentation
 - Real Chrome 156 / ZXing: a rectangular synthetic barcode photo rotated 90 degrees
   failed before the fix and decoded correctly afterwards. Photo-only square padding
   compensates for this pinned browser layer retaining unrotated luminance dimensions.
-  The repeatable check is `node apps/mobile/src/features/capture/rotatedBarcode.browser-check.cjs`
+  The repeatable check is `node apps/mobile/scripts/rotatedBarcode.browser-check.cjs`
   (requires installed Chrome and the existing development dependencies).
 
 - Regression tests: 33 pass across three scanner/photo files; fallback and
@@ -58,6 +58,27 @@ decoder chunk from precache and caches successful same-origin requests on demand
 Initial precache decreased from 68 URLs / 5.86 MB to 67 URLs / 5.32 MB.
 Independent review found no actionable issues in the cache adjustment.
 
+Dependency/script follow-up verified on 9 November: all 615 mobile tests, types,
+lint (zero errors; 57 existing warnings), PWA build and the moved browser check pass.
+Claude reported no blocking issues at `07abbc2`; its two minor cleanup requests
+are now addressed. Physical-phone acceptance remains pending.
+
+## Running the browser rotation check
+
+From the repository root, use Node 22+ and the declared pnpm 11.25.0.
+Install dependencies with `pnpm install --frozen-lockfile`, and install Google
+Chrome using its normal installer if it is not already available. The check
+uses Playwright's `chrome` channel and does not download or install a browser.
+
+```sh
+node apps/mobile/scripts/rotatedBarcode.browser-check.cjs
+```
+
+It runs real ZXing against synthetic horizontal and 90-degree-rotated rectangular
+barcode images. Both results must equal `0036000291452`; failure exits nonzero.
+This is a desktop regression check, not real iPhone or Android acceptance.
+The direct `@zxing/library` dependency is pinned to `0.21.3` in the mobile package.
+
 ## Remaining acceptance
 
 - Watch for heat or stutter on older iPhones during live-scanner testing.
@@ -66,4 +87,4 @@ Independent review found no actionable issues in the cache adjustment.
   installed mode: live barcode, photo, invalid/no code, permission refusal,
   exit during startup, camera indicator off after exit, and offline relaunch.
 - Record actual commit, device, OS, browser/mode and results in the team log.
-- Obtain Claude and human review before merge. No hosted deployment performed.
+- Attach Claude's review and obtain human approval before merge. No hosted deployment performed.
