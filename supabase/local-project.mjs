@@ -29,3 +29,17 @@ export function localApiUrl(config, endpoint) {
   }
   return url;
 }
+
+// CLI v3 removed --db-url. Its URL target syntax remains loopback-only here.
+export function localRecoveryTestArgs(config, database) {
+  localProject(config);
+  const section = config.match(/^\[db\]\s*\r?\n([\s\S]*?)(?=^\[|$(?![\s\S]))/m)?.[1];
+  const port = section?.match(/^port\s*=\s*(\d+)\s*$/m)?.[1];
+  if (!port || Number(port) < 1024 || Number(port) > 65535 ||
+      !/^okbite_restore_[a-f0-9]{12}$/.test(database)) {
+    throw new Error('Recovery verification requires a configured disposable local database');
+  }
+  // CLI v3 classifies even loopback URLs as remote; consent applies only after
+  // the strict local identity, port and disposable-name guards above.
+  return ['test', 'db', '--yes', `--remote=postgresql://postgres:postgres@127.0.0.1:${port}/${database}?sslmode=disable`];
+}

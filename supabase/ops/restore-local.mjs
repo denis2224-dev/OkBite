@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync, mkdirSync, chmodSync, openSync, closeSync,
 import { resolve, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
-import { localProject } from '../local-project.mjs';
+import { localProject, localRecoveryTestArgs } from '../local-project.mjs';
 
 // Local Docker only. Never accepts a hosted URL, source database or container override.
 const config = readFileSync(new URL('../config.toml', import.meta.url), 'utf8');
@@ -109,8 +109,7 @@ try {
   sql(target, grants);
   if (snapshot(target) !== before) throw new Error('Restored application/Auth/Storage counts differ');
   if (accessSnapshot(target) !== accessBefore) throw new Error('Restored owners or grants differ');
-  const tests = run(process.env.SUPABASE_CLI_BIN ?? 'supabase', ['test', 'db', '--db-url',
-    `postgresql://postgres:postgres@127.0.0.1:${port}/${target}?sslmode=disable`],
+  const tests = run(process.env.SUPABASE_CLI_BIN ?? 'supabase', localRecoveryTestArgs(config, target),
     // CLI 2.65.5 drops URL sslmode while rebuilding connection options.
     // This subprocess always targets the guarded local disposable database.
     { env: { ...process.env, PGSSLMODE: 'disable' } });
