@@ -1,8 +1,13 @@
 /* eslint-disable @typescript-eslint/no-redeclare -- Zod schemas intentionally share names with inferred types. */
 import { z } from 'zod';
-import { FieldReason, NutritionMode, ReadLabelRequest, ReadLabelResponse } from '@okbite/shared';
+import {
+  AddProductRequest, EnrichProductRequest, EnrichReadLabelRequest, EnrichReadLabelResponse,
+  FieldReason, NutritionMode, ReadLabelRequest, ReadLabelResponse,
+} from '@okbite/shared';
 
-export { FieldReason, NutritionMode };
+export { EnrichProductRequest, EnrichReadLabelRequest, EnrichReadLabelResponse, FieldReason, NutritionMode };
+// U1: categorySlug optional (server saves 'necunoscut'), brand may be '', unit required (option A, 9 Nov).
+export { AddProductRequest as UnknownAddProductRequest };
 
 // The guided flow always sends an explicit mode (the shared schema keeps it optional for old clients).
 export const GuidedReadLabelRequest = ReadLabelRequest.and(z.object({ nutrition: NutritionMode }));
