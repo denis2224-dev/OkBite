@@ -178,12 +178,28 @@ describe('unknown product flow (U1)', () => {
     expect(ReadLabelResponse.safeParse({ ...readAll, reasons: missingOne }).success).toBe(false);
     expect(ReadLabelResponse.safeParse({ ...readAll, reasons: { ...allRead, kcal: 'guessed' } }).success).toBe(false);
   });
-  it('keeps a field null exactly when its reason is not read', () => {
-    expect(ReadLabelResponse.safeParse({ ...label, reasons: { ...allRead, sugar: 'not_printed' } }).success).toBe(false);
-    expect(ReadLabelResponse.safeParse({ ...label, nutrients: { ...n, sugar: 0 }, reasons: { ...allRead, sugar: 'unreadable' } }).success).toBe(false);
-    expect(ReadLabelResponse.safeParse({ ...label, nutrients: { ...n, fruitVegPct: 0 }, reasons: allRead }).success).toBe(true);
-    expect(ReadLabelResponse.safeParse({ ...label, reasons: allRead }).success).toBe(false); // fruitVegPct null but 'read'
-    expect(ReadLabelResponse.safeParse({ ...label, ingredientsText: null, reasons: allRead }).success).toBe(false);
+  const enrichAll = { ...readAll, ingredientsPhotoPath: null };
+  const nulled = <T extends typeof readAll | typeof enrichAll>(r: T, key: (typeof LABEL_FIELDS)[number]) =>
+    key === 'ingredientsText' ? { ...r, ingredientsText: null } : { ...r, nutrients: { ...r.nutrients, [key]: null } };
+  describe.each([['ReadLabelResponse', ReadLabelResponse, readAll], ['EnrichReadLabelResponse', EnrichReadLabelResponse, enrichAll]] as const)(
+    '%s keeps a field null exactly when its reason is not read', (_name, schema, base) => {
+      it('accepts every field read with a value', () => {
+        expect(schema.safeParse({ ...base, reasons: allRead }).success).toBe(true);
+      });
+      it.each(LABEL_FIELDS)('rejects a value on %s whose reason is not read', (key) => {
+        expect(schema.safeParse({ ...base, reasons: { ...allRead, [key]: 'unreadable' } }).success).toBe(false);
+      });
+      it.each(LABEL_FIELDS)('rejects a null %s marked read', (key) => {
+        expect(schema.safeParse({ ...nulled(base, key), reasons: allRead }).success).toBe(false);
+      });
+      it.each(LABEL_FIELDS)('accepts a null %s with a reason', (key) => {
+        expect(schema.safeParse({ ...nulled(base, key), reasons: { ...allRead, [key]: 'not_printed' } }).success).toBe(true);
+      });
+    },
+  );
+  it('rejects an enrich response with an ingredients photo or without a nutrition photo', () => {
+    expect(EnrichReadLabelResponse.safeParse({ ...enrichAll, ingredientsPhotoPath: 'dev/i.jpg' }).success).toBe(false);
+    expect(EnrichReadLabelResponse.safeParse({ ...enrichAll, nutritionPhotoPath: '' }).success).toBe(false);
   });
   it.each(FieldReason.options)('accepts field reason %s', (reason) => {
     expect(FieldReason.parse(reason)).toBe(reason);
