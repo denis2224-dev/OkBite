@@ -34,12 +34,12 @@ const exactOrigins = [
   'https://okbite.md',
   'https://okbite.app',
   'https://www.okbite.app',
-  'https://okbite.pages.dev',
+  'https://okbite-ir1.pages.dev',
   'http://localhost:8081',
 ];
 function allowedOrigin(origin: string): boolean {
   return exactOrigins.includes(origin) ||
-    /^https:\/\/[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.okbite\.pages\.dev$/.test(origin);
+    /^https:\/\/[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.okbite-ir1\.pages\.dev$/.test(origin);
 }
 export function withCors(req: Request, response: Response): Response {
   const headers = new Headers(response.headers);
