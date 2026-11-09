@@ -2,7 +2,8 @@ import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { api } from '../../lib/api';
-import { identifyPhotoRoute, productRoute } from '../identify/routes';
+import { identifyPhotoRoute, isGuidedAddEnabled, productRoute } from '../identify/routes';
+import { keepPhoto, removePhoto } from '../offline/photos';
 import { enqueue } from '../offline/queue';
 import { compressPhoto } from './compressPhoto';
 import { findBarcode } from './findBarcode';
@@ -41,6 +42,7 @@ export function useCaptureFlow() {
       setState({ status: 'working' });
       setPhotoUri(null);
       let compressedUri: string | undefined;
+      let frontPhotoId: string | undefined;
       try {
         const uri = await getUri();
         if (!current()) return;
@@ -60,12 +62,28 @@ export function useCaptureFlow() {
             return router.replace(productRoute(hit.product.id));
           }
         }
+        if (isGuidedAddEnabled()) {
+          frontPhotoId = await keepPhoto(photo.uri);
+          if (!current()) {
+            await removePhoto(frontPhotoId).catch(() => {});
+            return;
+          }
+        }
         // No readable barcode, or an unknown one: the photo itself decides.
         const result = await api.identify(photo.base64);
-        if (!current()) return;
+        if (!current()) {
+          if (frontPhotoId) await removePhoto(frontPhotoId).catch(() => {});
+          return;
+        }
         setState(IDLE);
-        router.replace(result.status === 'found' ? productRoute(result.product.id) : identifyPhotoRoute(result));
+        if (result.status === 'found') {
+          if (frontPhotoId) await removePhoto(frontPhotoId).catch(() => {});
+          router.replace(productRoute(result.product.id));
+          return;
+        }
+        router.replace(identifyPhotoRoute(result, frontPhotoId));
       } catch (err) {
+        if (frontPhotoId) await removePhoto(frontPhotoId).catch(() => {});
         const code = (err as { code?: string } | null)?.code;
         if (code === 'offline' && compressedUri) {
           try {

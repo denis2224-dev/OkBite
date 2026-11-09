@@ -99,3 +99,32 @@ test('photographs the nutrition table, reads it, confirms, and enriches the same
   expect(mockReplace).toHaveBeenCalledWith(`/product/${foundProductId}`);
 });
 
+
+test('an unread unit is never guessed: save waits for one g/ml tap', async () => {
+  jest.mocked(requestUnknownFlow)
+    .mockResolvedValueOnce({
+      ingredientsText: null,
+      unit: null,
+      nutrients: readNutrients,
+      unclear: [],
+      ingredientsPhotoPath: null,
+      nutritionPhotoPath: 'uploads/dev-1/nutrition-later.jpg',
+      reasons: Object.fromEntries([...NUTRIENT_KEYS, 'ingredientsText'].map(k => [k, k === 'ingredientsText' ? 'not_photographed' : 'read'])),
+    })
+    .mockResolvedValueOnce(lookupFound);
+
+  await render(<AddNutritionScreen />);
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
+  });
+
+  expect(screen.getByText(ro.add.unitQuestion)).toBeTruthy();
+  expect(screen.getByRole('button', { name: ro.add.confirmSave })).toBeDisabled();
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: ro.compare.per100('ml') }));
+  });
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: ro.add.confirmSave }));
+  });
+  expect(jest.mocked(requestUnknownFlow).mock.calls[1]?.[3]).toMatchObject({ unit: 'ml' });
+});

@@ -97,13 +97,15 @@ export function mapOffProduct(raw: unknown): AddProductRequest | null {
   const off = parsed.data;
   const code = off.code ? normalizeCode(off.code.trim()) : null;
   const name = text(off.product_name_ro, off.product_name);
-  if (!code || !name) return null;
+  const brand = text(off.brands?.split(',')[0]).slice(0, 80);
+  // The contract now allows '' for a shopper's unreadable brand; imports still need a real one.
+  if (!code || !name || !brand) return null;
   const n = off.nutriments ?? {};
   const unit = off.nutrition_data_per === '100ml' || off.product_quantity_unit === 'ml' ? 'ml' : 'g';
   const result = AddProductRequest.safeParse({
     code,
     name: name.slice(0, 120),
-    brand: text(off.brands?.split(',')[0]).slice(0, 80),
+    brand,
     quantity: text(off.quantity).slice(0, 30),
     unit,
     categorySlug: 'necunoscut',

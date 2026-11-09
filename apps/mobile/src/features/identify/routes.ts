@@ -13,7 +13,6 @@ import {
 export type IdentifyPayload = Exclude<IdentifyResponse, { status: 'found' }>;
 
 export type AddRouteParams = {
-  flow?: 'guided';
   queueId?: string;
   code?: string;
   brand?: string;
@@ -22,6 +21,15 @@ export type AddRouteParams = {
   photoPath?: string;
   frontPhotoId?: string;
   unknownDraftId?: string;
+  flow?: 'guided' | 'manual';
+};
+
+// Flip to true after Denis's U1 and U2a merge on main.
+export const GUIDED_ADD_ENABLED = false;
+let guidedAddOverride: boolean | null = null;
+export const isGuidedAddEnabled = (): boolean => guidedAddOverride ?? GUIDED_ADD_ENABLED;
+export const setGuidedAddEnabled = (enabled: boolean | null): void => {
+  guidedAddOverride = enabled;
 };
 
 export type AddInitialValues = {
@@ -45,8 +53,17 @@ const CONFIDENT_SIMILARITY = 0.6;
 
 export const productRoute = (id: string) => `/product/${id}` as const;
 
-export const identifyPhotoRoute = (response: IdentifyPayload) =>
-  ({ pathname: '/identify', params: { source: 'photo', payload: JSON.stringify(response) } }) as const;
+export const identifyPhotoRoute = (response: IdentifyPayload, frontPhotoId?: string) => {
+  const cleanFrontPhotoId = cleanParam(frontPhotoId);
+  return {
+    pathname: '/identify' as const,
+    params: {
+      source: 'photo' as const,
+      payload: JSON.stringify(response),
+      ...(cleanFrontPhotoId ? { frontPhotoId: cleanFrontPhotoId } : {}),
+    },
+  };
+};
 
 export const identifyCodeRoute = (code: string) =>
   ({ pathname: '/identify', params: { source: 'code', code } }) as const;
@@ -75,9 +92,9 @@ export function addProductRoute({
   queueId?: string;
   frontPhotoId?: string;
   unknownDraftId?: string;
-  flow?: 'guided';
+  flow?: 'guided' | 'manual';
 }): { pathname: '/add'; params: AddRouteParams } {
-  const params: AddRouteParams = flow ? { flow } : {};
+  const params: AddRouteParams = {};
   const code = read.code ? normalizeCode(read.code) : null;
   const brand = cleanParam(read.brand ?? undefined);
   const name = cleanParam(read.name ?? undefined);
@@ -85,6 +102,7 @@ export function addProductRoute({
   const cleanPhoto = cleanParam(photoPath ?? undefined);
   const cleanFrontPhotoId = cleanParam(frontPhotoId);
   const cleanUnknownDraftId = cleanParam(unknownDraftId);
+  const resolvedFlow = flow ?? (isGuidedAddEnabled() ? 'guided' : undefined);
 
   if (code) params.code = code;
   if (brand) params.brand = brand;
@@ -94,6 +112,7 @@ export function addProductRoute({
   if (queueId) params.queueId = queueId;
   if (cleanFrontPhotoId) params.frontPhotoId = cleanFrontPhotoId;
   if (cleanUnknownDraftId) params.unknownDraftId = cleanUnknownDraftId;
+  if (resolvedFlow) params.flow = resolvedFlow;
   return { pathname: '/add', params };
 }
 

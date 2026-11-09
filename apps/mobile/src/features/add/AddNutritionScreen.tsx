@@ -30,7 +30,7 @@ export function AddNutritionScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [readResult, setReadResult] = useState<EnrichReadResult | null>(null);
-  const [unit, setUnit] = useState<Unit>('g');
+  const [unit, setUnit] = useState<Unit | null>(null);
   const [unitOpen, setUnitOpen] = useState(false);
   const [nutrients, setNutrients] = useState(
     () => Object.fromEntries(NUTRIENT_KEYS.map(key => [key, null])) as Record<(typeof NUTRIENT_KEYS)[number], number | null>,
@@ -62,7 +62,7 @@ export function AddNutritionScreen() {
       });
       if (!activity.isCurrent(token)) return;
       setReadResult(result);
-      setUnit(result.unit ?? 'g');
+      setUnit(result.unit); // unread stays null: the shopper picks g/ml, we never guess
       setNutrients({ ...result.nutrients });
     } catch (err) {
       if (activity.isCurrent(token)) {
@@ -78,10 +78,10 @@ export function AddNutritionScreen() {
     Object.values(invalid).some(Boolean) ||
     (nutrients.sat !== null && nutrients.fat !== null && nutrients.sat > nutrients.fat);
   const hasAnyValue = NUTRIENT_KEYS.some(key => nutrients[key] !== null);
-  const canSubmit = Boolean(readResult) && !saving && !numericInvalid && hasAnyValue;
+  const canSubmit = Boolean(readResult) && !saving && !numericInvalid && hasAnyValue && unit !== null;
 
   const handleConfirm = async () => {
-    if (busy.current || !readResult || !canSubmit) return;
+    if (busy.current || !readResult || !canSubmit || unit === null) return;
     busy.current = true;
     setSaving(true);
     setError(null);
@@ -139,9 +139,9 @@ export function AddNutritionScreen() {
           onPress={() => setUnitOpen(!unitOpen)}
           style={{ minHeight: 44, justifyContent: 'center' }}
         >
-          <Text style={{ color: colors.ink, fontSize: 16 }}>{unit === 'g' ? ro.add.basisGram : ro.add.basisMl}</Text>
+          <Text style={{ color: colors.ink, fontSize: 16 }}>{unit === 'g' ? ro.add.basisGram : unit === 'ml' ? ro.add.basisMl : ro.add.unitQuestion}</Text>
         </Pressable>
-        {unitOpen ? (
+        {unitOpen || unit === null ? (
           (['g', 'ml'] as const).map(option => (
             <ActionButton
               key={option}

@@ -1,66 +1,20 @@
 /* eslint-disable @typescript-eslint/no-redeclare -- Zod schemas intentionally share names with inferred types. */
 import { z } from 'zod';
-import { Code, NUTRIENT_KEYS, Nutrients, ReadLabelRequest, ReadLabelResponse, Unit, Uuid } from '@okbite/shared';
+import {
+  AddProductRequest, EnrichProductRequest, EnrichReadLabelRequest, EnrichReadLabelResponse,
+  FieldReason, NutritionMode, ReadLabelRequest, ReadLabelResponse,
+} from '@okbite/shared';
 
-// Provisional U1 adapter. Replace with canonical shared exports after R2 merges U1.
-export const NutritionMode = z.enum(['separate', 'same_photo', 'none', 'skipped']);
-export type NutritionMode = z.infer<typeof NutritionMode>;
-export const FieldReason = z.enum(['read', 'not_printed', 'not_photographed', 'unreadable', 'no_per_100', 'failed']);
-export const GuidedReadLabelRequest = ReadLabelRequest.extend({ nutrition: NutritionMode }).superRefine((value, context) => {
-  if ((value.nutrition === 'separate') !== (value.nutritionImage !== null)) {
-    context.addIssue({ code: 'custom', message: 'Nutrition photo must match explicit mode' });
-  }
-});
+export { EnrichProductRequest, EnrichReadLabelRequest, EnrichReadLabelResponse, FieldReason, NutritionMode };
+// U1: categorySlug optional (server saves 'necunoscut'), brand may be '', unit required (option A, 9 Nov).
+export { AddProductRequest as UnknownAddProductRequest };
+
+// The guided flow always sends an explicit mode (the shared schema keeps it optional for old clients).
+export const GuidedReadLabelRequest = ReadLabelRequest.and(z.object({ nutrition: NutritionMode }));
 export type GuidedReadLabelRequest = z.infer<typeof GuidedReadLabelRequest>;
-export const GuidedReadLabelResponse = ReadLabelResponse.extend({
+// ...and needs a reason per field (the shared schema keeps it optional until U3 is deployed).
+export const GuidedReadLabelResponse = ReadLabelResponse.and(z.object({
   ingredientsPhotoPath: z.string().trim().min(1),
-  nutritionPhotoPath: z.string().trim().min(1).nullable(),
-  reasons: z.record(z.enum([...NUTRIENT_KEYS, 'ingredientsText']), FieldReason),
-}).superRefine((value, context) => {
-  for (const key of [...NUTRIENT_KEYS, 'ingredientsText'] as const) {
-    if (!value.reasons[key]) context.addIssue({ code: 'custom', message: `Missing reason: ${key}` });
-  }
-});
+  reasons: ReadLabelResponse.innerType().shape.reasons.unwrap(),
+}));
 export type GuidedReadLabelResponse = z.infer<typeof GuidedReadLabelResponse>;
-export type FieldReason = z.infer<typeof FieldReason>;
-
-export const UnknownAddProductRequest = z.object({
-  categorySlug: z.string().trim().min(1).max(60).optional(),
-  code: Code.nullable(),
-  name: z.string().trim().min(1).max(120),
-  brand: z.string().trim().max(80),
-  quantity: z.string().trim().max(30),
-  photoPath: z.string().trim().min(1).nullable(),
-  ingredientsText: z.string().trim().min(3).max(3000),
-  unit: Unit.nullable(),
-  nutrients: Nutrients,
-  ingredientsPhotoPath: z.string().trim().min(1),
-  nutritionPhotoPath: z.string().trim().min(1).nullable(),
-});
-export type UnknownAddProductRequest = z.infer<typeof UnknownAddProductRequest>;
-
-export const EnrichReadLabelRequest = z.object({
-  ingredientsImage: z.literal(null),
-  nutritionImage: z.string().min(1),
-  nutrition: z.literal('separate'),
-});
-export type EnrichReadLabelRequest = z.infer<typeof EnrichReadLabelRequest>;
-
-export const EnrichReadLabelResponse = z.object({
-  ingredientsText: z.string().nullable(),
-  unit: Unit.nullable(),
-  nutrients: Nutrients,
-  unclear: z.array(z.enum([...NUTRIENT_KEYS, 'ingredientsText'])),
-  ingredientsPhotoPath: z.string().nullable(),
-  nutritionPhotoPath: z.string().trim().min(1),
-  reasons: z.record(z.enum([...NUTRIENT_KEYS, 'ingredientsText']), FieldReason).optional(),
-});
-export type EnrichReadLabelResponse = z.infer<typeof EnrichReadLabelResponse>;
-
-export const EnrichProductRequest = z.object({
-  productId: Uuid,
-  unit: Unit,
-  nutrients: Nutrients,
-  nutritionPhotoPath: z.string().trim().min(1),
-});
-export type EnrichProductRequest = z.infer<typeof EnrichProductRequest>;
