@@ -1,18 +1,21 @@
 import React from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { Screen } from '../../ui/Screen';
 import { StatusPanel, errorMessage } from '../capture/StatusPanel';
-import { parseAddParams } from '../identify/routes';
+import { addProductRoute, parseAddParams } from '../identify/routes';
 import { GuidedNutritionQuestion } from './GuidedNutritionQuestion';
 import { GuidedPhotoCapture } from './GuidedPhotoCapture';
 import { useGuidedAddSession } from './useGuidedAddSession';
 
+const useSafeSearchParams = useLocalSearchParams ?? (() => ({}));
+
 export function GuidedAddScreen() {
   const { colors } = useTheme();
-  const rawParams = useLocalSearchParams<Record<string, string | string[] | undefined>>();
+  const router = useRouter();
+  const rawParams = useSafeSearchParams<Record<string, string | string[] | undefined>>();
   const parsed = parseAddParams(rawParams);
   const frontPhotoId = typeof rawParams.frontPhotoId === 'string' && rawParams.frontPhotoId.trim() ? rawParams.frontPhotoId.trim() : undefined;
   const retakeParam = rawParams.retake;
@@ -24,6 +27,22 @@ export function GuidedAddScreen() {
     },
     retakeKind,
   );
+  const openManualFallback = () => {
+    const currentInitial = state?.initial ?? parsed;
+    router.replace(
+      addProductRoute({
+        read: {
+          code: currentInitial.code,
+          brand: currentInitial.brand,
+          name: currentInitial.name,
+          quantity: currentInitial.quantity,
+        },
+        photoPath: currentInitial.photoPath,
+        queueId: currentInitial.queueId,
+        flow: 'manual',
+      }),
+    );
+  };
 
   if (error) {
     return (
@@ -54,8 +73,21 @@ export function GuidedAddScreen() {
         ? ro.add.nutritionHint
         : ro.add.ingredientsHint;
 
+  const totalSteps = parsed.photoPath ? 3 : 4;
+  const stepNumber =
+    state.stage === 'front'
+      ? 1
+      : state.stage === 'ingredients'
+        ? parsed.photoPath
+          ? 1
+          : 2
+        : parsed.photoPath
+          ? 2
+          : 3;
+
   return (
     <Screen title={stageTitle}>
+      <Text style={{ color: colors.accent, fontSize: 13, fontWeight: '700' }}>{ro.add.stepOf(stepNumber, totalSteps)}</Text>
       {restoredFromDraft ? <Text style={{ color: colors.muted, fontSize: 14 }}>{ro.add.draftRestored}</Text> : null}
 
       {state.stage === 'front' || state.stage === 'ingredients' || state.stage === 'nutrition' ? (
@@ -93,6 +125,7 @@ export function GuidedAddScreen() {
           message={state.stage === 'interrupted' ? ro.add.draftInterrupted : errorMessage(state.error)}
           actions={[
             { label: ro.add.retryRead, onPress: () => void controller.retry() },
+            { label: ro.add.manualEntry, onPress: openManualFallback },
             { label: ro.add.discardDraft, onPress: () => void discardDraft() },
           ]}
         />

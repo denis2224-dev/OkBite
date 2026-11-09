@@ -34,3 +34,44 @@ Deno.test('submission handlers validate method, device and body before writes; e
   }
   assert.equal(calls, 0);
 });
+
+Deno.test('add-product saves a product without a category as necunoscut', async () => {
+  const seen: (string | undefined)[] = [];
+  const handler = createHandler(async (input) => {
+    seen.push(input.categorySlug);
+    return { status: 'not_found' };
+  });
+  const body = {
+    code: null,
+    name: 'Biscuiți',
+    brand: '',
+    quantity: '',
+    unit: 'g',
+    ingredientsText: 'făină, zahăr',
+    nutrients: {
+      kcal: null,
+      fat: null,
+      sat: null,
+      sugar: null,
+      salt: null,
+      protein: null,
+      fiber: null,
+      fruitVegPct: null,
+    },
+    photoPath: null,
+    ingredientsPhotoPath: `${device}/i.jpg`,
+    nutritionPhotoPath: null,
+  };
+  const headers = { origin: 'https://okbite.md', 'x-device-id': device };
+  for (const categorySlug of [undefined, 'iaurt']) {
+    const response = await handler(
+      new Request('http://local/', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ ...body, categorySlug }),
+      }),
+    );
+    assert.equal(response.status, 200);
+  }
+  assert.deepEqual(seen, ['necunoscut', 'iaurt']);
+});
