@@ -3,9 +3,9 @@ import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { describe, it, expect, jest, beforeAll, beforeEach } from '@jest/globals';
 import { render, fireEvent, screen, act } from '@testing-library/react-native';
 import { IdentifyResponse } from '@okbite/shared';
+import * as FileSystem from 'expo-file-system/legacy';
 import { ro } from '../../copy/ro';
 import { loadUnknownDraft } from '../add/unknownDraft';
-import { keepPhoto } from '../offline/photos';
 import { resolveQueued } from '../offline/queue';
 import AddScreen from '../../../app/add/index';
 import IdentifyScreen from '../../../app/identify';
@@ -61,10 +61,19 @@ const ORIGINAL_READ = {
 };
 const PHOTO_PATH = 'uploads/dev-1/front-1.jpg';
 jest.mock('../offline/queue', () => ({ resolveQueued: jest.fn() }));
-jest.mock('../offline/photos', () => ({
-  keepPhoto: jest.fn(async (uri: string) => `kept:${uri}`),
-  openPhoto: jest.fn(async (id: string) => ({ uri: id.replace(/^kept:/, ''), release() {} })),
-  removePhoto: jest.fn(async () => {}),
+jest.mock('expo-crypto', () => ({ randomUUID: () => 'front-uuid-1' }));
+jest.mock('expo-file-system/legacy', () => ({
+  documentDirectory: 'file:///doc/',
+  EncodingType: { Base64: 'base64' },
+  makeDirectoryAsync: jest.fn(async () => {}),
+  copyAsync: jest.fn(async ({ from }: { from: string; to: string }) => {
+    if (!from.startsWith('file://')) {
+      throw new Error(`Refusing server storage path in keepPhoto: ${from}`);
+    }
+  }),
+  getInfoAsync: jest.fn(async (uri: string) => ({ exists: uri.startsWith('file://') })),
+  readAsStringAsync: jest.fn(async () => 'base64'),
+  deleteAsync: jest.fn(async () => {}),
 }));
 jest.mock('../add/unknownDraft', () => ({
   loadUnknownDraft: jest.fn(async () => null),
@@ -80,7 +89,11 @@ describe('IdentifyScreen and B3 flow', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     setGuidedAddEnabled?.(null);
-    jest.mocked(keepPhoto).mockImplementation(async (uri: string) => `kept:${uri}`);
+    jest.mocked(FileSystem.copyAsync).mockImplementation(async ({ from }: { from: string; to: string }) => {
+      if (!from.startsWith('file://')) {
+        throw new Error(`Refusing server storage path in keepPhoto: ${from}`);
+      }
+    });
     jest.mocked(loadUnknownDraft).mockResolvedValue(null);
     mockParams.value = {};
   });
@@ -354,9 +367,10 @@ describe('IdentifyScreen and B3 flow', () => {
     });
   });
 
-  it('keeps the front photo via keepPhoto and reaches GuidedAddScreen at the ingredients step for identify not_found and "Nu e niciunul" when guided add is enabled', async () => {
+  it('uses the real offline/photos module without calling keepPhoto on server photoPath and reaches GuidedAddScreen at the ingredients step for identify not_found and "Nu e niciunul"', async () => {
     expect(GUIDED_ADD_ENABLED).toBe(false);
     setGuidedAddEnabled(true);
+    const keptFrontId = 'file:///doc/okbite-queue/front-uuid-1.jpg';
 
     const notFound = IdentifyResponse.parse({
       status: 'not_found',
@@ -364,24 +378,25 @@ describe('IdentifyScreen and B3 flow', () => {
       read: ORIGINAL_READ,
     });
     if (notFound.status === 'found') throw new Error('unexpected');
-    mockParams.value = identifyPhotoRoute(notFound).params;
+    mockParams.value = identifyPhotoRoute(notFound, keptFrontId).params;
 
     const first = await render(<IdentifyScreen />);
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: ro.identify.addButton }));
     });
-    expect(keepPhoto).toHaveBeenCalledWith(PHOTO_PATH);
+    expect(FileSystem.copyAsync).not.toHaveBeenCalled();
     const notFoundParams = requireReplacedParams();
     expect(notFoundParams).toEqual({
       brand: ORIGINAL_READ.brand,
       name: ORIGINAL_READ.name,
       quantity: ORIGINAL_READ.quantity,
       photoPath: PHOTO_PATH,
-      frontPhotoId: `kept:${PHOTO_PATH}`,
+      frontPhotoId: keptFrontId,
       flow: 'guided',
     });
     await first.unmount();
 
+    // Server-path case without frontPhotoId: openAdd still must not pass server photoPath to keepPhoto.
     mockReplace.mockClear();
     const candidates = IdentifyResponse.parse({
       status: 'candidates',
@@ -396,6 +411,7 @@ describe('IdentifyScreen and B3 flow', () => {
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: ro.identify.noneOfThem }));
     });
+    expect(FileSystem.copyAsync).not.toHaveBeenCalled();
     const noneParams = requireReplacedParams();
     expect(noneParams).toEqual({
       code: '4840001000014',
@@ -403,15 +419,41 @@ describe('IdentifyScreen and B3 flow', () => {
       name: ORIGINAL_READ.name,
       quantity: ORIGINAL_READ.quantity,
       photoPath: PHOTO_PATH,
-      frontPhotoId: `kept:${PHOTO_PATH}`,
       flow: 'guided',
     });
     await second.unmount();
 
-    mockParams.value = noneParams;
+    mockParams.value = notFoundParams;
     await render(<AddScreen />);
     await act(async () => {});
     expect(screen.getByText(ro.add.ingredientsTitle)).toBeTruthy();
     expect(screen.getByText(ro.add.stepOf(1, 3))).toBeTruthy();
+  });
+
+  it('shows an error StatusPanel instead of a dead button when openAdd fails, and recovers on retry', async () => {
+    setGuidedAddEnabled(true);
+    const notFound = IdentifyResponse.parse({
+      status: 'not_found',
+      photoPath: PHOTO_PATH,
+      read: ORIGINAL_READ,
+    });
+    if (notFound.status === 'found') throw new Error('unexpected');
+    mockParams.value = identifyPhotoRoute(notFound, 'file:///doc/okbite-queue/front-uuid-1.jpg').params;
+    mockReplace
+      .mockImplementationOnce(() => {
+        throw new Error('navigation failed');
+      })
+      .mockImplementation(() => {});
+
+    await render(<IdentifyScreen />);
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: ro.identify.addButton }));
+    });
+
+    expect(screen.getByText(ro.errors.generic)).toBeTruthy();
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: ro.errors.retry }));
+    });
+    expect(mockReplace).toHaveBeenCalledTimes(2);
   });
 });

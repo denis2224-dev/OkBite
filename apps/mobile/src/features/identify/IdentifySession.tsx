@@ -24,8 +24,10 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
   const selected = useRef<string | null>(null);
   const finishing = useRef(false);
   const adding = useRef(false);
+  const pendingAdd = useRef<{ read: FrontRead; photoPath: string | null } | null>(null);
   const [cleanupPending, setCleanupPending] = useState(false);
-  const navigate = (href: Parameters<typeof router.replace>[0]) => { activity.leave(); router.replace(href); };
+  const [addFailed, setAddFailed] = useState(false);
+  const navigate = (href: Parameters<typeof router.replace>[0]) => { router.replace(href); activity.leave(); };
   const openAdd = async (read: FrontRead, photoPath: string | null) => {
     const guided = isGuidedAddEnabled();
     if (!guided && !frontPhotoId && !unknownDraftId) {
@@ -34,9 +36,12 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
     }
     if (adding.current) return;
     adding.current = true;
+    pendingAdd.current = { read, photoPath };
+    setAddFailed(false);
     const token = activity.start();
     try {
-      const keptFrontId = frontPhotoId ?? (guided && photoPath ? await keepPhoto(photoPath) : undefined);
+      const keptFrontId =
+        frontPhotoId ?? (guided && photoPath?.startsWith('file://') ? await keepPhoto(photoPath) : undefined);
       if (activity.isCurrent(token)) {
         navigate(
           addProductRoute({
@@ -49,6 +54,8 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
           }),
         );
       }
+    } catch {
+      if (activity.isCurrent(token)) setAddFailed(true);
     } finally {
       adding.current = false;
     }
@@ -70,6 +77,11 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
 
   if (cleanupPending) return <View style={[styles.center, { backgroundColor: colors.ground }]}><StatusPanel message={ro.review.savedPendingCleanup} actions={[
     { label: ro.review.finishSave, onPress: () => { void finishConfirmation(); } },
+  ]} /></View>;
+  if (addFailed) return <View style={[styles.center, { backgroundColor: colors.ground }]}><StatusPanel message={ro.errors.generic} actions={[
+    { label: ro.errors.retry, onPress: () => { if (pendingAdd.current) void openAdd(pendingAdd.current.read, pendingAdd.current.photoPath); } },
+    { label: ro.capture.title, onPress: () => navigate('/capture') },
+    { label: ro.scan.title, onPress: () => navigate('/scan') },
   ]} /></View>;
 
   if (state.kind === 'confirm') {

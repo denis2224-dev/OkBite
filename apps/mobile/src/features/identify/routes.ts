@@ -53,8 +53,17 @@ const CONFIDENT_SIMILARITY = 0.6;
 
 export const productRoute = (id: string) => `/product/${id}` as const;
 
-export const identifyPhotoRoute = (response: IdentifyPayload) =>
-  ({ pathname: '/identify', params: { source: 'photo', payload: JSON.stringify(response) } }) as const;
+export const identifyPhotoRoute = (response: IdentifyPayload, frontPhotoId?: string) => {
+  const cleanFrontPhotoId = cleanParam(frontPhotoId);
+  return {
+    pathname: '/identify' as const,
+    params: {
+      source: 'photo' as const,
+      payload: JSON.stringify(response),
+      ...(cleanFrontPhotoId ? { frontPhotoId: cleanFrontPhotoId } : {}),
+    },
+  };
+};
 
 export const identifyCodeRoute = (code: string) =>
   ({ pathname: '/identify', params: { source: 'code', code } }) as const;
