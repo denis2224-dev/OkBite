@@ -108,13 +108,15 @@ Read-only Supabase inspection on 9 November confirmed:
 
 All inventoried functions have `verify_jwt=false`. Both projects report PG17.11.
 Neither migration history contains `20261109115029_c2_foundation_guards`.
-Production read-only access inspection confirmed private uploads/public products,
-service-only stats, denied anon/authenticated diagnostic reads/RPC, and no private
-moderator helper. Version numbers and hosted bundle hashes do not prove equality
+Read-only access inspection on both targets confirmed private uploads/public
+products, service-only stats, denied anon/authenticated diagnostic reads/RPC, and no
+private moderator helper. Staging has no receipt table; production does. Version numbers and hosted bundle hashes do not prove equality
 with this checkout. No hosted function invocations or writes were performed.
-The separate staging permissions SQL query and an additional local statistics
-value check were blocked by automatic approval review's account usage limit;
-they were not executed. Existing 132-test SQL access evidence remains valid.
+Automatic approval review temporarily blocked the staging permissions query and
+a local statistics value check because of an account usage limit. After the user
+continued the task and approval review resumed, both ran successfully. The local
+service role read the expected 2 photos, 1 barcode and 1 addition from rollback-only
+synthetic events; no persistent fixture events were added.
 
 Local inventory contains seven migrations, including the older C2 timestamp before
 replay admission. The C6 track additionally owns photo-moderation/publication-journal
