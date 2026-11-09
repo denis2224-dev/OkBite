@@ -154,15 +154,14 @@ export function createService(
       if (!result.created) await cleanup();
       return await foundResponse(result.id);
     } catch (error) {
-      // A lost RPC response may follow a committed transaction. Keep its photos/event.
+      // DELETE locks the reservation until an in-flight commit settles. Its NULL
+      // predicate preserves committed events; deleting an unused event prevents a
+      // later commit. Only then is it safe to inspect and compensate public copies.
+      await releaseUsage(db, event);
       const persisted = await db.from('products').select('id').eq('id', id).maybeSingle();
       if (persisted.error) throw new Error('Submission outcome unknown; compensation deferred');
       if (persisted.data) return await foundResponse(id);
-      try {
-        await cleanup();
-      } finally {
-        await releaseUsage(db, event);
-      }
+      await cleanup();
       throw error;
     }
   };
