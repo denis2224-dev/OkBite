@@ -45,6 +45,28 @@ Clean reset and seed succeeded. All 132 assertions across eight database test
 files passed. SQL lint and security advisors reported no warnings/errors.
 Only reset a disposable project created for this verification.
 
+### Incremental upgrade from current main
+
+Main already contains the future-dated `20261110000000_replay_admission.sql`.
+The CLI-generated foundation migration sorts before it, so ordinary `db push`
+refuses this older pending migration on an already-migrated database. Use the
+explicit include-all path, inspecting the dry run before applying anything:
+
+```sh
+supabase --workdir <temporary-project> db push --include-all --dry-run
+# Expect only 20261109115029_c2_foundation_guards.sql, without seeds or roles.
+supabase --workdir <temporary-project> db push --include-all
+supabase --workdir <temporary-project> test db
+```
+
+Verified against a disposable database reset to main's exact six-migration
+history: ordinary push dry-run failed as expected; include-all applied only the
+foundation migration; all 132 assertions passed afterward. A checksum of all
+product rows matched before/after, SQL lint/security advisors remained clean,
+and a second push dry-run reported up-to-date. A fresh reset is therefore not
+required to upgrade. Hosted migration histories must still be reconciled first;
+do not use include-all to apply an unreviewed list of missing migrations.
+
 Repository `pnpm lint`, `pnpm typecheck` and `pnpm test` also passed using the
 locked pnpm 11.25.0 dependencies. ESLint reported 57 warnings in existing source
 files and zero errors. This SQL-only change does not claim physical-device testing
