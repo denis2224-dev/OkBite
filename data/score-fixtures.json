@@ -103,7 +103,7 @@
   },
   {
     "name": "Apă potabilă (OM, 4841257001275)",
-    "scoreKind": "beverage",
+    "scoreKind": "water",
     "nutrients": {
       "kcal": 0,
       "fat": 0,
@@ -115,8 +115,8 @@
       "fruitVegPct": null
     },
     "expectedPoints": 0,
-    "expectedLetter": "B",
-    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 21 (label kJ 0); checked by Rusu Serghei, 2026-11-05"
+    "expectedLetter": "A",
+    "checkedWith": "Agent calculator reproduction by Codex, 2026-11-09: SpF Nutri-Score_Updated-algorithm_20240404.xlsx and FPS 2025-10 copy, corrected beverage to water; kcal × 4.184; unknown favourable nutrients entered as 0; human re-check pending. Prior record preserved in score-fixtures.validation.json."
   },
   {
     "name": "Monastârschi (Milina, 4841031003259)",
@@ -137,7 +137,7 @@
   },
   {
     "name": "LAPTE (Căsuța mea, 4840362001095)",
-    "scoreKind": "general",
+    "scoreKind": "beverage",
     "nutrients": {
       "kcal": 52.5,
       "fat": 2.5,
@@ -148,9 +148,9 @@
       "fiber": 0,
       "fruitVegPct": null
     },
-    "expectedPoints": 1,
+    "expectedPoints": 2,
     "expectedLetter": "B",
-    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 17 (label kJ 0); checked by Rusu Serghei, 2026-11-05"
+    "checkedWith": "Agent calculator reproduction by Codex, 2026-11-09: SpF Nutri-Score_Updated-algorithm_20240404.xlsx and FPS 2025-10 copy, corrected general to beverage; kcal × 4.184; unknown favourable nutrients entered as 0; human re-check pending. Prior record preserved in score-fixtures.validation.json."
   },
   {
     "name": "Fruit2go prune uscate (Belevini, 4840801000269)",
@@ -239,7 +239,7 @@
   },
   {
     "name": "Seminte de floaréa soarelui prajite (Banzai, 4840811002024)",
-    "scoreKind": "general",
+    "scoreKind": "fat",
     "nutrients": {
       "kcal": 600,
       "fat": 50,
@@ -250,9 +250,9 @@
       "fiber": 11,
       "fruitVegPct": null
     },
-    "expectedPoints": 7,
-    "expectedLetter": "C",
-    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 18 (label kJ 2482); checked by Rusu Serghei, 2026-11-05"
+    "expectedPoints": -10,
+    "expectedLetter": "A",
+    "checkedWith": "Agent calculator reproduction by Codex, 2026-11-09: SpF Nutri-Score_Updated-algorithm_20240404.xlsx and FPS 2025-10 copy, corrected general to fat; kcal × 4.184; unknown favourable nutrients entered as 0; human re-check pending. Prior record preserved in score-fixtures.validation.json."
   },
   {
     "name": "Latti Crema de branza cu usturoi (?, 4841259002058)",
@@ -443,7 +443,7 @@
   },
   {
     "name": "Spring Onion & Cracked Black Pepper Alternative to Soft Cheese (Cathedral City, 5000295157569)",
-    "scoreKind": "cheese",
+    "scoreKind": "general",
     "nutrients": {
       "kcal": 230,
       "fat": 20.6,
@@ -454,9 +454,9 @@
       "fiber": 2.4,
       "fruitVegPct": null
     },
-    "expectedPoints": 17,
-    "expectedLetter": "D",
-    "checkedWith": "Written by Claude with the official Nutri-Score calculator (updated algorithm, FPS/SpF workbook, health.belgium.be copy 2025-10) on Open Food Facts rev 16 (label kJ 950); not yet checked by Rusu Serghei"
+    "expectedPoints": 20,
+    "expectedLetter": "E",
+    "checkedWith": "Agent calculator reproduction by Codex, 2026-11-09: SpF Nutri-Score_Updated-algorithm_20240404.xlsx and FPS 2025-10 copy, corrected cheese to general; kcal × 4.184; unknown favourable nutrients entered as 0; human re-check pending. Prior record preserved in score-fixtures.validation.json."
   },
   {
     "name": "2 x Capellini Nr. 1 (Barilla, 8076800195019)",
