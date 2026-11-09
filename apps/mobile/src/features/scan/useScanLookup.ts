@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { normalizeCode } from '@okbite/shared';
 import { api } from '../../lib/api';
 import { enqueue } from '../offline/queue';
-import { identifyCodeRoute, productRoute } from '../identify/routes';
+import { addProductRoute, identifyCodeRoute, isGuidedAddEnabled, productRoute } from '../identify/routes';
 import { useScreenActivity } from '../capture/useScreenActivity';
 
 export type ScanState =
@@ -40,7 +40,17 @@ export function useScanLookup(onCameraAccept?: () => void) {
         enqueuedCode.current = null;
         if (!activity.isCurrent(token)) return;
         setState(IDLE);
-        router.replace(res.status === 'found' ? productRoute(res.product.id) : identifyCodeRoute(code));
+        router.replace(
+          res.status === 'found'
+            ? productRoute(res.product.id)
+            : isGuidedAddEnabled()
+              ? addProductRoute({
+                  read: { brand: null, name: null, quantity: null, code },
+                  photoPath: null,
+                  flow: 'guided',
+                })
+              : identifyCodeRoute(code),
+        );
       } catch (err) {
         // Latch only a failure the screen shows; a stale one would silently block the camera on return.
         if (activity.isCurrent(token)) failed.current = true;
