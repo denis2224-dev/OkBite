@@ -1,19 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 import { createDetector, firstValidCode } from '../capture/findBarcode.web';
+import { cameraAvailability, cameraFailure, type CameraIssue } from '../capture/cameraSupport.web';
 
 const SCAN_INTERVAL_MS = 250;
 
-export type LiveStatus = 'unsupported' | 'starting' | 'live' | 'unavailable';
+export type LiveStatus = 'unsupported' | 'starting' | 'live' | CameraIssue;
 
 const mediaDevices = () => (typeof navigator === 'undefined' ? undefined : navigator.mediaDevices);
 
-export const isLiveScanSupported = () => 'BarcodeDetector' in globalThis && !!mediaDevices()?.getUserMedia;
+export const isLiveScanSupported = () => !cameraAvailability() && 'BarcodeDetector' in globalThis;
 
 /**
  * Streams the camera into `video` and reports each valid barcode. Resolves with a stop function,
  * or null when the browser cannot do it. Rejects when the camera is refused or unavailable.
  */
 export async function startLiveScan(video: HTMLVideoElement, onCode: (code: string) => void): Promise<(() => void) | null> {
+  if (cameraAvailability()) return null;
   const detector = await createDetector();
   const media = mediaDevices();
   if (!detector || !media?.getUserMedia) return null;
@@ -54,7 +56,7 @@ export async function startLiveScan(video: HTMLVideoElement, onCode: (code: stri
 export function useWebLiveScan(onCode: (code: string) => void) {
   const [video, setVideo] = useState<HTMLVideoElement | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const [status, setStatus] = useState<LiveStatus>(() => (isLiveScanSupported() ? 'starting' : 'unsupported'));
+  const [status, setStatus] = useState<LiveStatus>(() => cameraAvailability() ?? (isLiveScanSupported() ? 'starting' : 'unsupported'));
   const latest = useRef(onCode);
   useEffect(() => { latest.current = onCode; });
 
@@ -70,7 +72,7 @@ export function useWebLiveScan(onCode: (code: string) => void) {
         stop = stopFn;
         setStatus(stopFn ? 'live' : 'unsupported');
       },
-      () => { if (!cancelled) setStatus('unavailable'); },
+      error => { if (!cancelled) setStatus(cameraFailure(error)); },
     );
     return () => {
       cancelled = true;

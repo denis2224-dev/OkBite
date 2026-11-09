@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { CameraView } from 'expo-camera';
+import { useCameraAccess } from '../capture/useCameraAccess';
 import { notificationAsync, NotificationFeedbackType } from 'expo-haptics';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
@@ -14,7 +15,7 @@ const tapOnDetection = () => { void notificationAsync(NotificationFeedbackType.S
 export default function ScanScreen() {
   const { colors } = useTheme();
   const styles = createStyles(colors);
-  const [permission, requestPermission] = useCameraPermissions({ request: true });
+  const { permission, requestPermission, settingsAction, message } = useCameraAccess();
   const [mountFailed, setMountFailed] = useState(false);
   const { state, onCameraCode, onManualCode, retry, dismiss } = useScanLookup(tapOnDetection);
   const working = state.status === 'working';
@@ -25,8 +26,8 @@ export default function ScanScreen() {
   } else if (!permission.granted) {
     preview = (
       <StatusPanel
-        message={ro.scan.deniedText}
-        actions={[{ label: ro.capture.openSettings, onPress: () => { void Linking.openSettings(); } }, { label: ro.capture.retry, onPress: () => { void requestPermission(); } }]}
+        message={message ?? ro.scan.deniedText}
+        actions={[...(settingsAction ? [settingsAction] : []), { label: ro.capture.retry, onPress: () => { void requestPermission(); } }]}
       />
     );
   } else if (mountFailed) {

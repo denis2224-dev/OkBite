@@ -67,6 +67,9 @@ export const ro = {
   },
   update: { title: 'Versiune nouă disponibilă', apply: 'Actualizează' },
   camera: {
+   browserDenied: 'Permite accesul la cameră din setările acestui site, apoi reîncearcă.',
+   settingsFailed: 'Nu am putut deschide setările. Permite accesul la cameră din setările aplicației.',
+   startupFailed: 'Camera nu a putut porni. Închide alte aplicații care folosesc camera și reîncearcă.',
    iosDenied: 'Pe iPhone, permite accesul din Setări > Safari > Cameră, apoi reîncearcă.',
    androidDenied: 'În Chrome, apasă lacătul de lângă adresă > Permisiuni > Cameră, apoi reîncearcă.',
    httpsRequired: 'Camera funcționează doar pe o conexiune securizată HTTPS.',
