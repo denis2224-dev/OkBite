@@ -17,25 +17,31 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
   const router = useRouter();
   const activity = useScreenActivity();
   const [state, setState] = useState<GuidedFlowState | null>(null);
+  const [controller, setController] = useState<ReturnType<typeof createGuidedFlow> | null>(null);
+  const [draftId, setDraftId] = useState<string>(() => randomUUID());
   const [error, setError] = useState<string | null>(null);
   const [restoredFromDraft, setRestoredFromDraft] = useState(false);
-  const controllerRef = useRef<ReturnType<typeof createGuidedFlow> | null>(null);
-  const draftIdRef = useRef<string>(randomUUID());
+  const draftIdRef = useRef<string>(draftId);
   const initialRef = useRef(initial);
   const retakeRef = useRef(retakeKind);
   const runtimeRef = useRef({ router, activity });
-  runtimeRef.current = { router, activity };
+
+  useEffect(() => {
+    runtimeRef.current = { router, activity };
+  });
 
   useEffect(() => {
     let active = true;
     let unsubscribe: (() => void) | undefined;
+    let activeFlow: ReturnType<typeof createGuidedFlow> | null = null;
     const token = runtimeRef.current.activity.start();
 
     void loadUnknownDraft()
       .then(stored => {
         if (!active) return;
-        const draftId = stored?.id ?? randomUUID();
-        draftIdRef.current = draftId;
+        const nextDraftId = stored?.id ?? randomUUID();
+        draftIdRef.current = nextDraftId;
+        setDraftId(nextDraftId);
         setRestoredFromDraft(Boolean(stored));
         const flow = createGuidedFlow(
           initialRef.current,
@@ -77,16 +83,17 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
           },
           stored ? draftToGuided(stored) : undefined,
         );
+        activeFlow = flow;
         unsubscribe = flow.subscribe(next => {
           if (active) setState(next);
         });
         if (retakeRef.current) flow.retake(retakeRef.current);
-        controllerRef.current = flow;
+        setController(flow);
         setState(flow.getState());
       })
       .catch(err => {
         if (!active) return;
-        controllerRef.current = null;
+        setController(null);
         setState(null);
         setError(err instanceof Error ? err.message : 'storage');
       });
@@ -94,14 +101,14 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
     return () => {
       active = false;
       unsubscribe?.();
-      controllerRef.current?.cancel();
+      activeFlow?.cancel();
     };
   }, []);
 
   const discardDraft = async () => {
     const currentId = draftIdRef.current;
     const photos = state?.photos;
-    controllerRef.current?.cancel();
+    controller?.cancel();
     await clearUnknownDraft(currentId);
     if (photos && !initialRef.current.queueId) {
       for (const id of new Set(Object.values(photos))) {
@@ -111,5 +118,5 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
     setRestoredFromDraft(false);
   };
 
-  return { state, controller: controllerRef.current, draftId: draftIdRef.current, error, restoredFromDraft, discardDraft };
+  return { state, controller, draftId, error, restoredFromDraft, discardDraft };
 }

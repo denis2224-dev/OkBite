@@ -21,7 +21,7 @@ test('persists a known saved result before history and only then clears the draf
   expect(completeQueued).toHaveBeenCalledWith('draft-id');
   expect(clearUnknownDraft).toHaveBeenCalledWith('draft-id');
   expect(jest.mocked(removePhoto).mock.calls).toEqual([['f'], ['i']]);
-  expect(jest.mocked(saveToHistory).mock.invocationCallOrder[0]).toBeLessThan(jest.mocked(clearUnknownDraft).mock.invocationCallOrder[0]);
+  expect(jest.mocked(saveToHistory).mock.invocationCallOrder[0]).toBeLessThan(jest.mocked(clearUnknownDraft).mock.invocationCallOrder[0]!);
 });
 test('retains the draft when local completion fails', async () => {
   jest.mocked(saveToHistory).mockRejectedValueOnce(new Error('storage'));

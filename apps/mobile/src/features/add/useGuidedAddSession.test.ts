@@ -26,7 +26,7 @@ test('asks after ingredients and reads only after an explicit answer', async () 
   expect(requestUnknownFlow).not.toHaveBeenCalled();
   await act(async () => { await result.current.controller!.chooseNutrition('none'); });
   expect(requestUnknownFlow).toHaveBeenCalledTimes(1);
-  expect(jest.mocked(requestUnknownFlow).mock.calls[0][3]).toMatchObject({ nutrition: 'none' });
+  expect(jest.mocked(requestUnknownFlow).mock.calls[0]?.[3]).toMatchObject({ nutrition: 'none' });
   expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'draft-id' } });
   expect(saveUnknownDraft).toHaveBeenCalled();
 });
