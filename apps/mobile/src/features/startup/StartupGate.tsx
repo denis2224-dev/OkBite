@@ -8,7 +8,7 @@ export function StartupGate({ ready, error, children }: PropsWithChildren<{ read
   const {colors}=useTheme();
   const [elapsed, setElapsed] = useState(false);
   useEffect(() => {
-    const timer = setTimeout(() => setElapsed(true), 2500);
+    const timer = setTimeout(() => setElapsed(true), 500);
     return () => clearTimeout(timer);
   }, []);
   const loading = !elapsed || (!ready && !error);
