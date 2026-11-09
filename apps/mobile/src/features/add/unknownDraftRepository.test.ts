@@ -87,3 +87,33 @@ it('allows retry after storage fails without dropping later saves', async () => 
   await repository.saveUnknownDraft(draft);
   expect((await repository.loadUnknownDraft())?.id).toBe('draft-a');
 });
+
+it('restores a shopper-selected category without inventing a default', async () => {
+  const storage = memoryStorage();
+  await createUnknownDraftRepository(storage).saveUnknownDraft({ ...draft, initial: { ...draft.initial, categorySlug: 'test-category' } });
+  expect((await createUnknownDraftRepository(storage).loadUnknownDraft())?.initial.categorySlug).toBe('test-category');
+});
+
+it('rejects an old draft update queued behind a newer pending write', async () => {
+  const storage = memoryStorage(JSON.stringify(draft));
+  let release!: () => void;
+  let started!: () => void;
+  const writing = new Promise<void>(resolve => { started = resolve; });
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  const write = storage.write;
+  storage.write = async json => { started(); await gate; await write(json); };
+  const repository = createUnknownDraftRepository(storage);
+  const newer = repository.saveUnknownDraft({ ...draft, id: 'draft-b' });
+  await writing;
+  const stale = repository.saveUnknownDraftIfCurrent({ ...draft, readStatus: 'interrupted' });
+  release();
+  await newer;
+  expect(await stale).toBe(false);
+  expect((await repository.loadUnknownDraft())?.id).toBe('draft-b');
+});
+
+it('conditionally saves a matching draft and reports that it was committed', async () => {
+  const repository = createUnknownDraftRepository(memoryStorage(JSON.stringify(draft)));
+  expect(await repository.saveUnknownDraftIfCurrent({ ...draft, stage: 'ingredients', readStatus: 'idle' })).toBe(true);
+  expect((await repository.loadUnknownDraft())?.stage).toBe('ingredients');
+});

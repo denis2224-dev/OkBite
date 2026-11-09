@@ -159,3 +159,42 @@ test('not-found front reading becomes the initial read without losing barcode me
   await flow.capturePhoto('front');
   expect(flow.getState()).toMatchObject({ stage: 'ingredients', initialFrontRead: { brand: 'read brand', code: '4840001000014' }, remotePhotoPath: 'uploads/newfront' });
 });
+
+test('retaking front photo after label read preserves existing label and returns directly to review', async () => {
+  const { flow, deps } = setup();
+  await flow.capturePhoto('ingredients');
+  await flow.chooseNutrition('none');
+  expect(flow.getState().stage).toBe('review');
+  deps.identify.mockResolvedValueOnce({
+    status: 'not_found',
+    read: { brand: 'Brand Nou', name: 'Nume Nou', quantity: '250 g', code: null },
+    photoPath: 'uploads/retaken-front',
+  });
+  flow.retake('front');
+  expect(flow.getState().stage).toBe('front');
+  await flow.capturePhoto('new-front');
+  expect(flow.getState()).toMatchObject({
+    stage: 'review',
+    initial: { brand: 'Brand Nou', name: 'Nume Nou', quantity: '250 g', photoPath: 'uploads/retaken-front', frontPhotoId: 'id:new-front' },
+    photos: { front: 'id:new-front', ingredients: 'id:ingredients', nutrition: null },
+    label: expect.objectContaining({ ingredientsText: 'text from label' }),
+  });
+  expect(deps.readLabel).toHaveBeenCalledTimes(1);
+});
+
+test('retaking ingredients photo after label read re-reads with existing nutritionMode and returns to review', async () => {
+  const { flow, deps } = setup();
+  await flow.capturePhoto('ingredients');
+  await flow.chooseNutrition('none');
+  expect(flow.getState().stage).toBe('review');
+  deps.readLabel.mockResolvedValueOnce({ ...label, ingredientsText: 'ingrediente noi' });
+  flow.retake('ingredients');
+  expect(flow.getState().stage).toBe('ingredients');
+  await flow.capturePhoto('new-ingredients');
+  expect(flow.getState()).toMatchObject({
+    stage: 'review',
+    photos: { front: null, ingredients: 'id:new-ingredients', nutrition: null },
+    label: expect.objectContaining({ ingredientsText: 'ingrediente noi' }),
+  });
+  expect(deps.readLabel).toHaveBeenCalledTimes(2);
+});

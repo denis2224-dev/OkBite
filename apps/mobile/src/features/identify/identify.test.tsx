@@ -306,4 +306,33 @@ describe('IdentifyScreen and B3 flow', () => {
       photoPath: null,
     });
   });
+
+  it('preserves frontPhotoId, unknownDraftId, and scanned code when "Nu e niciunul" returns to /add', async () => {
+    mockParams.value = {
+      source: 'photo',
+      frontPhotoId: 'kept-front-1',
+      unknownDraftId: 'draft-123',
+      payload: JSON.stringify({
+        status: 'candidates',
+        candidates: [CAND_1, CAND_2],
+        read: { ...ORIGINAL_READ, code: '4840001000014' },
+        photoPath: PHOTO_PATH,
+      }),
+    };
+    await render(<IdentifyScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.identify.noneOfThem }));
+    const sentParams = requireReplacedParams();
+    expect(sentParams).toMatchObject({
+      code: '4840001000014',
+      photoPath: PHOTO_PATH,
+      frontPhotoId: 'kept-front-1',
+      unknownDraftId: 'draft-123',
+    });
+    expect(parseAddParams(sentParams)).toMatchObject({
+      code: '4840001000014',
+      photoPath: PHOTO_PATH,
+      frontPhotoId: 'kept-front-1',
+      unknownDraftId: 'draft-123',
+    });
+  });
 });

@@ -66,17 +66,18 @@ export function createGuidedFlow(initial: GuidedFlowInitial, deps: GuidedFlowDep
       quantity: read.quantity ?? state.initial.quantity, code: state.scannedCode ?? read.code,
       photoPath: response.photoPath, frontPhotoId: state.photos.front! };
     set({ initial: nextInitial, initialFrontRead: { brand: nextInitial.brand, name: nextInitial.name, quantity: nextInitial.quantity, code: nextInitial.code }, remotePhotoPath: response.photoPath,
-      stage: response.status === 'not_found' ? 'ingredients' : 'interrupted' });
+      stage: response.status === 'not_found' ? (state.label ? 'review' : 'ingredients') : 'interrupted' });
     await persist();
     if (!active()) return;
     if (response.status === 'found') deps.onFound({ status: 'found', product: response.product, score: response.score });
     else if (response.status === 'candidates') deps.onIdentify(response, state.scannedCode, state.photos.front!);
+    else if (state.label) await review();
   }
   async function capturePhoto(uri: string) {
     const kind = state.stage;
     if (kind !== 'front' && kind !== 'ingredients' && kind !== 'nutrition') return;
     let retained: { id: string; base64: string } | null = null;
-    if (kind === 'nutrition') completedRead = null;
+    if (kind === 'nutrition' || kind === 'ingredients') completedRead = null;
     await run(async () => {
       if (!retained) {
         const photo = await prepareGuidedPhoto(deps, uri);
@@ -90,7 +91,7 @@ export function createGuidedFlow(initial: GuidedFlowInitial, deps: GuidedFlowDep
       await persist();
       if (!active()) return;
       if (kind === 'front') await identifyFront(retained.base64);
-      else if (kind === 'ingredients') { set({ stage: 'nutrition_question' }); await persist(); }
+      else if (kind === 'ingredients' && (!state.nutritionMode || !state.label)) { set({ stage: 'nutrition_question' }); await persist(); }
       else await read();
     });
   }
