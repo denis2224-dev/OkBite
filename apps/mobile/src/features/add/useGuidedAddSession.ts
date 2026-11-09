@@ -39,12 +39,10 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
       .then(stored => {
         if (!active) return;
         let token = runtimeRef.current.activity.start();
-        let running = false;
         const runFocused = async (action: () => Promise<void>) => {
-          if (running) return;
-          running = true;
+          if (flow.getState().stage === 'working') return;
           token = runtimeRef.current.activity.start();
-          try { await action(); } finally { running = false; }
+          await action();
         };
         const nextDraftId = stored?.id ?? randomUUID();
         draftIdRef.current = nextDraftId;
