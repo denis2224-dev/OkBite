@@ -30,7 +30,9 @@ C7 commits:
 privilege restrictions and add-product publication/settlement hooks. C7 adds no
 migrations or shared-helper/contract edits. Its hide handler requires those
 migrations. Integrate the reviewed C6 changes before C7; deploying only the C7
-handler makes hide cleanup fail. Shared-original ownership tests live in C6's
+handler makes hide cleanup fail. Point 6's later report-only settlement fix
+`482a5fa` leaves the moderation/schema interfaces unchanged and belongs in the
+final batch too. Shared-original ownership tests live in C6's
 `add-product/photo-ownership.integration.test.ts`.
 
 ### Automated local proof
@@ -38,9 +40,10 @@ handler makes hide cleanup fail. Shared-original ownership tests live in C6's
 Used Node 24.19.0, pnpm 11.25.0, Deno 2.9.8, Supabase CLI 3.0.0 and PG17.
 Created only `/private/tmp/okbite-c7-followup-20261109`, project
 `okbite-c7-followup-20261109`, API49431 / DB49432 / shadow49430 / mail49434.
-Checked-in defaults and existing stacks were untouched. After testing, removal of
-this disposable stack could not be confirmed: Docker's local socket disappeared
-before the scoped cleanup command ran. Its fixture volumes may remain.
+Checked-in defaults and existing stacks were untouched. Docker's local socket
+briefly disappeared after testing. Once it recovered, the scoped stop with
+`--project-id okbite-c7-followup-20261109 --no-backup` succeeded; a subsequent
+container/volume inventory confirmed that this disposable fixture was removed.
 Connection settings and
 the local JWT signing secret are in a mode-0600 temporary env file, outside Git.
 `SUPABASE_JWT_SECRET` is required by the correctly signed expired-token test.
@@ -59,6 +62,11 @@ the local JWT signing secret are in a mode-0600 temporary env file, outside Git.
   moderation/contribution/receipt/report/storage tests. This is integration proof,
   not a merge into this branch. The opt-in C6 pending-commit fault fixture was not
   enabled in this C7 run; Point 6 records its separate result.
+- Point 6 subsequently executed the final overlay of C6 `482a5fa` plus C7
+  `1a91ccc`: 27 passed, zero failed, with active product/report fault hooks and
+  the orphan/tombstone cases. C7 independently inspected
+  `/private/tmp/okbite-c6-c7-combined.log` and confirmed this result; this later
+  execution was performed by Point 6. Its final DB151/security logs also pass.
 - Fresh reset with C6 migrations succeeded; matching C6 SQL tests passed all 151
   assertions. Original pre-C6 RLS tests expect now-revoked direct UPDATE grants
   and must be integrated with C6's replacement assertions.
