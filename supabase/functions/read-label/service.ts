@@ -1,10 +1,18 @@
-import { type ReadLabelRequest, ReadLabelResponse } from '../_shared/contract.ts';
-import { askClaude, toBase64, validateProviderImages } from '../_lib/claude.ts';
+import { NUTRIENT_KEYS, type ReadLabelRequest, ReadLabelResponse } from '../_shared/contract.ts';
+import { askClaude, toBase64, UpstreamError, validateProviderImages } from '../_lib/claude.ts';
 import { adminClient } from '../_lib/http.ts';
 import { releaseUsage, reserveUsage } from '../_lib/quota.ts';
 import { saveJpeg } from '../_lib/storage.ts';
-import { parseLabel } from './parseLabel.ts';
+import { type LabelRead, parseLabel } from './parseLabel.ts';
 import { LABEL_PROMPT } from './prompt.ts';
+
+// The AI could not read the label: the photos are kept and every field goes to the shopper to type in.
+const UNREAD: LabelRead = {
+  ingredientsText: null,
+  unit: null,
+  nutrients: Object.fromEntries(NUTRIENT_KEYS.map((k) => [k, null])) as LabelRead['nutrients'],
+  unclear: [...NUTRIENT_KEYS, 'ingredientsText'],
+};
 
 export function createService(deps = { adminClient, saveJpeg, askClaude }) {
   return async (input: ReadLabelRequest, device: string) => {
@@ -36,7 +44,14 @@ export function createService(deps = { adminClient, saveJpeg, askClaude }) {
       }
       throw error;
     }
-    const read = parseLabel(await deps.askClaude(images, LABEL_PROMPT));
+    let read: LabelRead;
+    try {
+      read = parseLabel(await deps.askClaude(images, LABEL_PROMPT));
+    } catch (error) {
+      if (!(error instanceof UpstreamError)) throw error;
+      console.warn('Label not read by the AI; the shopper fills it in by hand');
+      read = UNREAD;
+    }
     return ReadLabelResponse.parse({
       ...read,
       ingredientsPhotoPath: saved[0],

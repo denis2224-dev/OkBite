@@ -463,6 +463,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
 
     expect(mockReadLabel).toHaveBeenCalledTimes(1);
     expect(await screen.findByText(ro.add.reading)).toBeTruthy();
+    expect(screen.getByTestId('add-preview')).toBeTruthy(); // the label photo, not the live camera
 
     await act(async () => {
       resolveRead(VALID_LABEL_RESPONSE);
