@@ -10,7 +10,7 @@ import { useScreenActivity } from './useScreenActivity';
 
 export type CaptureState =
   | { status: 'idle' }
-  | { status: 'working' }
+  | { status: 'working'; uri?: string }
   | { status: 'offline' }
   | { status: 'error'; code?: string };
 
@@ -42,6 +42,7 @@ export function useCaptureFlow() {
         const uri = await getUri();
         if (!current()) return;
         if (!uri) return setState(IDLE);
+        setState({ status: 'working', uri });
         lastUri.current = uri;
         setCanRetry(true);
         const photo = await compressPhoto(uri, IDENTIFY_PHOTO_MAX_BYTES);
