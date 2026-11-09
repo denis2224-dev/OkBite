@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { createClient } from '@supabase/supabase-js';
 import { HttpError } from '../_lib/http.ts';
+import { UpstreamError } from '../_lib/claude.ts';
 import { createHandler } from './index.ts';
 import { createService } from './service.ts';
 
@@ -83,4 +84,40 @@ Deno.test('read-label cleans up a photo pair too large for the provider before c
   assert.equal(response.status, 502);
   assert.equal(providerCalls, 0);
   assert.deepEqual(requests, ['POST', 'GET', 'GET', 'DELETE', 'DELETE']);
+});
+
+Deno.test('read-label keeps the photos and returns blank fields to type in when the AI fails', async () => {
+  const requests: string[] = [];
+  const db = createClient('http://127.0.0.1:1', 'test-key', {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: {
+      fetch: async (url, init) => {
+        const path = new URL(String(url)).pathname;
+        requests.push(init?.method ?? 'GET');
+        if (path.endsWith('/reserve_usage')) return Response.json(42);
+        if ((init?.method ?? 'GET') === 'GET') return new Response(new Uint8Array(10));
+        return Response.json([]);
+      },
+    },
+  });
+  const handler = createHandler(createService({
+    adminClient: () => db,
+    saveJpeg: async (_photo, device, suffix) => `${device}/stored-${suffix}.jpg`,
+    askClaude: async () => { throw new UpstreamError('Claude request failed'); },
+  }));
+  const device = crypto.randomUUID();
+  const response = await handler(
+    new Request('http://local/read-label', {
+      method: 'POST',
+      headers: { 'x-device-id': device },
+      body: JSON.stringify({ ingredientsImage: 'first', nutritionImage: null }),
+    }),
+  );
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.ingredientsText, null);
+  assert.deepEqual(Object.values(body.nutrients), Array(8).fill(null));
+  assert.equal(body.unclear.length, 9);
+  assert.equal(body.ingredientsPhotoPath, `${device}/stored-ingredients.jpg`);
+  assert.equal(requests.includes('DELETE'), false); // the photos stay for the shopper's submission
 });

@@ -443,6 +443,27 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
     expect(mockReplace).toHaveBeenCalledWith('/add/review');
   });
 
+  it('clears the old preview when a new label capture fails before returning a photo', async () => {
+    mockReadLabel.mockRejectedValueOnce(Object.assign(new Error('upstream'), { code: 'upstream_failed' }));
+    mockTakePicture
+      .mockResolvedValueOnce({ uri: 'file:///cam-shot-1.jpg' })
+      .mockResolvedValueOnce({ uri: 'file:///cam-shot-2.jpg' })
+      .mockRejectedValueOnce(new Error('camera failed'));
+
+    await render(<AddScreen />);
+    await cameraReady();
+
+    const shutter = () => screen.getByRole('button', { name: ro.capture.shutter });
+    await fireEvent.press(shutter());
+    await fireEvent.press(shutter());
+    expect(screen.getByTestId('add-preview').props.source).toEqual({ uri: 'file:///cam-shot-2.jpg' });
+
+    await fireEvent.press(screen.getByRole('button', { name: ro.nav.close }));
+    await fireEvent.press(shutter());
+    expect(screen.getByTestId('add-error-recovery')).toBeTruthy();
+    expect(screen.queryByTestId('add-preview')).toBeNull();
+  });
+
   it('prevents duplicate readLabel requests while a request is in flight', async () => {
     let resolveRead!: (res: ReadLabelResponse) => void;
     mockReadLabel.mockImplementationOnce(
@@ -463,6 +484,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
 
     expect(mockReadLabel).toHaveBeenCalledTimes(1);
     expect(await screen.findByText(ro.add.reading)).toBeTruthy();
+    expect(screen.getByTestId('add-preview')).toBeTruthy(); // the label photo, not the live camera
 
     await act(async () => {
       resolveRead(VALID_LABEL_RESPONSE);

@@ -28,6 +28,8 @@ export function useCaptureFlow() {
   // Only the screen that started a request, still focused, may act on its answer.
   const activity = useScreenActivity();
   const lastUri = useRef<string | null>(null);
+  // The photo being analysed stays on screen instead of the live camera.
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
 
   // One request at a time: camera, gallery and retry all go through here.
   const run = useCallback(
@@ -37,12 +39,14 @@ export function useCaptureFlow() {
       const token = activity.start();
       const current = () => activity.isCurrent(token);
       setState({ status: 'working' });
+      setPhotoUri(null);
       let compressedUri: string | undefined;
       try {
         const uri = await getUri();
         if (!current()) return;
         if (!uri) return setState(IDLE);
         lastUri.current = uri;
+        setPhotoUri(uri);
         setCanRetry(true);
         const photo = await compressPhoto(uri, IDENTIFY_PHOTO_MAX_BYTES);
         compressedUri = photo.uri;
@@ -102,5 +106,5 @@ export function useCaptureFlow() {
   const retry = useCallback(() => run(async () => lastUri.current), [run]);
   const dismiss = useCallback(() => { if (!busy.current) setState(IDLE); }, []);
 
-  return { state, takePhoto, pickFromGallery, retry, dismiss, canRetry };
+  return { state, takePhoto, pickFromGallery, retry, dismiss, canRetry, photoUri };
 }
