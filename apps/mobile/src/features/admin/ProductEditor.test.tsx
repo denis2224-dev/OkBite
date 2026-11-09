@@ -41,3 +41,11 @@ it('submits decimal-comma nutrients and preserves missing values as null', async
     }),
   );
 });
+it('rejects a barcode with the wrong check digit before saving', async () => {
+  const save = jest.fn();
+  await render(<ProductEditor initial={initial} onSave={save} />);
+  await fireEvent.changeText(screen.getByLabelText(ro.scan.manualLabel), '4840001000015');
+  await fireEvent.press(screen.getByText(ro.app.admin.verify));
+  await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
+  expect(save).not.toHaveBeenCalled();
+});
