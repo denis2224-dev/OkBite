@@ -12,6 +12,9 @@ Deno.test('CORS accepts exact app origins and rejects spoofed origins', () => {
   for (
     const origin of [
       'https://okbite.md',
+      'https://www.okbite.md',
+      'https://okbite.pages.dev',
+      'https://pr-12.okbite.pages.dev',
       'https://branch.okbite.pages.dev',
       'https://a-b.okbite.pages.dev',
       'http://localhost:8081',
@@ -31,10 +34,14 @@ Deno.test('CORS accepts exact app origins and rejects spoofed origins', () => {
   for (
     const origin of [
       'https://okbite.md.evil.test',
+      'https://okbite.pages.dev.evil.test',
+      'https://evil-okbite.pages.dev',
       'https://evilokbite.pages.dev',
+      'http://okbite.md',
+      'http://www.okbite.md',
+      'https://www.okbite.md.evil.test',
       'http://a.okbite.pages.dev',
       'https://a.okbite.pages.dev.evil.test',
-      'https://okbite.pages.dev',
       'https://a.b.okbite.pages.dev',
       'null',
       'http://localhost:80810',

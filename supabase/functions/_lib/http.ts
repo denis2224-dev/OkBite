@@ -30,8 +30,14 @@ export function fail(error: ErrorCode, message: string, status: number): Respons
   return json(ErrorBody.parse({ error, message }), status);
 }
 const allowedHeaders = ['content-type', 'x-device-id', 'authorization', 'apikey', 'x-client-info'];
+const exactOrigins = [
+  'https://okbite.md',
+  'https://www.okbite.md',
+  'https://okbite.pages.dev',
+  'http://localhost:8081',
+];
 function allowedOrigin(origin: string): boolean {
-  return origin === 'https://okbite.md' || origin === 'http://localhost:8081' ||
+  return exactOrigins.includes(origin) ||
     /^https:\/\/[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.okbite\.pages\.dev$/.test(origin);
 }
 export function withCors(req: Request, response: Response): Response {
