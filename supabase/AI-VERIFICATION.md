@@ -89,7 +89,7 @@ supabase --workdir <disposable-project> test db
 pnpm check
 ```
 
-Results: 60 function unit tests passed; all 28 identify/read-label tests passed
+Results: 62 function unit tests passed; all 28 identify/read-label tests passed
 with local integration enabled (no skips); 132 database assertions passed. Deno
 checks and generated shared-code parity passed. `pnpm check` passed: lint had
 57 existing warnings and zero errors; type checks, repository tests and data
@@ -144,3 +144,40 @@ keep photos, keys and raw provider bodies outside Git and logs.
 
 Claude cross-review, human approval, hosted/model-image acceptance, real-photo
 scores and phone/browser end-to-end acceptance remain separate release gates.
+
+## Review handoff
+
+Independent fresh-context Codex review of `9704b38..4b47f90` found no other
+Critical/Important defect. Review and author follow-ups reproduced two edge
+cases before fixing them: oversleep leaving less than the minimum retry window
+and unread stream cancellation after invalid UTF-8. Both regressions failed
+first, then passed with the complete 62-test function unit suite. Corrected the
+helper comment to distinguish provider and handler deadlines. The reviewer also
+independently reran all 60 baseline unit tests successfully. This is not the
+repository-required Claude cross-review or human approval.
+
+Rulings: keep the actual provider/model rather than implement the stale
+Anthropic steps; mocks cannot establish vision capability or quality. Keep
+shared I/O/request limits and contract changes with their designated owners;
+otherwise concurrent edits risk incompatible behavior. Leave real-photo and
+hosted acceptance unclaimed until supplied material/authorization exist.
+The review's scoped exclusions and rulings:
+
+- Preserve the provider/model; an unapproved switch could change cost/behavior.
+- Shared total deadlines, ingress size, storage uncertainty, replay/retention
+  and the unit contract remain with their owners; latency, large-photo and
+  recovery limitations remain as described above.
+- Retain uncertain inference admission and charge per endpoint rather than per
+  retry; this protects the quota but may count failed requests and multiple
+  provider executions. Do not retry malformed successful answers; they fail
+  closed and may require the shopper to try again.
+- Let the existing search RPC own threshold/limit enforcement; local integration
+  verifies them, but a future RPC change must preserve that behavior.
+- Preserve literal instruction-like text as data; prompt-level/model immunity is
+  unproven. Long ingredients return null rather than incomplete trusted text;
+  the shopper must supply a readable/manual list.
+- Real-photo, hosted image support, spend controls and device/browser acceptance
+  stay unclaimed; green local tests cannot establish launch readiness.
+
+No deferred review finding remains in owned code. Required Claude and human
+reviews remain outstanding.

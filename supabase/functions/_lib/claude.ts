@@ -7,8 +7,8 @@ export const CLAUDE_MODEL = 'deepseek-v4.1-flash:free'; // override with the AI_
 const RETRYABLE = new Set([408, 429, 500, 502, 503, 504, 529]);
 const ATTEMPTS = 3;
 const TIMEOUT_MS = 20_000;
-// All attempts together; the app waits AI_DEADLINE_MS + 15 s (apps/mobile/src/lib/api.ts),
-// so a server still retrying never outlives the shopper's request and gets queued twice.
+// All provider attempts together. The app waits AI_DEADLINE_MS + 15 s, but storage,
+// database work and cleanup are outside this budget; it is not a handler deadline.
 export const AI_DEADLINE_MS = 40_000;
 const MIN_ATTEMPT_MS = 10_000; // a shorter window is not worth another provider call
 const MAX_IMAGES = 2;
@@ -69,7 +69,10 @@ export async function askClaude(
   const now = deps.now ?? Date.now;
   const deadline = now() + AI_DEADLINE_MS;
   for (let attempt = 1;; attempt++) {
-    if (deadline <= now()) throw new UpstreamError('Claude deadline reached');
+    const remaining = deadline - now();
+    if (remaining <= 0 || (attempt > 1 && remaining < MIN_ATTEMPT_MS)) {
+      throw new UpstreamError('Claude deadline reached');
+    }
     let res: Response | null = null;
     try {
       res = await doFetch(API_URL, {
@@ -125,6 +128,7 @@ async function readResponse(res: Response): Promise<unknown> {
     }
     return JSON.parse(text + decoder.decode());
   } catch {
+    await reader.cancel().catch(() => {});
     throw new UpstreamError('Claude gave an invalid answer');
   } finally {
     reader.releaseLock();

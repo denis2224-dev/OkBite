@@ -174,3 +174,36 @@ Deno.test('askClaude timeout covers a stalled success response body', async () =
     AbortSignal.timeout = timeout;
   }
 });
+
+Deno.test('askClaude does not retry when oversleep leaves too little attempt time', async () => {
+  let clock = 0;
+  const { calls, deps } = fake([new Response('', { status: 503 }), ok('late retry')]);
+  await assert.rejects(
+    askClaude(['x'], 'p', {
+      ...deps,
+      now: () => clock,
+      sleep: () => {
+        clock += AI_DEADLINE_MS - 1000;
+        return Promise.resolve();
+      },
+    }),
+    UpstreamError,
+  );
+  assert.equal(calls.length, 1);
+});
+
+Deno.test('askClaude cancels an unread provider stream after malformed UTF-8', async () => {
+  let cancelled = false;
+  const response = new Response(
+    new ReadableStream({
+      start(controller) {
+        controller.enqueue(new Uint8Array([0xff]));
+      },
+      cancel() {
+        cancelled = true;
+      },
+    }),
+  );
+  await assert.rejects(askClaude(['x'], 'p', fake([response]).deps), UpstreamError);
+  assert.equal(cancelled, true);
+});
