@@ -69,8 +69,8 @@ export default function ScanScreen() {
 const createStyles = (colors: Palette) => StyleSheet.create({
   content: { flexGrow: 1, padding: 16, gap: 16, backgroundColor: colors.ground },
   title: { fontSize: 22, fontWeight: '700', color: colors.ink },
-  preview: { minHeight: 280, borderRadius: 16, overflow: 'hidden', backgroundColor: '#000', justifyContent: 'center' },
-  frameHint: { position: 'absolute', bottom: 12, left: 12, right: 12, color: '#fff', textAlign: 'center' },
+  preview: { minHeight: 280, borderRadius: 16, overflow: 'hidden', backgroundColor: colors.cameraBackground, justifyContent: 'center' },
+  frameHint: { position: 'absolute', bottom: 12, left: 12, right: 12, color: colors.cameraInk, textAlign: 'center' },
   status: { flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },
   working: { color: colors.ink },
 });

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
+import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import type { HistoryEntry } from '../history/store';
 import { AllergenChip, Badge, Body, Button, Card } from '../../ui';
 import { ro } from '../../copy/ro';
