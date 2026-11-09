@@ -146,6 +146,7 @@ describe('contract boundaries', () => {
 describe('unknown product flow (U1)', () => {
   const label = { ingredientsText: 'lapte', unit: 'g', nutrients: n, unclear: [], ingredientsPhotoPath: 'dev/i.jpg', nutritionPhotoPath: 'dev/n.jpg' };
   const allRead = Object.fromEntries(LABEL_FIELDS.map((key) => [key, 'read']));
+  const readAll = { ...label, nutrients: { ...n, fruitVegPct: 0 } }; // every field read
 
   it.each([
     ['separate', 'jpeg', true], ['separate', null, false],
@@ -169,18 +170,26 @@ describe('unknown product flow (U1)', () => {
     expect(EnrichReadLabelRequest.safeParse({ ingredientsImage: null, nutritionImage: 'jpeg', nutrition: 'same_photo' }).success).toBe(false);
   });
   it('returns a reason for every label field and still parses old responses', () => {
-    expect(ReadLabelResponse.parse({ ...label, reasons: { ...allRead, sugar: 'not_printed' } }).reasons?.sugar).toBe('not_printed');
+    const noSugar = { ...readAll, nutrients: { ...readAll.nutrients, sugar: null }, reasons: { ...allRead, sugar: 'not_printed' } };
+    expect(ReadLabelResponse.parse(noSugar).reasons?.sugar).toBe('not_printed');
     expect(ReadLabelResponse.parse(label).reasons).toBeUndefined();
     expect(ReadLabelResponse.parse(label).unclear).toEqual([]);
     const { fiber: _fiber, ...missingOne } = allRead;
-    expect(ReadLabelResponse.safeParse({ ...label, reasons: missingOne }).success).toBe(false);
-    expect(ReadLabelResponse.safeParse({ ...label, reasons: { ...allRead, kcal: 'guessed' } }).success).toBe(false);
+    expect(ReadLabelResponse.safeParse({ ...readAll, reasons: missingOne }).success).toBe(false);
+    expect(ReadLabelResponse.safeParse({ ...readAll, reasons: { ...allRead, kcal: 'guessed' } }).success).toBe(false);
+  });
+  it('keeps a field null exactly when its reason is not read', () => {
+    expect(ReadLabelResponse.safeParse({ ...label, reasons: { ...allRead, sugar: 'not_printed' } }).success).toBe(false);
+    expect(ReadLabelResponse.safeParse({ ...label, nutrients: { ...n, sugar: 0 }, reasons: { ...allRead, sugar: 'unreadable' } }).success).toBe(false);
+    expect(ReadLabelResponse.safeParse({ ...label, nutrients: { ...n, fruitVegPct: 0 }, reasons: allRead }).success).toBe(true);
+    expect(ReadLabelResponse.safeParse({ ...label, reasons: allRead }).success).toBe(false); // fruitVegPct null but 'read'
+    expect(ReadLabelResponse.safeParse({ ...label, ingredientsText: null, reasons: allRead }).success).toBe(false);
   });
   it.each(FieldReason.options)('accepts field reason %s', (reason) => {
     expect(FieldReason.parse(reason)).toBe(reason);
   });
   it('has no ingredients photo path on the enrich read response', () => {
-    const enrich = { ...label, ingredientsText: null, ingredientsPhotoPath: null, reasons: allRead };
+    const enrich = { ...readAll, ingredientsText: null, ingredientsPhotoPath: null, reasons: { ...allRead, ingredientsText: 'not_photographed' } };
     expect(EnrichReadLabelResponse.safeParse(enrich).success).toBe(true);
     expect(EnrichReadLabelResponse.safeParse({ ...enrich, nutritionPhotoPath: null }).success).toBe(false);
     expect(ReadLabelResponse.safeParse(enrich).success).toBe(false);

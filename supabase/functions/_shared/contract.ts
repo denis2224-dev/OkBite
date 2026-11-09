@@ -73,16 +73,29 @@ export const ReadLabelRequest = z.object({
 export const EnrichReadLabelRequest = z.object({
   ingredientsImage: z.null(), nutritionImage: z.string().min(1), nutrition: z.literal('separate'),
 });
-export const ReadLabelResponse = z.object({
+const LabelResponse = z.object({
   ingredientsText: z.string().nullable(), unit: Unit.nullable(), nutrients: Nutrients,
   unclear: z.array(LabelField), // kept for old clients; reasons says why a field is null
   reasons: z.object(Object.fromEntries(LABEL_FIELDS.map((k) => [k, FieldReason])) as Record<LabelField, typeof FieldReason>)
     .optional(), // shortcut: optional while servers without U3 still answer; make required once U3 is deployed
   ingredientsPhotoPath: z.string(), nutritionPhotoPath: z.string().nullable(),
 });
-export const EnrichReadLabelResponse = ReadLabelResponse.extend({
+// A field is 'read' exactly when it has a value: anything else stays null, never 0.
+const reasonsMatchValues = (
+  r: Pick<z.infer<typeof LabelResponse>, 'ingredientsText' | 'nutrients' | 'reasons'>, ctx: z.RefinementCtx,
+) => {
+  if (!r.reasons) return;
+  for (const key of LABEL_FIELDS) {
+    const value = key === 'ingredientsText' ? r.ingredientsText : r.nutrients[key];
+    if ((value !== null) !== (r.reasons[key] === 'read')) {
+      ctx.addIssue({ code: 'custom', path: ['reasons', key], message: 'a field is read exactly when it has a value' });
+    }
+  }
+};
+export const ReadLabelResponse = LabelResponse.superRefine(reasonsMatchValues);
+export const EnrichReadLabelResponse = LabelResponse.extend({
   ingredientsPhotoPath: z.null(), nutritionPhotoPath: z.string().min(1),
-});
+}).superRefine(reasonsMatchValues);
 export const AddProductRequest = z.object({
   code: Code.nullable(), name: z.string().min(1).max(120), brand: z.string().max(80), // '' = unreadable on the pack
   quantity: z.string().max(30), unit: Unit, categorySlug: z.string().optional(), // absent = add-product saves 'necunoscut'
