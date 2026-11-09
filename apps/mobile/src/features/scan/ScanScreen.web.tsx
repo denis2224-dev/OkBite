@@ -38,9 +38,9 @@ export default function ScanScreenWeb() {
           ]}
         />
       )}
-      {working ? <View style={styles.status}><ActivityIndicator color={colors.loading} /><Body>{ro.capture.working}</Body></View> : null}
+      {working ? <View style={styles.status}><ActivityIndicator /><Body>{ro.capture.working}</Body></View> : null}
       {state.status === 'error' || state.status === 'offline' ? (
-        <StatusPanel tone={state.status === 'offline' ? 'info' : 'error'}
+        <StatusPanel
           title={state.status === 'offline' ? ro.offline.title : undefined}
           message={state.status === 'offline' ? ro.offline.subtitle : errorMessage(state.code)}
           actions={[

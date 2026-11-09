@@ -1,6 +1,5 @@
-import { ThemedTextInput as TextInput } from '../../ui/ThemedTextInput';
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { normalizeCode } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
@@ -51,6 +50,6 @@ const createStyles = (colors: Palette) => StyleSheet.create({
   box: { gap: 8, padding: 16, backgroundColor: colors.ground },
   title: { fontSize: 18, fontWeight: '700', color: colors.ink },
   hint: { color: colors.muted },
-  error: { color: colors.error },
-  input: { minHeight: 44, borderWidth: 1, borderColor: colors.controlBorder, backgroundColor: colors.surface, color: colors.ink, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16 },
+  error: { color: colors.low },
+  input: { minHeight: 44, borderWidth: 1, borderColor: colors.muted, backgroundColor: colors.surface, color: colors.ink, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16 },
 });

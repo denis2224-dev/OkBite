@@ -43,28 +43,23 @@ export function StatusPanel({
   title,
   message,
   actions,
-  tone = 'neutral',
 }: {
-  tone?: 'neutral' | 'info' | 'warning' | 'error' | 'success';
   title?: string;
   message: string;
   actions: PanelAction[];
 }) {
   const { colors } = useTheme();
-  const foreground = tone === 'neutral' ? colors.ink : colors[tone];
-  const background = tone === 'neutral' ? colors.surface : colors[`${tone}Bg`];
   return (
     <View
-      style={[styles.panel, { backgroundColor: background, borderColor: colors.border }]}
+      style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.border }]}
       accessibilityLiveRegion="polite"
     >
       {title ? (
-        <Text accessibilityRole="header" style={[styles.title, { color: foreground }]}>
+        <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
           {title}
         </Text>
       ) : null}
-      <Text accessibilityRole={tone === 'error' ? 'alert' : undefined}
-        style={[styles.message, { color: foreground, backgroundColor: background }]}>{message}</Text>
+      <Text style={[styles.message, { color: colors.ink }]}>{message}</Text>
       {actions.map((a, index) => (
         <ActionButton
           key={a.label}

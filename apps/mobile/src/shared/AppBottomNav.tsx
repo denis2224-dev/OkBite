@@ -27,10 +27,10 @@ export function AppBottomNav({ state, emitter, navigateToTab, insets }: BottomTa
    if (!route) return null;
    const selected = current?.key === route.key;
    const color = selected ? colors.primary : colors.muted;
-   return <PressableOpacity key={route.key} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected }} aria-selected={selected}
+   return <PressableOpacity key={route.key} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected }}
     onPress={() => { const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true }); if (!selected && !event.defaultPrevented) navigateToTab(route.key); }}
     onLongPress={() => emitter.emit({ type: 'tabLongPress', target: route.key })}
-    style={{ flex: 1, minHeight: 52, paddingVertical: 4, borderRadius: 14, borderWidth: 2, borderColor: selected ? colors.primary : colors.transparent, backgroundColor: selected ? colors.soft : colors.transparent, gap: 2, alignItems: 'center', justifyContent: 'center' }}>
+    style={{ flex: 1, minHeight: 52, paddingVertical: 4, borderRadius: 14, gap: 2, alignItems: 'center', justifyContent: 'center' }}>
     <HomeIcon name={item.icon} size={24} color={color} /><Text style={{ fontFamily: fonts.bold, fontSize: 12, lineHeight: 17.4, color, textAlign: 'center' }}>{item.label}</Text>
    </PressableOpacity>;
   })}</View>

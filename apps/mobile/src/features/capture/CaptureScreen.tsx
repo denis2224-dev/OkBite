@@ -45,14 +45,14 @@ export default function CaptureScreen() {
         </>
       ) : state.status === 'idle' ? (
         <ScrollView testID="capture-permission-recovery" style={{ flex: 1 }} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
-          {loading ? <><ActivityIndicator color={colors.loading} size="large" testID="permission-loading" /><ActionButton {...gallery} /></> : !permission?.granted ? (
+          {loading ? <><ActivityIndicator size="large" testID="permission-loading" /><ActionButton {...gallery} /></> : !permission?.granted ? (
             <StatusPanel
               title={message ? undefined : ro.capture.deniedTitle}
               message={message ?? ro.capture.deniedText}
               actions={[gallery, ...(settingsAction ? [settingsAction] : []), ...(canRetryCamera ? [{ label: ro.capture.retry, onPress: () => { void requestPermission(); } }] : [])]}
             />
           ) : (
-            <StatusPanel tone="error"
+            <StatusPanel
               message={ro.pwa.camera.startupFailed}
               actions={[gallery, { label: ro.errors.retry, onPress: () => { setMountFailed(false); setReady(false); } }]}
             />
@@ -64,7 +64,7 @@ export default function CaptureScreen() {
       ) : null}
       {state.status === 'error' || state.status === 'offline' ? (
         <ScrollView testID="capture-error-recovery" style={StyleSheet.absoluteFill} contentContainerStyle={[styles.overlay, { flexGrow: 1 }]} keyboardShouldPersistTaps="handled">
-          <StatusPanel tone={state.status === 'offline' ? 'info' : 'error'}
+          <StatusPanel
             title={state.status === 'offline' ? ro.offline.title : undefined}
             message={state.status === 'offline' ? ro.offline.subtitle : errorMessage(state.code)}
             actions={[

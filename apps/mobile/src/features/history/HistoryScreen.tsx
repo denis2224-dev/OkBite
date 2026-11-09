@@ -70,14 +70,14 @@ export function HistoryScreen() {
 
   return <SafeAreaView edges={['top','left','right']} style={styles.safe}>
     <View style={styles.frame}>
-      <TabPageHeader title={copy.title} subtitle={copy.note} action={entries.length > 0 ? <HomePressable label={ro.history.clear} disabled={clearing} onPress={() => setConfirming(true)} style={styles.clear}><HomeIcon name="trash" size={18} color={t.colors.error}/><Text style={styles.clearText}>{ro.history.clear}</Text></HomePressable> : undefined}/>
+      <TabPageHeader title={copy.title} subtitle={copy.note} action={entries.length > 0 ? <HomePressable label={ro.history.clear} disabled={clearing} onPress={() => setConfirming(true)} style={styles.clear}><HomeIcon name="trash" size={18} color={t.colors.low}/><Text style={styles.clearText}>{ro.history.clear}</Text></HomePressable> : undefined}/>
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         {showStorageWarning ? <Card><Body>{ro.pwa.storageWarning}</Body></Card> : null}
         {loading && <Body accessibilityLiveRegion="polite">{ro.app.loading}</Body>}
         {error && !confirming && <Card><Body accessibilityRole="alert">{error === 'load' ? ro.history.loadError : ro.history.clearError}</Body>{error === 'load' && <Button variant="secondary" onPress={() => void load()}>{ro.app.retry}</Button>}</Card>}
         {!loading && !error && entries.length === 0 && <View style={styles.empty}>
-          <View style={styles.emptyIcon}><HomeIcon name="clock" size={30} color={t.colors.ink}/></View>
+          <View style={styles.emptyIcon}><HomeIcon name="clock" size={30} color={t.colors.primary}/></View>
           <Text accessibilityRole="header" style={styles.emptyTitle}>{copy.emptyTitle}</Text><Text style={styles.emptyText}>{copy.empty}</Text>
           <Button onPress={() => router.push('/scan')}>{copy.scan}</Button>
         </View>}
@@ -117,7 +117,7 @@ const createStyles=(t:HomeTheme)=>StyleSheet.create({
  confirmation:{flex:1,backgroundColor:t.colors.scrim},confirmationContent:{flexGrow:1,justifyContent:'center',padding:16,width:'100%',maxWidth:430,alignSelf:'center'},
  header:{minHeight:64,paddingTop:spacing.headerTop,paddingHorizontal:16,paddingBottom:8,flexDirection:'row',flexWrap:'wrap',alignItems:'center',gap:8},
  title:{flex:1,fontFamily:t.fonts.heading,fontSize:22,lineHeight:31.9,letterSpacing:-0.22,color:t.colors.ink},
- clear:{minHeight:44,paddingVertical:4,paddingHorizontal:12,borderRadius:999,backgroundColor:t.colors.errorBg,flexDirection:'row',alignItems:'center',gap:6},clearText:{fontFamily:t.fonts.bold,fontSize:13,lineHeight:18.85,color:t.colors.error,flexShrink:1},
+ clear:{minHeight:44,paddingVertical:4,paddingHorizontal:12,borderRadius:999,backgroundColor:t.colors.lowBg,flexDirection:'row',alignItems:'center',gap:6},clearText:{fontFamily:t.fonts.bold,fontSize:13,lineHeight:18.85,color:t.colors.low,flexShrink:1},
  body:{paddingHorizontal:16,paddingBottom:24,gap:12},note:{fontFamily:t.fonts.body,fontSize:13,lineHeight:18.85,color:t.colors.muted,marginBottom:0},
  empty:{paddingVertical:56,paddingHorizontal:16,alignItems:'stretch'},emptyIcon:{width:72,height:72,borderRadius:36,alignSelf:'center',backgroundColor:t.colors.mint,alignItems:'center',justifyContent:'center',marginBottom:14},
  emptyTitle:{fontFamily:t.fonts.heading,fontSize:21,lineHeight:30.45,letterSpacing:-0.21,color:t.colors.ink,textAlign:'center',marginBottom:6},

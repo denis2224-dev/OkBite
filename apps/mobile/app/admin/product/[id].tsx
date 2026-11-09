@@ -1,6 +1,5 @@
-import { ThemedTextInput as TextInput } from '../../../src/ui/ThemedTextInput';
 import { useEffect, useState } from 'react';
-import { Image } from 'react-native';
+import { Image, TextInput } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ProductInput } from '@okbite/shared';
 import { Screen, Body, Button } from '../../../src/ui';
@@ -73,7 +72,7 @@ function Editor({ id }: { id: string }) {
         onChangeText={setReason}
         style={{
           color: colors.ink,
-          borderColor: colors.controlBorder,
+          borderColor: colors.border,
           minHeight: 48,
           borderWidth: 1,
           padding: 12,
