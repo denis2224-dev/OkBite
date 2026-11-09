@@ -1,3 +1,4 @@
+import { UpdateBanner } from '../src/ui/UpdateBanner';
 import { InstallPromptProvider } from '../src/lib/installPrompt';
 import { spacing } from '../src/theme/tokens';
 import { useEffect } from 'react';
@@ -26,5 +27,5 @@ function ActionHeader() {
   </View>
  </SafeAreaView>;
 }
-function Navigation(){const pathname=usePathname();const {isDark,colors}=useTheme();return <ToastProvider><Diagnostics/><QueueListener/><StatusBar style={isDark?'light':'dark'}/><Stack screenLayout={({children})=>actionRoutes.has(pathname)?<SafeAreaView edges={['left','right','bottom']} style={{flex:1,backgroundColor:colors.ground}}>{children}</SafeAreaView>:children} screenOptions={{headerShown:actionRoutes.has(pathname),header:ActionHeader,contentStyle:{backgroundColor:colors.ground},animation:'none'}}/></ToastProvider>;}
+function Navigation(){const pathname=usePathname();const {isDark,colors}=useTheme();return <ToastProvider><Diagnostics/><QueueListener/><StatusBar style={isDark?'light':'dark'}/><Stack screenLayout={({children})=>actionRoutes.has(pathname)?<SafeAreaView edges={['left','right','bottom']} style={{flex:1,backgroundColor:colors.ground}}>{children}</SafeAreaView>:children} screenOptions={{headerShown:actionRoutes.has(pathname),header:ActionHeader,contentStyle:{backgroundColor:colors.ground},animation:'none'}}/><UpdateBanner/></ToastProvider>;}
 export default function Layout(){const [fontsLoaded,fontError]=useFonts({Manrope_400Regular,Manrope_500Medium,Manrope_600SemiBold,Manrope_700Bold,Manrope_800ExtraBold,BricolageGrotesque_700Bold,BricolageGrotesque_800ExtraBold});return <SafeAreaProvider><ThemeProvider><InstallPromptProvider><StartupGate ready={fontsLoaded} error={fontError}>{(fontsLoaded||fontError)&&<Navigation/>}</StartupGate></InstallPromptProvider></ThemeProvider></SafeAreaProvider>;}
