@@ -18,15 +18,20 @@ export function createService(deps = { adminClient }) {
     if (error) {
       // An RPC transport failure can follow a successful transaction. Its event is
       // linked atomically, so recover success before releasing an unused reservation.
-      const outcome = await db.from('usage_events').select('product_id').eq('id', event)
-        .eq('device_id', device).eq('kind', 'report').maybeSingle();
-      if (outcome.error) throw new Error('Report outcome unknown; quota release deferred');
-      const persisted = z.object({ product_id: Uuid.nullable() }).nullable().parse(outcome.data);
-      if (persisted?.product_id === input.productId.toLowerCase()) {
-        return success.parse({ status: 'ok' });
-      }
-      if (persisted?.product_id) throw new Error('Report reservation belongs to another product');
+      const recover = async () => {
+        const outcome = await db.from('usage_events').select('product_id').eq('id', event)
+          .eq('device_id', device).eq('kind', 'report').maybeSingle();
+        if (outcome.error) throw new Error('Report outcome unknown; quota release deferred');
+        const persisted = z.object({ product_id: Uuid.nullable() }).nullable().parse(outcome.data);
+        if (persisted?.product_id === input.productId.toLowerCase()) return true;
+        if (persisted?.product_id) throw new Error('Report reservation belongs to another product');
+        return false;
+      };
+      if (await recover()) return success.parse({ status: 'ok' });
+      // Conditional DELETE waits on a still-running commit before rechecking its
+      // linked event. If it wins first, the missing reservation prevents commit.
       await releaseUsage(db, event);
+      if (await recover()) return success.parse({ status: 'ok' });
       if (error.code === 'P0002') throw new HttpError(404, 'Produs negăsit.', 'not_found');
       throw new Error('Report transaction failed');
     }

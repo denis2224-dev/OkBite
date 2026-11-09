@@ -55,6 +55,7 @@ export function createService(
             code: input.code,
             added_by_device: device,
             ingredients_upload_path: input.ingredientsPhotoPath,
+            photo_upload_paths: photos.flatMap(([, path]) => path === null ? [] : [path]),
           },
           p_links: [],
           p_event: null,
@@ -98,6 +99,20 @@ export function createService(
       };
       for (const [suffix, path] of photos) {
         if (path === null) continue;
+        const intent = await db.rpc('record_photo_publication', {
+          p_event: event, p_device: device, p_product_id: id, p_upload_path: path, p_suffix: suffix,
+        });
+        if (intent.error?.code === 'P0004') {
+          // Another attempt may have committed this exact receipt while we waited.
+          const recovered = await recover();
+          if (recovered) {
+            await cleanup();
+            await releaseUsage(db, event);
+            return recovered;
+          }
+          throw new HttpError(400, 'Fotografie indisponibilă.');
+        }
+        if (intent.error) throw new Error('Photo publication journal failed');
         published.push(`${id}/${suffix}.jpg`);
         paths[suffix] = await deps.publishPhoto(path, id, suffix);
       }
@@ -122,6 +137,7 @@ export function createService(
           nutrition_photo_path: paths.nutrition,
           added_by_device: device,
           ingredients_upload_path: input.ingredientsPhotoPath,
+          photo_upload_paths: photos.flatMap(([, path]) => path === null ? [] : [path]),
         },
         p_links: matchIngredients(input.ingredientsText, kb.data ?? []),
         p_event: event,
@@ -130,6 +146,7 @@ export function createService(
         if (error.code === 'P0003') {
           throw new HttpError(409, 'Codul este deja utilizat.', 'duplicate');
         }
+        if (error.code === 'P0004') throw new HttpError(400, 'Fotografie indisponibilă.');
         if (error.code === '23503') throw new HttpError(400, 'Categorie necunoscută.');
         throw new Error('Product transaction failed');
       }
@@ -137,15 +154,14 @@ export function createService(
       if (!result.created) await cleanup();
       return await foundResponse(result.id);
     } catch (error) {
-      // A lost RPC response may follow a committed transaction. Keep its photos/event.
+      // DELETE locks the reservation until an in-flight commit settles. Its NULL
+      // predicate preserves committed events; deleting an unused event prevents a
+      // later commit. Only then is it safe to inspect and compensate public copies.
+      await releaseUsage(db, event);
       const persisted = await db.from('products').select('id').eq('id', id).maybeSingle();
       if (persisted.error) throw new Error('Submission outcome unknown; compensation deferred');
       if (persisted.data) return await foundResponse(id);
-      try {
-        await cleanup();
-      } finally {
-        await releaseUsage(db, event);
-      }
+      await cleanup();
       throw error;
     }
   };

@@ -135,6 +135,7 @@ async function fixture() {
           null,
         );
       }
+      assert.equal((await db.from('photo_publications').delete().eq('device_id', device)).error, null);
       assert.equal((await db.from('usage_events').delete().eq('device_id', device)).error, null);
       assert.equal((await db.storage.from('uploads').remove([photo])).error, null);
     },
