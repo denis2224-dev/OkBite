@@ -12,8 +12,14 @@ Deno.test('CORS accepts exact app origins and rejects spoofed origins', () => {
   for (
     const origin of [
       'https://okbite.md',
-      'https://branch.okbite.pages.dev',
-      'https://a-b.okbite.pages.dev',
+      'https://okbite.app',
+      'https://www.okbite.app',
+      'https://okbite-ir1.pages.dev',
+      'https://0f7ca672.okbite-ir1.pages.dev',
+      'https://r2-w1-cors-origins.okbite-ir1.pages.dev',
+      'https://pr-12.okbite-ir1.pages.dev',
+      'https://branch.okbite-ir1.pages.dev',
+      'https://a-b.okbite-ir1.pages.dev',
       'http://localhost:8081',
     ]
   ) {
@@ -30,16 +36,32 @@ Deno.test('CORS accepts exact app origins and rejects spoofed origins', () => {
   }
   for (
     const origin of [
+      'https://www.okbite.md',
+      'https://okbite.app.evil.test',
+      'https://www.okbite.app.evil.test',
+      'http://okbite.app',
+      'http://www.okbite.app',
       'https://okbite.md.evil.test',
+      'https://okbite.pages.dev',
+      'https://branch.okbite.pages.dev',
+      'https://okbite.pages.dev.evil.test',
+      'https://okbite-ir1.pages.dev.evil.test',
+      'https://pr-12.okbite-ir1.pages.dev.evil.test',
+      'https://a.b.okbite-ir1.pages.dev',
+      'https://evil-okbite-ir1.pages.dev',
+      'http://okbite-ir1.pages.dev',
+      'https://evil-okbite.pages.dev',
       'https://evilokbite.pages.dev',
+      'http://okbite.md',
+      'http://www.okbite.md',
+      'https://www.okbite.md.evil.test',
       'http://a.okbite.pages.dev',
       'https://a.okbite.pages.dev.evil.test',
-      'https://okbite.pages.dev',
       'https://a.b.okbite.pages.dev',
       'null',
       'http://localhost:80810',
-      'https://okbite.md:443',
-      'https://okbite.md/',
+      'https://okbite.app:443',
+      'https://okbite.app/',
     ]
   ) {
     for (const method of ['GET', 'OPTIONS']) {
@@ -58,10 +80,10 @@ Deno.test('preflight rejects unsupported methods and headers', () => {
   for (const headers of cases) {
     const req = new Request('http://local', {
       method: 'OPTIONS',
-      headers: { origin: 'https://okbite.md', ...headers },
+      headers: { origin: 'https://okbite.app', ...headers },
     });
     assert.equal(cors(req)!.status, 400);
-    assert.equal(cors(req)!.headers.get('access-control-allow-origin'), 'https://okbite.md');
+    assert.equal(cors(req)!.headers.get('access-control-allow-origin'), 'https://okbite.app');
   }
 });
 Deno.test('device ids must be UUIDs and normalize case', () => {
