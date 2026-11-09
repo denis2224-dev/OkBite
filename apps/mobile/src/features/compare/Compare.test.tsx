@@ -4,12 +4,13 @@ import Compare from '../../../app/(tabs)/compare';
 import { previewEntries } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
 import { ProductPicker } from './ProductPicker';
+import { router } from 'expo-router';
 const mockEntries = previewEntries.map(entry => ({ ...entry, savedAt: '2026-11-05T00:00:00.000Z' }));
 let mockId: string | undefined;
 let mockPending: Promise<typeof mockEntries> | undefined;
 beforeEach(() => { mockId = undefined; mockPending = undefined; });
 jest.mock('../history/store', () => ({ listHistory: async () => mockPending ?? mockEntries }));
-jest.mock('expo-router', () => ({ useLocalSearchParams: () => ({ id: mockId }), router: { push: jest.fn() },
+jest.mock('expo-router', () => ({ useLocalSearchParams: () => ({ id: mockId }), router: { push: jest.fn(), canGoBack: () => true, back: jest.fn() },
   useFocusEffect: (effect: () => void | (() => void)) => mockUseEffect(effect, [effect]) }));
 
 async function choose(index: number) {
@@ -28,6 +29,12 @@ test('renders the same-category comparison from history and announces picker exp
   expect(screen.getByText('4,1 g')).toBeTruthy();
   expect(screen.getByText('13,2 g')).toBeTruthy();
   expect(screen.getAllByText(ro.score.disclaimer)).toHaveLength(2);
+});
+test('can photograph another product after completing a compatible comparison', async () => {
+  await render(<Compare />);
+  await choose(0); await choose(1);
+  await fireEvent.press(screen.getByRole('button', { name: ro.compare.photo }));
+  expect(router.push).toHaveBeenCalledWith('/capture');
 });
 test('different categories show guidance and no nutrient comparison table', async () => {
   await render(<Compare />);
@@ -55,4 +62,15 @@ test('an unverified selection keeps its status visible', async () => {
   await render(<ProductPicker entries={mockEntries} selected={{ ...selected,
     product: { ...selected.product, status: 'unverified' } }} onSelect={() => {}} />);
   expect(screen.getAllByText(ro.result.unverified)).toHaveLength(2);
+});
+
+test('compatible comparison withholds a stale score for an incomplete label', async () => {
+  const original = mockEntries[0]!;
+  mockEntries[0] = { ...original, product: { ...original.product, nutrients: { ...original.product.nutrients, salt: null } } };
+  try {
+    await render(<Compare />);
+    await choose(0); await choose(1);
+    expect(screen.getByText(ro.result.scoreUnavailable)).toBeTruthy();
+    expect(screen.getByText(ro.result.missing)).toBeTruthy();
+  } finally { mockEntries[0] = original; }
 });

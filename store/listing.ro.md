@@ -1,39 +1,48 @@
-# OkBite — proiect de listare, nepublicat
+# okBite — propunere de listare, nepublicată
 
-Stare: 5 noiembrie 2026. Text pentru revizuire; nu este pregătit pentru trimitere
-în magazine. Nu reprezintă dovada funcționării serviciilor sau aprobării legale.
+8 noiembrie 2026. Textul descrie versiunea conectată propusă; se aprobă numai după
+verificarea funcțiilor în binarul de staging acceptat. Preț: gratuit. Fără plăți
+sau abonamente. Nu s-au creat capturi, conturi ori trimiteri în magazine.
 
-- Nume: OkBite
-- Subtitlu: Înțelege eticheta
-- Descriere scurtă: Citește etichetele: ingrediente, alergeni și informații nutriționale.
-- Categorie propusă: Food & Drink
-- Cuvinte-cheie: etichetă,ingrediente,alergeni,nutriție,produse,Moldova
-- Contact de suport: neconfirmat; operatorul trebuie să furnizeze o adresă reală.
-- Politică de confidențialitate: ruta `/privacy` este implementată în aplicație;
-  adresa publică HTTPS și operatorul domeniului nu au fost confirmate.
+## Câmpuri propuse pentru ambele magazine
 
-## Descriere pentru versiunea disponibilă acum
+- Nume: okBite
+- Subtitlu iOS: Înțelege eticheta
+- Descriere scurtă Android: Citește etichetele: ingrediente, alergeni și informații nutriționale.
+- Cuvinte-cheie iOS: etichetă,ingrediente,alergeni,nutriție,produse,Moldova
+- Categorie propusă: Alimente și băuturi; de confirmat în fiecare consolă.
+- Operator, drepturi de autor, email și URL de suport: neconfirmate.
+- URL HTTPS pentru confidențialitate: neconfirmat. Domeniul planificat nu dovedește găzduirea.
 
-OkBite este un proiect în dezvoltare pentru înțelegerea etichetelor alimentare
-în limba română. Poți explora interfața și exemplele demonstrative de ingrediente,
-alergeni și informații nutriționale.
+## Descriere lungă propusă
 
-Exemplele demonstrative sunt fictive. Scorurile lor sunt ilustrative și nu trebuie
-folosite pentru decizii alimentare. Serviciile conectate și motorul real de scor
-necesită integrare și validare înainte de lansare.
+Cu okBite, citești mai ușor etichetele alimentelor, în limba română.
 
-Informațiile din aplicație nu înlocuiesc ambalajul original sau sfatul unui
-specialist. Dacă ai alergii, verifică întotdeauna eticheta produsului.
+Fotografiază produsul sau caută după codul de bare. Pentru produsele disponibile,
+vezi ingredientele, alergenii declarați și informațiile nutriționale la 100 g
+sau 100 ml. Scorul este însoțit de explicații; când lipsesc datele necesare,
+apare „Scor indisponibil”.
 
-## Înainte de a descrie versiunea finală
+Dacă produsul nu este găsit, poți fotografia ingredientele și tabelul nutrițional,
+apoi verifica și corecta textul extras. Contribuțiile sunt marcate „Neverificat”
+până la verificarea echipei.
 
-Revizuiți descrierea după verificarea capturii foto, citirii etichetei, identificării,
-corectării și publicării contribuțiilor, istoricului offline, explicațiilor și
-comparațiilor. Descrieți numai funcțiile active și verificate în binarul trimis.
-Nu afirmați că toate produsele, sursele sau scorurile au fost verificate de oameni.
-Nu promiteți lipsa totală a datelor colectate sau anonimatul identificatorului.
+Compară produse din aceeași categorie și regăsește în istoric produsele salvate
+pe telefon, inclusiv fără conexiune. Căutările noi și analiza fotografiilor
+necesită internet. Nu ai nevoie de un cont de cumpărător.
 
-Capturile reale pentru magazine, limitele actuale ale câmpurilor, categoria,
-clasificarea de vârstă și răspunsurile de confidențialitate rămân de verificat de
-R1/operator în consolele magazinelor. Nu există capturi sau trimiteri de producție
-create prin acest document.
+Calculat la 100 g; nu indică riscul unei boli. Informațiile nu înlocuiesc
+ambalajul original sau recomandările unui specialist. Dacă ai alergii,
+verifică întotdeauna ambalajul. Rețetele și etichetele se pot modifica.
+
+## Înainte de trimitere
+
+- [ ] Verifică fiecare funcție descrisă în binarul real, cu date autorizate.
+- [ ] Confirmă limitele câmpurilor în console și păstrează textul în limite.
+- [ ] Completează identitatea vânzătorului și suportul; verifică URL-urile HTTPS.
+- [ ] Completează declarațiile și clasificarea din `privacy-and-rating.md`.
+- [ ] Atașează numai capturi reale conform `screenshots/README.md`.
+- [ ] Furnizează instrucțiuni de review fără cont de cumpărător, mediul de test,
+  modul de acces la funcțiile conectate și limitările reale. Nu include secrete.
+- [ ] Confirmă cu persoana care publică: preț gratuit și lansare manuală după
+  aprobările ambelor magazine. Nu presupune aprobarea sau publicarea.
