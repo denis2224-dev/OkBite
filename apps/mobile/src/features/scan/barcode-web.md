@@ -51,6 +51,8 @@ Independent review found no actionable issues in the cache adjustment.
 
 ## Remaining acceptance
 
+- Watch for heat or stutter on older iPhones during live-scanner testing.
+
 - Test a real iPhone in Safari and installed mode, then Android Chrome and
   installed mode: live barcode, photo, invalid/no code, permission refusal,
   exit during startup, camera indicator off after exit, and offline relaunch.

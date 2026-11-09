@@ -7,7 +7,6 @@ import { startLiveScan, useWebLiveScan } from './useWebLiveScan';
 jest.mock('expo-router', () => ({ useRouter: () => ({ replace: jest.fn() }), useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof import('react')>('react').useEffect(callback, [callback]) }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
 
-
 type G = Record<string, unknown>;
 const g = globalThis as unknown as G;
 

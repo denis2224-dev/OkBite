@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { findBarcode } from './findBarcode.web';
-
+import { DecodeHintType } from '@zxing/library';
 
 // Mock module loading only; exercise the real reader factory.
 jest.mock('./zxing.web', () => ({
@@ -9,7 +9,7 @@ jest.mock('./zxing.web', () => ({
 jest.mock('@zxing/browser', () => ({
   BarcodeFormat: { EAN_13: 7, EAN_8: 6, UPC_A: 14, UPC_E: 15 },
   BrowserMultiFormatReader: jest.fn().mockImplementation(function (this: object) {
-    Object.assign(this, { decode: jest.fn(), decodeFromImageUrl: jest.fn(), reader: { reset: jest.fn() } });
+    Object.assign(this, { hints: new Map(), setHints(hints: Map<number, unknown>) { this.hints = hints; }, decode: jest.fn(), decodeFromImageUrl: jest.fn(), reader: { reset: jest.fn() } });
   }),
 }));
 type ZxingReader = {
@@ -17,6 +17,7 @@ type ZxingReader = {
   decodeFromImageUrl: jest.Mock<(uri: string) => Promise<{ getText(): string; getBarcodeFormat(): number }>>;
   reader: { reset: jest.Mock };
   possibleFormats: number[];
+  hints?: Map<number, unknown>;
 };
 const zxing = jest.requireMock<{ BrowserMultiFormatReader: jest.Mock<() => void> }>('@zxing/browser');
 const currentReader = () => zxing.BrowserMultiFormatReader.mock.instances.at(-1) as unknown as ZxingReader;
@@ -100,23 +101,41 @@ describe('findBarcode (web)', () => {
 });
 
 describe('ZXing photo fallback', () => {
+  const saved = { BarcodeDetector: g.BarcodeDetector, createImageBitmap: g.createImageBitmap };
   beforeEach(() => { delete g.BarcodeDetector; zxing.BrowserMultiFormatReader.mockClear(); });
-  afterEach(() => { Object.assign(g, { BarcodeDetector: undefined }); });
+  afterEach(() => { Object.assign(g, saved); });
+
+  it.each([false, true])('uses TRY_HARDER for photos only and restores live hints (failure=%s)', async failPhoto => {
+    const { createZxingReader } = jest.requireActual<typeof import('./zxingReader.web')>('./zxingReader.web');
+    const reader = createZxingReader();
+    const observed = currentReader();
+    observed.decodeFromImageUrl.mockImplementation(async () => {
+      expect(observed.hints?.get(DecodeHintType.TRY_HARDER)).toBe(true);
+      if (failPhoto) throw new Error('No barcode');
+      return { getText: () => '036000291452', getBarcodeFormat: () => 14 };
+    });
+    if (failPhoto) await expect(reader.readCode('blob:photo')).rejects.toThrow('No barcode');
+    else await expect(reader.readCode('blob:photo')).resolves.toBe('0036000291452');
+    observed.decode.mockImplementation(() => {
+      expect(observed.hints?.has(DecodeHintType.TRY_HARDER)).toBe(false);
+      return { getText: () => '036000291452', getBarcodeFormat: () => 14 };
+    });
+    await expect(reader.readCode({} as HTMLVideoElement)).resolves.toBe('0036000291452');
+    expect(observed.possibleFormats).toEqual([7, 6, 14, 15]);
+  });
 
   it.each(['blob:http://localhost/photo', 'data:image/jpeg;base64,/9j/AA=='])('decodes %s without createImageBitmap and normalizes UPC', async uri => {
-    const saved = g.createImageBitmap;
     delete g.createImageBitmap;
     const reader: ZxingReader = {
       decode: jest.fn(),
       decodeFromImageUrl: jest.fn(async () => ({ getText: () => '036000291452', getBarcodeFormat: () => 14 })),
       reader: { reset: jest.fn() }, possibleFormats: [],
     };
-    zxing.BrowserMultiFormatReader.mockImplementationOnce(function (this: object) { Object.assign(this, reader); });
+    zxing.BrowserMultiFormatReader.mockImplementationOnce(function (this: object) { Object.assign(this, { hints: new Map(), setHints(hints: Map<number, unknown>) { this.hints = hints; } }, reader); });
     await expect(findBarcode(uri)).resolves.toBe('0036000291452');
     expect(reader.decodeFromImageUrl).toHaveBeenCalledWith(uri);
     expect(currentReader().possibleFormats).toEqual([7, 6, 14, 15]);
     expect(reader.reader.reset).toHaveBeenCalledTimes(1);
-    g.createImageBitmap = saved;
   });
   it.each(['4840001000017', null])('returns null for an invalid code or a decoding miss (%s) and resets', async code => {
     const reader: ZxingReader = {
@@ -127,19 +146,19 @@ describe('ZXing photo fallback', () => {
       }),
       reader: { reset: jest.fn() }, possibleFormats: [],
     };
-    zxing.BrowserMultiFormatReader.mockImplementationOnce(function (this: object) { Object.assign(this, reader); });
+    zxing.BrowserMultiFormatReader.mockImplementationOnce(function (this: object) { Object.assign(this, { hints: new Map(), setHints(hints: Map<number, unknown>) { this.hints = hints; } }, reader); });
     await expect(findBarcode('blob:http://localhost/photo')).resolves.toBeNull();
     expect(reader.reader.reset).toHaveBeenCalledTimes(1);
   });
-});
 
-it('expands UPC-E to canonical UPC-A before the shared checksum validation', async () => {
-  delete g.BarcodeDetector;
-  const reader: ZxingReader = {
-    decode: jest.fn(),
-    decodeFromImageUrl: jest.fn(async () => ({ getText: () => '04252614', getBarcodeFormat: () => 15 })),
-    reader: { reset: jest.fn() }, possibleFormats: [],
-  };
-  zxing.BrowserMultiFormatReader.mockImplementationOnce(function (this: object) { Object.assign(this, reader); });
-  await expect(findBarcode('blob:http://localhost/upce')).resolves.toBe('0042100005264');
+  it('expands UPC-E to canonical UPC-A before the shared checksum validation', async () => {
+    delete g.BarcodeDetector;
+    const reader: ZxingReader = {
+      decode: jest.fn(),
+      decodeFromImageUrl: jest.fn(async () => ({ getText: () => '04252614', getBarcodeFormat: () => 15 })),
+      reader: { reset: jest.fn() }, possibleFormats: [],
+    };
+    zxing.BrowserMultiFormatReader.mockImplementationOnce(function (this: object) { Object.assign(this, { hints: new Map(), setHints(hints: Map<number, unknown>) { this.hints = hints; } }, reader); });
+    await expect(findBarcode('blob:http://localhost/upce')).resolves.toBe('0042100005264');
+  });
 });

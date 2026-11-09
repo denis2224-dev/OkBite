@@ -18,7 +18,12 @@ export async function startLiveScan(video: HTMLVideoElement, onCode: (code: stri
   const detector = await createDetector();
   const media = mediaDevices();
   if (!media?.getUserMedia || signal?.aborted) return null;
-  const reader = detector ? null : await createZxingReader();
+  let reader: Awaited<ReturnType<typeof createZxingReader>> | null = null;
+  try {
+    if (!detector) reader = await createZxingReader();
+  } catch {
+    return null; // The decoder could not load; camera access has not been requested.
+  }
   if (signal?.aborted) { reader?.reset(); return null; }
 
   let stream: MediaStream;

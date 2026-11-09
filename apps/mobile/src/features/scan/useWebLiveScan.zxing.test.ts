@@ -3,8 +3,6 @@ import { renderHook, act } from '@testing-library/react-native';
 import { startLiveScan, useWebLiveScan } from './useWebLiveScan';
 import { createZxingReader } from '../capture/zxing.web';
 
-
-
 // Mock module loading only; exercise the real reader factory.
 jest.mock('../capture/zxing.web', () => ({
   createZxingReader: jest.fn(async () => jest.requireActual<typeof import('../capture/zxingReader.web')>('../capture/zxingReader.web').createZxingReader()),
@@ -44,6 +42,17 @@ const tick = () => act(async () => { await jest.advanceTimersByTimeAsync(250); }
 describe('ZXing live fallback', () => {
   beforeEach(() => { jest.useFakeTimers(); zxing.BrowserMultiFormatReader.mockClear(); });
   afterEach(() => { jest.useRealTimers(); });
+
+  it('offers manual scanning without requesting the camera when ZXing cannot load', async () => {
+    const getUserMedia = jest.fn(async () => stream());
+    install(getUserMedia); delete g.BarcodeDetector;
+    jest.mocked(createZxingReader).mockRejectedValueOnce(new Error('Chunk download failed'));
+    const { result, unmount } = await renderHook(() => useWebLiveScan(jest.fn()));
+    await act(async () => { result.current.videoRef(fakeVideo()); });
+    expect(result.current.status).toBe('unsupported');
+    expect(getUserMedia).not.toHaveBeenCalled();
+    await unmount();
+  });
 
   it('keeps native decoding when available without constructing ZXing', async () => {
     install(jest.fn(async () => stream()));
