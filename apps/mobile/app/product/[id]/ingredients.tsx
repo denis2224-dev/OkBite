@@ -26,8 +26,10 @@ export default function Ingredients() {
         {!product.allergens.length && <Body>{ro.result.noAllergens}</Body>}
         {!!product.mayContain.length && <><Body>{ro.result.mayContain}</Body><View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {product.mayContain.map(name => <AllergenChip key={name} name={name} />)}</View></>}
+        <Body>{ro.result.missingAllergenNote}</Body>
         <Body>{ro.result.allergyNote}</Body>
       </Card>
+      <Card><Body style={{fontWeight:'700'}}>{ro.result.transcribedLabel}</Body><Body selectable>{product.ingredientsText}</Body></Card>
       {groups.map(group => {
         const items = product.ingredients.map((ingredient, index) => ({ ingredient, index })).filter(item => item.ingredient.group === group);
         return items.length ? <View key={group ?? 'unknown'} style={{ gap: 8 }}>
@@ -42,6 +44,7 @@ export default function Ingredients() {
                 {ingredient.allergen && <AllergenChip name={ingredient.allergen} />}
               </Pressable>
               {open && (ingredient.slug && ingredient.explanation && source ? <>
+                <Body style={{fontWeight:'700'}}>{ro.result.explainedWithSource}</Body>
                 <Body>{ingredient.role}</Body><Body>{ingredient.explanation}</Body>
                 <Button variant="ghost" onPress={() => { void Linking.openURL(source).catch(() => toast(ro.errors.generic)); }}>{ro.ingredients.source}</Button>
               </> : <Body>{ro.ingredients.explanationSoon}</Body>)}

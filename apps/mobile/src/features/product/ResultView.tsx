@@ -1,24 +1,29 @@
 import { useState } from 'react';
 import { Image, View } from 'react-native';
 import { router } from 'expo-router';
-import type { Product, ScoreResult } from '@okbite/shared';
+import { NUTRIENT_KEYS, type Product, type ScoreResult } from '@okbite/shared';
 import { AllergenChip, Badge, Body, Button, Card, Heading, useToast } from '../../ui';
 import { ro } from '../../copy/ro';
 import { isPreview } from '../../lib/preview';
 import { displayScore } from './displayScore';
 import { ScoreCard } from './ScoreCard';
+import { PartialNutritionCard } from './PartialNutritionCard';
 import { PortionTable } from './PortionTable';
 import { SourceCard } from './SourceCard';
 import { ReportSheet } from './ReportSheet';
 import { shareProduct } from '../share/shareProduct';
 import { productShareUrl } from '../share/productShareText';
 
-export function ResultView({ product, score }: { product: Product; score: ScoreResult }) {
+// Enable only after the U1/U2 enrichment backend and U6 route have been verified together.
+const enrichmentReady = process.env.EXPO_PUBLIC_NUTRITION_ENRICHMENT === '1';
+export function ResultView({ product, score, nutritionAdditionAvailable = enrichmentReady }: { product: Product; score: ScoreResult; nutritionAdditionAvailable?: boolean }) {
   const [report, setReport] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [shareFailed, setShareFailed] = useState(false);
   const toast = useToast();
   const shownScore = displayScore(product, score);
+  const hasNutrition = NUTRIENT_KEYS.some(key => product.nutrients[key] !== null);
+  const canShowScore = shownScore.score !== null && shownScore.grade !== 'unavailable';
   const share = async () => {
     setSharing(true);
     setShareFailed(false);
@@ -48,9 +53,14 @@ export function ResultView({ product, score }: { product: Product; score: ScoreR
           {product.mayContain.map(name => <AllergenChip key={name} name={name} />)}
         </View>
       </>}
+      <Body>{ro.result.missingAllergenNote}</Body>
       <Body>{ro.result.allergyNote}</Body>
     </Card>
-    <ScoreCard score={shownScore} /><PortionTable product={product} /><SourceCard product={product} />
+    <Card><Heading style={{fontSize:18}}>{ro.result.transcribedLabel}</Heading><Body selectable>{product.ingredientsText}</Body></Card>
+    {canShowScore ? <><ScoreCard score={shownScore} />{hasNutrition && <PortionTable product={product} />}</> : <PartialNutritionCard product={product} />}
+    <SourceCard product={product} />
+    {nutritionAdditionAvailable && product.status === 'unverified' && !hasNutrition &&
+      <Button variant="secondary" onPress={() => router.push({pathname: '/add/nutrition', params: {productId: product.id}})}>{ro.result.addNutrition}</Button>}
     <Button variant="secondary" onPress={() => router.push({ pathname: '/product/[id]/ingredients', params: { id: product.id } })}>{ro.ingredients.title}</Button>
     <Button variant="secondary" onPress={() => router.push({ pathname: '/product/[id]/label', params: { id: product.id } })}>{ro.result.original}</Button>
     <Button variant="secondary" onPress={() => router.push({ pathname: '/compare', params: { id: product.id } })}>{ro.result.compare}</Button>
