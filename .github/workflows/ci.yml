@@ -84,6 +84,7 @@ jobs:
           export SUPABASE_URL="$API_URL"
           export SUPABASE_ANON_KEY="$ANON_KEY"
           export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
+          export SUPABASE_JWT_SECRET="$JWT_SECRET"
           export OKBITE_RUN_INTEGRATION=1
           if [ -f supabase/tests/local-cors.mjs ]; then
             node supabase/tests/local-cors.mjs
