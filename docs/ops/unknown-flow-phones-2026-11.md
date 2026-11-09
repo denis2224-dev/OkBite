@@ -1,7 +1,7 @@
 # Unknown-product flow: physical-phone acceptance, November 2026
 
 **Status: NOT RUN. U10 is incomplete; this file is a runner and evidence template.** No physical-phone session, live API call, product save, or photo capture was performed to prepare it. Execution is blocked pending the U9 preview and confirmed backend readiness described below.
-Source: [design specification, §9](../superpowers/specs/2026-11-03-okbite-design.md#9-acceptance-criteria), using the U0 draft in `C:\ASCS\okbite-U0`; confirm its approved wording in the U9 preview commit before execution.
+Source: [design specification, §9](../superpowers/specs/2026-11-03-okbite-design.md#9-acceptance-criteria) (U0 specification PR #106); confirm its approved wording in the U9 preview commit before execution.
 
 ## Preflight — required before any run
 
