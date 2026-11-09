@@ -9,7 +9,8 @@ integrationTest('real Auth JWT and membership protect verify/hide/report actions
   const db = adminClient();
   const email = `c7-${crypto.randomUUID()}@example.invalid`;
   const password = crypto.randomUUID();
-  const created = await db.auth.admin.createUser({ email, password, email_confirm: true });
+  const created = await db.auth.admin.createUser({ email, password, email_confirm: true,
+    user_metadata: { moderator: true, role: 'moderator' } });
   assert.equal(created.error, null);
   const actor = created.data.user!.id;
   const client = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
@@ -51,8 +52,36 @@ integrationTest('real Auth JWT and membership protect verify/hide/report actions
     const verify = { action: 'verify', productId: id, product: input };
     assert.equal((await post(verify, 'forged')).status, 401);
     assert.equal((await post(verify, '')).status, 401);
-    assert.equal((await post(verify)).status, 401);
+    assert.equal((await post(verify)).status, 401, 'user metadata grants no moderator access');
     assert.equal((await db.from('moderators').insert({ user_id: actor })).error, null);
+    const encode = (value: unknown) =>
+      btoa(JSON.stringify(value)).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
+    const payload = JSON.parse(
+      atob(token.split('.')[1].replaceAll('-', '+').replaceAll('_', '/')),
+    );
+    const unsigned = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ ...payload, exp: 1 })}`;
+    const secret = Deno.env.get('SUPABASE_JWT_SECRET');
+    assert.ok(secret, 'Local expired-JWT test requires this fixture JWT secret');
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign'],
+    );
+    const signature = new Uint8Array(
+      await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(unsigned)),
+    );
+    const expired = `${unsigned}.${
+      btoa(String.fromCharCode(...signature)).replaceAll('+', '-').replaceAll('/', '_')
+        .replaceAll('=', '')
+    }`;
+    assert.equal(
+      (await post(verify, expired)).status,
+      401,
+      'correctly signed but expired moderator JWT fails',
+    );
+
     const row = await db.from('products').insert({
       id,
       name: input.name,
@@ -74,6 +103,23 @@ integrationTest('real Auth JWT and membership protect verify/hide/report actions
       'zahăr',
     ]);
     assert.deepEqual(product?.product.allergens, ['Lapte']);
+    assert.equal(typeof product?.score.score, 'number');
+    const edited = {
+      ...input,
+      ingredientsText: 'apă, zahăr',
+      nutrients: { ...input.nutrients, sugar: null },
+    };
+    assert.equal((await post({ ...verify, product: edited })).status, 200);
+    const recalculated = await loadProduct({ id });
+    assert.deepEqual(recalculated?.product.ingredients.map((item) => item.name), [
+      'apă',
+      'zahăr',
+    ]);
+    assert.deepEqual(recalculated?.product.allergens, []);
+    assert.equal(recalculated?.score.score, null);
+    assert.ok(recalculated?.score.missing.includes('sugar'));
+    assert.equal((await post(verify)).status, 200);
+
     const verified = await db.from('products').select('verified_by').eq('id', id).single();
     assert.equal(verified.error, null);
     assert.equal(verified.data!.verified_by, actor);
@@ -99,6 +145,8 @@ integrationTest('real Auth JWT and membership protect verify/hide/report actions
       (await post({ action: 'hide', productId: id, reason: 'Etichetă neclară' })).status,
       200,
     );
+    assert.equal(await loadProduct({ id }), null);
+    assert.equal((await post(verify)).status, 404, 'hidden products cannot be reverified');
     assert.equal(await loadProduct({ id }), null);
     const hidden = await db.from('products').select('hidden_reason').eq('id', id).single();
     assert.equal(hidden.data!.hidden_reason, 'Etichetă neclară');
