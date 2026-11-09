@@ -29,6 +29,7 @@ const MAX: Record<NutrientKey, number> = {
   fiber: 100,
   fruitVegPct: 100,
 };
+const UNIT = (key: NutrientKey) => key === 'kcal' ? 'kcal' : key === 'fruitVegPct' ? '%' : 'g';
 // Why a nutrient is null when the shopper did not photograph a table.
 const NOT_ASKED: Partial<Record<NutritionMode, FieldReason>> = {
   none: 'not_printed',
@@ -36,7 +37,7 @@ const NOT_ASKED: Partial<Record<NutritionMode, FieldReason>> = {
 };
 
 /** "0,3" / "0 g" / "250 kcal" / 0.3 → number; blank, "?", "<0,5", "mg", words, out of range → null. */
-function amount(value: unknown, max: number): number | null {
+function amount(value: unknown, key: NutrientKey): number | null {
   // A bare JSON 0 is not a transcription: the prompt asks for printed text, so it is a model default.
   if (value === 0) return null;
   const text = typeof value === 'number'
@@ -44,10 +45,10 @@ function amount(value: unknown, max: number): number | null {
     : typeof value === 'string'
     ? value.trim()
     : '';
-  const m = text.match(/^(\d+(?:[.,]\d+)?)\s*(?:g|kcal|%)?$/i);
-  if (!m) return null;
+  const m = text.match(/^(\d+(?:[.,]\d+)?)\s*([a-z%]*)$/i);
+  if (!m || (m[2] && m[2].toLowerCase() !== UNIT(key))) return null; // "20 kcal" is not a fat value
   const n = Number(m[1].replace(',', '.'));
-  return n <= max ? n : null;
+  return n <= MAX[key] ? n : null;
 }
 
 // Only an explicit empty string means "row not printed"; a missing key or "?" is unreadable.
@@ -86,7 +87,7 @@ export function parseLabel(
   if (!NOT_ASKED[ask.nutrition]) {
     const perPortionOnly = o.perPortionOnly === true;
     for (const key of NUTRIENT_KEYS) {
-      const v = perPortionOnly ? null : amount(o[key], MAX[key]);
+      const v = perPortionOnly ? null : amount(o[key], key);
       read.nutrients[key] = v;
       read.reasons[key] = v !== null ? 'read' : perPortionOnly ? 'no_per_100' : UNREAD_CELL(o[key]);
       if (v === null) unclear.push(key);

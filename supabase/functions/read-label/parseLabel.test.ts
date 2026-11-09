@@ -164,3 +164,15 @@ Deno.test('parseLabel reads only nutrition for an enrich read', () => {
   assert.equal(read.unclear.includes('ingredientsText'), false);
   assert.equal(read.nutrients.kcal, 63);
 });
+
+Deno.test('parseLabel accepts a unit only on the row it belongs to', () => {
+  const read = parseLabel(
+    label({ fat: '20 kcal', kcal: '250 g', fruitVegPct: '12 g', sugar: '4 %' }),
+    both,
+  );
+  for (const key of ['fat', 'kcal', 'fruitVegPct', 'sugar'] as const) {
+    assert.equal(read.nutrients[key], null);
+    assert.equal(read.reasons[key], 'unreadable');
+  }
+  assert.equal(parseLabel(label({ fruitVegPct: '45 %' }), both).nutrients.fruitVegPct, 45);
+});
