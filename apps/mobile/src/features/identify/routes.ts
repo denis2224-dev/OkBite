@@ -19,6 +19,8 @@ export type AddRouteParams = {
   name?: string;
   quantity?: string;
   photoPath?: string;
+  frontPhotoId?: string;
+  unknownDraftId?: string;
 };
 
 export type AddInitialValues = {
@@ -28,6 +30,8 @@ export type AddInitialValues = {
   name: string | null;
   quantity: string | null;
   photoPath: string | null;
+  frontPhotoId?: string;
+  unknownDraftId?: string;
 };
 
 export type IdentifyRouteState =
@@ -61,10 +65,14 @@ export function addProductRoute({
   read,
   photoPath,
   queueId,
+  frontPhotoId,
+  unknownDraftId,
 }: {
   read: FrontRead;
   photoPath: string | null;
   queueId?: string;
+  frontPhotoId?: string;
+  unknownDraftId?: string;
 }): { pathname: '/add'; params: AddRouteParams } {
   const params: AddRouteParams = {};
   const code = read.code ? normalizeCode(read.code) : null;
@@ -72,6 +80,8 @@ export function addProductRoute({
   const name = cleanParam(read.name ?? undefined);
   const quantity = cleanParam(read.quantity ?? undefined);
   const cleanPhoto = cleanParam(photoPath ?? undefined);
+  const cleanFrontPhotoId = cleanParam(frontPhotoId);
+  const cleanUnknownDraftId = cleanParam(unknownDraftId);
 
   if (code) params.code = code;
   if (brand) params.brand = brand;
@@ -79,6 +89,8 @@ export function addProductRoute({
   if (quantity) params.quantity = quantity;
   if (cleanPhoto) params.photoPath = cleanPhoto;
   if (queueId) params.queueId = queueId;
+  if (cleanFrontPhotoId) params.frontPhotoId = cleanFrontPhotoId;
+  if (cleanUnknownDraftId) params.unknownDraftId = cleanUnknownDraftId;
   return { pathname: '/add', params };
 }
 
@@ -87,8 +99,12 @@ export function parseAddParams(
   raw: Record<string, string | string[] | undefined>,
 ): AddInitialValues {
   const rawCode = cleanParam(raw.code);
+  const frontPhotoId = cleanParam(raw.frontPhotoId);
+  const unknownDraftId = cleanParam(raw.unknownDraftId);
   return {
     ...(cleanParam(raw.queueId) ? { queueId: cleanParam(raw.queueId)! } : {}),
+    ...(frontPhotoId ? { frontPhotoId } : {}),
+    ...(unknownDraftId ? { unknownDraftId } : {}),
     code: rawCode ? normalizeCode(rawCode) : null,
     brand: cleanParam(raw.brand),
     name: cleanParam(raw.name),
