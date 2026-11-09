@@ -14,9 +14,18 @@ Prepared on 8 November 2026 from main 212597e, branch R5-W1-zxing-fallback.
 
 ## Validation
 
-- Regression tests: 30 pass across three scanner/photo files; fallback and
+Review fixes verified on 9 November 2026 at code commit `ba7633c` (documentation follows separately).
+- Three new regressions were observed RED, then GREEN: decoder loading failure,
+  photo-only TRY_HARDER, and hint restoration after photo failure.
+- Real Chrome 156 / ZXing: a rectangular synthetic barcode photo rotated 90 degrees
+  failed before the fix and decoded correctly afterwards. Photo-only square padding
+  compensates for this pinned browser layer retaining unrotated luminance dimensions.
+  The repeatable check is `node apps/mobile/src/features/capture/rotatedBarcode.browser-check.cjs`
+  (requires installed Chrome and the existing development dependencies).
+
+- Regression tests: 33 pass across three scanner/photo files; fallback and
   startup-cancellation tests were observed failing before their implementation.
-- Full mobile suite: 533 pass, including the cache regressions. Shared package: 231 pass.
+- Full mobile suite: 615 pass, including the cache regressions. Shared package: 231 pass.
 - Root app: 104 pass; web storage: 9 pass; scripts: 31 pass.
 - Cache regressions were observed RED, then GREEN. In desktop Chrome 156,
   generated service-worker installation requested no ZXing chunk; its first
@@ -29,9 +38,9 @@ Prepared on 8 November 2026 from main 212597e, branch R5-W1-zxing-fallback.
   Separately running the remaining groups exposed the existing media-preflight
   test's missing Bash/WSL runtime. Both also fail on unchanged main.
 - Independent code review found startup cancellation; its two regressions were
-  observed RED, fixed and verified GREEN. Claude cross-review remains pending.
+  observed RED, fixed and verified GREEN. Claude cross-review findings 1, 2 and 4 are addressed; finding 3 remains a phone-test note.
 
-## Web bundle measurement
+## Initial web bundle measurement (8 November)
 
 Same local toolchain and Expo web export, no production credentials:
 
