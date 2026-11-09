@@ -44,7 +44,7 @@ export default function Home() {
   const recent = demo === 'empty' ? [] : history.slice(0, 3);
   return <SafeAreaView edges={['top', 'left', 'right']} style={s.safe}>
     <View style={s.frame}>
-      {offline && <View accessibilityRole="alert" style={s.offline}><HomeIcon name="offline" size={18} color={t.colors.heroText} /><Text style={s.offlineText}>{copy.offline}</Text></View>}
+      {offline && <View accessibilityRole="alert" style={s.offline}><HomeIcon name="offline" size={18} color={t.colors.info} /><Text style={s.offlineText}>{copy.offline}</Text></View>}
       <View style={s.top}>
         <View style={s.brand}><AppLogo/><Text accessibilityRole="header" style={s.brandText}>{copy.brand}</Text></View>
         <HomePressable label={copy.demo} onPress={() => setShowDemo(true)} style={s.demo}><HomeIcon name="sliders" size={18} /><Text style={s.demoText}>{copy.demo}</Text></HomePressable>
@@ -109,7 +109,7 @@ const createStyles = (t: HomeTheme) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: t.colors.ground },
   frame: { flex: 1, width: '100%', maxWidth: 430, alignSelf: 'center' }, loading: { opacity: 0 },
   offline: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 16, backgroundColor: t.colors.offline },
-  offlineText: { flex: 1, color: t.colors.heroText, fontFamily: t.fonts.semibold, fontSize: 13, lineHeight: 18.85 },
+  offlineText: { flex: 1, color: t.colors.info, fontFamily: t.fonts.semibold, fontSize: 13, lineHeight: 18.85 },
   top: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: spacing.headerTop, paddingHorizontal: 16, paddingBottom: 6 },
   brand: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
   logo: { width: 38, height: 38, borderRadius: 12, backgroundColor: t.colors.hero, alignItems: 'center', justifyContent: 'center' },
@@ -118,7 +118,7 @@ const createStyles = (t: HomeTheme) => StyleSheet.create({
   demoText: { color: t.colors.ink, fontFamily: t.fonts.bold, fontSize: 13, lineHeight: 18.85 },
   scroll: { flex: 1 }, body: { paddingHorizontal: 16, paddingBottom: 24 },
   hero: { backgroundColor: t.colors.hero, borderRadius: 24, paddingTop: 22, paddingHorizontal: 20, paddingBottom: 24, marginTop: 8, overflow: 'hidden' },
-  decoration: { position: 'absolute', right: -30, top: -26, opacity: 0.22 },
+  decoration: { position: 'absolute', right: -100, top: -110, opacity: 0.08 },
   label: { fontFamily: t.fonts.extra, fontSize: 12, lineHeight: 17.4, letterSpacing: 0.84, textTransform: 'uppercase', color: t.colors.muted },
   heroLabel: { color: t.colors.accent }, title: { fontFamily: t.fonts.headingExtra, fontSize: 30, lineHeight: 32.4, letterSpacing: -0.3, color: t.colors.heroText, maxWidth: 290, marginTop: 8, marginBottom: 10 },
   heroDescription: { fontFamily: t.fonts.body, fontSize: 15, lineHeight: 21.75, color: t.colors.heroMuted },
@@ -131,7 +131,7 @@ const createStyles = (t: HomeTheme) => StyleSheet.create({
   section: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 8 },
   sectionTitle: { fontFamily: t.fonts.heading, fontSize: 18, lineHeight: 26.1, letterSpacing: -0.18, color: t.colors.ink, flexShrink: 1 },
   link: { minHeight: 44, paddingHorizontal: 4, justifyContent: 'center' },
-  linkText: { color: t.colors.good, fontFamily: t.fonts.bold, fontSize: 14, lineHeight: 20.3, textDecorationLine: 'underline' },
+  linkText: { color: t.colors.link, fontFamily: t.fonts.bold, fontSize: 14, lineHeight: 20.3, textDecorationLine: 'underline' },
   list: { paddingHorizontal: 0, paddingVertical: 4, overflow: 'hidden' },
   row: { minHeight: 68, flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 14, gap: 12 },
   rowBorder: { borderTopWidth: 1, borderTopColor: t.colors.separator },

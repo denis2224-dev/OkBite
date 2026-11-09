@@ -22,7 +22,7 @@ export default function ScanScreen() {
 
   let preview: React.ReactNode;
   if (!permission || permission.status === 'undetermined') {
-    preview = <ActivityIndicator size="large" testID="permission-loading" />;
+    preview = <ActivityIndicator color={colors.loading} size="large" testID="permission-loading" />;
   } else if (!permission.granted) {
     preview = (
       <StatusPanel
@@ -31,7 +31,7 @@ export default function ScanScreen() {
       />
     );
   } else if (mountFailed) {
-    preview = <StatusPanel message={ro.errors.generic} actions={[{ label: ro.errors.retry, onPress: () => setMountFailed(false) }]} />;
+    preview = <StatusPanel tone="error" message={ro.errors.generic} actions={[{ label: ro.errors.retry, onPress: () => setMountFailed(false) }]} />;
   } else {
     preview = (
       <>
@@ -51,9 +51,9 @@ export default function ScanScreen() {
     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Text accessibilityRole="header" style={styles.title}>{ro.scan.title}</Text>
       <View style={styles.preview}>{preview}</View>
-      {working ? <View style={styles.status}><ActivityIndicator color={colors.primary} /><Text style={styles.working}>{ro.capture.working}</Text></View> : null}
+      {working ? <View style={styles.status}><ActivityIndicator color={colors.loading} /><Text style={styles.working}>{ro.capture.working}</Text></View> : null}
       {state.status === 'error' || state.status === 'offline' ? (
-        <StatusPanel
+        <StatusPanel tone={state.status === 'offline' ? 'info' : 'error'}
           title={state.status === 'offline' ? ro.offline.title : undefined}
           message={state.status === 'offline' ? ro.offline.subtitle : errorMessage(state.code)}
           actions={[

@@ -68,6 +68,7 @@ it('lets the numbered instructions grow with the text', async () => {
 it('themes manual entry and disables editing while a lookup is in flight', async () => {
   await render(<ManualCode disabled onSubmit={jest.fn()} />);
   const input = screen.getByLabelText(ro.scan.manualTitle);
-  expect(style(input)).toMatchObject({ color: mockColors.ink, backgroundColor: mockColors.surface });
+  expect(style(input)).toMatchObject({ color: mockColors.ink, backgroundColor: mockColors.disabledBg });
+  expect(style(input).opacity ?? 1).toBe(1);
   expect(input.props.editable).toBe(false);
 });

@@ -22,7 +22,7 @@ export function PortionTable({ product }: { product: Product }) {
         <Body>{value === null ? ro.result.undeclared : `${formatAmount(value)} ${key === 'kcal' ? 'kcal' : ro.app.unitGram}`}</Body>
         {percent !== null && <>
           <View accessible={false} style={{ height: 6, borderRadius: 3, backgroundColor: colors.soft }}>
-            <View style={{ height: 6, borderRadius: 3, width: `${Math.min(percent, 100)}%`, backgroundColor: colors.good }} />
+            <View style={{ height: 6, borderRadius: 3, width: `${Math.min(percent, 100)}%`, backgroundColor: colors.controlBorder }} />
           </View>
           <Body style={{ color: colors.muted }}>{ro.result.daily(percent)}</Body>
         </>}

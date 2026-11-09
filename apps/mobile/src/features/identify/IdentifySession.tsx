@@ -75,7 +75,7 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
   }
   return (
     <View style={[styles.center, { backgroundColor: colors.ground }]}>
-      <StatusPanel
+      <StatusPanel tone="error"
         message={ro.errors.generic}
         actions={[
           { label: ro.capture.title, onPress: () => navigate('/capture') },

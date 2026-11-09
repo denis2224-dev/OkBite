@@ -1,5 +1,5 @@
+import { ThemedTextInput as TextInput } from '../../ui/ThemedTextInput';
 import { useEffect, useState, type PropsWithChildren } from 'react';
-import { TextInput } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
@@ -114,7 +114,7 @@ export function AdminGate({ children }: PropsWithChildren) {
                 autoComplete="email"
                 style={{
                   color: colors.ink,
-                  borderColor: colors.border,
+                  borderColor: colors.controlBorder,
                   borderWidth: 1,
                   padding: 12,
                   minHeight: 48,

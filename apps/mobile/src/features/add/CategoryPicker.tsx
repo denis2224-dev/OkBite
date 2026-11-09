@@ -39,11 +39,12 @@ export function CategoryPicker({
                 accessibilityRole="button"
                 accessibilityLabel={`${ro.review.category}: ${cat.name}`}
                 accessibilityState={{ selected, disabled }}
+                aria-pressed={selected}
                 disabled={disabled}
                 onPress={() => onSelect(cat.slug)}
                 style={[styles.chip, selected && styles.chipSelected, disabled && styles.chipDisabled]}
               >
-                <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+                <Text style={[styles.chipText, selected && styles.chipTextSelected, disabled && {color: colors.disabledText}]}>
                   {cat.name}
                 </Text>
               </Pressable>
@@ -66,7 +67,7 @@ const createStyles = (colors: Palette) => StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: colors.muted,
+    borderColor: colors.controlBorder,
     backgroundColor: colors.surface,
     justifyContent: 'center',
   },
@@ -74,15 +75,15 @@ const createStyles = (colors: Palette) => StyleSheet.create({
     borderColor: colors.primary,
     backgroundColor: colors.primary,
   },
-  chipDisabled: { opacity: 0.55 },
+  chipDisabled: { backgroundColor: colors.disabledBg, borderColor: colors.border },
   chipText: { flexShrink: 1, fontSize: 14, fontWeight: '600', color: colors.ink },
   chipTextSelected: { color: colors.onPrimary },
   emptyBox: {
     padding: 12,
     borderRadius: 12,
-    backgroundColor: colors.lowBg,
+    backgroundColor: colors.neutralBg,
     gap: 4,
   },
-  emptyTitle: { fontSize: 14, fontWeight: '700', color: colors.low },
-  emptyText: { fontSize: 13, color: colors.low },
+  emptyTitle: { fontSize: 14, fontWeight: '700', color: colors.neutral },
+  emptyText: { fontSize: 13, color: colors.neutral },
 });

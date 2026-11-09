@@ -1,5 +1,6 @@
+import { ThemedTextInput as TextInput } from '../../ui/ThemedTextInput';
 import { useState } from 'react';
-import { TextInput, View } from 'react-native';
+import { View } from 'react-native';
 import { NUTRIENT_KEYS, ProductInput } from '@okbite/shared';
 import { Body, Button } from '../../ui';
 import { ro } from '../../copy/ro';
@@ -35,7 +36,7 @@ export function ProductEditor({
           minHeight: 48,
           padding: 12,
           borderWidth: 1,
-          borderColor: colors.border,
+          borderColor: colors.controlBorder,
           color: colors.ink,
         }}
       />

@@ -23,7 +23,7 @@ export function ResultView({ product, score }: { product: Product; score: ScoreR
     setSharing(true);
     setShareFailed(false);
     try {
-      if (await shareProduct(product, shownScore) === 'copied') toast(ro.share.copied);
+      if (await shareProduct(product, shownScore) === 'copied') toast(ro.share.copied, undefined, 'success');
     } catch {
       setShareFailed(true);
     } finally {

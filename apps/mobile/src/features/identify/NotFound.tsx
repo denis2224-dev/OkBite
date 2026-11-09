@@ -58,11 +58,11 @@ const createStyles = (colors: Palette) => StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 16,
-    backgroundColor: colors.goodBg,
+    backgroundColor: colors.neutralBg,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeText: { fontSize: 14, fontWeight: '700', color: colors.good },
+  badgeText: { fontSize: 14, fontWeight: '700', color: colors.neutral },
   stepText: { flex: 1, fontSize: 15, color: colors.ink },
   actions: { gap: 10 },
 });

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, type PressableProps } from 'react-native';
+import { Pressable, StyleSheet, type PressableProps } from 'react-native';
 import { useTheme } from '../theme/useTheme';
 
 export function PressableOpacity({ style, onFocus, onBlur, onHoverIn, onHoverOut, android_ripple: _ripple, ...props }: PressableProps) {
@@ -19,7 +19,16 @@ export function PressableOpacity({ style, onFocus, onBlur, onHoverIn, onHoverOut
    setFocused(target.matches?.(':focus-visible') ?? false); props.onPressIn?.(event);
   }}
   onBlur={event => { setFocused(false); onBlur?.(event); }}
-  style={state => [{ minHeight: 44 }, typeof style === 'function' ? style(state) : style,
-   !props.disabled && (state.pressed ? { opacity: 0.6 } : hovered ? { opacity: 0.9 } : undefined),
-   focused ? { outlineWidth: 3, outlineColor: colors.focus, outlineOffset: 2, outlineStyle: 'solid' } : { outlineWidth: 0 }]} />;
+  style={state => {
+   const base = typeof style === 'function' ? style(state) : style;
+   const bg = StyleSheet.flatten(base)?.backgroundColor;
+   const onFill = bg === colors.primary ? colors.onPrimary : bg === colors.accent ? colors.onAccent : undefined;
+   const active = !props.disabled && (state.pressed || hovered);
+   const neutral = !bg || bg === colors.transparent || [colors.ground, colors.surface, colors.soft].includes(String(bg));
+   const backgroundColor = bg === colors.primary ? (state.pressed ? colors.primaryPressed : colors.primaryHover)
+    : neutral ? (state.pressed ? colors.pressedSurface : colors.hoverSurface) : bg;
+   return [{ minHeight: 44 }, base, active && { backgroundColor },
+    { outlineWidth: focused ? 3 : active ? (state.pressed ? 2 : 1) : 0,
+      outlineColor: onFill ?? (focused ? colors.focus : colors.controlBorder), outlineOffset: -3, outlineStyle: 'solid' }];
+  }} />;
 }

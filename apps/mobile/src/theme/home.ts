@@ -4,9 +4,7 @@ export const homeTheme = {
   colors: { ...light, cardBorder: light.border, separator: light.divider },
   fonts: { ...fonts, body: 'Manrope_400Regular', semibold: fonts.medium, extra: 'Manrope_800ExtraBold', headingExtra: 'BricolageGrotesque_800ExtraBold' },
   tiles: [
-    { background: '#E8EFE3', foreground: '#35613D' },
-    { background: '#F5E8D4', foreground: '#8A5A2C' },
-    { background: '#F1E3E1', foreground: '#8C4646' },
+    { background: light.soft, foreground: light.ink },
   ],
 } as const;
 
@@ -19,9 +17,7 @@ const darkHomeTheme: HomeTheme = {
   ...homeTheme,
   colors: { ...homeTheme.colors, ...dark, cardBorder: dark.border, separator: dark.divider },
   tiles: [
-    { background: dark.goodBg, foreground: dark.good },
-    { background: dark.mediumBg, foreground: dark.medium },
-    { background: dark.lowBg, foreground: dark.low },
+    { background: dark.soft, foreground: dark.ink },
   ],
 };
 export function useHomeTheme(): HomeTheme {

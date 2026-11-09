@@ -111,7 +111,7 @@ export default function Compare() {
         <Heading style={{ fontSize: 18 }}>{ro.result.nutrients[row.key]}</Heading>
         <View style={{ flexDirection: 'row', gap: 12 }}>
           {(['a', 'b'] as const).map(side => <View key={side} style={{ flex: 1, padding: 8, borderRadius: 12,
-            backgroundColor: row.better === side ? colors.goodBg : colors.soft }}>
+            backgroundColor: colors.soft }}>
             <Body>{side === 'a' ? a.product.name : b.product.name}</Body>
             <Body>{row[side] === null ? ro.result.undeclared : `${formatAmount(row[side])} ${row.key === 'kcal' ? 'kcal' : 'g'}`}</Body>
             {row.better === side && <Body>{ro.score.positive}</Body>}

@@ -1,5 +1,6 @@
+import { ThemedTextInput as TextInput } from '../../ui/ThemedTextInput';
 import React from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { NUTRIENT_KEYS, type NutrientKey, type ReadLabelResponse } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
@@ -105,7 +106,7 @@ const createStyles = (colors: Palette) => StyleSheet.create({
   labelCol: { flexGrow: 1, flexShrink: 1, flexBasis: 160, minWidth: 0 },
   labelText: { fontSize: 14, fontWeight: '600', color: colors.ink },
   unclearMark: { fontSize: 12, fontWeight: '800', color: colors.medium },
-  errorText: { fontSize: 12, fontWeight: '700', color: colors.low },
+  errorText: { fontSize: 12, fontWeight: '700', color: colors.error },
   input: {
     minWidth: 108,
     flexGrow: 1,
@@ -115,12 +116,12 @@ const createStyles = (colors: Palette) => StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: colors.muted,
+    borderColor: colors.controlBorder,
     backgroundColor: colors.surface,
     textAlign: 'right',
     fontSize: 15,
     color: colors.ink,
   },
-  inputInvalid: { borderColor: colors.low },
+  inputInvalid: { borderColor: colors.error },
   unitSuffix: { minWidth: 36, fontSize: 13, color: colors.muted },
 });

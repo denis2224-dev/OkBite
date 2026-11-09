@@ -22,7 +22,7 @@ export function AddCaptureScreen() {
   if (!permission || permission.status === 'undetermined') {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" testID="add-permission-loading" />
+        <ActivityIndicator color={colors.loading} size="large" testID="add-permission-loading" />
       </View>
     );
   }
@@ -91,7 +91,7 @@ export function AddCaptureScreen() {
               ]}
             />
           ) : (
-            <StatusPanel
+            <StatusPanel tone="error"
               message={ro.errors.generic}
               actions={[
                 gallery,
@@ -120,7 +120,7 @@ export function AddCaptureScreen() {
 
       {state.status === 'error' || state.status === 'offline' ? (
         <ScrollView testID="add-error-recovery" style={StyleSheet.absoluteFill} contentContainerStyle={[styles.overlay, { flexGrow: 1 }]} keyboardShouldPersistTaps="handled">
-          <StatusPanel
+          <StatusPanel tone={state.status === 'offline' ? 'info' : 'error'}
             title={state.status === 'offline' ? ro.offline.title : undefined}
             message={state.status === 'offline' ? ro.offline.subtitle : errorMessage(state.code)}
             actions={[
@@ -152,7 +152,7 @@ const createStyles = (colors: Palette) => StyleSheet.create({
   stepBadge: { color: colors.accent, fontSize: 13, fontWeight: '700' },
   title: { color: colors.cameraInk, fontSize: 18, fontWeight: '800' },
   hint: { color: colors.heroMuted, fontSize: 14 },
-  doneNote: { color: colors.accent, fontSize: 13, fontWeight: '600' },
+  doneNote: { color: colors.cameraSuccess, fontSize: 13, fontWeight: '600' },
   cameraArea: { flex: 1 },
   center: { flexGrow: 1, justifyContent: 'center', padding: 20 },
   controls: {

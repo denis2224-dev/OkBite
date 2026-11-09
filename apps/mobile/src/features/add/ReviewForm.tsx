@@ -1,5 +1,6 @@
+import { ThemedTextInput as TextInput } from '../../ui/ThemedTextInput';
 import React, { useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import {
   AddProductRequest,
@@ -266,10 +267,10 @@ const createStyles = (colors: Palette) => StyleSheet.create({
   fieldLabel: { fontSize: 15, fontWeight: '700', color: colors.ink },
   subLabel: { fontSize: 13, fontWeight: '700', color: colors.muted, marginTop: 4 },
   unclearMark: { fontSize: 12, fontWeight: '800', color: colors.medium },
-  input: { minHeight: 46, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, borderWidth: 1.5, borderColor: colors.muted, backgroundColor: colors.surface, color: colors.ink, fontSize: 15 },
+  input: { minHeight: 46, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, borderWidth: 1.5, borderColor: colors.controlBorder, backgroundColor: colors.surface, color: colors.ink, fontSize: 15 },
   multiline: { minHeight: 96, textAlignVertical: 'top' },
   unitRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  unitButton: { minHeight: 44, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, borderWidth: 1.5, borderColor: colors.muted, justifyContent: 'center' },
+  unitButton: { minHeight: 44, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, borderWidth: 1.5, borderColor: colors.controlBorder, justifyContent: 'center' },
   unitButtonSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
   unitText: { fontSize: 14, fontWeight: '600', color: colors.ink },
   unitTextSelected: { color: colors.onPrimary },
@@ -278,5 +279,5 @@ const createStyles = (colors: Palette) => StyleSheet.create({
   mayChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: colors.neutralBg },
   mayChipText: { fontSize: 13, fontWeight: '600', color: colors.neutral },
   muted: { fontSize: 13, color: colors.muted },
-  errorBanner: { fontSize: 14, fontWeight: '700', color: colors.low },
+  errorBanner: { fontSize: 14, fontWeight: '700', color: colors.error },
 });

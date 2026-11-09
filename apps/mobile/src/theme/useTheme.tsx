@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { light, dark } from './tokens';
+import { useDocumentTheme } from './useDocumentTheme';
 type Preference = 'system' | 'light' | 'dark';
 const key = 'okbite.appearance';
 const Context = createContext({ colors: light, isDark: false, preference: 'system' as Preference, setPreference: (_value: Preference) => {} });
@@ -23,6 +24,7 @@ export function ThemeProvider({ children }: PropsWithChildren) {
   pendingWrite.current = pendingWrite.current.then(() => AsyncStorage.setItem(key, value)).catch(() => {});
  }, []);
  const isDark = preference === 'system' ? system === 'dark' : preference === 'dark';
+ useDocumentTheme(isDark, (isDark ? dark : light).ground);
  return <Context.Provider value={{ colors: isDark ? dark : light, isDark, preference, setPreference }}>{children}</Context.Provider>;
 }
 export const useTheme = () => useContext(Context);
