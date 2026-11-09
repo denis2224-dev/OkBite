@@ -39,6 +39,7 @@ jobs:
       - name: Test unknown product flows and offline shell on iPhone and Android viewports
         env:
           EXPO_PUBLIC_NUTRITION_ENRICHMENT: '1' # Local stubs only; hosted previews retain the backend-readiness gate.
+          EXPO_PUBLIC_GUIDED_ADD: '1' # Same: the guided unknown-product entry stays off outside the stub build.
         run: |
           pnpm exec playwright install --with-deps chromium webkit
           pnpm e2e:web:build
