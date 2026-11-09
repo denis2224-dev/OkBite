@@ -53,6 +53,8 @@ it('blocks malformed numeric edits instead of saving zero or NaN', async () => {
   await fireEvent.changeText(screen.getByLabelText(ro.review.nutrients.salt), 'abc');
   expect(screen.getByRole('button', { name: ro.add.confirmSave })).toBeDisabled();
   expect(input.onChange).not.toHaveBeenCalled();
+  await fireEvent(screen.getByLabelText(ro.review.nutrients.salt), 'blur');
+  expect(screen.getByLabelText(ro.review.nutrients.salt).props.value).toBe('abc');
 });
 
 it.each(['not_printed', 'not_photographed'])('does not describe %s nutrients as blurry', async reason => {
