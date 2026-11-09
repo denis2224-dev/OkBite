@@ -27,7 +27,7 @@ function fixture(t) {
     } });
     const snapshot = { source, counts: Object.fromEntries(['public.products', 'public.contribution_receipts',
       'auth.users', 'storage.objects'].map(table => [table, 0])), receiptMap: 'a'.repeat(64),
-    accessSha256: 'b'.repeat(64), extensionsSha256: 'c'.repeat(64), objects: [] };
+    accessSha256: 'b'.repeat(64), extensionsSha256: 'c'.repeat(64), valuesSha256: 'e'.repeat(64), objects: [] };
     snapshot.counts['storage.buckets'] = 2;
     for (const name of ['source-before.json', 'source-after.json']) writeFileSync(join(directory, name), JSON.stringify(snapshot));
     seal(directory, repository);

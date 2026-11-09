@@ -26,7 +26,7 @@ function evidence(directory, count = 1, source = STAGING_REF) {
   const snapshot = { source, counts: { 'public.products': 1,
     'public.contribution_receipts': count, 'auth.users': 0, 'storage.objects': 2,
     'storage.buckets': 2 }, receiptMap: 'a'.repeat(64), accessSha256: 'b'.repeat(64),
-    extensionsSha256: 'c'.repeat(64), objects: ['uploads', 'products'].map(bucket =>
+    extensionsSha256: 'c'.repeat(64), valuesSha256: 'e'.repeat(64), objects: ['uploads', 'products'].map(bucket =>
       ({ bucket, name: 'photo.jpg', bytes: Buffer.byteLength('fixture bytes') })) };
   for (const name of ['source-before.json', 'source-after.json']) {
     writeFileSync(join(directory, name), JSON.stringify(snapshot));
@@ -129,4 +129,30 @@ test('seal checks independently captured evidence; verify rejects corruption, mi
   assert.throws(() => verify(f.directory, f.repository), /integrity/);
   symlinkSync(join(f.directory, 'data.sql'), photo);
   assert.throws(() => verify(f.directory, f.repository), /symlink/);
+});
+
+test('export includes the private helper schema and sealing requires complete value evidence', t => {
+  const f = fixture(t);
+  exportStaging(f.directory, f);
+  const schemaDumps = f.calls.filter(args => args[0] === 'db' && args.includes('--schema') &&
+    args[args.indexOf('--schema') + 1].includes('public'));
+  assert.equal(schemaDumps.length, 2);
+  for (const args of schemaDumps) assert.ok(args[args.indexOf('--schema') + 1].split(',').includes('private'));
+  evidence(f.directory);
+  const beforePath = join(f.directory, 'source-before.json');
+  const withoutValues = JSON.parse(readFileSync(beforePath, 'utf8'));
+  delete withoutValues.valuesSha256;
+  writeFileSync(beforePath, JSON.stringify(withoutValues));
+  assert.throws(() => seal(f.directory, f.repository), /Missing evidence SHA-256/);
+  for (const name of ['source-before.json', 'source-after.json']) {
+    const path = join(f.directory, name);
+    const value = JSON.parse(readFileSync(path, 'utf8'));
+    value.valuesSha256 = 'e'.repeat(64);
+    writeFileSync(path, JSON.stringify(value));
+  }
+  const path = join(f.directory, 'source-after.json');
+  const changed = JSON.parse(readFileSync(path, 'utf8'));
+  changed.valuesSha256 = 'f'.repeat(64);
+  writeFileSync(path, JSON.stringify(changed));
+  assert.throws(() => seal(f.directory, f.repository), /differ/);
 });

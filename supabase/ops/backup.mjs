@@ -46,8 +46,8 @@ function exportProject(directory, { repository = repositoryRoot, run = args => c
     catch { throw new Error('Export command failed; private partial export remains incomplete'); }
   };
   for (const [name, flags] of [
-    ['roles.sql', ['--role-only']], ['schema.sql', ['--schema', 'public,auth,storage,extensions']],
-    ['data.sql', ['--schema', 'public,auth,storage,extensions', '--data-only', '--use-copy']],
+    ['roles.sql', ['--role-only']], ['schema.sql', ['--schema', 'public,private,auth,storage,extensions']],
+    ['data.sql', ['--schema', 'public,private,auth,storage,extensions', '--data-only', '--use-copy']],
     ['history-schema.sql', ['--schema', 'supabase_migrations']],
     ['history-data.sql', ['--schema', 'supabase_migrations', '--data-only', '--use-copy']],
   ]) invoke(['db', 'dump', ...flags, '--file', join(actual, name)]);
@@ -82,7 +82,7 @@ function evidence(directory) {
   const before = json(join(directory, 'source-before.json'));
   const after = json(join(directory, 'source-after.json'));
   assert.equal(before.source, source, 'Wrong evidence source');
-  for (const field of ['receiptMap', 'accessSha256', 'extensionsSha256']) assert.match(before[field] ?? '', /^[a-f0-9]{64}$/, 'Missing evidence SHA-256');
+  for (const field of ['receiptMap', 'accessSha256', 'extensionsSha256', 'valuesSha256']) assert.match(before[field] ?? '', /^[a-f0-9]{64}$/, 'Missing evidence SHA-256');
   const dumpedTables = ['data.sql', 'history-data.sql'].flatMap(name =>
     [...readFileSync(join(directory, name), 'utf8').matchAll(/^COPY (.+?) \(/gm)].map(match => {
       assert.match(match[1], /^"?[a-z_][a-z0-9_]*"?\."?[a-z_][a-z0-9_]*"?$/, 'Review unsupported dumped table identifier');

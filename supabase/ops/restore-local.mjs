@@ -41,10 +41,11 @@ const snapshot = (database) => sql(database, `select jsonb_build_object(
   'receipts',(select count(*) from public.contribution_receipts),
   'receiptMap',(select encode(sha256(convert_to(coalesce(string_agg(row_to_json(r)::text, E'\n' order by device_id,upload_path),''),'UTF8')),'hex') from public.contribution_receipts r),
   'client_errors',(select count(*) from public.client_errors),'objects',(select count(*) from storage.objects),'users',(select count(*) from auth.users),'buckets',(select count(*) from storage.buckets));`);
+const valueSnapshot = (database) => sql(database, readFileSync(new URL('./recovery-values.sql', import.meta.url), 'utf8'));
 const accessSnapshot = (database) => sql(database, `
   with namespaces as (
     select oid, nspname, nspowner, nspacl from pg_namespace
-    where nspname in ('public','auth','storage','extensions')
+    where nspname in ('public','private','auth','storage','extensions','supabase_migrations')
   ), access as (
     select 'schema' kind, nspname::text identity, pg_get_userbyid(nspowner) owner, coalesce(nspacl,acldefault('n',nspowner)) acl from namespaces
     union all
@@ -68,17 +69,17 @@ const accessSnapshot = (database) => sql(database, `
 const supplementalGrants = () => sql('postgres', `
   with objects as (
     select 'schema' kind, format('%I',nspname) identity, coalesce(nspacl,acldefault('n',nspowner)) acl
-      from pg_namespace where nspname in ('public','auth','storage','extensions')
+      from pg_namespace where nspname in ('public','private','auth','storage','extensions','supabase_migrations')
     union all
     select case when c.relkind='S' then 'sequence' else 'table' end,
       format('%I.%I',n.nspname,c.relname),coalesce(c.relacl,acldefault(case when c.relkind='S' then 's'::"char" else 'r'::"char" end,c.relowner))
       from pg_class c join pg_namespace n on n.oid=c.relnamespace
-      where n.nspname in ('public','auth','storage','extensions') and c.relkind in ('r','v','m','S','f','p')
+      where n.nspname in ('public','private','auth','storage','extensions','supabase_migrations') and c.relkind in ('r','v','m','S','f','p')
         and exists(select 1 from pg_depend d where d.classid='pg_class'::regclass and d.objid=c.oid and d.deptype='e')
     union all
     select 'function', format('%I.%I(%s)',n.nspname,p.proname,pg_get_function_identity_arguments(p.oid)),
       coalesce(p.proacl,acldefault('f',p.proowner)) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-      where n.nspname in ('public','auth','storage','extensions')
+      where n.nspname in ('public','private','auth','storage','extensions','supabase_migrations')
         and exists(select 1 from pg_depend d where d.classid='pg_proc'::regclass and d.objid=p.oid and d.deptype='e')
   ) select format('grant %s on %s %s to %s%s;',a.privilege_type,kind,identity,
     case when a.grantee=0 then 'public' else quote_ident(pg_get_userbyid(a.grantee)) end,
@@ -88,11 +89,15 @@ let created = false;
 try {
   const before = snapshot('postgres');
   const accessBefore = accessSnapshot('postgres');
+  const valuesBefore = valueSnapshot('postgres');
   const databaseOwner = sql('postgres', 'select pg_get_userbyid(datdba) from pg_database where datname=current_database();').trim();
   if (!/^[a-z_][a-z0-9_]*$/.test(databaseOwner)) throw new Error('Unsupported local database owner');
   const grants = supplementalGrants();
   writeFileSync(join(directory, 'supplemental-grants.sql'), grants, { mode: 0o600 });
-  docker('pg_dump -U supabase_admin -d postgres --format=custom --schema=public --schema=auth --schema=storage --schema=extensions', { stdoutFile: archive });
+  docker('pg_dump -U supabase_admin -d postgres --format=custom --schema=public --schema=private --schema=supabase_migrations --schema=auth --schema=storage --schema=extensions', { stdoutFile: archive });
+  if (valueSnapshot('postgres') !== valuesBefore || accessSnapshot('postgres') !== accessBefore) {
+    throw new Error('Source changed during backup; use a quiescent disposable stack');
+  }
   const extensions = sql('postgres', `select format('create extension if not exists %I with schema %I;',e.extname,n.nspname)
     from pg_extension e join pg_namespace n on n.oid=e.extnamespace
     where n.nspname in ('public','extensions') order by e.extname;`);
@@ -108,6 +113,7 @@ try {
   docker(`pg_restore -U supabase_admin -d ${target} --exit-on-error --section=post-data`, { stdinFile: archive });
   sql(target, grants);
   if (snapshot(target) !== before) throw new Error('Restored application/Auth/Storage counts differ');
+  if (valueSnapshot(target) !== valuesBefore) throw new Error('Restored row values, mappings or sequence state differ');
   if (accessSnapshot(target) !== accessBefore) throw new Error('Restored owners or grants differ');
   const tests = run(process.env.SUPABASE_CLI_BIN ?? 'supabase', localRecoveryTestArgs(config, target),
     // CLI 2.65.5 drops URL sslmode while rebuilding connection options.
@@ -117,7 +123,7 @@ try {
   const report = { date: new Date().toISOString(), scope: 'Local application/Auth/Storage schemas; not hosted recovery',
     project, databaseOwner, restoredDatabase: target, counts: JSON.parse(before), archive,
     archiveSha256: createHash('sha256').update(readFileSync(archive)).digest('hex'),
-    pgTap: 'passed', ownersAndGrants: 'matched source schemas, relations, columns, routines and defaults', storageFiles: 'Separate binary round-trip required; SQL does not contain photo bytes',
+    pgTap: 'passed', values: JSON.parse('[' + valuesBefore.trim().split('\n').join(',') + ']'), ownersAndGrants: 'matched source schemas, relations, columns, routines and defaults', storageFiles: 'Separate binary round-trip required; SQL does not contain photo bytes',
     staging: 'pending: local-only drill does not establish hosted recovery' };
   writeFileSync(join(directory, 'report.json'), JSON.stringify(report, null, 2), { mode: 0o600 });
   console.log(`Local restore verified. Private evidence: ${directory}`);
