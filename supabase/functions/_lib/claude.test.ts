@@ -262,3 +262,22 @@ Deno.test('askClaude cancels an unread provider stream after malformed UTF-8', a
   await assert.rejects(askClaude(['x'], 'p', fake([response]).deps), UpstreamError);
   assert.equal(cancelled, true);
 });
+
+Deno.test('askClaude does not retry an attempt still pending at the deadline', async () => {
+  const { calls, deps } = fake([new DOMException('timed out', 'TimeoutError'), ok('second call')]);
+  await assert.rejects(askClaude(['x'], 'p', deps), UpstreamError);
+  assert.equal(calls.length, 1);
+});
+
+Deno.test('askClaude gives one attempt the whole remaining deadline', async () => {
+  const timeout = AbortSignal.timeout;
+  const windows: number[] = [];
+  AbortSignal.timeout = (ms: number) => (windows.push(ms), timeout(ms));
+  try {
+    const { deps } = fake([ok('x')]);
+    await askClaude(['x'], 'p', { ...deps, now: () => 0 });
+    assert.deepEqual(windows, [AI_DEADLINE_MS]);
+  } finally {
+    AbortSignal.timeout = timeout;
+  }
+});
