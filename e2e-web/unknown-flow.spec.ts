@@ -140,11 +140,11 @@ test('reload during read-label restores draft photos without replaying the reque
     const db = await new Promise<IDBDatabase>(resolve => {
       const opening = indexedDB.open('okbite-photos'); opening.onsuccess = () => resolve(opening.result);
     });
-    const photos = await new Promise<Blob[]>(resolve => {
+    const photos = await new Promise<(Blob | { bytes: ArrayBuffer })[]>(resolve => {
       const request = db.transaction('photos').objectStore('photos').getAll(); request.onsuccess = () => resolve(request.result);
     }); db.close();
     const hash = async (blob: Blob) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer()))).join(',');
-    const photoHashes = await Promise.all(photos.map(hash));
+    const photoHashes = await Promise.all(photos.map(record => hash(record instanceof Blob ? record : new Blob([record.bytes]))));
     const cached = await Promise.all((await caches.keys()).map(async name => {
       const cache = await caches.open(name);
       return Promise.all((await cache.keys()).map(async request => ({ url: request.url,
