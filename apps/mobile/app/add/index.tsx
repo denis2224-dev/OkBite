@@ -9,6 +9,8 @@ const useSafeSearchParams = useLocalSearchParams ?? (() => ({}));
 
 export default function AddRouteScreen() {
   const params = useSafeSearchParams<Record<string, string | string[] | undefined>>();
-  const guided = Boolean(params?.unknownDraftId || params?.frontPhotoId || params?.retake || params?.flow === 'guided');
+  const guided =
+    params?.flow !== 'manual' &&
+    Boolean(params?.unknownDraftId || params?.frontPhotoId || params?.retake || params?.flow === 'guided');
   return guided ? <GuidedAddScreen /> : <AddCaptureScreen />;
 }

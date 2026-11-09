@@ -41,7 +41,10 @@ export function parseLabel(raw: string): LabelRead {
   const readable = text.length >= 3 && text.length <= 3000; // never hide a truncated allergen
   if (!readable) unclear.push('ingredientsText');
   const unit = typeof o.unit === 'string' ? o.unit.trim().toLowerCase() : '';
-  return ReadLabelResponse.omit({ ingredientsPhotoPath: true, nutritionPhotoPath: true }).parse({
+  return ReadLabelResponse.innerType().omit({
+    ingredientsPhotoPath: true,
+    nutritionPhotoPath: true,
+  }).parse({
     ingredientsText: readable ? text : null,
     unit: unit === 'g' || unit === 'ml' ? unit : null,
     nutrients,

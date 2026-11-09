@@ -1,14 +1,29 @@
+import React from 'react';
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { renderHook, act } from '@testing-library/react-native';
+import { render, renderHook, act, screen } from '@testing-library/react-native';
 import { api } from '../../lib/api';
+import { ro } from '../../copy/ro';
+import AddScreen from '../../../app/add/index';
+import { loadUnknownDraft } from '../add/unknownDraft';
+import { GUIDED_ADD_ENABLED, setGuidedAddEnabled } from '../identify/routes';
 import { useScanLookup } from './useScanLookup';
 import { CODE, PRODUCT_ID, lookupFound, lookupNotFound } from '../capture/__fixtures__/responses';
 
 const mockReplace = jest.fn();
+const mockParams: { value: Record<string, string | string[] | undefined> } = { value: {} };
 const mockEnqueue = jest.fn<(...args: unknown[]) => Promise<unknown>>(async () => {});
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }), useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof import('react')>('react').useEffect(callback, [callback]) }));
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ replace: mockReplace }),
+  useLocalSearchParams: () => mockParams.value,
+  useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof import('react')>('react').useEffect(callback, [callback]),
+}));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
 jest.mock('../offline/queue', () => ({ enqueue: (arg: unknown) => mockEnqueue(arg) }));
+jest.mock('../add/unknownDraft', () => ({
+  loadUnknownDraft: jest.fn(async () => null),
+  saveUnknownDraft: jest.fn(async () => {}),
+  clearUnknownDraft: jest.fn(async () => {}),
+}));
 
 const lookup = api.lookup as unknown as jest.Mock<(...a: unknown[]) => Promise<unknown>>;
 const offline = Object.assign(new Error('offline'), { code: 'offline' });
@@ -16,7 +31,10 @@ const offline = Object.assign(new Error('offline'), { code: 'offline' });
 describe('useScanLookup', () => {
   beforeEach(() => {
     jest.resetAllMocks();
+    setGuidedAddEnabled?.(null);
+    mockParams.value = {};
     mockEnqueue.mockResolvedValue(undefined);
+    jest.mocked(loadUnknownDraft).mockResolvedValue(null);
   });
 
   it('opens the product for a code that exists', async () => {
@@ -32,6 +50,28 @@ describe('useScanLookup', () => {
     const { result } = await renderHook(() => useScanLookup());
     await act(async () => { await result.current.onManualCode('96385074'); });
     expect(mockReplace).toHaveBeenCalledWith({ pathname: '/identify', params: { source: 'code', code: '96385074' } });
+  });
+
+  it('opens /add with flow=guided and scanned code on barcode not_found and reaches GuidedAddScreen at the front-photo step when guided add is enabled', async () => {
+    expect(GUIDED_ADD_ENABLED).toBe(false);
+    setGuidedAddEnabled(true);
+    lookup.mockResolvedValue(lookupNotFound);
+
+    const { result } = await renderHook(() => useScanLookup());
+    await act(async () => { await result.current.onManualCode('96385074'); });
+
+    expect(mockReplace).toHaveBeenCalledWith({
+      pathname: '/add',
+      params: { code: '96385074', flow: 'guided' },
+    });
+
+    const routeArg = mockReplace.mock.calls[0]?.[0] as { pathname: string; params: Record<string, string> };
+    mockParams.value = routeArg.params;
+    await render(React.createElement(AddScreen));
+    await act(async () => {});
+
+    expect(screen.getByText(ro.add.frontTitle)).toBeTruthy();
+    expect(screen.getByText(ro.add.stepOf(1, 4))).toBeTruthy();
   });
 
   it('does not look up or navigate for an invalid code', async () => {

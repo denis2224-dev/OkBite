@@ -3,15 +3,20 @@ import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { describe, it, expect, jest, beforeAll, beforeEach } from '@jest/globals';
 import { render, fireEvent, screen, act } from '@testing-library/react-native';
 import { IdentifyResponse } from '@okbite/shared';
+import * as FileSystem from 'expo-file-system/legacy';
 import { ro } from '../../copy/ro';
+import { loadUnknownDraft } from '../add/unknownDraft';
 import { resolveQueued } from '../offline/queue';
+import AddScreen from '../../../app/add/index';
 import IdentifyScreen from '../../../app/identify';
 import {
+  GUIDED_ADD_ENABLED,
   addProductRoute,
   identifyCodeRoute,
   identifyPhotoRoute,
   parseAddParams,
   parseIdentifyParams,
+  setGuidedAddEnabled,
 } from './routes';
 
 type ReplaceArg = string | { pathname: string; params: Record<string, string | undefined> };
@@ -56,6 +61,25 @@ const ORIGINAL_READ = {
 };
 const PHOTO_PATH = 'uploads/dev-1/front-1.jpg';
 jest.mock('../offline/queue', () => ({ resolveQueued: jest.fn() }));
+jest.mock('expo-crypto', () => ({ randomUUID: () => 'front-uuid-1' }));
+jest.mock('expo-file-system/legacy', () => ({
+  documentDirectory: 'file:///doc/',
+  EncodingType: { Base64: 'base64' },
+  makeDirectoryAsync: jest.fn(async () => {}),
+  copyAsync: jest.fn(async ({ from }: { from: string; to: string }) => {
+    if (!from.startsWith('file://')) {
+      throw new Error(`Refusing server storage path in keepPhoto: ${from}`);
+    }
+  }),
+  getInfoAsync: jest.fn(async (uri: string) => ({ exists: uri.startsWith('file://') })),
+  readAsStringAsync: jest.fn(async () => 'base64'),
+  deleteAsync: jest.fn(async () => {}),
+}));
+jest.mock('../add/unknownDraft', () => ({
+  loadUnknownDraft: jest.fn(async () => null),
+  saveUnknownDraft: jest.fn(async () => {}),
+  clearUnknownDraft: jest.fn(async () => {}),
+}));
 
 describe('IdentifyScreen and B3 flow', () => {
   beforeAll(() => {
@@ -64,6 +88,13 @@ describe('IdentifyScreen and B3 flow', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
+    setGuidedAddEnabled?.(null);
+    jest.mocked(FileSystem.copyAsync).mockImplementation(async ({ from }: { from: string; to: string }) => {
+      if (!from.startsWith('file://')) {
+        throw new Error(`Refusing server storage path in keepPhoto: ${from}`);
+      }
+    });
+    jest.mocked(loadUnknownDraft).mockResolvedValue(null);
     mockParams.value = {};
   });
   it('keeps queued work until a shopper confirms a candidate', async () => {
@@ -130,7 +161,6 @@ describe('IdentifyScreen and B3 flow', () => {
     expect(mockReplace).toHaveBeenCalledWith({
       pathname: '/add',
       params: {
-        flow: 'guided',
         brand: ORIGINAL_READ.brand,
         name: ORIGINAL_READ.name,
         quantity: ORIGINAL_READ.quantity,
@@ -181,7 +211,6 @@ describe('IdentifyScreen and B3 flow', () => {
     expect(mockReplace).toHaveBeenCalledWith({
       pathname: '/add',
       params: {
-        flow: 'guided',
         code: '4840001000014',
         brand: ORIGINAL_READ.brand,
         name: ORIGINAL_READ.name,
@@ -213,7 +242,6 @@ describe('IdentifyScreen and B3 flow', () => {
     expect(mockReplace).toHaveBeenCalledWith({
       pathname: '/add',
       params: {
-        flow: 'guided',
         brand: 'Bucuria',
         quantity: '100 g',
         photoPath: PHOTO_PATH,
@@ -232,7 +260,7 @@ describe('IdentifyScreen and B3 flow', () => {
     await fireEvent.press(screen.getByRole('button', { name: ro.identify.addButton }));
     expect(mockReplace).toHaveBeenCalledWith({
       pathname: '/add',
-      params: { flow: 'guided', code: '0036000291452' },
+      params: { code: '0036000291452' },
     });
     const sentParams = requireReplacedParams();
     expect('photoPath' in sentParams).toBe(false);
@@ -310,11 +338,6 @@ describe('IdentifyScreen and B3 flow', () => {
     });
   });
 
-  it('opens the guided flow when an unknown barcode has no front photo or draft', () => {
-    expect(addProductRoute({ read: { code: '4840001000014', brand: null, name: null, quantity: null }, photoPath: null, flow: 'guided' }))
-      .toMatchObject({ pathname: '/add', params: { flow: 'guided', code: '4840001000014' } });
-  });
-
   it('preserves frontPhotoId, unknownDraftId, and scanned code when "Nu e niciunul" returns to /add', async () => {
     mockParams.value = {
       source: 'photo',
@@ -343,4 +366,99 @@ describe('IdentifyScreen and B3 flow', () => {
       unknownDraftId: 'draft-123',
     });
   });
+
+  it('uses the real offline/photos module without calling keepPhoto on server photoPath and reaches GuidedAddScreen at the ingredients step for identify not_found and "Nu e niciunul"', async () => {
+    expect(GUIDED_ADD_ENABLED).toBe(false);
+    setGuidedAddEnabled(true);
+    const keptFrontId = 'file:///doc/okbite-queue/front-uuid-1.jpg';
+
+    const notFound = IdentifyResponse.parse({
+      status: 'not_found',
+      photoPath: PHOTO_PATH,
+      read: ORIGINAL_READ,
+    });
+    if (notFound.status === 'found') throw new Error('unexpected');
+    mockParams.value = identifyPhotoRoute(notFound, keptFrontId).params;
+
+    const first = await render(<IdentifyScreen />);
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: ro.identify.addButton }));
+    });
+    expect(FileSystem.copyAsync).not.toHaveBeenCalled();
+    const notFoundParams = requireReplacedParams();
+    expect(notFoundParams).toEqual({
+      brand: ORIGINAL_READ.brand,
+      name: ORIGINAL_READ.name,
+      quantity: ORIGINAL_READ.quantity,
+      photoPath: PHOTO_PATH,
+      frontPhotoId: keptFrontId,
+      flow: 'guided',
+    });
+    await first.unmount();
+
+    // Server-path case without frontPhotoId: openAdd still must not pass server photoPath to keepPhoto.
+    mockReplace.mockClear();
+    const candidates = IdentifyResponse.parse({
+      status: 'candidates',
+      photoPath: PHOTO_PATH,
+      read: { ...ORIGINAL_READ, code: '4840001000014' },
+      candidates: [CAND_1, CAND_2],
+    });
+    if (candidates.status === 'found') throw new Error('unexpected');
+    mockParams.value = identifyPhotoRoute(candidates).params;
+
+    const second = await render(<IdentifyScreen />);
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: ro.identify.noneOfThem }));
+    });
+    expect(FileSystem.copyAsync).not.toHaveBeenCalled();
+    const noneParams = requireReplacedParams();
+    expect(noneParams).toEqual({
+      code: '4840001000014',
+      brand: ORIGINAL_READ.brand,
+      name: ORIGINAL_READ.name,
+      quantity: ORIGINAL_READ.quantity,
+      photoPath: PHOTO_PATH,
+      flow: 'guided',
+    });
+    await second.unmount();
+
+    mockParams.value = notFoundParams;
+    await render(<AddScreen />);
+    await act(async () => {});
+    expect(screen.getByText(ro.add.ingredientsTitle)).toBeTruthy();
+    expect(screen.getByText(ro.add.stepOf(1, 3))).toBeTruthy();
+  });
+
+  it('shows an error StatusPanel instead of a dead button when openAdd fails, and recovers on retry', async () => {
+    setGuidedAddEnabled(true);
+    const notFound = IdentifyResponse.parse({
+      status: 'not_found',
+      photoPath: PHOTO_PATH,
+      read: ORIGINAL_READ,
+    });
+    if (notFound.status === 'found') throw new Error('unexpected');
+    mockParams.value = identifyPhotoRoute(notFound, 'file:///doc/okbite-queue/front-uuid-1.jpg').params;
+    mockReplace
+      .mockImplementationOnce(() => {
+        throw new Error('navigation failed');
+      })
+      .mockImplementation(() => {});
+
+    await render(<IdentifyScreen />);
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: ro.identify.addButton }));
+    });
+
+    expect(screen.getByText(ro.errors.generic)).toBeTruthy();
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: ro.errors.retry }));
+    });
+    expect(mockReplace).toHaveBeenCalledTimes(2);
+  });
+});
+
+it('opens the guided flow when an unknown barcode has no front photo or draft', () => {
+  expect(addProductRoute({ read: { code: '4840001000014', brand: null, name: null, quantity: null }, photoPath: null, flow: 'guided' }))
+    .toMatchObject({ pathname: '/add', params: { flow: 'guided', code: '4840001000014' } });
 });
