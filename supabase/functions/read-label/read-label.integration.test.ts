@@ -156,3 +156,32 @@ integrationTest(
     }
   },
 );
+
+integrationTest('read-label: concurrent final quota slot admits one provider call', async () => {
+  const device = crypto.randomUUID();
+  let asked = 0;
+  try {
+    assert.equal(
+      (await adminClient().from('usage_events').insert(
+        Array.from({ length: 19 }, () => ({ kind: 'read_label', device_id: device })),
+      )).error,
+      null,
+    );
+    const handler = handlerWith(() => {
+      asked++;
+      return Promise.resolve(answer);
+    });
+    const responses = await Promise.all(
+      Array.from(
+        { length: 4 },
+        () => post(handler, device, { ingredientsImage: photo, nutritionImage: null }),
+      ),
+    );
+    assert.deepEqual(responses.map((r) => r.status).sort(), [200, 429, 429, 429]);
+    assert.equal(asked, 1);
+    assert.equal(await events(device), 20);
+    assert.equal(await uploads(device), 1);
+  } finally {
+    await cleanup(device);
+  }
+});
