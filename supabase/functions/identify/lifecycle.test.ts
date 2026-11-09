@@ -55,6 +55,17 @@ for (const kind of ['front', 'label'] as const) {
           ),
         }),
       );
+      if (kind === 'label' && outcome !== 'unconfigured') {
+        assert.equal(response.status, 200);
+        const draft = await response.json();
+        assert.equal(draft.ingredientsText, null);
+        assert.deepEqual(Object.values(draft.nutrients), Array(8).fill(null));
+        assert.equal(draft.unclear.length, 9);
+        assert.ok(draft.ingredientsPhotoPath.endsWith('/stored-ingredients.jpg'));
+        assert.ok(draft.nutritionPhotoPath.endsWith('/stored-nutrition.jpg'));
+        assert.equal(requests.some((request) => request.startsWith('DELETE ')), false);
+        return;
+      }
       assert.equal(response.status, 502);
       assert.equal((await response.json()).error, 'upstream_failed');
       assert.ok(requests.includes('DELETE /storage/v1/object/uploads'), requests.join());
