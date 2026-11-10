@@ -177,7 +177,7 @@ Deno.test('parseLabel accepts a unit only on the row it belongs to', () => {
   assert.equal(parseLabel(label({ fruitVegPct: '45 %' }), both).nutrients.fruitVegPct, 45);
 });
 
-Deno.test('parseLabel reads soda tables with dual kJ/kcal energy, per-100 ml unit and unprinted null/dash rows', () => {
+Deno.test('parseLabel reads soda tables without confusing unknown null cells with unprinted dash rows', () => {
   const read = parseLabel(
     label({
       unit: 'per 100 ml',
@@ -202,6 +202,27 @@ Deno.test('parseLabel reads soda tables with dual kJ/kcal energy, per-100 ml uni
   assert.equal(read.nutrients.fiber, null);
   assert.equal(read.nutrients.fruitVegPct, null);
   assert.equal(read.reasons.kcal, 'read');
-  assert.equal(read.reasons.fiber, 'not_printed');
+  assert.equal(read.reasons.fiber, 'unreadable');
   assert.equal(read.reasons.fruitVegPct, 'not_printed');
+});
+
+Deno.test('parseLabel keeps an all-null photographed table unreadable for guided recovery', () => {
+  const unknown = { kcal: null, fat: null, sat: null, sugar: null, salt: null, protein: null, fiber: null, fruitVegPct: null };
+  for (const nutrition of ['separate', 'same_photo'] as const) {
+    const read = parseLabel(label(unknown), { ingredients: true, nutrition });
+    assert.deepEqual(read.nutrients, unknown);
+    for (const key of Object.keys(unknown) as (keyof typeof unknown)[]) {
+      assert.equal(read.reasons[key], 'unreadable');
+      assert.ok(read.unclear.includes(key));
+    }
+  }
+});
+
+Deno.test('parseLabel recognizes explicit absent rows while preserving zero and partial reads', () => {
+  const read = parseLabel(label({ fat: '0 g', sugar: null, protein: '', fiber: '—', fruitVegPct: '-' }), both);
+  assert.equal(read.nutrients.fat, 0);
+  assert.equal(read.nutrients.kcal, 63);
+  assert.equal(read.nutrients.sugar, null);
+  assert.equal(read.reasons.sugar, 'unreadable');
+  for (const key of ['protein', 'fiber', 'fruitVegPct'] as const) assert.equal(read.reasons[key], 'not_printed');
 });

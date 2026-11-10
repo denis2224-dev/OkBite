@@ -57,9 +57,9 @@ function amount(value: unknown, key: NutrientKey): number | null {
   return n <= MAX[key] ? n : null;
 }
 
-// Empty string, null, or dash means "row not printed"; "?" or unparseable text is unreadable.
+// Only explicit empty/dash markers mean "not printed"; null does not establish absence.
 const UNREAD_CELL = (v: unknown): FieldReason =>
-  v === '' || v === null || v === '-' || v === '—' ? 'not_printed' : 'unreadable';
+  v === '' || v === '-' || v === '—' ? 'not_printed' : 'unreadable';
 
 /** Every field null with the given reasons: the AI was not asked, or failed. */
 export function emptyRead(ask: LabelAsk, failed: boolean): LabelRead {
