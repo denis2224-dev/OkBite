@@ -45,9 +45,11 @@ test('repeated capture and scan navigation preserves React hook ordering', async
     await page.getByRole('button', { name: 'Fotografiază eticheta', exact: true }).click();
     await expect(page).toHaveURL(/\/capture$/);
     await page.getByRole('button', { name: 'Înapoi', exact: true }).click();
-    await page.getByRole('button', { name: 'Scanează produsul', exact: true }).click();
-    await expect(page).toHaveURL(/\/scan$/);
-    await page.getByRole('button', { name: 'Înapoi', exact: true }).click();
+    await expect(page.getByRole('tab', { name: 'Scanează', exact: true })).toHaveAttribute('aria-selected', 'true');
+    await page.getByRole('tab', { name: 'Istoric', exact: true }).click();
+    await page.getByRole('tab', { name: 'Scanează', exact: true }).click();
+    await expect(page).toHaveURL(app + '/');
+    await expect(page.getByRole('textbox', { name: 'Introdu codul manual', exact: true })).toBeVisible();
   }
   expect(errors).toEqual([]);
 });
