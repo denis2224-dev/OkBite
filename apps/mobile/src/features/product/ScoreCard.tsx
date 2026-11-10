@@ -3,14 +3,16 @@ import type { ScoreResult } from '@okbite/shared';
 import { Body, Card, Heading, ScoreRing } from '../../ui';
 import { useTheme } from '../../theme/useTheme';
 import { ro } from '../../copy/ro';
+import { NutriScoreScale } from './NutriScoreScale';
 
 export function ScoreCard({ score }: { score: ScoreResult }) {
   const { colors } = useTheme();
   const unavailable = score.score === null || score.grade === 'unavailable';
   return <Card>
     <Heading style={{ fontSize: 18 }}>{ro.score.title}</Heading>
-    <View style={{ alignItems: 'center' }}>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 16 }}>
       <ScoreRing score={unavailable ? null : score.score} grade={unavailable ? 'unavailable' : score.grade} />
+      {!unavailable && <NutriScoreScale letter={score.letter} />}
     </View>
     <Body style={{ fontWeight: '700' }}>{unavailable ? ro.result.scoreUnavailable : ro.score[score.grade]}</Body>
     {unavailable ? <>

@@ -123,3 +123,29 @@ it('re-scores Open Food Facts Coca-Cola Zero as a beverage (53/100) and analyzes
 });
 
 
+
+it.each(['A', 'B', 'C', 'D', 'E'] as const)('shows the supplied Nutri-Score letter %s alongside the nutrition score', async letter => {
+  await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter }} />);
+  expect(screen.getByLabelText(`Nutri-Score: ${letter}`)).toBeTruthy();
+  for (const value of ['A', 'B', 'C', 'D', 'E']) expect(screen.getByText(value)).toBeTruthy();
+  expect(screen.getByText(ro.score.disclaimer)).toBeTruthy();
+});
+it('does not present a stale letter when the nutrition score is unavailable', async () => {
+  await render(<ResultView product={{ ...foundYogurt.product, nutrients: { ...foundYogurt.product.nutrients, salt: null } }} score={foundYogurt.score} />);
+  expect(screen.queryByLabelText(/Nutri-Score:/)).toBeNull();
+  expect(screen.getByText(ro.result.scoreUnavailable)).toBeTruthy();
+});
+it('leaves an absent Nutri-Score letter unavailable without inventing one', async () => {
+  await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter: null }} />);
+  expect(screen.queryByLabelText(/Nutri-Score:/)).toBeNull();
+  expect(screen.getByLabelText(ro.score.ringLabel(foundYogurt.score.score!, foundYogurt.score.grade))).toBeTruthy();
+});
+it('orders nutrition summary before allergens, portions and the transcribed label', async () => {
+  await render(<ResultView {...foundYogurt} />);
+  const headings = screen.getAllByRole('header').map(node => node.props.children);
+  const position = (text: string) => headings.indexOf(text);
+  expect(position(ro.score.title)).toBeLessThan(position(ro.result.allergens));
+  expect(position(ro.result.allergens)).toBeLessThan(position(ro.result.portion));
+  expect(position(ro.result.portion)).toBeLessThan(position(ro.result.transcribedLabel));
+  expect(position(ro.result.transcribedLabel)).toBeLessThan(position(ro.result.source));
+});
