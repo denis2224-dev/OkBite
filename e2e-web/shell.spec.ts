@@ -19,6 +19,24 @@ test('links an installable Romanian manifest and valid existing icons', async ({
     expect(bytes.readUInt32BE(20)).toBe(size);
   }
 });
+test('every manifest icon and screenshot exists at its declared size, with a maskable icon', async ({ request }) => {
+  const manifest = await (await request.get('/manifest.webmanifest')).json();
+  expect(manifest).toMatchObject({ orientation: 'portrait', categories: ['food', 'health', 'shopping'] });
+  expect(manifest.description).toEqual(expect.any(String));
+  expect(manifest.icons.some((icon: { purpose: string }) => icon.purpose === 'maskable')).toBe(true);
+  expect(manifest.screenshots.length).toBeGreaterThan(0);
+  for (const image of [...manifest.icons, ...manifest.screenshots] as { src: string; sizes: string }[]) {
+    const bytes = await (await request.get(image.src)).body();
+    expect(`${bytes.readUInt32BE(16)}x${bytes.readUInt32BE(20)}`).toBe(image.sizes);
+  }
+});
+test('iPhone home-screen metadata is present', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content', 'OkBite');
+  await expect(page.locator('meta[name="apple-mobile-web-app-status-bar-style"]')).toHaveAttribute('content', 'default');
+  await expect(page.locator('meta[name="mobile-web-app-capable"]')).toHaveAttribute('content', 'yes');
+  await expect(page.locator('meta[name="viewport"]')).toHaveAttribute('content', /viewport-fit=cover/);
+});
 test('offline hard navigation loads the shell and a product saved in IndexedDB', async ({ page, context }) => {
   await page.goto(`/product/${id}`);
   await expect(page.getByText('Iaurt natural 2,5%', { exact: true })).toBeVisible();

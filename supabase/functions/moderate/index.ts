@@ -1,5 +1,7 @@
+import { removeHiddenPhotos } from './photos.ts';
 import { z } from 'npm:zod@3.23.8';
 import { ModerateRequest, Uuid } from '../_shared/contract.ts';
+import { normalizeCode } from '../_shared/ean/index.ts';
 import { detectAllergens } from '../_shared/allergens/index.ts';
 import { matchIngredients } from '../add-product/matchIngredients.ts';
 import { adminClient, cors, fail, HttpError, json, readJsonBody, withCors } from '../_lib/http.ts';
@@ -53,6 +55,7 @@ export async function moderate(input: ModerateRequest, actor: string): Promise<v
   if (error?.code === '23505') throw new HttpError(409, 'Codul este deja utilizat.', 'duplicate');
   if (error?.code === '23503') throw new HttpError(400, 'Categorie necunoscută.');
   if (error) throw new Error('Moderation transaction failed');
+  if (input.action === 'hide') await removeHiddenPhotos(input.productId, db);
 }
 const success = z.object({ status: z.literal('ok') });
 export function createHandler(deps = { authorize, moderate }) {
@@ -67,7 +70,12 @@ export function createHandler(deps = { authorize, moderate }) {
       } else {
         const actor = await deps.authorize(req);
         if (!actor) throw new HttpError(401, 'Acces neautorizat.', 'unauthorized');
-        await deps.moderate(await readJsonBody(req, ModerateRequest), actor);
+        const input = await readJsonBody(req, ModerateRequest);
+        if (
+          input.action === 'verify' && input.product.code !== null &&
+          normalizeCode(input.product.code) !== input.product.code
+        ) throw new HttpError(400);
+        await deps.moderate(input, actor);
         response = json(success.parse({ status: 'ok' }));
       }
     } catch (error) {

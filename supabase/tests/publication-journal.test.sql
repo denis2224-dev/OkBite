@@ -1,0 +1,11 @@
+begin;
+select plan(7);
+select ok((select relrowsecurity from pg_class where oid='public.photo_publications'::regclass),'publication journal has RLS');
+select ok(not has_table_privilege('anon','public.photo_publications','SELECT'),'anonymous users cannot read private publication mappings');
+select ok(not has_table_privilege('authenticated','public.photo_publications','SELECT'),'ordinary and staff clients cannot read publication mappings');
+select ok(not has_function_privilege('authenticated','public.record_photo_publication(bigint,uuid,uuid,text,text)','EXECUTE'),'clients cannot mint publication intents');
+select ok(has_function_privilege('service_role','public.record_photo_publication(bigint,uuid,uuid,text,text)','EXECUTE'),'server can record intents before copying');
+select ok(not has_function_privilege('service_role','public.guard_removed_product_storage()','EXECUTE'),'privileged Storage guard is internal only');
+select throws_ok($$select public.record_photo_publication(-1,'cd000000-0000-4000-8000-000000000001','cd000000-0000-4000-8000-000000000002','invalid','front')$$,'P0004','Upload unavailable','publication requires a genuine owned active reservation');
+select * from finish();
+rollback;

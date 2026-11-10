@@ -20,8 +20,13 @@ const BEV_ENERGY_KJ = [30, 90, 150, 210, 240, 270, 300, 330, 360, 390]; // bever
 const BEV_SUGAR = [0.5, 2, 3.5, 5, 6, 7, 8, 9, 10, 11]; // beverages 1.1
 const BEV_PROTEIN = [1.2, 1.5, 1.8, 2.1, 2.4, 2.7, 3]; // beverages 1.2
 
-// 5,8 / 10 × 100 is 57.99999999999999 in floating point; round so "< 58 %" rows stay exact.
-const satPercent = (sat: number, fat: number) => Math.round((sat / fat) * 100 * 1e6) / 1e6;
+// Compare cross-products with only an arithmetic-error tolerance: decimal label equality
+// (0.58 × 100 = 57.99999999999999) must count, but genuinely lower ratios must not round up.
+const ratioAtLeast = (sat: number, fat: number, threshold: number) => {
+  const value = sat * 100;
+  const boundary = threshold * fat;
+  return value >= boundary || boundary - value <= Number.EPSILON * Math.max(value, boundary) * 2;
+};
 
 const above = (value: number | null, thresholds: number[]) =>
   value === null ? 0 : thresholds.filter((t) => value > t).length;
@@ -67,7 +72,7 @@ export function nutriScorePoints(n: Nutrients, kind: ScoreKind, sweeteners = fal
     ? {
       energy: above(n.sat === null ? null : n.sat * 37, SAT_ENERGY_KJ),
       sugar: above(n.sugar, SUGAR),
-      satRatio: n.sat === null || !n.fat ? 0 : SAT_RATIO.filter((t) => satPercent(n.sat!, n.fat!) >= t).length,
+      satRatio: n.sat === null || !n.fat ? 0 : SAT_RATIO.filter((t) => ratioAtLeast(n.sat!, n.fat!, t)).length,
       salt: above(n.salt, SALT),
     }
     : {

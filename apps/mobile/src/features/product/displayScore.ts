@@ -2,6 +2,7 @@ import { NUTRIENT_KEYS, type NutrientKey, type Product, type ScoreResult } from 
 
 /** Guard incomplete labels; the backend owns score calculation and reasons. */
 export function displayScore(product: Product, score: ScoreResult): ScoreResult {
+  if (product.category.slug === 'necunoscut') return { score: null, letter: null, grade: 'unavailable', reasons: [], missing: [] };
   const kind = product.category.scoreKind;
   const required: readonly NutrientKey[] = kind === 'water' ? []
     : kind === 'fat' ? ['kcal', 'sat', 'sugar', 'salt', 'fat'] : ['kcal', 'sat', 'sugar', 'salt'];

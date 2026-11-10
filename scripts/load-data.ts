@@ -1,6 +1,6 @@
 import { pathToFileURL } from 'node:url';
 import { CategoryEntry, IngredientEntry } from '../packages/shared/src/index';
-import { checkData, readData, type DataFiles } from './check-data';
+import { checkData, checkReadiness, readData, type DataFiles } from './check-data';
 
 /**
  * POSTs rows to Supabase's REST API with the service-role key from the environment.
@@ -40,8 +40,8 @@ function service() {
 }
 
 /** Upserts the checked categories and ingredients; refuses to write anything while data:check reports errors. */
-export async function loadData(data: DataFiles = readData()): Promise<{ categories: number; ingredients: number }> {
-  const { errors } = checkData(data);
+export async function loadData(data: DataFiles = readData(), options: { release?: boolean } = {}): Promise<{ categories: number; ingredients: number }> {
+  const { errors } = options.release ? checkReadiness(data) : checkData(data);
   if (errors.length) throw new Error(`data:check found ${errors.length} errors, nothing loaded:\n${errors.join('\n')}`);
   const categories = CategoryEntry.array().parse(data.categories)
     .map(({ slug, name, scoreKind }) => ({ slug, name, score_kind: scoreKind }));
@@ -56,7 +56,7 @@ export async function loadData(data: DataFiles = readData()): Promise<{ categori
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  loadData().then(
+  loadData(readData(), { release: process.argv.includes('--release') }).then(
     (counts) => console.log(`categories: ${counts.categories}, ingredients: ${counts.ingredients}`),
     (e: Error) => { console.error(e.message); process.exitCode = 1; },
   );

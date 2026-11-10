@@ -39,7 +39,8 @@ export async function readAdminProduct(id: string) {
     .eq('id', Uuid.parse(id))
     .single();
   if (error) throw new Error(ro.app.admin.failed);
-  const input = ProductInput.parse({
+  // A shopper may save an unreadable brand as ''; the editor makes the moderator fill it before verifying.
+  const input = ProductInput.extend({ brand: z.string().max(80) }).parse({
     code: row.code,
     name: row.name,
     brand: row.brand,

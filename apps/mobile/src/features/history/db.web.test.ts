@@ -95,7 +95,7 @@ it('keeps a candidate browser photo for review and deletes its blob only on reso
   await flushQueue();
   expect(api.identify).toHaveBeenCalledTimes(1);
   const photos = createStore('okbite-photos', 'photos');
-  expect(await (await get<mockBlob>(item.payload, photos))?.text()).toBe('review image');
+  expect(Buffer.from((await get<{ bytes: ArrayBuffer }>(item.payload, photos))!.bytes).toString()).toBe('review image');
   expect(await listNeedsReview()).toEqual([{ id: item.id, kind: 'photo', payload: item.payload, result }]);
   await resolveQueued(item.id);
   expect(await listQueued()).toEqual([]);

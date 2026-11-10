@@ -46,7 +46,7 @@
   },
   "scripts": {
     "dev": "pnpm --filter mobile start",
-    "test": "pnpm test:metro && pnpm test:toolchain && pnpm test:sync-shared && pnpm test:app && pnpm test:web && pnpm -r test && pnpm test:scripts && pnpm test:local-gateway && pnpm test:local-ops && pnpm test:media",
+    "test": "pnpm test:metro && pnpm test:toolchain && pnpm test:sync-shared && pnpm test:app && pnpm test:web && pnpm -r test && pnpm test:scripts && pnpm test:local-gateway && pnpm test:local-ops && pnpm test:media && pnpm test:web-env",
     "lint": "eslint .",
     "typecheck": "pnpm typecheck:app && pnpm -r typecheck && pnpm typecheck:e2e",
     "e2e": "maestro test .maestro/known-by-code.yaml",
@@ -75,6 +75,7 @@
     "typecheck:app": "tsc --noEmit",
     "data:load": "tsx scripts/load-data.ts",
     "data:off": "tsx scripts/import-off.ts",
+    "label:accuracy": "tsx scripts/label-accuracy.ts",
     "preinstall": "node scripts/verify-toolchain.mjs",
     "verify:toolchain": "node scripts/verify-toolchain.mjs",
     "test:toolchain": "node --test scripts/verify-toolchain.test.mjs",
@@ -83,6 +84,7 @@
     "test:metro": "node --test scripts/metro-target.test.mjs",
     "e2e:offline": "maestro test .maestro/offline-history.yaml",
     "test:media": "node --test scripts/push-test-media.test.mjs",
+    "test:web-env": "node --test scripts/check-web-env.test.mjs",
     "e2e:web": "playwright test -c e2e-web",
     "e2e:web:build": "EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:18766 EXPO_PUBLIC_SUPABASE_ANON_KEY=demo-only pnpm --filter mobile exec expo export -p web --output-dir dist-e2e && OKBITE_WEB_OUTPUT=dist-e2e pnpm --filter mobile exec workbox generateSW workbox-config.cjs",
     "typecheck:e2e": "tsc --noEmit -p e2e-web/tsconfig.json"

@@ -1,7 +1,7 @@
 import { useTheme } from '../../theme/useTheme';
 import type { Palette } from '../../theme/tokens';
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { ro } from '../../copy/ro';
@@ -15,7 +15,7 @@ export default function CaptureScreen() {
   const camera = useRef<CameraView>(null);
   const [ready, setReady] = useState(false);
   const [mountFailed, setMountFailed] = useState(false);
-  const { state, takePhoto, pickFromGallery, retry, dismiss, canRetry } = useCaptureFlow();
+  const { state, takePhoto, pickFromGallery, retry, dismiss, canRetry, photoUri } = useCaptureFlow();
   const working = state.status === 'working';
 
   // Permission unknown, or the system dialog is still open.
@@ -61,6 +61,9 @@ export default function CaptureScreen() {
           )}
         </ScrollView>
       ) : null}
+      {photoUri && state.status !== 'idle' ? (
+        <Image testID="capture-preview" source={{ uri: photoUri }} style={[StyleSheet.absoluteFill, styles.preview]} resizeMode="contain" accessibilityIgnoresInvertColors />
+      ) : null}
       {working ? (
         <View style={[StyleSheet.absoluteFill, styles.overlay]}><ActivityIndicator size="large" color={colors.cameraInk} /><Text style={styles.overlayText}>{ro.capture.working}</Text></View>
       ) : null}
@@ -83,6 +86,7 @@ export default function CaptureScreen() {
 
 const createStyles = (colors: Palette) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.cameraBackground },
+  preview: { backgroundColor: colors.cameraBackground },
   center: { flexGrow: 1, justifyContent: 'center', padding: 20 },
   hint: { position: 'absolute', top: 24, left: 16, right: 16, color: colors.cameraInk, fontSize: 16, textAlign: 'center' },
   controls: { position: 'absolute', bottom: 32, left: 16, right: 16, flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'space-between' },

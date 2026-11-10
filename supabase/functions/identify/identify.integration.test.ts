@@ -96,6 +96,7 @@ integrationTest(
       const failed = await post(down, device);
       assert.equal(failed.status, 502);
       assert.equal((await failed.json()).error, 'upstream_failed');
+      assert.equal((await adminClient().storage.from('uploads').list(device)).data?.length ?? 0, 0);
       assert.equal(await events(device, 'photo'), 1); // the provider may have billed the attempt
     } finally {
       await cleanup(device);
@@ -115,6 +116,51 @@ integrationTest('identify: the 41st photo in 24 hours is rate limited before upl
     assert.equal((await res.json()).error, 'rate_limited');
     assert.equal(asked, 0);
     assert.equal((await db.storage.from('uploads').list(device)).data?.length ?? 0, 0);
+  } finally {
+    await cleanup(device);
+  }
+});
+
+integrationTest(
+  'identify: valid absent barcode falls back to trigrams and remains in unknown read',
+  async () => {
+    const device = crypto.randomUUID();
+    try {
+      const match = await identify(front('Zorel', 'Iaurt cu căpșuni', '4840001009994'), device);
+      assert.equal(match.status, 'candidates');
+      if (match.status === 'candidates') {
+        assert.equal(match.read.code, '4840001009994');
+        assert.equal(match.candidates[0].name, 'Iaurt cu căpșuni 2%');
+        assert.ok(match.candidates.length <= 3);
+        assert.ok(match.candidates.every((c) => c.similarity >= 0.35));
+      }
+      const none = await identify(front('', '', '4840001009994'), device);
+      assert.equal(none.status, 'not_found');
+      if (none.status === 'not_found') assert.equal(none.read.code, '4840001009994');
+    } finally {
+      await cleanup(device);
+    }
+  },
+);
+
+integrationTest('identify: concurrent final quota slot admits one provider call', async () => {
+  const device = crypto.randomUUID();
+  let asked = 0;
+  try {
+    assert.equal(
+      (await adminClient().from('usage_events').insert(
+        Array.from({ length: 39 }, () => ({ kind: 'photo', device_id: device })),
+      )).error,
+      null,
+    );
+    const handler = handlerAnswering(() => {
+      asked++;
+      return front('', '')();
+    });
+    const responses = await Promise.all(Array.from({ length: 4 }, () => post(handler, device)));
+    assert.deepEqual(responses.map((r) => r.status).sort(), [200, 429, 429, 429]);
+    assert.equal(asked, 1);
+    assert.equal(await events(device, 'photo'), 40);
   } finally {
     await cleanup(device);
   }

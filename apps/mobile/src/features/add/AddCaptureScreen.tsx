@@ -1,7 +1,7 @@
 import { useTheme } from '../../theme/useTheme';
 import type { Palette } from '../../theme/tokens';
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { ro } from '../../copy/ro';
@@ -15,7 +15,7 @@ export function AddCaptureScreen() {
   const camera = useRef<CameraView>(null);
   const [ready, setReady] = useState(false);
   const [mountFailed, setMountFailed] = useState(false);
-  const { step, state, takePhoto, pickFromGallery, submitSamePhoto, retry, dismiss, canRetry } =
+  const { step, state, takePhoto, pickFromGallery, submitSamePhoto, retry, dismiss, canRetry, photoUri } =
     useAddFlow();
   const working = state.status === 'working';
 
@@ -111,6 +111,10 @@ export function AddCaptureScreen() {
         </ScrollView>
       ) : null}
 
+      {photoUri && state.status !== 'idle' ? (
+        <Image testID="add-preview" source={{ uri: photoUri }} style={[StyleSheet.absoluteFill, styles.preview]} resizeMode="contain" accessibilityIgnoresInvertColors />
+      ) : null}
+
       {working ? (
         <View style={[StyleSheet.absoluteFill, styles.overlay]}>
           <ActivityIndicator size="large" color={colors.cameraInk} />
@@ -148,6 +152,7 @@ export default AddCaptureScreen;
 
 const createStyles = (colors: Palette) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.cameraBackground },
+  preview: { backgroundColor: colors.cameraBackground },
   header: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 12, gap: 4, backgroundColor: colors.cameraPanel },
   stepBadge: { color: colors.accent, fontSize: 13, fontWeight: '700' },
   title: { color: colors.cameraInk, fontSize: 18, fontWeight: '800' },

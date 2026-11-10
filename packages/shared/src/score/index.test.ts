@@ -67,3 +67,10 @@ it('a beverage with a non-nutritive sweetener in its ingredients drops a letter 
     { tone: 'bad', title: 'Conține îndulcitori', detail: 'Îndulcitori fără calorii în ingrediente' });
   expect(score({}, 'general', 'iaurt, aspartam').letter).toBe('A');
 });
+
+it.each(['E960b', 'E960c', 'E960d'])('%s adds four beverage points through ingredientsText', (sweetener) => {
+  expect(score({}, 'beverage', `apă, îndulcitor: ${sweetener}`))
+    .toMatchObject({ letter: 'C', grade: 'medium', score: 53 });
+  expect(score({}, 'beverage', `apă, îndulcitor: ${sweetener}`).reasons)
+    .toContainEqual({ tone: 'bad', title: 'Conține îndulcitori', detail: 'Îndulcitori fără calorii în ingrediente' });
+});

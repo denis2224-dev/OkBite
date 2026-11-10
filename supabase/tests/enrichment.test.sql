@@ -1,0 +1,10 @@
+begin;
+select plan(6);
+select ok((select relrowsecurity from pg_class where oid='public.enrichment_receipts'::regclass),'receipts have RLS');
+select ok(not has_table_privilege('anon','public.enrichment_receipts','SELECT'),'anon cannot read device receipts');
+select ok(not has_table_privilege('authenticated','public.enrichment_receipts','SELECT'),'signed-in clients cannot read device receipts');
+select ok(not has_function_privilege('anon','public.enrich_product(uuid,uuid,text,text,bigint,jsonb,text)','EXECUTE'),'anon cannot bypass endpoint');
+select ok(not has_function_privilege('authenticated','public.enrich_product(uuid,uuid,text,text,bigint,jsonb,text)','EXECUTE'),'clients cannot bypass endpoint');
+select ok(has_function_privilege('service_role','public.enrich_product(uuid,uuid,text,text,bigint,jsonb,text)','EXECUTE'),'server can enrich atomically');
+select * from finish();
+rollback;
