@@ -1,9 +1,10 @@
 import { useTheme } from '../../theme/useTheme';
 import type { Palette } from '../../theme/tokens';
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Image, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView } from 'expo-camera';
+import { useCameraAccess } from './useCameraAccess';
 import { ro } from '../../copy/ro';
 import { ActionButton, StatusPanel, errorMessage } from './StatusPanel';
 import { useCaptureFlow } from './useCaptureFlow';
@@ -11,19 +12,16 @@ import { useCaptureFlow } from './useCaptureFlow';
 export default function CaptureScreen() {
   const { colors } = useTheme();
   const styles = createStyles(colors);
-  const [permission, requestPermission] = useCameraPermissions({ request: true });
+  const { permission, requestPermission, settingsAction, message, canRetry: canRetryCamera } = useCameraAccess();
   const camera = useRef<CameraView>(null);
   const [ready, setReady] = useState(false);
   const [mountFailed, setMountFailed] = useState(false);
   const { state, takePhoto, pickFromGallery, retry, dismiss, canRetry, photoUri } = useCaptureFlow();
   const working = state.status === 'working';
 
-  // Permission unknown, or the system dialog is still open.
-  if (!permission || permission.status === 'undetermined') {
-    return <View style={styles.center}><ActivityIndicator size="large" testID="permission-loading" /></View>;
-  }
+  const loading = !permission || permission.status === 'undetermined';
   const gallery = { label: ro.capture.gallery, onPress: () => { void pickFromGallery(); } };
-  const cameraActive = permission.granted && !mountFailed;
+  const cameraActive = permission?.granted && !mountFailed;
 
   return (
     <View style={styles.root}>
@@ -47,15 +45,15 @@ export default function CaptureScreen() {
         </>
       ) : state.status === 'idle' ? (
         <ScrollView testID="capture-permission-recovery" style={{ flex: 1 }} contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
-          {!permission.granted ? (
+          {loading ? <><ActivityIndicator size="large" testID="permission-loading" /><ActionButton {...gallery} /></> : !permission?.granted ? (
             <StatusPanel
-              title={ro.capture.deniedTitle}
-              message={ro.capture.deniedText}
-              actions={[gallery, { label: ro.capture.openSettings, onPress: () => { void Linking.openSettings(); } }, { label: ro.capture.retry, onPress: () => { void requestPermission(); } }]}
+              title={message ? undefined : ro.capture.deniedTitle}
+              message={message ?? ro.capture.deniedText}
+              actions={[gallery, ...(settingsAction ? [settingsAction] : []), ...(canRetryCamera ? [{ label: ro.capture.retry, onPress: () => { void requestPermission(); } }] : [])]}
             />
           ) : (
             <StatusPanel
-              message={ro.errors.generic}
+              message={ro.pwa.camera.startupFailed}
               actions={[gallery, { label: ro.errors.retry, onPress: () => { setMountFailed(false); setReady(false); } }]}
             />
           )}

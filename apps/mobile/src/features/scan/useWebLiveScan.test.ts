@@ -128,6 +128,28 @@ describe('useWebLiveScan', () => {
   beforeEach(() => { detect.mockClear(); nextHits = []; });
   afterEach(() => { Object.assign(g, saved); });
 
+  it('identifies insecure HTTP separately from missing barcode support', async () => {
+    const secure = Object.getOwnPropertyDescriptor(globalThis, 'isSecureContext');
+    Object.defineProperty(globalThis, 'isSecureContext', { value: false, configurable: true });
+    const getUserMedia = jest.fn(async () => stream());
+    install(getUserMedia);
+    try {
+      const { result } = await renderHook(() => useWebLiveScan(jest.fn()));
+      expect(result.current.status).toBe('insecure');
+      expect(getUserMedia).not.toHaveBeenCalled();
+    } finally {
+      if (secure) Object.defineProperty(globalThis, 'isSecureContext', secure);
+      else delete g.isSecureContext;
+    }
+  });
+
+  it.each([['NotAllowedError', 'denied'], ['NotReadableError', 'busy']])('distinguishes %s from failed camera startup', async (name, expected) => {
+    install(jest.fn(async () => { throw Object.assign(new Error(name), { name }); }));
+    const { result } = await renderHook(() => useWebLiveScan(jest.fn()));
+    await act(async () => { result.current.videoRef(fakeVideo()); });
+    expect(result.current.status).toBe(expected);
+  });
+
   it('is unsupported, and opens no camera, when the browser lacks getUserMedia', async () => {
     const getUserMedia = jest.fn();
     install(getUserMedia);

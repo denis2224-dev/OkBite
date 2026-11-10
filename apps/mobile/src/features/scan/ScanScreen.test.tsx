@@ -55,6 +55,15 @@ describe('ScanScreen', () => {
     expect(openSettings).toHaveBeenCalled();
   });
 
+  it('reports a rejected native settings action and keeps manual entry', async () => {
+    mockPermission.value = { granted: false, status: 'denied', canAskAgain: false };
+    jest.spyOn(Linking, 'openSettings').mockRejectedValue(new Error('settings blocked'));
+    await render(<ScanScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.capture.openSettings }));
+    expect(await screen.findByText('Nu am putut deschide setările. Permite accesul la cameră din setările aplicației.')).toBeTruthy();
+    expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
+  });
+
   it('scans EAN-13, EAN-8 and UPC-A only, with a visible-size preview', async () => {
     await render(<ScanScreen />);
     expect(camera().props.barcodeScannerSettings).toEqual({ barcodeTypes: ['ean13', 'ean8', 'upc_a'] });

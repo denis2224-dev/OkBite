@@ -40,9 +40,9 @@ describe('ScanScreen (web)', () => {
   });
 
   it('explains a refused camera, keeps manual entry, and can retry or take a photo', async () => {
-    mockLive.status = 'unavailable';
+    mockLive.status = 'denied';
     await render(<ScanScreenWeb />);
-    expect(screen.getByText(ro.scan.deniedText)).toBeTruthy();
+    expect(screen.getByText(ro.pwa.camera.browserDenied)).toBeTruthy();
     expect(screen.queryByText(ro.scan.frameHint)).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: ro.errors.retry }));
     expect(mockLive.retry).toHaveBeenCalled();

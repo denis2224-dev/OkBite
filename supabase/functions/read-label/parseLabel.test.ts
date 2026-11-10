@@ -176,3 +176,32 @@ Deno.test('parseLabel accepts a unit only on the row it belongs to', () => {
   }
   assert.equal(parseLabel(label({ fruitVegPct: '45 %' }), both).nutrients.fruitVegPct, 45);
 });
+
+Deno.test('parseLabel reads soda tables with dual kJ/kcal energy, per-100 ml unit and unprinted null/dash rows', () => {
+  const read = parseLabel(
+    label({
+      unit: 'per 100 ml',
+      kcal: '180 kJ / 42 kcal',
+      fat: '0 g',
+      sat: '0 g',
+      sugar: '10,6 g',
+      salt: '0 g',
+      protein: '0 g',
+      fiber: null,
+      fruitVegPct: '-',
+    }),
+    both,
+  );
+  assert.equal(read.unit, 'ml');
+  assert.equal(read.nutrients.kcal, 42);
+  assert.equal(read.nutrients.sugar, 10.6);
+  assert.equal(read.nutrients.fat, 0);
+  assert.equal(read.nutrients.sat, 0);
+  assert.equal(read.nutrients.salt, 0);
+  assert.equal(read.nutrients.protein, 0);
+  assert.equal(read.nutrients.fiber, null);
+  assert.equal(read.nutrients.fruitVegPct, null);
+  assert.equal(read.reasons.kcal, 'read');
+  assert.equal(read.reasons.fiber, 'not_printed');
+  assert.equal(read.reasons.fruitVegPct, 'not_printed');
+});

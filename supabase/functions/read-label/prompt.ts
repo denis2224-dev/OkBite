@@ -22,7 +22,7 @@ export function labelPrompt(ask: { ingredients: boolean; nutrition: boolean }): 
       'From the nutrition table, copy the values per 100 g or per 100 ml (not per portion):',
       'kcal (the kcal value, not kJ), fat, sat (saturates), sugar, salt, protein, fiber, fruitVegPct',
       '(fruit, vegetables and legumes in %). unit is "g" or "ml" as in "per 100 g".',
-      'Copy each cell as printed with its unit, e.g. "0,3 g" or "0 g". Write 0 only where the label prints 0.',
+      'Copy each cell as printed with its unit as a JSON string, e.g. "0,3 g" or "0 g". Write "0 g" only where the label prints 0.',
       'Use an empty string for a row the label does not print, and "?" for a row that is printed but',
       'cut off, blurred or not readable. Never write 0 for a missing or unreadable row.',
       'If the table gives values only per portion, set perPortionOnly to true and leave every value empty.',

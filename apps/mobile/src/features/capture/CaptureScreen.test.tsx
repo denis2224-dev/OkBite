@@ -12,7 +12,7 @@ import { PRODUCT_ID, identifyFound } from './__fixtures__/responses';
 
 const mockReplace = jest.fn();
 const mockPermission: { value: unknown } = { value: null };
-const mockRequestPermission = jest.fn();
+const mockRequestPermission = jest.fn<() => Promise<unknown>>();
 const mockTakePicture = jest.fn<() => Promise<unknown>>();
 jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }), useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof import('react')>('react').useEffect(callback, [callback]) }));
 jest.mock('expo-image-manipulator', () => ({ SaveFormat: { JPEG: 'jpeg' }, ImageManipulator: { manipulate: jest.fn() } }));
@@ -54,6 +54,7 @@ describe('CaptureScreen', () => {
     mockPermission.value = value;
     await render(<CaptureScreen />);
     expect(screen.getByTestId('permission-loading')).toBeTruthy();
+    expect(screen.getByRole('button', { name: ro.capture.gallery })).toBeTruthy();
     expect(screen.queryByTestId('camera')).toBeNull();
     expect(screen.queryByText(ro.capture.deniedTitle)).toBeNull();
   });
@@ -72,6 +73,23 @@ describe('CaptureScreen', () => {
     expect(mockRequestPermission).toHaveBeenCalled();
     await fireEvent.press(screen.getByRole('button', { name: ro.capture.gallery }));
     expect(launchImageLibraryAsync).toHaveBeenCalled();
+  });
+
+  it('keeps recovery available when requesting native permission rejects', async () => {
+    mockPermission.value = null;
+    mockRequestPermission.mockRejectedValue(new Error('camera unavailable'));
+    await render(<CaptureScreen />);
+    expect(await screen.findByText(ro.pwa.camera.unavailable)).toBeTruthy();
+    expect(screen.queryByTestId('permission-loading')).toBeNull();
+    expect(screen.getByRole('button', { name: ro.capture.gallery })).toBeTruthy();
+  });
+
+  it('reports a rejected native settings action without an unhandled error', async () => {
+    mockPermission.value = { granted: false, status: 'denied', canAskAgain: false };
+    jest.spyOn(Linking, 'openSettings').mockRejectedValue(new Error('settings blocked'));
+    await render(<CaptureScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.capture.openSettings }));
+    expect(await screen.findByText('Nu am putut deschide setările. Permite accesul la cameră din setările aplicației.')).toBeTruthy();
   });
 
   it('gives the preview a full-screen layout and the shutter a visible 44 pt+ target', async () => {
@@ -168,7 +186,7 @@ describe('CaptureScreen', () => {
   it('offers the gallery when the camera fails to start', async () => {
     await render(<CaptureScreen />);
     await act(() => { (camera().props.onMountError as () => void)(); });
-    expect(screen.getByText(ro.errors.generic)).toBeTruthy();
+    expect(screen.getByText(ro.pwa.camera.startupFailed)).toBeTruthy();
     expect(screen.getByRole('button', { name: ro.capture.gallery })).toBeTruthy();
     expect(screen.queryByTestId('camera')).toBeNull();
   });
@@ -189,7 +207,7 @@ describe('CaptureScreen', () => {
           expect(screen.getByText(ro.capture.deniedTitle)).toBeTruthy();
           expect(screen.getByRole('button', { name: ro.capture.openSettings })).toBeTruthy();
         } else {
-          expect(screen.getByText(ro.errors.generic)).toBeTruthy();
+          expect(screen.getByText(ro.pwa.camera.startupFailed)).toBeTruthy();
           expect(screen.getByRole('button', { name: ro.errors.retry })).toBeTruthy();
         }
       };
@@ -243,7 +261,7 @@ describe('CaptureScreen', () => {
       if (mode === 'camera-denied') {
         expect(screen.getByText(ro.capture.deniedTitle)).toBeTruthy();
       } else {
-        expect(screen.getByText(ro.errors.generic)).toBeTruthy();
+        expect(screen.getByText(ro.pwa.camera.startupFailed)).toBeTruthy();
       }
     },
   );
