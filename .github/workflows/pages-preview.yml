@@ -1,0 +1,53 @@
+name: Cloudflare PR preview link
+on:
+  pull_request:
+permissions:
+  contents: read
+  checks: read
+  pull-requests: write
+concurrency:
+  group: pages-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  pages-preview:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      # Cloudflare's existing Git integration builds the branch; never run PR code with write access.
+      - name: Confirm the exact commit deployed to okbite-ir1
+        run: |
+          for attempt in {1..60}; do
+            gh api "repos/$GH_REPO/commits/$HEAD_SHA/check-runs" \
+              --jq '.check_runs[] | select(.name == "Cloudflare Pages" and .app.slug == "cloudflare-workers-and-pages" and .conclusion == "success") | .output.summary' \
+              > "$RUNNER_TEMP/pages-summary.txt"
+            if [ -s "$RUNNER_TEMP/pages-summary.txt" ]; then break; fi
+            sleep 10
+          done
+          python3 - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP'])
+          links = list(dict.fromkeys(re.findall(r'https://[a-z0-9-]+\.okbite-ir1\.pages\.dev', (root / 'pages-summary.txt').read_text())))
+          if not links:
+              raise SystemExit('No successful okbite-ir1 preview found for this PR commit.')
+          body = '<!-- okbite-pages-preview -->\nCloudflare preview for commit `' + os.environ['HEAD_SHA'] + '`:\n\n'
+          body += '\n'.join(f'- [{url}]({url})' for url in links)
+          (root / 'pages-comment.json').write_text(json.dumps({'body': body}))
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write(body + '\n')
+          PY
+      - name: Post or update the preview URL in the PR
+        run: |
+          comment_id=$(gh api --paginate "repos/$GH_REPO/issues/$PR_NUMBER/comments" \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("<!-- okbite-pages-preview -->"))) | .id' | head -1)
+          if [ -n "$comment_id" ]; then
+            gh api --method PATCH "repos/$GH_REPO/issues/comments/$comment_id" --input "$RUNNER_TEMP/pages-comment.json" > /dev/null
+          else
+            gh api --method POST "repos/$GH_REPO/issues/$PR_NUMBER/comments" --input "$RUNNER_TEMP/pages-comment.json" > /dev/null
+          fi
