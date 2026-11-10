@@ -40,19 +40,26 @@ const NOT_ASKED: Partial<Record<NutritionMode, FieldReason>> = {
 function amount(value: unknown, key: NutrientKey): number | null {
   // A bare JSON 0 is not a transcription: the prompt asks for printed text, so it is a model default.
   if (value === 0) return null;
-  const text = typeof value === 'number'
+  const rawText = typeof value === 'number'
     ? String(value)
     : typeof value === 'string'
     ? value.trim()
     : '';
+  const text = key === 'kcal'
+    ? rawText.replace(
+      /^(?:\d+(?:[.,]\d+)?\s*kj\s*(?:\/|\()?\s*)?(\d+(?:[.,]\d+)?\s*kcal)(?:\s*\)|\s*\/?\s*\d+(?:[.,]\d+)?\s*kj)?$/i,
+      '$1',
+    )
+    : rawText;
   const m = text.match(/^(\d+(?:[.,]\d+)?)\s*([a-z%]*)$/i);
   if (!m || (m[2] && m[2].toLowerCase() !== UNIT(key))) return null; // "20 kcal" is not a fat value
   const n = Number(m[1].replace(',', '.'));
   return n <= MAX[key] ? n : null;
 }
 
-// Only an explicit empty string means "row not printed"; a missing key or "?" is unreadable.
-const UNREAD_CELL = (v: unknown): FieldReason => (v === '' ? 'not_printed' : 'unreadable');
+// Empty string, null, or dash means "row not printed"; "?" or unparseable text is unreadable.
+const UNREAD_CELL = (v: unknown): FieldReason =>
+  v === '' || v === null || v === '-' || v === '—' ? 'not_printed' : 'unreadable';
 
 /** Every field null with the given reasons: the AI was not asked, or failed. */
 export function emptyRead(ask: LabelAsk, failed: boolean): LabelRead {
@@ -92,8 +99,10 @@ export function parseLabel(
       read.reasons[key] = v !== null ? 'read' : perPortionOnly ? 'no_per_100' : UNREAD_CELL(o[key]);
       if (v === null) unclear.push(key);
     }
-    const unit = typeof o.unit === 'string' ? o.unit.trim().toLowerCase() : '';
-    read.unit = !perPortionOnly && (unit === 'g' || unit === 'ml') ? unit : null;
+    const unitMatch = typeof o.unit === 'string'
+      ? o.unit.trim().match(/^(?:(?:per|la)\s+)?(?:100\s*)?(g|ml)$/i)
+      : null;
+    read.unit = !perPortionOnly && unitMatch ? (unitMatch[1].toLowerCase() as 'g' | 'ml') : null;
   }
   if (ask.ingredients) {
     const text = typeof o.ingredientsText === 'string' ? o.ingredientsText.trim() : '';

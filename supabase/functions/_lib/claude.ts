@@ -172,14 +172,26 @@ function readText(message: unknown): string {
 
 /** The JSON object in a model answer, with or without ``` fences; anything else is an UpstreamError. */
 export function parseJsonObject(raw: string): Record<string, unknown> {
-  const fenced = raw.trim().match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
-  try {
-    const value: unknown = JSON.parse(fenced ? fenced[1] : raw.trim());
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      return value as Record<string, unknown>;
+  const trimmed = raw.trim();
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  const start = trimmed.indexOf('{');
+  const end = trimmed.lastIndexOf('}');
+  for (
+    const candidate of [
+      fenced?.[1],
+      trimmed,
+      start >= 0 && end > start ? trimmed.slice(start, end + 1) : undefined,
+    ]
+  ) {
+    if (!candidate) continue;
+    try {
+      const value: unknown = JSON.parse(candidate);
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        return value as Record<string, unknown>;
+      }
+    } catch {
+      // try next candidate
     }
-  } catch {
-    // reported below
   }
   throw new UpstreamError('Claude answer is not a JSON object');
 }

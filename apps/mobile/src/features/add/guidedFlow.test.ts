@@ -53,6 +53,16 @@ test('unreadable optional nutrition continues without another AI request and ret
   expect(deps.readLabel).toHaveBeenCalledTimes(1);
 });
 
+test('partially read nutrition table with one unreadable row proceeds to review with read values preserved', async () => {
+  const partialNutrients = { ...nutrients, kcal: 42, fat: 0, sat: 0, sugar: 10.6, protein: 0 };
+  const partialReasons = { ...reasons, kcal: 'read', fat: 'read', sat: 'read', sugar: 'read', protein: 'read', salt: 'unreadable' };
+  const { flow, deps } = setup({ ...label, unit: 'ml', nutrients: partialNutrients, reasons: partialReasons, unclear: ['salt'] });
+  await flow.capturePhoto('ingredients'); await flow.chooseNutrition('separate'); await flow.capturePhoto('nutrition');
+  expect(flow.getState().stage).toBe('review');
+  expect(flow.getState().label?.nutrients).toEqual(partialNutrients);
+  expect(deps.onReview).toHaveBeenCalledTimes(1);
+});
+
 test('code entry starts at front, retains scanned code and hands candidates back before adding', async () => {
   const { deps } = setup();
   deps.identify.mockResolvedValue({ status: 'candidates', candidates: [{ id: '00000000-0000-4000-8000-000000000001', name: 'read name', brand: 'read brand', quantity: '', imageUrl: null, similarity: 0.5 }], read: { brand: null, name: null, quantity: null, code: null }, photoPath: 'uploads/newfront' });

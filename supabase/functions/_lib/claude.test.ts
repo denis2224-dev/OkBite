@@ -140,6 +140,11 @@ Deno.test('askClaude rejects refusals, truncation, empty answers, missing key an
 
 Deno.test('parseJsonObject reads fenced JSON; toBase64 round-trips large inputs', () => {
   assert.deepEqual(parseJsonObject('```json\n{"x":"0,3"}\n```'), { x: '0,3' });
+  assert.deepEqual(
+    parseJsonObject('Reasoning before JSON:\n```json\n{"x":"0,3"}\n```'),
+    { x: '0,3' },
+  );
+  assert.deepEqual(parseJsonObject('<think>step 1</think>\n{"x":"0,3"}'), { x: '0,3' });
   assert.throws(() => parseJsonObject('null'), UpstreamError);
   const bytes = new Uint8Array(100_000).map((_, i) => i % 256);
   assert.deepEqual(Uint8Array.from(atob(toBase64(bytes)), (c) => c.charCodeAt(0)), bytes);

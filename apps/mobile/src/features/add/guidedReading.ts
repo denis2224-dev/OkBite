@@ -38,5 +38,6 @@ export function ingredientsOnly(label: GuidedReadLabelResponse, reason: FieldRea
     unclear: label.unclear.filter(key => key === 'ingredientsText') };
 }
 export function hasUnreadableNutrition(label: GuidedReadLabelResponse) {
-  return NUTRIENT_KEYS.some(key => ['unreadable', 'no_per_100', 'failed'].includes(label.reasons[key] ?? ''));
+  const anyRead = NUTRIENT_KEYS.some(key => label.nutrients[key] !== null);
+  return !anyRead && NUTRIENT_KEYS.some(key => ['unreadable', 'no_per_100', 'failed'].includes(label.reasons[key] ?? ''));
 }
