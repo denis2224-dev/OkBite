@@ -1,6 +1,6 @@
 # OkBite — instructions for AI agents (Claude Code and Codex)
 
-OkBite is a Romanian-language mobile app for iPhone and Android (Expo / React Native, published in the App Store and Google Play) for shoppers in Moldova: photograph a product, and if it is in the database see its allergens, a 0–100 nutrition score with reasons, ingredients explained and comparisons; if it is not, photograph the label, get the analysis, and the product is added to the database. Barcode scanning is an alternative entry.
+OkBite is a Romanian- and English-language mobile app for iPhone and Android (Expo / React Native, published in the App Store and Google Play) for shoppers in Moldova: photograph a product, and if it is in the database see its allergens, a 0–100 nutrition score with reasons, ingredients explained and comparisons; if it is not, photograph the label, get the analysis, and the product is added to the database. Barcode scanning is an alternative entry.
 
 ## Read first, in this order
 
@@ -29,13 +29,13 @@ OkBite is a Romanian-language mobile app for iPhone and Android (Expo / React Na
 ## Conventions
 
 - TypeScript strict; named exports; one component per file; files under ~200 lines.
-- All UI text comes from `apps/mobile/src/copy/ro.ts`; Romanian diacritics with comma-below (ș, ț).
+- UI text is Romanian and English via `apps/mobile/src/copy/ro.ts`, selected by the language module; catalogues live in `strings.ro.ts` and `strings.en.ts`. Use comma-below Romanian diacritics (ș, ț). Ingredient knowledge-base explanations stay Romanian for this release.
 - The same app runs on iOS, Android and the web (Expo web at okbite.md). Put platform differences in `*.web.ts(x)` files with the same exports as the native file; no scattered `Platform.OS` checks.
-- Every pressable has `accessibilityRole` and a Romanian `accessibilityLabel`; screens work in dark mode and at 200% font size.
+- Every pressable has `accessibilityRole` and an `accessibilityLabel` from the selected-language copy; screens work in dark mode and at 200% font size.
 - No payment or subscription code: pricing is not decided.
 - Validate every API request and response with the Zod schemas from `@okbite/shared`.
 - Numbers shown to users use a decimal comma (`13,2 g`); stored values are per 100 g or 100 ml.
-- Never display the Nutri-Score logo. Always show "Calculat la 100 g; nu indică riscul unei boli." next to a score.
+- Never use the official Nutri-Score logo artwork; our own A to E letter scale is allowed. Always show "Calculat la 100 g; nu indică riscul unei boli." next to a score.
 - Secrets only in environment settings; never commit `.env*` except `.env.example`.
 
 ## Definition of done
