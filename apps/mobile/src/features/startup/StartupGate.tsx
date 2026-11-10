@@ -17,7 +17,8 @@ export function StartupGate({ ready, error, children }: PropsWithChildren<{ read
       {children}
     </View>
     {loading && <View style={[styles.overlay,{backgroundColor:light.ground}]} accessible accessibilityRole="progressbar" accessibilityLabel={ro.app.loading}>
-      <StatusBar style="dark" />
+      {/* Reassert after font readiness mounts Navigation's status bar underneath. */}
+      <StatusBar key={ready || error ? 'ready' : 'pending'} style="dark" />
       <Image testID="startup-background" source={require('../../../assets/brand/android-background.png')} style={styles.background} resizeMode="cover" accessible={false} />
       <Image testID="startup-artwork" source={require('../../../assets/brand/startup-screen.png')} style={styles.artwork} resizeMode="contain" accessible={false} />
     </View>}

@@ -66,3 +66,14 @@ it('keeps native status-bar icons readable on the cream loading canvas', async (
   expect(pushed).toHaveBeenCalledWith(expect.objectContaining({barStyle:'dark-content'}));
   pushed.mockRestore();
 });
+
+it.each(['ready', 'error'] as const)('retains dark startup icons when %s mounts dark-mode navigation before 500ms', async phase => {
+  const pushed = jest.spyOn(StatusBar, 'pushStackEntry');
+  const view = await render(<StartupGate ready={false} />);
+  await view.rerender(<StartupGate ready={phase === 'ready'} error={phase === 'error' ? new Error('Font unavailable') : null}>
+    <StatusBar barStyle="light-content" />
+  </StartupGate>);
+  expect(pushed.mock.calls.at(-1)?.[0].barStyle).toBe('dark-content');
+  expect(screen.getByRole('progressbar', {name:ro.app.loading})).toBeTruthy();
+  pushed.mockRestore();
+});

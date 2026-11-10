@@ -6,12 +6,12 @@ existing plain cream brand background fills the viewport (`cover`) in both theme
 removing contrasting side bands on landscape, tablet and desktop screens. Native
 status-bar icons use dark content while that cream loading screen is present.
 
-- Regression tests for the background/artwork and native status-bar contrast failed
-  before implementation; all five StartupGate tests pass, including the 499/500 ms
+- Regression tests for the background/artwork and native status-bar contrast/readiness race failed
+  before implementation; all seven StartupGate tests pass, including the 499/500 ms
   boundary, font wait, error recovery, immediate child mounting and timer cleanup.
-- Integrated `pnpm check` passes: 776 mobile, 104 root, 9 web and 353 shared tests;
+- Integrated `pnpm check` passes: 778 mobile, 104 root, 9 web and 353 shared tests;
   remaining script/data checks pass. Inherited lint warnings remain, with zero errors.
-- Browser suite: 63 passed, one expected WebKit synthetic-camera skip. Includes
+- Browser suite: 67 passed, one expected WebKit synthetic-camera skip. Includes
   camera permissions/recovery/navigation, unknown-product flows and 20 startup
   cases: 360x640, 844x390, 1024x1366, 1440x900 and 2560x1080, both themes, Chromium
   and WebKit. Overlay, background and artwork match the full viewport bounds.
