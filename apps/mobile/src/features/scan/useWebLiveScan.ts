@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createZxingReader } from '../capture/zxing.web';
 import { createDetector, firstValidCode } from '../capture/findBarcode.web';
 import { cameraAvailability, cameraFailure, type CameraIssue } from '../capture/cameraSupport.web';
 
@@ -8,28 +9,46 @@ export type LiveStatus = 'unsupported' | 'starting' | 'live' | CameraIssue;
 
 const mediaDevices = () => (typeof navigator === 'undefined' ? undefined : navigator.mediaDevices);
 
-export const isLiveScanSupported = () => !cameraAvailability() && 'BarcodeDetector' in globalThis;
+// ZXing covers browsers without BarcodeDetector, so only camera access decides support.
+export const isLiveScanSupported = () => !cameraAvailability();
 
 /**
  * Streams the camera into `video` and reports each valid barcode. Resolves with a stop function,
  * or null when the browser cannot do it. Rejects when the camera is refused or unavailable.
  */
-export async function startLiveScan(video: HTMLVideoElement, onCode: (code: string) => void): Promise<(() => void) | null> {
+export async function startLiveScan(video: HTMLVideoElement, onCode: (code: string) => void, signal?: AbortSignal): Promise<(() => void) | null> {
   if (cameraAvailability()) return null;
   const detector = await createDetector();
   const media = mediaDevices();
-  if (!detector || !media?.getUserMedia) return null;
+  if (!media?.getUserMedia || signal?.aborted) return null;
+  let reader: Awaited<ReturnType<typeof createZxingReader>> | null = null;
+  try {
+    if (!detector) reader = await createZxingReader();
+  } catch {
+    return null; // The decoder could not load; camera access has not been requested.
+  }
+  if (signal?.aborted) { reader?.reset(); return null; }
 
-  const stream = await media.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+  let stream: MediaStream;
+  try {
+    stream = await media.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+  } catch (error) {
+    reader?.reset();
+    throw error;
+  }
   let timer: ReturnType<typeof setInterval> | undefined = undefined;
   let stopped = false;
   const stop = () => {
     if (stopped) return;
     stopped = true;
     clearInterval(timer);
+    signal?.removeEventListener('abort', stop);
+    reader?.reset();
     stream.getTracks().forEach((track) => track.stop());
-    video.srcObject = null;
+    if (video.srcObject === stream) video.srcObject = null;
   };
+  signal?.addEventListener('abort', stop, { once: true });
+  if (signal?.aborted) { stop(); return null; }
   try {
     video.srcObject = stream;
     await video.play();
@@ -37,12 +56,15 @@ export async function startLiveScan(video: HTMLVideoElement, onCode: (code: stri
     stop();
     throw err;
   }
+  if (stopped) return null;
   let reading = false;
   timer = setInterval(async () => {
     if (reading || stopped) return;
     reading = true;
     try {
-      const code = await firstValidCode(detector, video);
+      const code = detector
+        ? await firstValidCode(detector, video)
+        : await reader!.readCode(video);
       if (!stopped && code) onCode(code);
     } catch {
       // A frame that cannot be read is skipped; the next one is tried.
@@ -63,10 +85,11 @@ export function useWebLiveScan(onCode: (code: string) => void) {
   useEffect(() => {
     if (!video) return;
     let cancelled = false;
+    const controller = new AbortController();
     let stop: (() => void) | null = null;
     startLiveScan(video, (code) => {
       if (!cancelled) latest.current(code);
-    }).then(
+    }, controller.signal).then(
       (stopFn) => {
         if (cancelled) return stopFn?.(); // unmounted while the camera was starting: release it right away
         stop = stopFn;
@@ -76,6 +99,7 @@ export function useWebLiveScan(onCode: (code: string) => void) {
     );
     return () => {
       cancelled = true;
+      controller.abort();
       stop?.();
     };
   }, [video, attempt]);
