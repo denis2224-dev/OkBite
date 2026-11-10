@@ -9,6 +9,7 @@ import { StatusPanel, errorMessage } from '../capture/StatusPanel';
 import { ManualCode } from './ManualCode';
 import { useScanLookup } from './useScanLookup';
 import { useWebLiveScan } from './useWebLiveScan';
+import { cameraMessage } from '../capture/cameraSupport.web';
 
 export default function ScanScreenWeb() {
   const { colors } = useTheme();
@@ -30,9 +31,9 @@ export default function ScanScreenWeb() {
         </View>
       ) : (
         <StatusPanel
-          message={liveStatus === 'unsupported' ? ro.scan.webManualOnly : ro.scan.deniedText}
+          message={liveStatus === 'unsupported' ? ro.scan.webManualOnly : cameraMessage(liveStatus)}
           actions={[
-            ...(liveStatus === 'unavailable' ? [{ label: ro.errors.retry, onPress: retryLive }] : []),
+            ...(['unavailable', 'denied', 'busy'].includes(liveStatus) ? [{ label: ro.errors.retry, onPress: retryLive }] : []),
             { label: ro.capture.title, onPress: () => router.push('/capture') },
           ]}
         />
