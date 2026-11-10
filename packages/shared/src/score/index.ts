@@ -7,6 +7,8 @@ import { toHundred } from './toHundred';
 export { nutriScorePoints } from './nutriscore';
 export { toHundred } from './toHundred';
 export { hasNonNutritiveSweetener } from './sweeteners';
+export { productScore, tierFor } from './product';
+export type { Deduction, DeductionKey, ProductScore, ScoredProduct, Tier } from './product';
 
 const GRADE: Record<Letter, ScoreResult['grade']> = { A: 'good', B: 'good', C: 'medium', D: 'low', E: 'low' };
 const REQUIRED: NutrientKey[] = ['kcal', 'sat', 'sugar', 'salt'];

@@ -40,6 +40,32 @@ calculator evidence, fixture coverage and `data/score-*`; do not replace missing
 human review with an agent assertion. Counts and classifications must be rechecked
 after integrating that track.
 
+## Product score (N4)
+
+`productScore` in `packages/shared/src/score/product.ts` gives each product a 0–100 score
+built from deductions. `computeScore` is unchanged: it stays the Nutri-Score part (letter A–E
+and its own 0–100) and lookup keeps returning it. Weights decided by Sergiu on 2026-11-10;
+the app's method page copies this section.
+
+| Part | Worth | Rule |
+| --- | --- | --- |
+| Nutrition | 60 | `round(Nutri-Score 0–100 × 0.6)`. The loss is split over the Nutri-Score negative points (sugar, saturated fat, salt, energy; beverage sweetener points count as "other nutrition"). |
+| Additives | 30 | −10 per high-risk additive, −5 per moderate, never below 0. Low risk takes nothing off. An additive whose risk is not assessed takes nothing off but is listed. |
+| Processing | 10 | NOVA group 1 or 2: 10, group 3: 5, group 4: 0. NOVA unknown: this part is left out and nutrition plus additives are scaled from 90 to 100. |
+| Cap | — | Any high-risk additive caps the total at 49. |
+
+- Nutrition unavailable (missing kcal, sugar, saturated fat or salt): no score at all, as today.
+  A missing value is never counted as 0.
+- Deductions are reported after scaling and rounding, so 100 minus their sum is always the score;
+  rounding leftovers go to the largest deduction. They carry keys only
+  (`sugar`, `sat`, `salt`, `kcal`, `nutrition_other`, `additive`, `processing`, `cap`); the app
+  translates them.
+- Tiers: excellent 80–100, good 60–79, fair 40–59, poor 20–39, bad 0–19. The Nutri-Score letter
+  keeps its own A (green) to E (red) scale, drawn by us (never the official logo).
+- Additive risk levels (`Ingredient.risk`) and the NOVA group (`Product.processing`, from Open Food
+  Facts or the team) come from the N1 contract; each needs its own source a human opened.
+- Every score is shown with "Calculat la 100 g; nu indică riscul unei boli."
+
 ## Explicit release gate
 
 Run `pnpm data:check --release` before a content release. It requires:
