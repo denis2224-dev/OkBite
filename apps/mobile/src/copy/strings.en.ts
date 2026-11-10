@@ -1,6 +1,6 @@
-import { plural, type Copy } from './strings.ro';
+import { plural, type Copy, type RedesignCopy } from './strings.ro';
 const gradeNames: Record<string, string> = {good:"good",medium:"medium",low:"low",unavailable:"unavailable"};
-export const en: Copy = {
+const legacyEn = {
  app: {admin:{"title": "Administration", "email": "Team email address", "sendLink": "Send sign-in link", "signIn": "Sign in for the moderation team", "linkSent": "Check your email for the sign-in link.", "notConfigured": "Administration is not configured yet.", "denied": "This account does not have moderation access.", "failed": "The action failed. Try again.", "signOut": "Sign out", "unverified": "Unverified products", "reports": "Open reports", "emptyProducts": "No products to review.", "emptyReports": "No open reports.", "verify": "Verify and save", "hide": "Hide product", "reason": "Reason for hiding", "open": "Open product", "closeReport": "Close report", "invalid": "Check the name, category and values you entered.", "reload": "Reload list", "unit": "Unit: g or ml", "front": "Product photo", "ingredientsPhoto": "Ingredients photo", "nutritionPhoto": "Nutrition table photo", "version": "Version", "versionLabel": "App version. Press and hold for administration."},name:"OkBite",back:"Back",close:"Close",cancel:"Cancel",retry:"Try again",loading:"Loading…",demo:"Demo mode",demoNote:"Fictional products and illustrative scores. Do not use this data to make dietary decisions.",open:"Open",done:"Done",settings:"Appearance",light:"Light",dark:"Dark",system:"System",unavailable:"Unavailable",preview:"Explore an example",unitGram:"g",unitMl:"ml"},
  nav: {close:"Close",home:"Home",compare:"Compare",history:"History",about:"About OkBite",privacy:"Privacy",terms:"Terms of use",method:"How we calculate the score"},
  home: {design: {brand:"okBite",demo:"Settings",themeLabels:{light:"Light mode",dark:"Dark mode"},description:"Scan the barcode to see the nutrition score, allergens and what each ingredient means.",photo:"Photograph the label",photoHint:"For missing products",compareHint:"Values per 100 g",recent:"Recently scanned",empty:"You have not scanned anything yet. Analysed products appear here and remain available offline.",medium:"Medium",low:"Low",footnote:"The score describes nutritional quality per 100 g, comparable within the same category. It does not show the likelihood of disease. Prototype scores are illustrative.",scan:"Scan product",offline:"Offline · history remains available",now:"now",states:{online:"Connected",offline:"Offline",empty:"Empty history"}},title:"What does the label really say?",eyebrow:"Your shopping companion",description:"Photograph the product and understand your choices: allergens, ingredients and nutritional quality.",photoButton:"Photograph product",scanLink:"Scan barcode",compare:"Compare products",compareHint:"Choices from the same category",recent:"Recently analysed",allHistory:"View all history",legend:"How to read the score",good:"Good nutritional quality",medium:"Medium nutritional quality",low:"Low nutritional quality",empty:"No products analysed yet. Products you open appear here and remain available offline.",promise:"More clarity. Right at the shelf.",legendGood:"60–100",legendMedium:"40–59",legendLow:"0–39",how:"From photo to answer in a few steps",stepPhoto:"Photograph the product",stepRead:"Confirm the product found",stepUnderstand:"Understand the label",workflowPending:"Photography and identification will be connected by the capture team.",connection:"The service is not configured yet."},
@@ -93,3 +93,79 @@ insufficientData:"Insufficient data",title:"Product analysis",allergens:"Declare
  },
 } as const;
 
+// Approved N2 redesign additions.
+export const redesignEn: RedesignCopy = {
+ nav: {scan:'Scan', about:'About', history:'History', profile:'Profile', settings:'Settings'},
+ tiers: {excellent:'Excellent', good:'Good', fair:'Fair', poor:'Poor', bad:'Bad', why:'Why?', nutriScore:'Nutri-Score'},
+ ledger: {
+  sugar:'Sugars', sat:'Saturated fat', salt:'Salt', kcal:'Energy', nutrition_other:'Other nutrition',
+  additive:'Additive', processing:'Processing', cap:'High-risk additive cap', points:(n:number)=>`−${n} points`,
+ },
+ processing: {
+  title:'Processing level', 1:'Unprocessed or minimally processed', 2:'Processed culinary ingredients',
+  3:'Processed', 4:'Ultra-processed', unknown:'Processing level unknown',
+  level1:'Unprocessed foods or foods with minimal processing.', level2:'Culinary ingredients obtained from foods.',
+  level3:'Foods processed by combining foods with culinary ingredients.',
+  level4:'Industrial formulations with ingredients and processes specific to ultra-processing.',
+ },
+ additives: {
+  title:'Additives', low:'Low risk', moderate:'Moderate risk', high:'High risk', notAssessed:'Not assessed',
+  source:'Assessment source', explanationSource:'Explanation source', role:'Role', romanianOnly:'The explanation is available in Romanian.',
+  open:(name:string)=>`View details about ${name}`, empty:'We have no additive information for this product.',
+ },
+ profile: {
+  title:'Profile', goalTitle:'What matters to you?', allergensTitle:'Allergens to watch for', avoidTitle:'Foods and ingredients to avoid',
+  health:'More balanced food choices', allergies:'Food allergies', family:'Choices for the family',
+  weight:'Weight management', other:'Another goal', added_sugar:'Added sugar', sweeteners:'Sweeteners',
+  ultra_processed:'Ultra-processed foods', colourings:'Colourings', palm_oil:'Palm oil',
+  flagNote:'We flag these when you scan a product.', savedLocally:'Saved only on this phone',
+  pending:'Your profile will be available once local preferences are connected.',
+ },
+ onboarding: {
+  goalTitle:'What matters to you?', allergensTitle:'Which allergens do you want to watch for?', avoidTitle:'What do you want to avoid?',
+  skip:'Skip', continue:'Continue', done:'Done, let’s start', flagNote:'We flag these when you scan a product.',
+  savedLocally:'Your preferences are saved only on this phone.', step:(n:number)=>`Step ${n} of 3`,
+ },
+ settings: {
+  title:'Settings', language:'Language', romanian:'Română', english:'English', theme:'Theme', system:'Use device setting',
+  light:'Light', dark:'Dark', install:'Install the app', clearHistory:'Clear history',
+  clearHistoryTitle:'Clear all history?', clearHistoryBody:'This clears history on this phone. Pending searches and published contributions remain.',
+  clearHistoryConfirm:'Yes, clear history', cancel:'Cancel', privacy:'Privacy', terms:'Terms of use',
+  method:'How we calculate the score', version:'Version', resetOnboarding:'Restart profile setup',
+  pending:'More settings will be available once they are connected.',
+ },
+ about: {
+  title:'About OkBite', whatTitle:'Understand the label',
+  whatBody:'Scan a product to see nutrition information, allergens and ingredient explanations, with their sources.',
+  methodTitle:'How the score works',
+  methodBody:'The score uses the available product information. Missing data is never estimated. See the calculation method for the rules applied.',
+  tiersTitle:'Five tiers, explained', tiersBody:'Excellent, good, fair, poor and bad. The score does not tell you whether a product is safe for someone with allergies.',
+  nutriScoreTitle:'The Nutri-Score letter', nutriScoreBody:'The A to E scale describes nutritional quality. We draw our own representation without the official logo.',
+  sourcesTitle:'Our sources', sourcesBody:'Product packaging, Open Food Facts and reviewed explanations, each with its source shown.',
+  promiseTitle:'Simple access', promiseBody:'Free, with no ads or advertising tracking. No account needed.',
+ },
+ scan: {aimHint:'Keep the barcode inside the frame', flashOn:'Turn flash on', flashOff:'Turn flash off', manualCode:'Manual code', photoLabel:'Photograph the label', loadingReader:'Preparing the reader…'},
+ result: {
+  profileAllergens:'Allergens in your profile', profileMayContain:'May contain allergens in your profile',
+  profileAvoid:'Ingredients you want to avoid', profileUnknown:'We cannot check all your preferences.',
+  nutriScoreLabel:'Nutri-Score letter', closeSheet:'Close product analysis',
+ },
+ history: {
+  search:'Search by name or brand', noMatches:'No products found.', remove:(name:string)=>`Delete ${name} from history`,
+  removed:'Product removed from history.', undo:'Undo deletion', removeError:'Could not remove the product. Try again.',
+  scoreUnavailable:'Score unavailable', restoreError:'Could not restore the product. Try undoing the deletion again.',
+ },
+ allergens: {
+  Gluten:'Gluten', Crustacee:'Crustaceans', Ouă:'Eggs', Pește:'Fish', Arahide:'Peanuts', Soia:'Soybeans', Lapte:'Milk',
+  'Fructe cu coajă lemnoasă':'Nuts', Țelină:'Celery', Muștar:'Mustard', Susan:'Sesame',
+  'Dioxid de sulf și sulfiți':'Sulphur dioxide and sulphites', Lupin:'Lupin', Moluște:'Molluscs',
+ },
+};
+
+export const en: Copy = {
+ ...legacyEn, ...redesignEn,
+ nav: {...legacyEn.nav, ...redesignEn.nav},
+ scan: {...legacyEn.scan, ...redesignEn.scan},
+ result: {...legacyEn.result, ...redesignEn.result},
+ history: {...legacyEn.history, ...redesignEn.history},
+};

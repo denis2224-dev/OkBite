@@ -2,7 +2,7 @@ export function plural(n: number, one: string, many: string, language: 'ro' | 'e
   return `${n}${language === 'ro' && n >= 20 && (n % 100 === 0 || n % 100 >= 20) ? ' de' : ''} ${n === 1 ? one : many}`;
 }
 const gradeNames: Record<string, string> = {good:'bună',medium:'medie',low:'scăzută',unavailable:'indisponibilă'};
-export const roStrings = {
+const legacyRo = {
  app: {admin:{"title": "Administrare", "email": "Adresa de e-mail a echipei", "sendLink": "Trimite linkul de autentificare", "signIn": "Autentificare pentru echipa de moderare", "linkSent": "Verifică e-mailul pentru linkul de autentificare.", "notConfigured": "Administrarea nu este configurată încă.", "denied": "Contul nu are drept de moderare.", "failed": "Acțiunea nu a reușit. Încearcă din nou.", "signOut": "Deconectare", "unverified": "Produse neverificate", "reports": "Rapoarte deschise", "emptyProducts": "Nu sunt produse de verificat.", "emptyReports": "Nu sunt rapoarte deschise.", "verify": "Verifică și salvează", "hide": "Ascunde produsul", "reason": "Motivul ascunderii", "open": "Deschide produsul", "closeReport": "Închide raportul", "invalid": "Verifică numele, categoria și valorile introduse.", "reload": "Reîncarcă lista", "unit": "Unitate: g sau ml", "front": "Fotografia produsului", "ingredientsPhoto": "Fotografia ingredientelor", "nutritionPhoto": "Fotografia tabelului nutrițional", "version": "Versiune", "versionLabel": "Versiunea aplicației. Ține apăsat pentru administrare."},name:'OkBite',back:'Înapoi',close:'Închide',cancel:'Anulează',retry:'Încearcă din nou',loading:'Se încarcă…',demo:'Mod demonstrativ',demoNote:'Produse fictive și scoruri ilustrative. Nu folosi aceste date pentru decizii alimentare.',open:'Deschide',done:'Gata',settings:'Aspect',light:'Luminos',dark:'Întunecat',system:'După telefon',unavailable:'Indisponibil',preview:'Explorează un exemplu',unitGram:'g',unitMl:'ml'},
  nav: {close:'Închide',home:'Acasă',compare:'Compară',history:'Istoric',about:'Despre OkBite',privacy:'Confidențialitate',terms:'Termeni de utilizare',method:'Cum calculăm scorul'},
  home: {design: {brand:'okBite',demo:'Setări',themeLabels:{light:'Mod luminos',dark:'Mod întunecat'},description:'Scanezi codul de bare și afli scorul nutrițional, alergenii și ce înseamnă fiecare ingredient.',photo:'Fotografiază eticheta',photoHint:'Pentru produse lipsă',compareHint:'Valori la 100 g',recent:'Scanate recent',empty:'Încă nu ai scanat nimic. Produsele analizate apar aici și rămân disponibile fără internet.',medium:'Medie',low:'Scăzută',footnote:'Scorul descrie calitatea nutrițională la 100 g, comparabilă în aceeași categorie. Nu arată probabilitatea unei boli. În prototip, scorurile sunt ilustrative.',scan:'Scanează produsul',offline:'Fără conexiune · istoricul rămâne disponibil',now:'acum',states:{online:'Conectat',offline:'Fără conexiune',empty:'Istoric gol'}},title:'Ce scrie, de fapt, pe etichetă?',eyebrow:'Asistentul tău la raft',description:'Fotografiază produsul și înțelege mai ușor ce alegi: alergeni, ingrediente și calitate nutrițională.',photoButton:'Fotografiază produsul',scanLink:'Scanează codul de bare',compare:'Compară produse',compareHint:'Alegeri din aceeași categorie',recent:'Analizate recent',allHistory:'Vezi tot istoricul',legend:'Cum citești scorul',good:'Calitate nutrițională bună',medium:'Calitate nutrițională medie',low:'Calitate nutrițională scăzută',empty:'Niciun produs analizat încă. Produsele deschise apar aici și rămân disponibile fără internet.',promise:'Mai multă claritate. Chiar la raft.',legendGood:'60–100',legendMedium:'40–59',legendLow:'0–39',how:'Din fotografie, în câțiva pași',stepPhoto:'Fotografiezi produsul',stepRead:'Confirmi produsul găsit',stepUnderstand:'Înțelegi eticheta',workflowPending:'Fotografierea și identificarea vor fi conectate de echipa responsabilă de captură.',connection:'Serviciul nu este încă configurat.'},
@@ -93,6 +93,84 @@ insufficientData:'Date insuficiente',title:'Analiza produsului',allergens:'Alerg
    retry: 'O nouă încercare poate porni o nouă procesare. Reîncearcă doar când ești pregătit.',
   },
  },
+} as const;
+// Approved N2 redesign additions.
+export const redesignRo = {
+ nav: {scan:'Scanează', about:'Despre', history:'Istoric', profile:'Profil', settings:'Setări'},
+ tiers: {excellent:'Excelent', good:'Bun', fair:'Moderat', poor:'Slab', bad:'Foarte slab', why:'De ce?', nutriScore:'Nutri-Score'},
+ ledger: {
+  sugar:'Zaharuri', sat:'Grăsimi saturate', salt:'Sare', kcal:'Energie', nutrition_other:'Alte valori nutriționale',
+  additive:'Aditiv', processing:'Procesare', cap:'Limită pentru un aditiv cu risc ridicat', points:(n:number)=>`−${n} puncte`,
+ },
+ processing: {
+  title:'Nivel de procesare', 1:'Neprocesat sau minim procesat', 2:'Ingrediente culinare procesate',
+  3:'Procesat', 4:'Ultraprocesat', unknown:'Nivel de procesare necunoscut',
+  level1:'Alimente neprocesate sau cu prelucrare minimă.', level2:'Ingrediente culinare obținute din alimente.',
+  level3:'Alimente procesate prin combinarea alimentelor cu ingrediente culinare.',
+  level4:'Formulări industriale cu ingrediente și procese specifice ultraprocesării.',
+ },
+ additives: {
+  title:'Aditivi', low:'Risc scăzut', moderate:'Risc moderat', high:'Risc ridicat', notAssessed:'Neevaluat',
+  source:'Sursa evaluării', explanationSource:'Sursa explicației', role:'Rol', romanianOnly:'Explicația este disponibilă în română.',
+  open:(name:string)=>`Vezi detalii despre ${name}`, empty:'Nu avem informații despre aditivi pentru acest produs.',
+ },
+ profile: {
+  title:'Profil', goalTitle:'Ce este important pentru tine?', allergensTitle:'Alergeni de urmărit', avoidTitle:'Alimente și ingrediente de evitat',
+  health:'Alegeri alimentare mai echilibrate', allergies:'Alergii alimentare', family:'Alegeri pentru familie',
+  weight:'Gestionarea greutății', other:'Alt obiectiv', added_sugar:'Zahăr adăugat', sweeteners:'Îndulcitori',
+  ultra_processed:'Produse ultraprocesate', colourings:'Coloranți', palm_oil:'Ulei de palmier',
+  flagNote:'Le semnalăm când scanezi un produs.', savedLocally:'Salvat doar pe acest telefon',
+  pending:'Profilul va fi disponibil după conectarea preferințelor locale.',
+ },
+ onboarding: {
+  goalTitle:'Ce este important pentru tine?', allergensTitle:'Ce alergeni vrei să urmărești?', avoidTitle:'Ce vrei să eviți?',
+  skip:'Omite', continue:'Continuă', done:'Gata, începem', flagNote:'Le semnalăm când scanezi un produs.',
+  savedLocally:'Preferințele sunt salvate doar pe acest telefon.', step:(n:number)=>`Pasul ${n} din 3`,
+ },
+ settings: {
+  title:'Setări', language:'Limbă', romanian:'Română', english:'English', theme:'Aspect', system:'După telefon',
+  light:'Luminos', dark:'Întunecat', install:'Instalează aplicația', clearHistory:'Șterge istoricul',
+  clearHistoryTitle:'Ștergi tot istoricul?', clearHistoryBody:'Ștergem istoricul de pe acest telefon. Căutările în așteptare și contribuțiile publicate rămân.',
+  clearHistoryConfirm:'Da, șterge istoricul', cancel:'Anulează', privacy:'Confidențialitate', terms:'Termeni de utilizare',
+  method:'Cum calculăm scorul', version:'Versiune', resetOnboarding:'Reia configurarea profilului',
+  pending:'Setările suplimentare vor fi disponibile după conectarea lor.',
+ },
+ about: {
+  title:'Despre OkBite', whatTitle:'Înțelege eticheta',
+  whatBody:'Scanează un produs pentru a vedea informațiile nutriționale, alergenii și explicațiile ingredientelor, cu sursele lor.',
+  methodTitle:'Cum funcționează scorul',
+  methodBody:'Scorul folosește informațiile disponibile despre produs. Datele lipsă nu sunt estimate. Consultă metoda de calcul pentru regulile aplicate.',
+  tiersTitle:'Cinci niveluri, explicate', tiersBody:'Excelent, bun, moderat, slab și foarte slab. Scorul nu arată dacă un produs este sigur pentru o persoană cu alergii.',
+  nutriScoreTitle:'Litera Nutri-Score', nutriScoreBody:'Scara de la A la E descrie calitatea nutrițională. Afișăm o reprezentare proprie, fără sigla oficială.',
+  sourcesTitle:'Sursele noastre', sourcesBody:'Ambalajele produselor, Open Food Facts și explicațiile verificate, fiecare cu sursa indicată.',
+  promiseTitle:'Acces simplu', promiseBody:'Gratuit, fără reclame și fără urmărire publicitară. Nu ai nevoie de cont.',
+ },
+ scan: {aimHint:'Încadrează codul de bare în chenar', flashOn:'Pornește blițul', flashOff:'Oprește blițul', manualCode:'Cod manual', photoLabel:'Fotografiază eticheta', loadingReader:'Se pregătește cititorul…'},
+ result: {
+  profileAllergens:'Alergeni din profilul tău', profileMayContain:'Poate conține alergeni din profilul tău',
+  profileAvoid:'Ingrediente pe care vrei să le eviți', profileUnknown:'Nu putem verifica toate preferințele tale.',
+  nutriScoreLabel:'Litera Nutri-Score', closeSheet:'Închide analiza produsului',
+ },
+ history: {
+  search:'Caută după nume sau marcă', noMatches:'Niciun produs găsit.', remove:(name:string)=>`Șterge ${name} din istoric`,
+  removed:'Produs șters din istoric.', undo:'Anulează ștergerea', removeError:'Nu am putut șterge produsul. Încearcă din nou.',
+  scoreUnavailable:'Scor indisponibil', restoreError:'Nu am putut restabili produsul. Reîncearcă anularea ștergerii.',
+ },
+ allergens: {
+  Gluten:'Gluten', Crustacee:'Crustacee', Ouă:'Ouă', Pește:'Pește', Arahide:'Arahide', Soia:'Soia', Lapte:'Lapte',
+  'Fructe cu coajă lemnoasă':'Fructe cu coajă lemnoasă', Țelină:'Țelină', Muștar:'Muștar', Susan:'Susan',
+  'Dioxid de sulf și sulfiți':'Dioxid de sulf și sulfiți', Lupin:'Lupin', Moluște:'Moluște',
+ },
+} as const;
+type Widen<T> = T extends (...args: infer A) => unknown ? (...args: A) => string : T extends string ? string : {[K in keyof T]: Widen<T[K]>};
+export type RedesignCopy = Widen<typeof redesignRo>;
+
+export const roStrings = {
+ ...legacyRo, ...redesignRo,
+ nav: {...legacyRo.nav, ...redesignRo.nav},
+ scan: {...legacyRo.scan, ...redesignRo.scan},
+ result: {...legacyRo.result, ...redesignRo.result},
+ history: {...legacyRo.history, ...redesignRo.history},
 } as const;
 type TextShape<T> = T extends string ? string : T extends (...args: infer A) => infer R ? (...args: A) => R : T extends object ? { [K in keyof T]: TextShape<T[K]> } : T;
 export type Copy = TextShape<typeof roStrings>;

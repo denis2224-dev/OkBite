@@ -25,7 +25,8 @@ export async function loadProduct(by: { id: string } | { code: string }): Promis
     'position,raw_name,ingredient:ingredients(slug,name,group:grp,role,explanation,source,allergen)',
   ).eq('product_id', row.id).order('position');
   if (links.error) throw new Error('Ingredient lookup failed');
-  let resolvedLinks = links.data ?? [];
+  // The untyped join infers an array; both sources are validated by Ingredient.parse below.
+  let resolvedLinks: { position: number; raw_name: string; ingredient: unknown }[] = links.data ?? [];
   if (resolvedLinks.length === 0 && row.ingredients_text?.trim()) {
     const kbQuery = await db.from('ingredients').select(
       'slug,name,aliases,group:grp,role,explanation,source,allergen',
