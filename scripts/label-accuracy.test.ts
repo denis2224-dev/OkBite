@@ -75,6 +75,9 @@ describe('summarize and renderReport', () => {
     expect(text).toContain('b: fiber = 0');
     expect(text).toContain('d: no truth.json');
     expect(renderReport(summarize([]), [], { ...meta, skipped: [] })).toContain('No photo set has been run');
+    const allSkipped = renderReport(summarize([]), [], meta);
+    expect(allSkipped).toContain('No photo set has been run');
+    expect(allSkipped).toContain('d: no truth.json');
   });
 });
 

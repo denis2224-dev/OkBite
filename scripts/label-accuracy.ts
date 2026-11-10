@@ -89,7 +89,10 @@ export function renderReport(
     'Written by `pnpm label:accuracy`. Ground truth was typed by a person from each package; the script never fills it.',
     'Photos stay in the git-ignored `label-photos/` folder.', '',
   ];
-  if (!results.length) return [...head, 'No photo set has been run yet. There are no accuracy results.', ''].join('\n');
+  const notRun = ['## Sets not run', '', ...(meta.skipped.length ? meta.skipped.map((x) => `- ${x}`) : ['None.']), ''];
+  if (!results.length) {
+    return [...head, 'No photo set has been run yet. There are no accuracy results.', '', ...notRun].join('\n');
+  }
   const invented = results.flatMap((r) => r.invented.map((i) => `- ${r.set}: ${i.key} = ${String(i.value).replace('.', ',')}`));
   return [
     ...head,
@@ -112,8 +115,7 @@ export function renderReport(
       `| ${r.set} | ${r.failed ? 'no' : 'yes'} | ${FIELDS.filter((f) => r.fields[f].exact).length}/${FIELDS.length} | ${comma(r.similarity)} |`
     ),
     '',
-    '## Sets not run', '',
-    ...(meta.skipped.length ? meta.skipped.map((x) => `- ${x}`) : ['None.']), '',
+    ...notRun,
   ].join('\n');
 }
 

@@ -6,3 +6,7 @@ Written by `pnpm label:accuracy`. Ground truth was typed by a person from each p
 Photos stay in the git-ignored `label-photos/` folder.
 
 No photo set has been run yet. There are no accuracy results.
+
+## Sets not run
+
+None.
