@@ -172,26 +172,46 @@ function readText(message: unknown): string {
 
 /** The JSON object in a model answer, with or without ``` fences; anything else is an UpstreamError. */
 export function parseJsonObject(raw: string): Record<string, unknown> {
-  const trimmed = raw.trim();
-  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-  const start = trimmed.indexOf('{');
-  const end = trimmed.lastIndexOf('}');
-  for (
-    const candidate of [
-      fenced?.[1],
-      trimmed,
-      start >= 0 && end > start ? trimmed.slice(start, end + 1) : undefined,
-    ]
-  ) {
-    if (!candidate) continue;
-    try {
-      const value: unknown = JSON.parse(candidate);
-      if (value && typeof value === 'object' && !Array.isArray(value)) {
-        return value as Record<string, unknown>;
-      }
-    } catch {
-      // try next candidate
+  let answer = raw.trim();
+  while (/^<think>/i.test(answer)) {
+    const reasoning = answer.match(/^<think>[\s\S]*?<\/think>/i);
+    if (!reasoning) throw new UpstreamError('Claude reasoning is incomplete');
+    answer = answer.slice(reasoning[0].length).trim();
+  }
+  const candidates: unknown[] = [];
+  const collect = (text: string) => {
+    try { candidates.push(JSON.parse(text)); } catch { /* prose is not JSON */ }
+  };
+  collect(answer);
+  if (!candidates.length) {
+    const fences = [...answer.matchAll(/```(?:json)?\s*([\s\S]*?)\s*```/gi)];
+    if (fences.length) {
+      if (fences.length !== 1) throw new UpstreamError('Claude answer is ambiguous');
+      collect(fences[0][1]);
+      if (!candidates.length) throw new UpstreamError('Claude JSON fence is invalid');
+      answer = answer.replace(fences[0][0], '');
     }
+    // Match complete top-level structures, respecting braces inside JSON strings.
+    let start = 0, depth = 0, quoted = false, escaped = false;
+    for (let i = 0; i < answer.length; i++) {
+      const c = answer[i];
+      if (!depth) {
+        if (c === '{' || c === '[') { start = i; depth = 1; }
+      } else if (quoted) {
+        if (escaped) escaped = false;
+        else if (c === '\\') escaped = true;
+        else if (c === '"') quoted = false;
+      } else if (c === '"') quoted = true;
+      else if (c === '{' || c === '[') depth++;
+      else if (c === '}' || c === ']') {
+        if (--depth === 0) collect(answer.slice(start, i + 1));
+      }
+    }
+    if (depth) throw new UpstreamError('Claude JSON is incomplete');
+  }
+  const value = candidates[0];
+  if (candidates.length === 1 && value && typeof value === 'object' && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
   }
   throw new UpstreamError('Claude answer is not a JSON object');
 }

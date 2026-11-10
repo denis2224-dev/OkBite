@@ -150,6 +150,29 @@ Deno.test('parseJsonObject reads fenced JSON; toBase64 round-trips large inputs'
   assert.deepEqual(Uint8Array.from(atob(toBase64(bytes)), (c) => c.charCodeAt(0)), bytes);
 });
 
+Deno.test('parseJsonObject ignores marked reasoning drafts and reads only the final answer', () => {
+  const draft = '```json\n{"kcal":"0 kcal"}\n```';
+  const final = '```json\n{"kcal":"42 kcal"}\n```';
+  assert.deepEqual(parseJsonObject(`<think>${draft}</think>\n${final}`), { kcal: '42 kcal' });
+  assert.throws(() => parseJsonObject(`<think>${draft}`), UpstreamError);
+});
+
+Deno.test('parseJsonObject rejects ambiguous answers and arrays instead of salvaging an object', () => {
+  for (const raw of [
+    'Draft: ```json\n{"x":0}\n```\nFinal: ```json\n{"x":42}\n```',
+    'Draft: {"x":0}\nFinal: {"x":42}',
+    '[{"x":42}]',
+    '```json\n[{"x":42}]\n```',
+    'Answer: [{"x":42}]',
+  ]) assert.throws(() => parseJsonObject(raw), UpstreamError);
+});
+
+Deno.test('parseJsonObject handles prose braces, nested objects and escaped quotes without truncation', () => {
+  const value = { nested: { text: 'a "quote" and } brace', x: 42 } };
+  assert.deepEqual(parseJsonObject(`Read {kcal, sugar}.\n${JSON.stringify(value)}`), value);
+  assert.throws(() => parseJsonObject('{"outer":{"x":42}'), UpstreamError);
+});
+
 Deno.test('askClaude stops retrying before the app gives up on the request', async () => {
   let clock = 0;
   const slow = fake([

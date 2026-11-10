@@ -153,6 +153,8 @@ Run: `pnpm --filter @okbite/shared test` → Expected: FAIL.
 
 ### Task D5: `read-label` function
 
+- [x] **2026-11-10 review follow-up:** ignore marked reasoning drafts, reject ambiguous JSON/arrays, and keep unknown nutrition cells unreadable. Regression tests failed before the fix and pass in Deno; explicit absence markers, zero values and partial reads are preserved.
+
 **Files:**
 - Create: `supabase/functions/read-label/index.ts`, `supabase/functions/read-label/parseLabel.ts`, `supabase/functions/read-label/prompt.ts`
 - Test: `supabase/functions/read-label/parseLabel.test.ts`, `supabase/functions/read-label/index.test.ts`
