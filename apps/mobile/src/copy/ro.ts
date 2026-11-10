@@ -1,8 +1,9 @@
+import { redesignRo } from './strings.ro';
 export function plural(n: number, one: string, many: string): string {
   return `${n}${n >= 20 && (n % 100 === 0 || n % 100 >= 20) ? ' de' : ''} ${n === 1 ? one : many}`;
 }
 const gradeNames: Record<string, string> = {good:'bună',medium:'medie',low:'scăzută',unavailable:'indisponibilă'};
-export const ro = {
+const legacyRo = {
  app: {admin:{"title": "Administrare", "email": "Adresa de e-mail a echipei", "sendLink": "Trimite linkul de autentificare", "signIn": "Autentificare pentru echipa de moderare", "linkSent": "Verifică e-mailul pentru linkul de autentificare.", "notConfigured": "Administrarea nu este configurată încă.", "denied": "Contul nu are drept de moderare.", "failed": "Acțiunea nu a reușit. Încearcă din nou.", "signOut": "Deconectare", "unverified": "Produse neverificate", "reports": "Rapoarte deschise", "emptyProducts": "Nu sunt produse de verificat.", "emptyReports": "Nu sunt rapoarte deschise.", "verify": "Verifică și salvează", "hide": "Ascunde produsul", "reason": "Motivul ascunderii", "open": "Deschide produsul", "closeReport": "Închide raportul", "invalid": "Verifică numele, categoria și valorile introduse.", "reload": "Reîncarcă lista", "unit": "Unitate: g sau ml", "front": "Fotografia produsului", "ingredientsPhoto": "Fotografia ingredientelor", "nutritionPhoto": "Fotografia tabelului nutrițional", "version": "Versiune", "versionLabel": "Versiunea aplicației. Ține apăsat pentru administrare."},name:'OkBite',back:'Înapoi',close:'Închide',cancel:'Anulează',retry:'Încearcă din nou',loading:'Se încarcă…',demo:'Mod demonstrativ',demoNote:'Produse fictive și scoruri ilustrative. Nu folosi aceste date pentru decizii alimentare.',open:'Deschide',done:'Gata',settings:'Aspect',light:'Luminos',dark:'Întunecat',system:'După telefon',unavailable:'Indisponibil',preview:'Explorează un exemplu',unitGram:'g',unitMl:'ml'},
  nav: {close:'Închide',home:'Acasă',compare:'Compară',history:'Istoric',about:'Despre OkBite',privacy:'Confidențialitate',terms:'Termeni de utilizare',method:'Cum calculăm scorul'},
  home: {design: {brand:'okBite',demo:'Setări',themeLabels:{light:'Mod luminos',dark:'Mod întunecat'},description:'Scanezi codul de bare și afli scorul nutrițional, alergenii și ce înseamnă fiecare ingredient.',photo:'Fotografiază eticheta',photoHint:'Pentru produse lipsă',compareHint:'Valori la 100 g',recent:'Scanate recent',empty:'Încă nu ai scanat nimic. Produsele analizate apar aici și rămân disponibile fără internet.',medium:'Medie',low:'Scăzută',footnote:'Scorul descrie calitatea nutrițională la 100 g, comparabilă în aceeași categorie. Nu arată probabilitatea unei boli. În prototip, scorurile sunt ilustrative.',scan:'Scanează produsul',offline:'Fără conexiune · istoricul rămâne disponibil',now:'acum',states:{online:'Conectat',offline:'Fără conexiune',empty:'Istoric gol'}},title:'Ce scrie, de fapt, pe etichetă?',eyebrow:'Asistentul tău la raft',description:'Fotografiază produsul și înțelege mai ușor ce alegi: alergeni, ingrediente și calitate nutrițională.',photoButton:'Fotografiază produsul',scanLink:'Scanează codul de bare',compare:'Compară produse',compareHint:'Alegeri din aceeași categorie',recent:'Analizate recent',allHistory:'Vezi tot istoricul',legend:'Cum citești scorul',good:'Calitate nutrițională bună',medium:'Calitate nutrițională medie',low:'Calitate nutrițională scăzută',empty:'Niciun produs analizat încă. Produsele deschise apar aici și rămân disponibile fără internet.',promise:'Mai multă claritate. Chiar la raft.',legendGood:'60–100',legendMedium:'40–59',legendLow:'0–39',how:'Din fotografie, în câțiva pași',stepPhoto:'Fotografiezi produsul',stepRead:'Confirmi produsul găsit',stepUnderstand:'Înțelegi eticheta',workflowPending:'Fotografierea și identificarea vor fi conectate de echipa responsabilă de captură.',connection:'Serviciul nu este încă configurat.'},
@@ -93,5 +94,12 @@ insufficientData:'Date insuficiente',title:'Analiza produsului',allergens:'Alerg
    retry: 'O nouă încercare poate porni o nouă procesare. Reîncearcă doar când ești pregătit.',
   },
  },
+} as const;
+export const ro = {
+ ...legacyRo, ...redesignRo,
+ nav: {...legacyRo.nav, ...redesignRo.nav},
+ scan: {...legacyRo.scan, ...redesignRo.scan},
+ result: {...legacyRo.result, ...redesignRo.result},
+ history: {...legacyRo.history, ...redesignRo.history},
 } as const;
 export type Copy = typeof ro;
