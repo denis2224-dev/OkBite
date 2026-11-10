@@ -50,5 +50,12 @@
       "form_factor": "narrow",
       "label": "Rezultatul unui produs"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Scanează",
+      "short_name": "Scanează",
+      "url": "/"
+    }
   ]
 }
