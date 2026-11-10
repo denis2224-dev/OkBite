@@ -30,17 +30,18 @@ export function HistoryScreen() {
   const focused = useRef(false);
   const generation = useRef(0);
   const clearPending = useRef(false);
+  const refreshPending = useRef(false);
 
-  const load = useCallback(async () => {
-    if (clearPending.current) return;
+  const load = useCallback(async (preserveError = false) => {
+    if (clearPending.current) { refreshPending.current = true; return; }
     const request = ++generation.current;
     setLoading(true);
-    setError(null);
+    if (!preserveError) setError(null);
     try {
       const rows = await listHistory();
       if (focused.current && generation.current === request) setEntries(rows);
     } catch {
-      if (focused.current && generation.current === request) setError('load');
+      if (!preserveError && focused.current && generation.current === request) setError('load');
     } finally {
       if (focused.current && generation.current === request) setLoading(false);
     }
@@ -66,16 +67,26 @@ export function HistoryScreen() {
     try {
       await removeFromHistory(entry.product.id);
       if (focused.current) setEntries(rows => rows.filter(row => row.product.id !== entry.product.id));
-      toast(ro.history.removed, { label: ro.history.undo, onPress: () => {
+      const undo = () => {
         if (mutation.current !== revision) return;
-        void restoreToHistory(entry).then(() => { if (focused.current) void load(); }).catch(() => toast(ro.history.removeError));
-      } });
+        void restoreToHistory(entry).then(() => { if (focused.current) void load(); }).catch(() => {
+          if (mutation.current === revision) toast(ro.history.restoreError, { label: ro.history.undo, onPress: undo });
+        });
+      };
+      toast(ro.history.removed, { label: ro.history.undo, onPress: undo });
     } catch { toast(ro.history.removeError); }
-    finally { clearPending.current = false; if (focused.current) setClearing(false); }
+    finally { finishMutation(); }
+  }
+
+  function finishMutation(preserveError = false) {
+    clearPending.current = false;
+    if (focused.current) setClearing(false);
+    if (refreshPending.current) { refreshPending.current = false; if (focused.current) void load(preserveError); }
   }
 
   async function confirmClear() {
     if (clearPending.current) return;
+    let failed = false;
     clearPending.current = true;
     mutation.current++;
     generation.current++;
@@ -86,10 +97,10 @@ export function HistoryScreen() {
       await clearHistory();
       if (focused.current) { setEntries([]); setConfirming(false); }
     } catch {
+      failed = true;
       if (focused.current) setError('clear');
     } finally {
-      clearPending.current = false;
-      if (focused.current) setClearing(false);
+      finishMutation(failed);
     }
   }
 
