@@ -22,7 +22,7 @@ https://okbite-ir1.pages.dev/ (production, commit `3f6fa49`).
 
 - **LCP is the startup artwork.** `assets/brand/startup-screen.png` is 1,256 KB of the page's 2,084 KB.
   Lighthouse estimates about 6 s of LCP saved by serving it as WebP/AVIF at display size.
-  Owner: R4 (`StartupGate.tsx`, brand assets), see the GitHub issue linked in the PR.
+  Owner: R4 (`StartupGate.tsx`, brand assets), [#126](https://github.com/denis2224-dev/OkBite/issues/126).
 - **JavaScript:** 468 KB of scripts, 2.7 s of execution on a slow phone, 242 KB unused at first load.
 - **SEO 83:** no meta description and no `robots.txt`. Both are fixed in this PR.
 
