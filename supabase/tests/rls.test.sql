@@ -1,5 +1,5 @@
 begin;
-select plan(53);
+select plan(55);
 select has_table('public', 'products','products table exists');
 -- Test-only states and identities; every file rolls back.
 insert into auth.users (id) values ('00000000-0000-4000-8000-000000000001'), ('00000000-0000-4000-8000-000000000002');
@@ -20,7 +20,9 @@ select is((select count(*) from products where status='verified'),6::bigint,'ano
 select is((select count(*) from products where status='unverified'),1::bigint,'anon sees unverified');
 select is((select count(*) from products where status='hidden'),0::bigint,'anon cannot see hidden');
 select is((select count(*) from product_ingredients where raw_name='secret'),0::bigint,'hidden ingredient links excluded');
-select is((select count(*) from categories),3::bigint,'public categories');
+select is((select count(*) from categories where slug <> 'necunoscut'),3::bigint,'public categories');
+select is((select count(*) from categories),4::bigint,'public categories include fallback');
+select is((select score_kind from categories where slug='necunoscut'),'general','unknown category is available without a reference-data import');
 select ok((select count(*) > 0 from ingredients),'public ingredients');
 select ok((select count(*) > 0 from product_ingredients),'public visible ingredient links');
 select throws_ok('select added_by_device from products','42501',null,'device identifiers are private');
