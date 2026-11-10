@@ -1,0 +1,20 @@
+# CSP is report-only until a week of clean previews (21 Nov 2026), then rename it to Content-Security-Policy.
+/*
+  Strict-Transport-Security: max-age=31536000
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(self), microphone=(), geolocation=()
+  X-Frame-Options: DENY
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://ndnhzultkotujtkskulu.supabase.co; connect-src 'self' https://ndnhzultkotujtkskulu.supabase.co; worker-src 'self'; media-src 'self' blob:; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+
+/sw.js
+  Cache-Control: no-cache
+
+/register-sw.js
+  Cache-Control: no-cache
+
+/_expo/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/manifest.webmanifest
+  Content-Type: application/manifest+json
