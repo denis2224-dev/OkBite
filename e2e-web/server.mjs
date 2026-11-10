@@ -2,8 +2,10 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
+import { unknownStub } from './unknown-stubs.mjs';
 const root = resolve('apps/mobile/dist-e2e');
 const entries = JSON.parse(await readFile('apps/mobile/src/test/preview-data.json', 'utf8'));
+const categories = JSON.parse(await readFile('data/categories.json', 'utf8'));
 // Applies Cloudflare Pages _headers rules (exact paths and trailing-* prefixes) so tests see production headers.
 const rules = (await readFile(resolve(root, '_headers'), 'utf8')).split(/\r?\n(?=\S)/).map(block => {
   const [path, ...lines] = block.trim().split(/\r?\n/);
@@ -21,6 +23,7 @@ const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/cs
 const serve = async (req, res) => {
   try {
     const url = new URL(req.url, 'http://127.0.0.1:18766');
+    if (await unknownStub(req, res, url, entries[0], categories)) return;
     applyHeaders(res, url.pathname);
     if (url.pathname === '/functions/v1/lookup') {
       const entry = entries.find(item => item.product.id === url.searchParams.get('id'));
