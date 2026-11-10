@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { Product, ScoreResult } from '@okbite/shared';
-import { writeHistory, readHistory, deleteHistory } from './db';
+import { writeHistory, readHistory, deleteHistory, restoreHistory } from './db';
 
 const Entry = z.object({ product: Product, score: ScoreResult, savedAt: z.string().datetime() });
 export type HistoryEntry = z.infer<typeof Entry>;
@@ -20,3 +20,9 @@ export async function getFromHistory(id: string): Promise<HistoryEntry | undefin
   return (await listHistory()).find(entry => entry.product.id === id);
 }
 export async function clearHistory(): Promise<void> { await deleteHistory(); }
+
+export async function removeFromHistory(id: string): Promise<void> { await deleteHistory(id); }
+export async function restoreToHistory(entry: HistoryEntry): Promise<void> {
+  const value = Entry.parse(entry);
+  await restoreHistory(value.product.id, JSON.stringify(value), value.savedAt);
+}

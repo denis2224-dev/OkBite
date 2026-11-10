@@ -1,5 +1,5 @@
 import { DatabaseSync as mockDatabaseSync } from 'node:sqlite';
-import { saveToHistory, listHistory, getFromHistory, clearHistory } from './store';
+import { saveToHistory, listHistory, getFromHistory, clearHistory, removeFromHistory, restoreToHistory } from './store';
 import { writeHistory } from './db';
 import { foundYogurt } from '../../test/fixtures';
 
@@ -44,4 +44,23 @@ it('clears history and rejects records that break the shared contract', async ()
   await saveToHistory(foundYogurt);
   await clearHistory();
   expect(await listHistory()).toEqual([]);
+});
+
+it('deletes one item and restores its original date without affecting other rows', async () => {
+  const other = { ...foundYogurt, product: { ...foundYogurt.product, id: '00000000-0000-4000-8000-000000000002' } };
+  await saveToHistory(foundYogurt);
+  const original = (await listHistory())[0]!;
+  await saveToHistory(other);
+  await removeFromHistory(original.product.id);
+  expect((await listHistory()).map(row => row.product.id)).toEqual([other.product.id]);
+  await restoreToHistory(original);
+  expect(await getFromHistory(original.product.id)).toEqual(original);
+});
+it('undo never replaces a product scanned again after deletion', async () => {
+  await saveToHistory(foundYogurt);
+  const original = (await listHistory())[0]!;
+  await removeFromHistory(original.product.id);
+  await saveToHistory({ ...foundYogurt, product: { ...foundYogurt.product, name: 'Actualizat după ștergere' } });
+  await restoreToHistory(original);
+  expect((await getFromHistory(original.product.id))?.product.name).toBe('Actualizat după ștergere');
 });
