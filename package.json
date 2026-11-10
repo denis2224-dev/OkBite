@@ -75,6 +75,7 @@
     "typecheck:app": "tsc --noEmit",
     "data:load": "tsx scripts/load-data.ts",
     "data:off": "tsx scripts/import-off.ts",
+    "label:accuracy": "tsx scripts/label-accuracy.ts",
     "preinstall": "node scripts/verify-toolchain.mjs",
     "verify:toolchain": "node scripts/verify-toolchain.mjs",
     "test:toolchain": "node --test scripts/verify-toolchain.test.mjs",
