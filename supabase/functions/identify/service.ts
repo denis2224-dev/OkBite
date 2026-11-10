@@ -6,7 +6,7 @@ import {
   IdentifyResponse,
   Uuid,
 } from '../_shared/contract.ts';
-import { askClaude, toBase64, validateProviderImages } from '../_lib/claude.ts';
+import { askClaude, PreProviderError, toBase64, validateProviderImages } from '../_lib/claude.ts';
 import { loadProduct } from '../_lib/db.ts';
 import { adminClient, logEvent } from '../_lib/http.ts';
 import { releaseUsage, reserveUsage } from '../_lib/quota.ts';
@@ -49,43 +49,44 @@ export function createService(deps = { adminClient, loadProduct, saveJpeg, askCl
     const db = deps.adminClient();
     const event = await reserveUsage(db, device, 'photo'); // 40 per device per 24 h (C6 migration)
     let photoPath: string | undefined;
-    let image: string;
+    let providerStarted = false;
     try {
       photoPath = await deps.saveJpeg(photo, device, 'front');
       // Claude gets the stored copy, which saveJpeg re-encoded without EXIF/GPS metadata.
       const stored = await db.storage.from('uploads').download(photoPath);
       if (stored.error) throw new Error('Private photo read failed');
-      image = toBase64(new Uint8Array(await stored.data.arrayBuffer()));
+      const image = toBase64(new Uint8Array(await stored.data.arrayBuffer()));
       validateProviderImages([image]);
+      providerStarted = true;
+      const read = parseFront(await deps.askClaude([image], FRONT_PROMPT));
+      const found = read.code ? await deps.loadProduct({ code: read.code }) : null;
+      const candidates = found ? [] : await findCandidates(db, read);
+      const body = IdentifyResponse.parse(
+        found
+          ? { status: 'found', ...found, photoPath }
+          : candidates.length
+          ? { status: 'candidates', candidates, read, photoPath }
+          : { status: 'not_found', read, photoPath },
+      );
+      try {
+        if (found) await deps.logEvent('identified', device, found.product.id);
+        else if (!candidates.length) await deps.logEvent('not_found', device);
+      } catch {
+        console.warn('Identify analytics unavailable'); // analytics must not hide a valid answer
+      }
+      return body;
     } catch (error) {
-      // Nothing reached Claude: undo the upload and the quota use (same as read-label).
+      // Failed requests return no reusable paths. Keep admission on uncertain/billed attempts.
       try {
         if (photoPath) {
           const { error } = await db.storage.from('uploads').remove([photoPath]);
           if (error) throw new Error('Private photo cleanup failed');
         }
       } finally {
-        await releaseUsage(db, event);
+        if (!providerStarted || error instanceof PreProviderError) await releaseUsage(db, event);
       }
       throw error;
     }
-    const read = parseFront(await deps.askClaude([image], FRONT_PROMPT));
-    const found = read.code ? await deps.loadProduct({ code: read.code }) : null;
-    const candidates = found ? [] : await findCandidates(db, read);
-    const body = IdentifyResponse.parse(
-      found
-        ? { status: 'found', ...found, photoPath }
-        : candidates.length
-        ? { status: 'candidates', candidates, read, photoPath }
-        : { status: 'not_found', read, photoPath },
-    );
-    try {
-      if (found) await deps.logEvent('identified', device, found.product.id);
-      else if (!candidates.length) await deps.logEvent('not_found', device);
-    } catch {
-      console.warn('Identify analytics unavailable'); // analytics must not hide a valid answer
-    }
-    return body;
   };
 }
 export const identify = createService();

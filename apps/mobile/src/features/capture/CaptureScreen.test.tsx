@@ -129,6 +129,20 @@ describe('CaptureScreen', () => {
     expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
   });
 
+  it('keeps the taken photo on screen while it is analysed and on an error, then returns to the camera', async () => {
+    let fail!: (e: unknown) => void;
+    identify.mockReturnValue(new Promise((_r, reject) => { fail = reject; }));
+    await render(<CaptureScreen />);
+    await cameraReady();
+    expect(screen.queryByTestId('capture-preview')).toBeNull();
+    await fireEvent.press(shutter());
+    expect((await screen.findByTestId('capture-preview')).props.source).toEqual({ uri: 'file:///shot.jpg' });
+    await act(async () => { fail(new ApiError('rate_limited')); });
+    expect(screen.getByTestId('capture-preview')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: ro.nav.close }));
+    expect(screen.queryByTestId('capture-preview')).toBeNull();
+  });
+
   it('offers retry on the same photo when offline queue storage fails', async () => {
     identify.mockRejectedValueOnce(Object.assign(new Error('offline'), { code: 'offline' })).mockResolvedValue(identifyFound);
     await render(<CaptureScreen />);

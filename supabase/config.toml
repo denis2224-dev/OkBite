@@ -51,3 +51,7 @@ import_map = "./functions/deno.json"
 [auth]
 site_url = "http://localhost:8081"
 additional_redirect_urls = ["http://localhost:8081/admin", "okbite://admin"]
+
+[functions.enrich-product]
+verify_jwt = false
+import_map = "./functions/deno.json"

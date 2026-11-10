@@ -1,5 +1,5 @@
 import { useEffect, useState, type PropsWithChildren } from 'react';
-import { TextInput } from 'react-native';
+import { AppState, TextInput } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
@@ -28,9 +28,14 @@ export function AdminGate({ children }: PropsWithChildren) {
   useEffect(() => {
     let alive = true;
     if (client) {
-      void client.auth.getSession().then(({ data }) => {
-        if (alive) setSession(data.session);
-      });
+      void client.auth
+        .getSession()
+        .then(({ data }) => {
+          if (alive) setSession(data.session);
+        })
+        .catch(() => {
+          if (alive) setMessage(ro.app.admin.failed);
+        });
       const subscription = client.auth.onAuthStateChange((_event, value) => {
         if (alive) {
           setSession(value);
@@ -38,11 +43,21 @@ export function AdminGate({ children }: PropsWithChildren) {
         }
       });
       const accept = async (url: string | null) => {
-        const tokens = sessionFromUrl(url);
+        const tokens = sessionFromUrl(url, Linking.createURL('admin'));
         if (tokens) {
           const result = await client.auth.setSession(tokens);
           if (result.error) throw result.error;
-          router.replace('/admin');
+          const member = await client.rpc('is_moderator');
+          if (member.error || member.data !== true) {
+            await client.auth.signOut();
+            if (alive) {
+              setSession(null);
+              setMemberId(null);
+              setMessage(ro.app.admin.denied);
+            }
+            return;
+          }
+          if (alive) router.replace('/admin');
         }
       };
       void consumeInitialAuthUrl()
@@ -65,16 +80,37 @@ export function AdminGate({ children }: PropsWithChildren) {
   }, [client]);
   useEffect(() => {
     let alive = true;
-    if (session && client) {
-      void client.rpc('is_moderator').then(({ data, error }) => {
+    let checking = false;
+    const check = async () => {
+      if (!session || !client || checking) return;
+      checking = true;
+      try {
+        const { data, error } = await client.rpc('is_moderator');
+        if (error || data !== true) throw new Error('Moderator access denied');
         if (alive) {
-          setMemberId(!error && data === true ? session.user.id : null);
-          setMessage(!error && data === true ? '' : ro.app.admin.denied);
+          setMemberId(session.user.id);
+          setMessage('');
         }
-      });
-    }
+      } catch {
+        if (alive) {
+          setMemberId(null);
+          setSession(null);
+          setMessage(ro.app.admin.denied);
+          void client!.auth.signOut({ scope: 'local' }).catch(() => {});
+        }
+      } finally {
+        checking = false;
+      }
+    };
+    void check();
+    const timer = setInterval(() => void check(), 30_000);
+    const foreground = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void check();
+    });
     return () => {
       alive = false;
+      clearInterval(timer);
+      foreground.remove();
     };
   }, [session, client]);
   const signIn = async () => {
@@ -129,7 +165,11 @@ export function AdminGate({ children }: PropsWithChildren) {
         <Button
           variant="ghost"
           onPress={() => {
-            void getAdminClient().auth.signOut();
+            setSession(null);
+            setMemberId(null);
+            void getAdminClient()
+              .auth.signOut({ scope: 'local' })
+              .catch(() => {});
           }}
         >
           {ro.app.admin.signOut}

@@ -353,3 +353,23 @@ describe('importOff and loadData against stubbed services', () => {
     ]);
   });
 });
+
+describe('OFF normalization boundaries', () => {
+  it('returns null rather than throwing for malformed direct inputs', () => {
+    for (const raw of [null, {}, { ...off, code: 123 }, { ...off, brands: [] }]) {
+      expect(() => mapOffProduct(raw as unknown as OffProduct)).not.toThrow();
+      expect(mapOffProduct(raw as unknown as OffProduct)).toBeNull();
+    }
+  });
+  it('accepts nullable optional OFF fields without losing an otherwise usable product', () => {
+    expect(mapOffProduct({ ...off, product_name_ro: null, ingredients_text_ro: null, quantity: null, nutriments: null } as unknown as OffProduct))
+      .toMatchObject({ name: off.product_name, quantity: '', nutrients: { kcal: null } });
+  });
+  it('uses normalized _100g fields even when the source table was entered per serving', () => {
+    expect(mapOffProduct({ ...off, nutrition_data_per: 'serving', nutriments: { sugars_100g: 10, sugars_serving: 2 } })?.nutrients.sugar).toBe(10);
+    expect(mapOffProduct({ ...off, nutrition_data_per: 'serving', nutriments: { sugars_serving: 2 } })?.nutrients.sugar).toBeNull();
+  });
+  it('keeps normalized OFF liquid nutrition per 100 ml when the package unit is ml', () => {
+    expect(mapOffProduct({ ...off, nutrition_data_per: '100g', product_quantity_unit: 'ml' } as OffProduct)?.unit).toBe('ml');
+  });
+});

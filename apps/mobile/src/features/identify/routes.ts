@@ -19,6 +19,17 @@ export type AddRouteParams = {
   name?: string;
   quantity?: string;
   photoPath?: string;
+  frontPhotoId?: string;
+  unknownDraftId?: string;
+  flow?: 'guided' | 'manual';
+};
+
+// Off in real builds until the backend is ready; the e2e stub build sets EXPO_PUBLIC_GUIDED_ADD=1.
+export const GUIDED_ADD_ENABLED = process.env.EXPO_PUBLIC_GUIDED_ADD === '1';
+let guidedAddOverride: boolean | null = null;
+export const isGuidedAddEnabled = (): boolean => guidedAddOverride ?? GUIDED_ADD_ENABLED;
+export const setGuidedAddEnabled = (enabled: boolean | null): void => {
+  guidedAddOverride = enabled;
 };
 
 export type AddInitialValues = {
@@ -28,6 +39,8 @@ export type AddInitialValues = {
   name: string | null;
   quantity: string | null;
   photoPath: string | null;
+  frontPhotoId?: string;
+  unknownDraftId?: string;
 };
 
 export type IdentifyRouteState =
@@ -40,8 +53,17 @@ const CONFIDENT_SIMILARITY = 0.6;
 
 export const productRoute = (id: string) => `/product/${id}` as const;
 
-export const identifyPhotoRoute = (response: IdentifyPayload) =>
-  ({ pathname: '/identify', params: { source: 'photo', payload: JSON.stringify(response) } }) as const;
+export const identifyPhotoRoute = (response: IdentifyPayload, frontPhotoId?: string) => {
+  const cleanFrontPhotoId = cleanParam(frontPhotoId);
+  return {
+    pathname: '/identify' as const,
+    params: {
+      source: 'photo' as const,
+      payload: JSON.stringify(response),
+      ...(cleanFrontPhotoId ? { frontPhotoId: cleanFrontPhotoId } : {}),
+    },
+  };
+};
 
 export const identifyCodeRoute = (code: string) =>
   ({ pathname: '/identify', params: { source: 'code', code } }) as const;
@@ -61,10 +83,16 @@ export function addProductRoute({
   read,
   photoPath,
   queueId,
+  frontPhotoId,
+  unknownDraftId,
+  flow,
 }: {
   read: FrontRead;
   photoPath: string | null;
   queueId?: string;
+  frontPhotoId?: string;
+  unknownDraftId?: string;
+  flow?: 'guided' | 'manual';
 }): { pathname: '/add'; params: AddRouteParams } {
   const params: AddRouteParams = {};
   const code = read.code ? normalizeCode(read.code) : null;
@@ -72,6 +100,9 @@ export function addProductRoute({
   const name = cleanParam(read.name ?? undefined);
   const quantity = cleanParam(read.quantity ?? undefined);
   const cleanPhoto = cleanParam(photoPath ?? undefined);
+  const cleanFrontPhotoId = cleanParam(frontPhotoId);
+  const cleanUnknownDraftId = cleanParam(unknownDraftId);
+  const resolvedFlow = flow ?? (isGuidedAddEnabled() ? 'guided' : undefined);
 
   if (code) params.code = code;
   if (brand) params.brand = brand;
@@ -79,6 +110,9 @@ export function addProductRoute({
   if (quantity) params.quantity = quantity;
   if (cleanPhoto) params.photoPath = cleanPhoto;
   if (queueId) params.queueId = queueId;
+  if (cleanFrontPhotoId) params.frontPhotoId = cleanFrontPhotoId;
+  if (cleanUnknownDraftId) params.unknownDraftId = cleanUnknownDraftId;
+  if (resolvedFlow) params.flow = resolvedFlow;
   return { pathname: '/add', params };
 }
 
@@ -87,8 +121,12 @@ export function parseAddParams(
   raw: Record<string, string | string[] | undefined>,
 ): AddInitialValues {
   const rawCode = cleanParam(raw.code);
+  const frontPhotoId = cleanParam(raw.frontPhotoId);
+  const unknownDraftId = cleanParam(raw.unknownDraftId);
   return {
     ...(cleanParam(raw.queueId) ? { queueId: cleanParam(raw.queueId)! } : {}),
+    ...(frontPhotoId ? { frontPhotoId } : {}),
+    ...(unknownDraftId ? { unknownDraftId } : {}),
     code: rawCode ? normalizeCode(rawCode) : null,
     brand: cleanParam(raw.brand),
     name: cleanParam(raw.name),

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Text } from 'react-native';
+import { StatusBar, StyleSheet, Text } from 'react-native';
 import { act, render, screen } from '@testing-library/react-native';
 import { StartupGate } from './StartupGate';
 import { ro } from '../../copy/ro';
@@ -48,4 +48,21 @@ it('releases when fonts finish loading and clears its timer on disposal', async 
   expect(cancel).toHaveBeenCalledWith(timer);
   schedule.mockRestore();
   cancel.mockRestore();
+});
+
+it('fills the loading viewport with the existing branded background without cropping the logo', async () => {
+  await render(<StartupGate ready={false}><Text>Application</Text></StartupGate>);
+  const background = screen.getByTestId('startup-background');
+  const artwork = screen.getByTestId('startup-artwork');
+  expect(background.props.resizeMode).toBe('cover');
+  expect(artwork.props.resizeMode).toBe('contain');
+  expect(StyleSheet.flatten(background.props.style)).toMatchObject({width:'100%',height:'100%'});
+  expect(StyleSheet.flatten(artwork.props.style)).toMatchObject({width:'100%',height:'100%'});
+});
+
+it('keeps native status-bar icons readable on the cream loading canvas', async () => {
+  const pushed = jest.spyOn(StatusBar, 'pushStackEntry');
+  await render(<StartupGate ready={false}><Text>Application</Text></StartupGate>);
+  expect(pushed).toHaveBeenCalledWith(expect.objectContaining({barStyle:'dark-content'}));
+  pushed.mockRestore();
 });

@@ -35,7 +35,7 @@ integrationTest('lookup resolves seeded code/id, label order, nulls and usage ev
     assert.equal(found.product.addedAt, '2026-10-12');
     assert.equal(found.product.verifiedAt, '2026-10-28');
     assert.deepEqual(await lookup(`id=${seedId}`), found);
-    assert.deepEqual(await lookup('code=4840001009995'), { status: 'not_found' });
+    assert.deepEqual(await lookup('code=4840001009994'), { status: 'not_found' });
     const juice = await loadProduct({ code: '4840001000052' });
     assert.equal(juice?.product.nutrients.sugar, null);
     assert.equal(juice?.score.grade, 'unavailable');
