@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { Category, Code, Ingredient, type NutrientKey, Product, ScoreResult, Uuid } from '../_shared/contract.ts';
+import { BUILTIN_INGREDIENTS, matchIngredients, resolveOffCategory } from '../_shared/ingredients/index.ts';
 import { computeScore } from '../_shared/score/index.ts';
 
 // Explicit public columns: C2 deliberately denies SELECT * to shopper readers.
@@ -24,12 +25,35 @@ export async function loadProduct(by: { id: string } | { code: string }): Promis
     'position,raw_name,ingredient:ingredients(slug,name,group:grp,role,explanation,source,allergen)',
   ).eq('product_id', row.id).order('position');
   if (links.error) throw new Error('Ingredient lookup failed');
+  let resolvedLinks = links.data ?? [];
+  if (resolvedLinks.length === 0 && row.ingredients_text?.trim()) {
+    const kbQuery = await db.from('ingredients').select(
+      'slug,name,aliases,group:grp,role,explanation,source,allergen',
+    );
+    const mergedKb = new Map(BUILTIN_INGREDIENTS.map((entry) => [entry.slug, entry]));
+    for (const dbEntry of kbQuery.data ?? []) {
+      mergedKb.set(dbEntry.slug, dbEntry);
+    }
+    const kbList = [...mergedKb.values()];
+    resolvedLinks = matchIngredients(row.ingredients_text, kbList).map((m, position) => ({
+      position,
+      raw_name: m.rawName,
+      ingredient: m.slug ? (mergedKb.get(m.slug) ?? null) : null,
+    }));
+  }
   const photoUrl = (path: string | null) =>
     path?.startsWith(`${row.id}/`) &&
       /^[a-f0-9-]+\/[a-z][a-z0-9-]*\.jpg$/.test(path)
       ? db.storage.from('products').getPublicUrl(path).data.publicUrl
       : null;
   const date = (value: string) => new Date(value).toISOString().slice(0, 10);
+  const resolvedCategory = resolveOffCategory({
+    category: Category.parse(row.category),
+    source: String(row.source ?? ''),
+    unit: row.unit,
+    name: String(row.name ?? ''),
+    ingredientsText: String(row.ingredients_text ?? ''),
+  });
   const product = Product.parse({
     id: row.id,
     code: row.code,
@@ -38,7 +62,7 @@ export async function loadProduct(by: { id: string } | { code: string }): Promis
     brand: row.brand,
     quantity: row.quantity,
     unit: row.unit,
-    category: Category.parse(row.category),
+    category: resolvedCategory,
     portion: { amount: Number(row.portion_amount), label: row.portion_label },
     nutrients: {
       kcal: row.kcal,
@@ -51,7 +75,7 @@ export async function loadProduct(by: { id: string } | { code: string }): Promis
       fruitVegPct: row.fruit_veg_pct,
     },
     ingredientsText: row.ingredients_text,
-    ingredients: (links.data ?? []).map((link) => ({
+    ingredients: resolvedLinks.map((link) => ({
       ...(link.ingredient ? Ingredient.parse(link.ingredient) : {
         slug: null,
         group: null,

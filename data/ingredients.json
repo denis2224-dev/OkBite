@@ -1,1 +1,532 @@
-[]
+[
+  {
+    "slug": "apa-carbogazoasa",
+    "name": "Apă carbogazoasă",
+    "aliases": [
+      "apa",
+      "apa minerala",
+      "apa carbonatata",
+      "apa purificata"
+    ],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Apă potabilă sau minerală în care s-a dizolvat dioxid de carbon pentru efervescență. Nu aduce calorii, zaharuri sau grăsimi.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "dioxid-de-carbon-e290",
+    "name": "Dioxid de carbon (E290)",
+    "aliases": [
+      "dioxid de carbon",
+      "e290",
+      "e 290"
+    ],
+    "group": "add",
+    "role": "Agent de carbogazificare (E290)",
+    "explanation": "Gaz alimentar dizolvat în băuturi pentru a le face acidulate (bule). Poate da senzație de balonare la consum rapid sau în cantități mari.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "colorant-caramel-e150d",
+    "name": "Caramel cu sulfit de amoniu (E150d)",
+    "aliases": [
+      "caramel cu sulfit de amoniu",
+      "caramel sulfit de amoniu",
+      "colorant caramel",
+      "caramel",
+      "e150d",
+      "e 150d",
+      "e150a",
+      "e150b",
+      "e150c"
+    ],
+    "group": "add",
+    "role": "Colorant sintetic (E150d)",
+    "explanation": "Colorant maro închis folosit frecvent în băuturile tip cola. Este un aditiv cu rol strict estetic; EFSA a stabilit o doză zilnică acceptabilă (DZA) pentru clasa caramelilor (E150a–d) și limite pentru compușii secundari (4-MEI).",
+    "source": "https://www.efsa.europa.eu/en/efsajournal/pub/2004",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "acid-fosforic-e338",
+    "name": "Acid fosforic (E338)",
+    "aliases": [
+      "acid fosforic",
+      "acid ortofosforic",
+      "e338",
+      "e 338"
+    ],
+    "group": "add",
+    "role": "Acidifiant (E338)",
+    "explanation": "Aditiv care conferă gustul acrișor specific băuturilor cola și echilibrează dulceața. Aciditatea ridicată din băuturile răcoritoare poate eroda smalțul dentar la consum frecvent, iar aportul excesiv de fosfați aditivi este monitorizat de EFSA.",
+    "source": "https://www.efsa.europa.eu/en/efsajournal/pub/5674",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "acid-citric-e330",
+    "name": "Acid citric (E330)",
+    "aliases": [
+      "acid citric",
+      "e330",
+      "e 330"
+    ],
+    "group": "add",
+    "role": "Acidifiant și antioxidant (E330)",
+    "explanation": "Acid organic prezent natural în citrice și produs industrial prin fermentare. Dă gust acrișor și stabilizează băuturile; în concentrații mari în băuturi acide poate contribui la eroziunea smalțului dentar.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "citrati-de-sodiu-e331",
+    "name": "Citrați de sodiu (E331)",
+    "aliases": [
+      "citrati de sodiu",
+      "citrat de sodiu",
+      "citrat trisodic",
+      "e331",
+      "e 331"
+    ],
+    "group": "add",
+    "role": "Corector de aciditate (E331)",
+    "explanation": "Săruri de sodiu ale acidului citric folosite pentru a regla aciditatea băuturilor răcoritoare și a stabiliza gustul.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "aspartam-e951",
+    "name": "Aspartam (E951)",
+    "aliases": [
+      "aspartam",
+      "e951",
+      "e 951"
+    ],
+    "group": "add",
+    "role": "Îndulcitor intens fără calorii (E951)",
+    "explanation": "Îndulcitor artificial de ~200 de ori mai dulce decât zahărul. Conține o sursă de fenilalanină (contraindicat persoanelor cu fenilcetonurie). În algoritmul Nutri-Score 2023 pentru băuturi, îndulcitorii fără calorii adaugă 4 puncte nefavorabile pentru a nu încuraja obișnuința cu gustul dulce; OMS (2023) nu recomandă îndulcitorii fără zahăr pentru controlul greutății pe termen lung.",
+    "source": "https://www.efsa.europa.eu/en/efsajournal/pub/3496",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "acesulfam-k-e950",
+    "name": "Acesulfam K (E950)",
+    "aliases": [
+      "acesulfam k",
+      "acesulfam de potasiu",
+      "acesulfam-k",
+      "acesulfam",
+      "e950",
+      "e 950"
+    ],
+    "group": "add",
+    "role": "Îndulcitor intens fără calorii (E950)",
+    "explanation": "Îndulcitor sintetic fără calorii, folosit adesea împreună cu aspartamul sau ciclamații pentru a masca postgustul amărui. În Nutri-Score 2023, prezența îndulcitorilor în băuturi este penalizată cu 4 puncte nefavorabile.",
+    "source": "https://www.efsa.europa.eu/en/efsajournal/pub/9398",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "ciclamat-de-sodiu-e952",
+    "name": "Ciclamați (E952)",
+    "aliases": [
+      "ciclamati",
+      "ciclamat de sodiu",
+      "acid ciclamic",
+      "ciclamat",
+      "e952",
+      "e 952"
+    ],
+    "group": "add",
+    "role": "Îndulcitor intens fără calorii (E952)",
+    "explanation": "Îndulcitor sintetic fără calorii (de ~30–50 de ori mai dulce decât zahărul), utilizat în băuturi răcoritoare „zero zahăr”. Are o doză zilnică acceptabilă mai mică decât alți îndulcitori (7 mg/kg corp/zi) și declanșează penalizarea de 4 puncte în Nutri-Score 2023 pentru băuturi.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "sucraloza-e955",
+    "name": "Sucraloză (E955)",
+    "aliases": [
+      "sucraloza",
+      "e955",
+      "e 955"
+    ],
+    "group": "add",
+    "role": "Îndulcitor intens fără calorii (E955)",
+    "explanation": "Îndulcitor artificial obținut prin clorurarea zaharozei, de ~600 de ori mai dulce decât zahărul. În băuturi, prezența îndulcitorilor fără calorii adaugă 4 puncte nefavorabile în calculul Nutri-Score 2023.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "zaharina-e954",
+    "name": "Zaharină (E954)",
+    "aliases": [
+      "zaharina",
+      "zaharina de sodiu",
+      "e954",
+      "e 954"
+    ],
+    "group": "add",
+    "role": "Îndulcitor intens fără calorii (E954)",
+    "explanation": "Îndulcitor sintetic intens fără calorii. În băuturi răcoritoare, îndulcitorii fără calorii primesc 4 puncte nefavorabile în Nutri-Score 2023.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "glicozide-steviolice-e960a",
+    "name": "Glicozide steviolice din stevia (E960a)",
+    "aliases": [
+      "glicozide steviolice",
+      "glicozide derivate din steviol",
+      "stevia",
+      "e960",
+      "e960a",
+      "e 960a"
+    ],
+    "group": "add",
+    "role": "Îndulcitor intens fără calorii (E960a)",
+    "explanation": "Îndulcitor extras din frunzele plantei Stevia rebaudiana. Deși are origine vegetală, este un îndulcitor intens fără calorii și adaugă 4 puncte nefavorabile băuturilor în Nutri-Score 2023.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "benzoat-de-sodiu-e211",
+    "name": "Benzoat de sodiu (E211)",
+    "aliases": [
+      "benzoat de sodiu",
+      "e211",
+      "e 211"
+    ],
+    "group": "add",
+    "role": "Conservant sintetic (E211)",
+    "explanation": "Conservant folosit în băuturi răcoritoare acide și sosuri pentru a opri dezvoltarea drojdiilor și bacteriilor.",
+    "source": "https://www.efsa.europa.eu/en/efsajournal/pub/4433",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "sorbat-de-potasiu-e202",
+    "name": "Sorbat de potasiu (E202)",
+    "aliases": [
+      "sorbat de potasiu",
+      "e202",
+      "e 202"
+    ],
+    "group": "add",
+    "role": "Conservant (E202)",
+    "explanation": "Sare de potasiu a acidului sorbic, utilizată pentru a preveni apariția mucegaiurilor și drojdiilor în băuturi, lactate și sosuri.",
+    "source": "https://www.efsa.europa.eu/en/efsajournal/pub/4144",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "cafeina",
+    "name": "Cafeină",
+    "aliases": [
+      "cafeina",
+      "cofeina",
+      "aroma cafeina",
+      "aroma de cafeina"
+    ],
+    "group": "taste",
+    "role": "Aromă și stimulent",
+    "explanation": "Alcaloid cu efect stimulent asupra sistemului nervos central, adăugat în băuturile tip cola pentru gust amărui și în băuturile energizante. Se recomandă limitarea consumului la copii, femei însărcinate și persoane sensibile la cafeină.",
+    "source": "https://www.efsa.europa.eu/en/efsajournal/pub/4102",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "aroma-naturala",
+    "name": "Aromă naturală",
+    "aliases": [
+      "arome naturale",
+      "aroma",
+      "arome"
+    ],
+    "group": "taste",
+    "role": "Aromă",
+    "explanation": "Substanțe aromatizante obținute din surse vegetale, animale sau microbiologice, folosite pentru a reda sau standardiza gustul și mirosul produsului.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1334",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "zahar",
+    "name": "Zahăr",
+    "aliases": [
+      "zahar alb",
+      "zaharوها",
+      "sirop de glucoza-fructoza",
+      "sirop de fructoza-glucoza"
+    ],
+    "group": "taste",
+    "role": "Îndulcitor caloric",
+    "explanation": "Zaharuri adăugate de producător pentru gust și conservare. Aduc calorii și cresc direct punctele nefavorabile pentru zaharuri în tabelul nutrițional.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "sare",
+    "name": "Sare",
+    "aliases": [
+      "sare iodata",
+      "sare de mare",
+      "clorura de sodiu"
+    ],
+    "group": "taste",
+    "role": "Gust și conservare",
+    "explanation": "Clorură de sodiu adăugată pentru gust sau conservare. Contribuie direct la cantitatea totală de sare din tabelul nutrițional.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "lapte-normalizat",
+    "name": "Lapte normalizat",
+    "aliases": [
+      "lapte de vaca pasteurizat",
+      "lapte pasteurizat"
+    ],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Lapte de vacă cu grăsimea ajustată la valoarea de pe etichetă. Aduce proteine, calciu și lactoză, zahărul natural din lapte.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Lapte",
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "lapte-integral",
+    "name": "Lapte integral",
+    "aliases": [
+      "lapte de vaca integral"
+    ],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Lapte de vacă cu conținutul integral de grăsime. Aduce proteine, calciu și lactoză.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Lapte",
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "smantana",
+    "name": "Smântână",
+    "aliases": [
+      "smantana pasteurizata"
+    ],
+    "group": "fat",
+    "role": "Grăsime și cremozitate",
+    "explanation": "Partea grasă a laptelui, bogată în grăsimi saturate și responsabilă pentru textura densă și cremoasă.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Lapte",
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "culturi-lactice-vii",
+    "name": "Culturi lactice vii",
+    "aliases": [
+      "culturi lactice",
+      "culturi lactice selectionate",
+      "fermenti lactici"
+    ],
+    "group": "cult",
+    "role": "Fermentare",
+    "explanation": "Bacterii lactice care transformă lactoza din lapte în acid lactic, dând iaurtului și chefirului textura și gustul acrișor.",
+    "source": "https://www.fao.org/fao-who-codexalimentarius",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "amidon-modificat",
+    "name": "Amidon modificat",
+    "aliases": [
+      "amidon modificat din porumb",
+      "amidon modificat de tapioca"
+    ],
+    "group": "add",
+    "role": "Îngroșător și stabilizator",
+    "explanation": "Amidon tratat fizic sau chimic pentru a păstra textura cremoasă la rece, la încălzire și la amestecare.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "pectina-e440",
+    "name": "Pectină (E440)",
+    "aliases": [
+      "pectina",
+      "pectine",
+      "e440",
+      "e 440"
+    ],
+    "group": "add",
+    "role": "Gelifiant (E440)",
+    "explanation": "Fibră solubilă extrasă din fructe (mere, citrice), folosită pentru a lega gemurile, iaurturile cu fructe și jeleurile.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "carmin-e120",
+    "name": "Carmin (E120)",
+    "aliases": [
+      "carmin",
+      "acid carminic",
+      "cosenila",
+      "e120",
+      "e 120"
+    ],
+    "group": "add",
+    "role": "Colorant (E120)",
+    "explanation": "Colorant roșu obținut din insecte (coșenilă). Poate provoca reacții alergice rare la persoane sensibile și nu este potrivit pentru dietele vegetariene/vegane.",
+    "source": "https://www.efsa.europa.eu/en/efsajournal/pub/4288",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "faina-de-grau",
+    "name": "Făină de grâu",
+    "aliases": [
+      "faina alba de grau"
+    ],
+    "group": "base",
+    "role": "Cereale",
+    "explanation": "Făină albă rafinată din grâu, cu mai puține fibre decât făina integrală. Conține gluten.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": "Gluten",
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "ulei-de-palmier",
+    "name": "Ulei de palmier",
+    "aliases": [
+      "grasime de palmier",
+      "grasime vegetala de palmier"
+    ],
+    "group": "fat",
+    "role": "Grăsime vegetală",
+    "explanation": "Grăsime vegetală semisolidă la temperatura camerei, bogată în acizi grași saturați (~50%).",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "ulei-de-floarea-soarelui",
+    "name": "Ulei de floarea-soarelui",
+    "aliases": [
+      "ulei vegetal de floarea-soarelui",
+      "ulei rafinat de floarea-soarelui"
+    ],
+    "group": "fat",
+    "role": "Grăsime vegetală",
+    "explanation": "Ulei vegetal lichid bogat în acizi grași nesaturați și cu conținut redus de grăsimi saturate.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "lecitina-din-soia-e322",
+    "name": "Lecitină din soia (E322)",
+    "aliases": [
+      "lecitina din soia",
+      "lecitine din soia",
+      "lecitina de soia",
+      "e322",
+      "e 322"
+    ],
+    "group": "add",
+    "role": "Emulsifiant (E322)",
+    "explanation": "Ajută grăsimea și apa să se amestece uniform în ciocolată, biscuiți și creme. Provine din soia, alergen declarat.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": "Soia",
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "bicarbonat-de-sodiu-e500",
+    "name": "Bicarbonat de sodiu (E500)",
+    "aliases": [
+      "bicarbonat de sodiu",
+      "carbonati de sodiu",
+      "carbonat acid de sodiu",
+      "e500",
+      "e 500"
+    ],
+    "group": "add",
+    "role": "Agent de afânare (E500)",
+    "explanation": "Face aluatul să crească la coacere prin eliberare de dioxid de carbon. Conține sodiu, contribuind ușor la valoarea sării.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "acid-ascorbic-e300",
+    "name": "Acid ascorbic (E300)",
+    "aliases": [
+      "acid ascorbic",
+      "vitamina c",
+      "e300",
+      "e 300"
+    ],
+    "group": "add",
+    "role": "Antioxidant (E300)",
+    "explanation": "Vitamina C folosită ca antioxidant alimentar pentru a preveni oxidarea și închiderea la culoare a sucurilor și alimentelor.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  },
+  {
+    "slug": "suc-de-mere-din-concentrat",
+    "name": "Suc de mere din concentrat",
+    "aliases": [
+      "suc de mere reconstituit"
+    ],
+    "group": "base",
+    "role": "Ingredient de bază",
+    "explanation": "Suc obținut prin eliminarea apei din sucul de mere și reconstituire ulterioară cu apă. Conține zaharurile naturale ale merelor.",
+    "source": "https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32001L0112",
+    "allergen": null,
+    "checkedBy": "Ion",
+    "checkedAt": "2026-11-10"
+  }
+]

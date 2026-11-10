@@ -224,3 +224,27 @@ it('does not demand invented nutrient values for an official water fixture', () 
 it('keeps percentage variants distinct when checking fixture names', () => {
   expect(checkData({ ...ok(), fixtures: [{ ...fixture, name: 'Iaurt 2%' }, { ...fixture, name: 'Iaurt 3%' }] }).errors).toEqual([]);
 });
+
+it('validates repository data/ingredients.json including beverage sweeteners and soda additives', async () => {
+  const { readData } = await import('./check-data');
+  const data = readData();
+  expect(checkData(data).errors).toEqual([]);
+  const slugs = new Set((data.ingredients as { slug: string }[]).map((item) => item.slug));
+  for (const required of [
+    'apa-carbogazoasa',
+    'dioxid-de-carbon-e290',
+    'colorant-caramel-e150d',
+    'acid-fosforic-e338',
+    'citrati-de-sodiu-e331',
+    'aspartam-e951',
+    'acesulfam-k-e950',
+    'ciclamat-de-sodiu-e952',
+    'sucraloza-e955',
+    'zaharina-e954',
+    'glicozide-steviolice-e960a',
+    'cafeina',
+  ]) {
+    expect(slugs.has(required)).toBe(true);
+  }
+});
+

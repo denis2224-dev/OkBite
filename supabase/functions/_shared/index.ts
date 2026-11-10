@@ -4,3 +4,4 @@ export * from './contract.ts';
 export * from './score/index.ts';
 export * from './ean/index.ts';
 export * from './allergens/index.ts';
+export * from './ingredients/index.ts';

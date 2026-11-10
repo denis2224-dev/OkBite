@@ -24,6 +24,7 @@ const OffProductSchema = z.object({
   product_quantity_unit: z.string().nullish(),
   nutrition_data_per: z.string().nullish(),
   nutriments: z.record(z.unknown()).nullish(),
+  categories_tags: z.array(z.string()).nullish(),
   allergens_tags: z.array(z.string()).nullish(),
   traces_tags: z.array(z.string()).nullish(),
 });
@@ -35,7 +36,7 @@ type Pause = (ms: number) => Promise<void>;
 const PAGE_SIZE = 100;
 const FIELDS =
   'code,product_name,product_name_ro,brands,quantity,ingredients_text,ingredients_text_ro,lang,' +
-  'nutrition_data_per,product_quantity_unit,nutriments,allergens_tags,traces_tags';
+  'nutrition_data_per,product_quantity_unit,nutriments,categories_tags,allergens_tags,traces_tags';
 const SEARCH = `https://world.openfoodfacts.org/api/v2/search?fields=${FIELDS}&page_size=${PAGE_SIZE}&countries_tags=en:moldova`;
 // OFF answers 401 past 1000 results of one search, so the 1928 Moldova products (8 Nov 2026) are split by
 // label language into searches of 577, 316, 860 and about 175 results.
@@ -85,6 +86,47 @@ const text = (...values: (string | null | undefined)[]) =>
   values.map((v) => v?.trim()).find((v) => v) ?? '';
 const sleep: Pause = (ms) => new Promise((r) => setTimeout(r, ms));
 
+const OFF_CATEGORY_RULES: [RegExp, string][] = [
+  [/\b(waters|mineral-waters|spring-waters|carbonated-waters)\b/, 'apa'],
+  [/\b(juices-and-nectars|fruit-juices|vegetable-juices|nectars)\b/, 'suc'],
+  [/\b(carbonated-drinks|sodas|colas|sweetened-beverages|artificially-sweetened-beverages|energy-drinks|iced-teas|soft-drinks)\b/, 'bauturi-racoritoare'],
+  [/\b(yogurts|fermented-milk-products|kefir)\b/, 'iaurt'],
+  [/\b(milks|flavored-milks)\b/, 'lapte'],
+  [/\b(cheeses)\b/, 'branza'],
+  [/\b(butters|creams|sour-creams)\b/, 'unt-si-smantana'],
+  [/\b(biscuits|cookies|wafers)\b/, 'biscuiti'],
+  [/\b(chocolates|candies|confectioneries|sweet-snacks)\b/, 'ciocolata-si-dulciuri'],
+  [/\b(breakfast-cereals|cereals|oats|mueslis)\b/, 'cereale'],
+  [/\b(breads|bakery-products)\b/, 'paine'],
+  [/\b(poultry|chicken|turkey)\b/, 'mezeluri-pasare'],
+  [/\b(meats|prepared-meats|sausages|hams|salamis)\b/, 'mezeluri'],
+  [/\b(vegetable-oils|sunflower-oils|olive-oils|fats)\b/, 'ulei'],
+  [/\b(salty-snacks|chips|crisps|crackers)\b/, 'snacks-sarate'],
+  [/\b(ice-creams|sorbets)\b/, 'inghetata'],
+  [/\b(canned-foods|tinned-foods)\b/, 'conserve'],
+];
+
+export function inferCategorySlug(
+  off: Pick<OffProduct, 'categories_tags'>,
+  name: string,
+  ingredientsText: string,
+  unit: 'g' | 'ml',
+): string {
+  const joinedTags = (off.categories_tags ?? []).join(' ').toLowerCase();
+  if (joinedTags) {
+    for (const [pattern, slug] of OFF_CATEGORY_RULES) {
+      if (pattern.test(joinedTags)) return slug;
+    }
+  }
+  if (unit === 'ml') {
+    const plain = `${name} ${ingredientsText}`.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
+    if (/\b(cola|pepsi|fanta|sprite|bautura racoritoare|energizant|dioxid de carbon|e290|aspartam|acesulfam|ciclamat|sucraloza|indulcitor)\b/.test(plain)) {
+      return 'bauturi-racoritoare';
+    }
+  }
+  return 'necunoscut';
+}
+
 /**
  * Maps one OFF product to an unverified OkBite product, or null when it has no name,
  * fails the barcode checksum, or lacks what the contract requires (a brand, ingredients text of 3+ characters).
@@ -102,17 +144,18 @@ export function mapOffProduct(raw: unknown): AddProductRequest | null {
   if (!code || !name || !brand) return null;
   const n = off.nutriments ?? {};
   const unit = off.nutrition_data_per === '100ml' || off.product_quantity_unit === 'ml' ? 'ml' : 'g';
+  const ingredientsText = text(
+    off.ingredients_text_ro,
+    off.lang === 'ro' ? off.ingredients_text : undefined,
+  );
   const result = AddProductRequest.safeParse({
     code,
     name: name.slice(0, 120),
     brand,
     quantity: text(off.quantity).slice(0, 30),
     unit,
-    categorySlug: 'necunoscut',
-    ingredientsText: text(
-      off.ingredients_text_ro,
-      off.lang === 'ro' ? off.ingredients_text : undefined,
-    ),
+    categorySlug: inferCategorySlug(off, name, ingredientsText, unit),
+    ingredientsText,
     nutrients: {
       kcal: amount(n['energy-kcal_100g']),
       fat: amount(n.fat_100g),

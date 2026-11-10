@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Image, View } from 'react-native';
 import { router } from 'expo-router';
-import { NUTRIENT_KEYS, type Product, type ScoreResult } from '@okbite/shared';
+import { NUTRIENT_KEYS, resolveProductIngredients, type Product, type ScoreResult } from '@okbite/shared';
 import { AllergenChip, Badge, Body, Button, Card, Heading, useToast } from '../../ui';
 import { ro } from '../../copy/ro';
 import { isPreview } from '../../lib/preview';
@@ -24,6 +24,9 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
   const shownScore = displayScore(product, score);
   const hasNutrition = NUTRIENT_KEYS.some(key => product.nutrients[key] !== null);
   const canShowScore = shownScore.score !== null && shownScore.grade !== 'unavailable';
+  const explainedIngredients = resolveProductIngredients(product)
+    .filter(item => Boolean(item.slug && item.explanation && item.source && /^https?:\/\//i.test(item.source)))
+    .sort((a, b) => (a.group === 'add' ? 0 : 1) - (b.group === 'add' ? 0 : 1));
   const share = async () => {
     setSharing(true);
     setShareFailed(false);
@@ -56,7 +59,20 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
       <Body>{ro.result.missingAllergenNote}</Body>
       <Body>{ro.result.allergyNote}</Body>
     </Card>
-    <Card><Heading style={{fontSize:18}}>{ro.result.transcribedLabel}</Heading><Body selectable>{product.ingredientsText}</Body></Card>
+    <Card>
+      <Heading style={{fontSize:18}}>{ro.result.transcribedLabel}</Heading>
+      <Body selectable>{product.ingredientsText}</Body>
+      {explainedIngredients.length > 0 && <View style={{ gap: 8, marginTop: 8 }}>
+        <Body style={{ fontWeight: '700' }}>{ro.result.explainedWithSource}</Body>
+        {explainedIngredients.map((item, idx) => (
+          <View key={`${item.slug}:${idx}`} style={{ gap: 2 }}>
+            <Body style={{ fontWeight: '700' }}>{item.name}</Body>
+            {item.role && <Body>{item.role}</Body>}
+            {item.explanation && <Body>{item.explanation}</Body>}
+          </View>
+        ))}
+      </View>}
+    </Card>
     {canShowScore ? <><ScoreCard score={shownScore} />{hasNutrition && <PortionTable product={product} />}</> : <PartialNutritionCard product={product} />}
     <SourceCard product={product} />
     {nutritionAdditionAvailable && product.status === 'unverified' && !hasNutrition &&

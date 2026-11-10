@@ -77,6 +77,40 @@ describe('mapOffProduct', () => {
     const r = mapOffProduct({ ...off, nutriments: { sugars_100g: '4', salt_100g: -1 } });
     expect(r?.nutrients).toMatchObject({ sugar: null, salt: null });
   });
+
+  it('maps Coca-Cola Zero and OFF category tags to real OkBite categories so beverage sweeteners are penalized', async () => {
+    const { computeScore } = await import('../packages/shared/src/index');
+    const cola = mapOffProduct({
+      code: '5449000131805',
+      product_name: 'Coca-Cola Zero Zahăr',
+      brands: 'Coca-Cola',
+      quantity: '500 ml',
+      nutrition_data_per: '100ml',
+      categories_tags: ['en:beverages', 'en:carbonated-drinks', 'en:sodas', 'en:colas'],
+      lang: 'ro',
+      ingredients_text_ro:
+        'Apă, dioxid de carbon, colorant E150d, acidifiant acid fosforic, îndulcitori (ciclamați, acesulfam K, aspartam), corector de aciditate citrați de sodiu, arome naturale, aromă cafeină.',
+      nutriments: {
+        'energy-kcal_100g': 0.2,
+        fat_100g: 0,
+        'saturated-fat_100g': 0,
+        sugars_100g: 0,
+        salt_100g: 0.02,
+        proteins_100g: 0,
+      },
+    });
+    expect(cola?.categorySlug).toBe('bauturi-racoritoare');
+    expect(cola?.unit).toBe('ml');
+    const scored = computeScore(cola!.nutrients, 'beverage', cola!.ingredientsText);
+    expect(scored.score).toBe(53);
+    expect(scored.letter).toBe('C');
+    expect(scored.grade).toBe('medium');
+    expect(scored.reasons).toContainEqual({
+      tone: 'bad',
+      title: 'Conține îndulcitori',
+      detail: 'Îndulcitori fără calorii în ingrediente',
+    });
+  });
 });
 
 describe('toRow', () => {

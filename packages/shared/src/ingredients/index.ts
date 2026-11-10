@@ -1,0 +1,319 @@
+import type { Category, Ingredient, IngredientEntry, Product } from '../contract';
+
+export type IngredientKey = Pick<IngredientEntry, 'slug' | 'name' | 'aliases'>;
+
+export const BUILTIN_INGREDIENTS: Omit<IngredientEntry, 'checkedBy' | 'checkedAt'>[] = [
+  {
+    slug: 'apa-carbogazoasa',
+    name: 'Apă carbogazoasă',
+    aliases: ['apa', 'apa minerala', 'apa carbonatata', 'apa purificata'],
+    group: 'base',
+    role: 'Ingredient de bază',
+    explanation: 'Apă potabilă sau minerală în care s-a dizolvat dioxid de carbon pentru efervescență. Nu aduce calorii, zaharuri sau grăsimi.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169',
+    allergen: null,
+  },
+  {
+    slug: 'dioxid-de-carbon-e290',
+    name: 'Dioxid de carbon (E290)',
+    aliases: ['dioxid de carbon', 'e290', 'e 290'],
+    group: 'add',
+    role: 'Agent de carbogazificare (E290)',
+    explanation: 'Gaz alimentar dizolvat în băuturi pentru a le face acidulate (bule). Poate da senzație de balonare la consum rapid sau în cantități mari.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333',
+    allergen: null,
+  },
+  {
+    slug: 'colorant-caramel-e150d',
+    name: 'Caramel cu sulfit de amoniu (E150d)',
+    aliases: ['caramel cu sulfit de amoniu', 'caramel sulfit de amoniu', 'colorant caramel', 'caramel', 'e150d', 'e 150d', 'e150a', 'e150b', 'e150c'],
+    group: 'add',
+    role: 'Colorant sintetic (E150d)',
+    explanation: 'Colorant maro închis folosit frecvent în băuturile tip cola. Este un aditiv cu rol strict estetic; EFSA a stabilit o doză zilnică acceptabilă (DZA) pentru clasa caramelilor (E150a–d) și limite pentru compușii secundari (4-MEI).',
+    source: 'https://www.efsa.europa.eu/en/efsajournal/pub/2004',
+    allergen: null,
+  },
+  {
+    slug: 'acid-fosforic-e338',
+    name: 'Acid fosforic (E338)',
+    aliases: ['acid fosforic', 'acid ortofosforic', 'e338', 'e 338'],
+    group: 'add',
+    role: 'Acidifiant (E338)',
+    explanation: 'Aditiv care conferă gustul acrișor specific băuturilor cola și echilibrează dulceața. Aciditatea ridicată din băuturile răcoritoare poate eroda smalțul dentar la consum frecvent, iar aportul excesiv de fosfați aditivi este monitorizat de EFSA.',
+    source: 'https://www.efsa.europa.eu/en/efsajournal/pub/5674',
+    allergen: null,
+  },
+  {
+    slug: 'acid-citric-e330',
+    name: 'Acid citric (E330)',
+    aliases: ['acid citric', 'e330', 'e 330'],
+    group: 'add',
+    role: 'Acidifiant și antioxidant (E330)',
+    explanation: 'Acid organic prezent natural în citrice și produs industrial prin fermentare. Dă gust acrișor și stabilizează băuturile; în concentrații mari în băuturi acide poate contribui la eroziunea smalțului dentar.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333',
+    allergen: null,
+  },
+  {
+    slug: 'citrati-de-sodiu-e331',
+    name: 'Citrați de sodiu (E331)',
+    aliases: ['citrati de sodiu', 'citrat de sodiu', 'citrat trisodic', 'e331', 'e 331'],
+    group: 'add',
+    role: 'Corector de aciditate (E331)',
+    explanation: 'Săruri de sodiu ale acidului citric folosite pentru a regla aciditatea băuturilor răcoritoare și a stabiliza gustul.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333',
+    allergen: null,
+  },
+  {
+    slug: 'aspartam-e951',
+    name: 'Aspartam (E951)',
+    aliases: ['aspartam', 'e951', 'e 951'],
+    group: 'add',
+    role: 'Îndulcitor intens fără calorii (E951)',
+    explanation: 'Îndulcitor artificial de ~200 de ori mai dulce decât zahărul. Conține o sursă de fenilalanină (contraindicat persoanelor cu fenilcetonurie). În algoritmul Nutri-Score 2023 pentru băuturi, îndulcitorii fără calorii adaugă 4 puncte nefavorabile pentru a nu încuraja obișnuința cu gustul dulce; OMS (2023) nu recomandă îndulcitorii fără zahăr pentru controlul greutății pe termen lung.',
+    source: 'https://www.efsa.europa.eu/en/efsajournal/pub/3496',
+    allergen: null,
+  },
+  {
+    slug: 'acesulfam-k-e950',
+    name: 'Acesulfam K (E950)',
+    aliases: ['acesulfam k', 'acesulfam de potasiu', 'acesulfam-k', 'acesulfam', 'e950', 'e 950'],
+    group: 'add',
+    role: 'Îndulcitor intens fără calorii (E950)',
+    explanation: 'Îndulcitor sintetic fără calorii, folosit adesea împreună cu aspartamul sau ciclamații pentru a masca postgustul amărui. În Nutri-Score 2023, prezența îndulcitorilor în băuturi este penalizată cu 4 puncte nefavorabile.',
+    source: 'https://www.efsa.europa.eu/en/efsajournal/pub/9398',
+    allergen: null,
+  },
+  {
+    slug: 'ciclamat-de-sodiu-e952',
+    name: 'Ciclamați (E952)',
+    aliases: ['ciclamati', 'ciclamat de sodiu', 'acid ciclamic', 'ciclamat', 'e952', 'e 952'],
+    group: 'add',
+    role: 'Îndulcitor intens fără calorii (E952)',
+    explanation: 'Îndulcitor sintetic fără calorii (de ~30–50 de ori mai dulce decât zahărul), utilizat în băuturi răcoritoare „zero zahăr”. Are o doză zilnică acceptabilă mai mică decât alți îndulcitori (7 mg/kg corp/zi) și declanșează penalizarea de 4 puncte în Nutri-Score 2023 pentru băuturi.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333',
+    allergen: null,
+  },
+  {
+    slug: 'sucraloza-e955',
+    name: 'Sucraloză (E955)',
+    aliases: ['sucraloza', 'e955', 'e 955'],
+    group: 'add',
+    role: 'Îndulcitor intens fără calorii (E955)',
+    explanation: 'Îndulcitor artificial obținut prin clorurarea zaharozei, de ~600 de ori mai dulce decât zahărul. În băuturi, prezența îndulcitorilor fără calorii adaugă 4 puncte nefavorabile în calculul Nutri-Score 2023.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333',
+    allergen: null,
+  },
+  {
+    slug: 'zaharina-e954',
+    name: 'Zaharină (E954)',
+    aliases: ['zaharina', 'zaharina de sodiu', 'e954', 'e 954'],
+    group: 'add',
+    role: 'Îndulcitor intens fără calorii (E954)',
+    explanation: 'Îndulcitor sintetic intens fără calorii. În băuturi răcoritoare, îndulcitorii fără calorii primesc 4 puncte nefavorabile în Nutri-Score 2023.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333',
+    allergen: null,
+  },
+  {
+    slug: 'glicozide-steviolice-e960a',
+    name: 'Glicozide steviolice din stevia (E960a)',
+    aliases: ['glicozide steviolice', 'glicozide derivate din steviol', 'stevia', 'e960', 'e960a', 'e 960a'],
+    group: 'add',
+    role: 'Îndulcitor intens fără calorii (E960a)',
+    explanation: 'Îndulcitor extras din frunzele plantei Stevia rebaudiana. Deși are origine vegetală, este un îndulcitor intens fără calorii și adaugă 4 puncte nefavorabile băuturilor în Nutri-Score 2023.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333',
+    allergen: null,
+  },
+  {
+    slug: 'benzoat-de-sodiu-e211',
+    name: 'Benzoat de sodiu (E211)',
+    aliases: ['benzoat de sodiu', 'e211', 'e 211'],
+    group: 'add',
+    role: 'Conservant sintetic (E211)',
+    explanation: 'Conservant folosit în băuturi răcoritoare acide și sosuri pentru a opri dezvoltarea drojdiilor și bacteriilor.',
+    source: 'https://www.efsa.europa.eu/en/efsajournal/pub/4433',
+    allergen: null,
+  },
+  {
+    slug: 'sorbat-de-potasiu-e202',
+    name: 'Sorbat de potasiu (E202)',
+    aliases: ['sorbat de potasiu', 'e202', 'e 202'],
+    group: 'add',
+    role: 'Conservant (E202)',
+    explanation: 'Sare de potasiu a acidului sorbic, utilizată pentru a preveni apariția mucegaiurilor și drojdiilor în băuturi, lactate și sosuri.',
+    source: 'https://www.efsa.europa.eu/en/efsajournal/pub/4144',
+    allergen: null,
+  },
+  {
+    slug: 'cafeina',
+    name: 'Cafeină',
+    aliases: ['cafeina', 'cofeina', 'aroma cafeina', 'aroma de cafeina'],
+    group: 'taste',
+    role: 'Aromă și stimulent',
+    explanation: 'Alcaloid cu efect stimulent asupra sistemului nervos central, adăugat în băuturile tip cola pentru gust amărui și în băuturile energizante. Se recomandă limitarea consumului la copii, femei însărcinate și persoane sensibile la cafeină.',
+    source: 'https://www.efsa.europa.eu/en/efsajournal/pub/4102',
+    allergen: null,
+  },
+  {
+    slug: 'aroma-naturala',
+    name: 'Aromă naturală',
+    aliases: ['arome naturale', 'aroma', 'arome'],
+    group: 'taste',
+    role: 'Aromă',
+    explanation: 'Substanțe aromatizante obținute din surse vegetale, animale sau microbiologice, folosite pentru a reda sau standardiza gustul și mirosul produsului.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1334',
+    allergen: null,
+  },
+  {
+    slug: 'zahar',
+    name: 'Zahăr',
+    aliases: ['zahar alb', 'zaharoza', 'sirop de glucoza-fructoza', 'sirop de fructoza-glucoza'],
+    group: 'taste',
+    role: 'Îndulcitor caloric',
+    explanation: 'Zaharuri adăugate de producător pentru gust și conservare. Aduc calorii și cresc direct punctele nefavorabile pentru zaharuri în tabelul nutrițional.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169',
+    allergen: null,
+  },
+  {
+    slug: 'sare',
+    name: 'Sare',
+    aliases: ['sare iodata', 'sare de mare', 'clorura de sodiu'],
+    group: 'taste',
+    role: 'Gust și conservare',
+    explanation: 'Clorură de sodiu adăugată pentru gust sau conservare. Contribuie direct la cantitatea totală de sare din tabelul nutrițional.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169',
+    allergen: null,
+  },
+];
+
+const normalized = (text: string) =>
+  text.normalize('NFD').replace(/\p{M}/gu, '')
+    .toLowerCase().replace(/\d+(?:[.,]\d+)?\s*%/g, '').replace(/\s+/g, ' ').trim();
+
+const ROLE_PREFIX =
+  /^(?:indulcitor\w*|colorant\w*|acidifiant\w*|corector\w* de aciditate|conservant\w*|antioxidant\w*|emulsifiant\w*|stabilizator\w*|agent\w* de [a-z]+|gelifiant\w*|ingrosator\w*|potentiator\w* de [a-z]+)\b/;
+const E_CODE_PAREN = /\(\s*(e\s*-?\s*\d{3}[a-f]?)\s*\)/i;
+
+function stripRolePrefix(value: string): string {
+  const colonIdx = value.indexOf(':');
+  if (colonIdx === -1) return value;
+  const prefix = normalized(value.slice(0, colonIdx));
+  return ROLE_PREFIX.test(prefix) ? value.slice(colonIdx + 1).trim() : value;
+}
+
+export function matchIngredients(
+  text: string,
+  kb: IngredientKey[],
+): { rawName: string; slug: string | null }[] {
+  const names = new Map<string, string>();
+  for (const entry of kb) {
+    for (const name of [entry.name, ...entry.aliases]) names.set(normalized(name), entry.slug);
+  }
+  const cleanedText = text
+    .replace(/^\s*ingrediente\s*:\s*/i, '')
+    .replace(/\.\s*(?:contine|conține|poate\s+contine|poate\s+conține|urme\s+de)\b[\s\S]*$/i, '');
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < cleanedText.length; i++) {
+    const char = cleanedText[i];
+    if (char === '(') depth++;
+    if (char === ')') depth = Math.max(0, depth - 1);
+    const decimal = char === ',' && /\d/.test(cleanedText[i - 1] ?? '') && /\d/.test(cleanedText[i + 1] ?? '');
+    if (!depth && (char === ';' || (char === ',' && !decimal))) {
+      parts.push(cleanedText.slice(start, i));
+      start = i + 1;
+    }
+  }
+  parts.push(cleanedText.slice(start));
+
+  const expanded: string[] = [];
+  for (const rawPart of parts) {
+    const clean = rawPart.replace(/[.\s]+$/, '').trim();
+    if (!clean) continue;
+    const parenMatch = /^([^()]+)\(([^()]+)\)$/.exec(clean);
+    if (parenMatch?.[1] && parenMatch[2] && !clean.includes(':') && ROLE_PREFIX.test(normalized(parenMatch[1]))) {
+      const innerItems = parenMatch[2]
+        .split(/,|\s+(?:și|si)\s+/i)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (innerItems.length > 1 || (innerItems.length === 1 && !E_CODE_PAREN.test(clean))) {
+        expanded.push(...innerItems);
+        continue;
+      }
+    }
+    const afterRole = stripRolePrefix(clean);
+    const siParts = afterRole.split(/\s+(?:și|si)\s+/i).map((s) => s.trim()).filter(Boolean);
+    if (siParts.length > 1 && siParts.some((p) => names.has(normalized(p)))) {
+      expanded.push(...siParts);
+      continue;
+    }
+    expanded.push(clean);
+  }
+
+  return expanded.map((item) => {
+    const beforeParen = (item.split('(')[0] ?? item).replace(/[.\s]+$/, '').trim();
+    const eCodeMatch = E_CODE_PAREN.exec(item);
+    const rawName = eCodeMatch ? item : beforeParen;
+    const withoutRole = stripRolePrefix(beforeParen);
+    const slug =
+      names.get(normalized(rawName)) ??
+      names.get(normalized(beforeParen)) ??
+      names.get(normalized(withoutRole)) ??
+      (eCodeMatch?.[1] ? names.get(normalized(eCodeMatch[1])) : undefined) ??
+      null;
+    return { rawName, slug };
+  }).filter((entry) => Boolean(entry.rawName));
+}
+
+export function resolveProductIngredients(
+  product: Pick<Product, 'ingredients' | 'ingredientsText'>,
+): Ingredient[] {
+  if (product.ingredients.length > 0) return product.ingredients;
+  if (!product.ingredientsText?.trim()) return [];
+  const bySlug = new Map(BUILTIN_INGREDIENTS.map((entry) => [entry.slug, entry]));
+  return matchIngredients(product.ingredientsText, BUILTIN_INGREDIENTS).map((m) => {
+    const entry = m.slug ? bySlug.get(m.slug) : undefined;
+    return entry
+      ? {
+          slug: entry.slug,
+          name: m.rawName,
+          group: entry.group,
+          role: entry.role,
+          explanation: entry.explanation,
+          source: entry.source,
+          allergen: entry.allergen,
+        }
+      : {
+          slug: null,
+          name: m.rawName,
+          group: null,
+          role: null,
+          explanation: null,
+          source: null,
+          allergen: null,
+        };
+  });
+}
+
+export function resolveOffCategory(
+  product: Pick<Product, 'category' | 'source' | 'unit' | 'name' | 'ingredientsText'>,
+): Category {
+  if (product.category.slug !== 'necunoscut' || !product.source.startsWith('Open Food Facts')) {
+    return product.category;
+  }
+  const plain = `${product.name} ${product.ingredientsText}`
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '');
+  if (
+    product.unit === 'ml' &&
+    /\b(cola|pepsi|fanta|sprite|bautura racoritoare|energizant|dioxid de carbon|e290|aspartam|acesulfam|ciclamat|sucraloza|indulcitor)\b/.test(plain)
+  ) {
+    return { slug: 'bauturi-racoritoare', name: 'Băuturi răcoritoare', scoreKind: 'beverage' };
+  }
+  if (product.unit === 'ml' && /\b(suc de|nectar de)\b/.test(plain)) {
+    return { slug: 'suc', name: 'Suc', scoreKind: 'beverage' };
+  }
+  return product.category;
+}
+

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Linking, View } from 'react-native';
+import { resolveProductIngredients } from '@okbite/shared';
 import { PressableOpacity as Pressable } from '../../../src/shared/PressableOpacity';
 import { useLocalSearchParams } from 'expo-router';
 import { AllergenChip, Badge, Body, Button, Card, Heading, Screen, useToast } from '../../../src/ui';
@@ -14,6 +15,7 @@ export default function Ingredients() {
   const [expanded, setExpanded] = useState<string>();
   const toast = useToast();
   const product = data?.product;
+  const resolvedIngredients = product ? resolveProductIngredients(product) : [];
   return <Screen title={ro.ingredients.title} back>
     {loading && <Body accessibilityLiveRegion="polite">{ro.app.loading}</Body>}
     {error && <Body accessibilityLiveRegion="polite">{error.message}</Body>}
@@ -31,7 +33,7 @@ export default function Ingredients() {
       </Card>
       <Card><Body style={{fontWeight:'700'}}>{ro.result.transcribedLabel}</Body><Body selectable>{product.ingredientsText}</Body></Card>
       {groups.map(group => {
-        const items = product.ingredients.map((ingredient, index) => ({ ingredient, index })).filter(item => item.ingredient.group === group);
+        const items = resolvedIngredients.map((ingredient, index) => ({ ingredient, index })).filter(item => item.ingredient.group === group);
         return items.length ? <View key={group ?? 'unknown'} style={{ gap: 8 }}>
           <Heading style={{ fontSize: 18 }}>{group ? ro.ingredients[group] : ro.ingredients.explanationSoon}</Heading>
           {items.map(({ ingredient, index }) => {
