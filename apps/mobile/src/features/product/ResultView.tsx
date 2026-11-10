@@ -44,6 +44,7 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
     {product.status === 'unverified' && <>
       <Badge tone="unverified">{ro.result.unverified}</Badge><Body>{ro.result.unverifiedNote}</Body>
     </>}
+    {canShowScore ? <ScoreCard score={shownScore} /> : <PartialNutritionCard product={product} />}
     <Card>
       <Heading style={{ fontSize: 18 }}>{ro.result.allergens}</Heading>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -59,6 +60,7 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
       <Body>{ro.result.missingAllergenNote}</Body>
       <Body>{ro.result.allergyNote}</Body>
     </Card>
+    {canShowScore && hasNutrition && <PortionTable product={product} />}
     <Card>
       <Heading style={{fontSize:18}}>{ro.result.transcribedLabel}</Heading>
       <Body selectable>{product.ingredientsText}</Body>
@@ -73,7 +75,6 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
         ))}
       </View>}
     </Card>
-    {canShowScore ? <><ScoreCard score={shownScore} />{hasNutrition && <PortionTable product={product} />}</> : <PartialNutritionCard product={product} />}
     <SourceCard product={product} />
     {nutritionAdditionAvailable && product.status === 'unverified' && !hasNutrition &&
       <Button variant="secondary" onPress={() => router.push({pathname: '/add/nutrition', params: {productId: product.id}})}>{ro.result.addNutrition}</Button>}
