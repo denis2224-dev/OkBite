@@ -1,16 +1,19 @@
-import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
-import Home from '../(tabs)/index';
+import { fireEvent, renderRouter, screen } from 'expo-router/testing-library';
+import ScanTab from '../(tabs)/index';
+import ScanRoute from '../scan';
+import { ro } from '../../src/copy/ro';
 
 jest.mock('../../src/lib/preview', () => ({ isPreview: true }));
 const Blank = () => null;
-
-// Demo mode used to push '/preview', a route that does not exist in apps/mobile ("Unmatched Route").
-it.each([
-  ['Fotografiază eticheta', '/capture'],
-  ['Scanează produsul', '/scan'],
-])('in demo mode "%s" opens %s', async (name, path) => {
-  await renderRouter({ index: Home, capture: Blank, scan: Blank });
-  const button = await screen.findByRole('button', { name });
-  await act(async () => { fireEvent.press(button); });
-  expect(screen).toHavePathname(path);
+// Demo mode must use the real capture and scan routes, never the missing /preview route.
+it('in demo mode the photo fallback opens /capture', async () => {
+ await renderRouter({ index: ScanTab, capture: Blank, scan: ScanRoute });
+ await fireEvent.press(await screen.findByRole('button', { name: 'Fotografiază eticheta' }));
+ expect(screen).toHavePathname('/capture');
+});
+it('in demo mode /scan remains directly reachable with its manual fallback', async () => {
+ await renderRouter({ index: ScanTab, capture: Blank, scan: ScanRoute }, { initialUrl: '/scan' });
+ expect(await screen.findByRole('header', { name: ro.scan.title })).toBeTruthy();
+ expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
+ expect(screen).toHavePathname('/scan');
 });
