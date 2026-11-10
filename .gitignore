@@ -24,3 +24,5 @@ supabase/.temp/
 **/dist-e2e/
 test-results/
 playwright-report/
+# U4: real package photos and typed ground truth stay on the tester's machine
+/label-photos/
