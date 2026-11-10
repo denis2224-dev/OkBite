@@ -56,14 +56,14 @@ export function SettingsScreen({ currentLanguage = 'ro', setLanguage, resetOnboa
       <Card>
         <Heading style={[styles.section, styles.sectionLabel, { color: colors.primary }]}>{ro.settings.language}</Heading>
         <View style={styles.choices}>
-          {(['ro', 'en'] as const).map(language => <HomePressable key={language} label={ro.settings[language === 'ro' ? 'romanian' : 'english']} disabled={!setLanguage} accessibilityState={{ disabled: !setLanguage, selected: currentLanguage === language }} onPress={() => chooseLanguage(language)} style={[styles.choice, { backgroundColor: currentLanguage === language ? colors.primary : colors.surface, opacity: setLanguage ? 1 : 0.55 }]}><Body style={{ color: currentLanguage === language ? colors.onPrimary : colors.ink }}>{ro.settings[language === 'ro' ? 'romanian' : 'english']}</Body></HomePressable>)}
+          {(['ro', 'en'] as const).map(language => <HomePressable key={language} label={ro.settings[language === 'ro' ? 'romanian' : 'english']} disabled={!setLanguage} aria-pressed={currentLanguage === language} accessibilityState={{ disabled: !setLanguage, selected: currentLanguage === language }} onPress={() => chooseLanguage(language)} style={[styles.choice, { backgroundColor: currentLanguage === language ? colors.primary : colors.surface, opacity: setLanguage ? 1 : 0.55 }]}><Body style={{ color: currentLanguage === language ? colors.onPrimary : colors.ink }}>{ro.settings[language === 'ro' ? 'romanian' : 'english']}</Body></HomePressable>)}
         </View>
         {(!setLanguage || languageError) && <Body accessibilityLiveRegion="polite" style={{ color: colors.muted }}>{ro.settings.pending}</Body>}
       </Card>
       <Card>
         <Heading style={[styles.section, styles.sectionLabel, { color: colors.primary }]}>{ro.settings.theme}</Heading>
         <View style={styles.choices}>
-          {(['system', 'light', 'dark'] as const).map(value => <HomePressable key={value} label={ro.settings[value]} accessibilityState={{ selected: preference === value }} onPress={() => setPreference(value)} style={[styles.choice, { backgroundColor: preference === value ? colors.primary : colors.surface }]}><Body style={{ color: preference === value ? colors.onPrimary : colors.ink }}>{ro.settings[value]}</Body></HomePressable>)}
+          {(['system', 'light', 'dark'] as const).map(value => <HomePressable key={value} label={ro.settings[value]} aria-pressed={preference === value} accessibilityState={{ selected: preference === value }} onPress={() => setPreference(value)} style={[styles.choice, { backgroundColor: preference === value ? colors.primary : colors.surface }]}><Body style={{ color: preference === value ? colors.onPrimary : colors.ink }}>{ro.settings[value]}</Body></HomePressable>)}
         </View>
       </Card>
       <Card>
@@ -78,7 +78,7 @@ export function SettingsScreen({ currentLanguage = 'ro', setLanguage, resetOnboa
       </Card>
       <Body style={{ color: colors.muted, textAlign: 'center' }}>{ro.settings.version} {Constants.expoConfig?.version ?? ro.app.unavailable}</Body>
     </Screen>
-    <Modal visible={confirming} transparent animationType="none" onRequestClose={cancelClear}>
+    <Modal accessibilityLabel={ro.settings.clearHistoryTitle} visible={confirming} transparent animationType="none" onRequestClose={cancelClear}>
       <ScreenSafeArea edges={['top', 'bottom', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.scrim }}>
         <ScrollView contentContainerStyle={styles.confirmation}>
           <Card accessibilityLabel={ro.settings.clearHistoryTitle} accessibilityViewIsModal>

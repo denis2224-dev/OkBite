@@ -24,3 +24,7 @@ under the settings/about routes; this task deliberately adds no route files.
 
 Pending acceptance: N17/N4/N10 integration, Claude cross-review, physical iPhone
 and Android app/browser checks in dark mode and at 200% font size, human merge.
+
+Web accessibility DOM regressions (actual RNW buttons and modal):
+`pnpm --filter mobile exec jest --config src/features/settings/jest.dom.config.cjs --runInBand`.
+The separate web preset avoids the native Jest window bootstrap conflict.
