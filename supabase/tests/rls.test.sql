@@ -1,5 +1,5 @@
 begin;
-select plan(53);
+select plan(55);
 select has_table('public', 'products','products table exists');
 -- Test-only states and identities; every file rolls back.
 insert into auth.users (id) values ('00000000-0000-4000-8000-000000000001'), ('00000000-0000-4000-8000-000000000002');
@@ -20,7 +20,9 @@ select is((select count(*) from products where status='verified'),6::bigint,'ano
 select is((select count(*) from products where status='unverified'),1::bigint,'anon sees unverified');
 select is((select count(*) from products where status='hidden'),0::bigint,'anon cannot see hidden');
 select is((select count(*) from product_ingredients where raw_name='secret'),0::bigint,'hidden ingredient links excluded');
-select is((select count(*) from categories),3::bigint,'public categories');
+select is((select count(*) from categories where slug <> 'necunoscut'),3::bigint,'public categories');
+select is((select count(*) from categories),4::bigint,'public categories include fallback');
+select is((select score_kind from categories where slug='necunoscut'),'general','unknown category is available without a reference-data import');
 select ok((select count(*) > 0 from ingredients),'public ingredients');
 select ok((select count(*) > 0 from product_ingredients),'public visible ingredient links');
 select throws_ok('select added_by_device from products','42501',null,'device identifiers are private');
@@ -47,8 +49,7 @@ select is((select count(*) from product_ingredients where raw_name='secret'),0::
 select is(is_moderator(),false,'ordinary user is not moderator');
 select is((select count(*) from products where status='hidden'),0::bigint,'ordinary user cannot read hidden');
 select is((select count(*) from reports),0::bigint,'ordinary user cannot read reports');
-with changed as (update products set name='tampered' returning id)
-select is((select count(*) from changed),0::bigint,'ordinary user cannot update');
+select throws_ok($$update products set name='tampered'$$,'42501',null,'ordinary user cannot update');
 select throws_ok($$insert into products (name,brand,quantity,category_slug,unit,ingredients_text,source) values ('Test','','','iaurt','g','','')$$,'42501',null,'ordinary user cannot insert');
 select throws_ok($$insert into moderators values ('00000000-0000-4000-8000-000000000001')$$,'42501',null,'cannot self-enroll as moderator');
 select throws_ok('select * from daily_stats','42501',null,'ordinary user cannot read stats');
@@ -56,14 +57,14 @@ select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000002'
 select is(is_moderator(),true,'moderator identity');
 select is((select count(*) from products where status='hidden'),1::bigint,'moderator sees hidden');
 select is((select count(*) from reports),1::bigint,'moderator sees reports');
-select lives_ok($$update products set hidden_reason='test' where status='hidden'$$,'moderator updates products');
-select lives_ok($$insert into product_ingredients values ('00000000-0000-4000-8000-000000000011',0,'test',null)$$,'moderator inserts ingredient link');
-select lives_ok($$delete from product_ingredients where raw_name='test'$$,'moderator deletes link');
-select lives_ok($$update reports set status='closed'$$,'moderator closes report');
-select lives_ok($$insert into products (name,brand,quantity,category_slug,unit,ingredients_text,source) values ('Moderator','','','iaurt','g','','test')$$,'moderator inserts product');
-select lives_ok($$delete from products where name='Moderator'$$,'moderator deletes product');
-select lives_ok($$insert into reports (product_id,message,device_id) values ('00000000-0000-4000-8000-000000000011','test','test')$$,'moderator inserts report');
-select lives_ok($$delete from reports where device_id='test'$$,'moderator deletes report');
+select throws_ok($$update products set hidden_reason='test' where status='hidden'$$,'42501',null,'moderator direct write denied: updates products');
+select throws_ok($$insert into product_ingredients values ('00000000-0000-4000-8000-000000000011',0,'test',null)$$,'42501',null,'moderator direct write denied: inserts ingredient link');
+select throws_ok($$delete from product_ingredients where raw_name='test'$$,'42501',null,'moderator direct write denied: deletes link');
+select throws_ok($$update reports set status='closed'$$,'42501',null,'moderator direct write denied: closes report');
+select throws_ok($$insert into products (name,brand,quantity,category_slug,unit,ingredients_text,source) values ('Moderator','','','iaurt','g','','test')$$,'42501',null,'moderator direct write denied: inserts product');
+select throws_ok($$delete from products where name='Moderator'$$,'42501',null,'moderator direct write denied: deletes product');
+select throws_ok($$insert into reports (product_id,message,device_id) values ('00000000-0000-4000-8000-000000000011','test','test')$$,'42501',null,'moderator direct write denied: inserts report');
+select throws_ok($$delete from reports where device_id='test'$$,'42501',null,'moderator direct write denied: deletes report');
 select throws_ok('select * from client_errors','42501',null,'moderator has no log access');
 reset role;
 set local role service_role;

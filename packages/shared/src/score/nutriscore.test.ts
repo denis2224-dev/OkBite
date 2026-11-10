@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ScoreFixture, type Nutrients } from '../contract';
 import { nutriScorePoints } from './nutriscore';
@@ -7,12 +7,11 @@ import { hasNonNutritiveSweetener } from './sweeteners';
 const zero: Nutrients = { kcal: 0, fat: 0, sat: 0, sugar: 0, salt: 0, protein: 0, fiber: 0, fruitVegPct: 0 };
 const n = (over: Partial<Nutrients>): Nutrients => ({ ...zero, ...over });
 
-// A3: 30 products checked by a person in the official SpF calculator. Skipped until the file lands.
+// Calculator agreement is not human approval; see data/SCORE-VALIDATION.md.
 const fixturesPath = new URL('../../../../data/score-fixtures.json', import.meta.url);
-const fixtures = existsSync(fixturesPath)
-  ? ScoreFixture.array().parse(JSON.parse(readFileSync(fixturesPath, 'utf8'))) : [];
+const fixtures = ScoreFixture.array().min(30).parse(JSON.parse(readFileSync(fixturesPath, 'utf8')));
 
-describe.skipIf(fixtures.length === 0)('data/score-fixtures.json', () => {
+describe('data/score-fixtures.json (agent calculator reproduction)', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', (_name, f) => {
     const { points, letter } = nutriScorePoints(f.nutrients, f.scoreKind, hasNonNutritiveSweetener(f.ingredientsText ?? ''));
     expect({ points, letter }).toEqual({ points: f.expectedPoints, letter: f.expectedLetter });
@@ -89,6 +88,11 @@ it('fat ratio thresholds stay inclusive for decimal label values (5,8 g of 10 g 
   const ratio = (sat: number, fat: number) =>
     nutriScorePoints({ ...zero, sat, fat }, 'fat').components.satRatio;
   expect([ratio(5.8, 10), ratio(5.79, 10), ratio(1, 10), ratio(0.99, 10), ratio(6.4, 10)]).toEqual([9, 8, 1, 0, 10]);
+});
+
+it('does not round a fat ratio just below a threshold up into the next point', () => {
+  expect(nutriScorePoints(n({ sat: 5.79999999, fat: 10 }), 'fat').components.satRatio).toBe(8);
+  expect(nutriScorePoints(n({ sat: 0.58, fat: 1 }), 'fat').components.satRatio).toBe(9);
 });
 
 describe('beverages (2023 report, points allocation)', () => {

@@ -163,7 +163,7 @@ Run: `pnpm --filter @okbite/shared test` → Expected: FAIL.
 
 - [ ] **Step 1: Failing tests for `parseLabel`** — valid JSON → numbers; `"salt": "0,3"` → `0.3`; `"sugar": ""` → `null` and `'sugar'` in `unclear`; `"ingredientsText": ""` → `null` and `'ingredientsText'` in `unclear`; fenced JSON parses; non-JSON → `UpstreamError`.
 - [ ] **Step 2: Implement `parseLabel`**, run → PASS.
-- [ ] **Step 3: Failing handler tests** — > 2 MB → 400; 21st call → 429; `nutritionImage: null` sends one image and returns `nutritionPhotoPath: null`; success → both paths under `uploads/<deviceId>/`; Claude failure → 502.
+- [ ] **Step 3: Failing handler tests** — > 2 MB → 400; 21st call → 429; `nutritionImage: null` sends one image and returns `nutritionPhotoPath: null`; success → both paths under `uploads/<deviceId>/`; AI failure after storing valid photos → 200 with blank, unclear fields and the private photo paths for manual entry.
 - [ ] **Step 4: Implement** — prompt asks for Romanian ingredients text exactly as printed and nutrition per 100 g/ml as JSON keys `ingredientsText, unit, kcal, fat, sat, sugar, salt, protein, fiber, fruitVegPct`, empty string when unreadable. Run → PASS.
 - [ ] **Step 5: Grade on 30 real label photo pairs** — per field: correct / wrong / null; target ≥ 90% correct or correctly null; table in the PR.
 - [ ] **Step 6: Spend cap (human)** — monthly limit on the Anthropic key; `ANTHROPIC_API_KEY` set in both Supabase projects' function secrets.

@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { importOff, translateIngredients, type OffProduct } from './import-off';
 
@@ -202,4 +202,66 @@ describe('resumable import', () => {
     expect(pause).toHaveBeenCalledWith(120000);
     vi.restoreAllMocks();
   });
+});
+
+
+describe('checkpoint integrity', () => {
+  it('rejects a corrupted checkpoint before making network requests', async () => {
+    writeFileSync(cache, '{bad');
+    const network = vi.fn();
+    vi.stubGlobal('fetch', network);
+    await expect(importOff(noPause, cache)).rejects.toThrow(/checkpoint/);
+    expect(network).not.toHaveBeenCalled();
+  });
+  it('does not trust cached translations that lost source quantities', async () => {
+    services([{ ...foreign, ingredients_text: 'молоко 2%, сахар' }]);
+    ai.mockImplementation(() => response(JSON.stringify(['lapte 2%', 'zahăr'])));
+    databaseFails = true;
+    await expect(importOff(noPause, cache)).rejects.toThrow('503');
+    const saved = JSON.parse(readFileSync(cache, 'utf8'));
+    for (const id of Object.keys(saved)) saved[id] = 'lapte, zahăr';
+    writeFileSync(cache, JSON.stringify(saved));
+    databaseFails = false;
+    await expect(importOff(noPause, cache)).rejects.toThrow(/checkpoint/);
+    expect(written).toHaveLength(0);
+    expect(ai).toHaveBeenCalledTimes(1);
+  });
+  it('reports database write failures with progress and restart context', async () => {
+    services([native]);
+    databaseFails = true;
+    await expect(importOff(noPause, cache)).rejects.toThrow(/import incomplete.*re-run to resume.*503/);
+  });
+});
+
+it('accepts OFF nulls at the page boundary', async () => {
+  services([{ ...native, quantity: null, nutriments: null } as unknown as OffProduct]);
+  expect(await importOff(noPause, cache)).toMatchObject({ inserted: 1 });
+});
+
+it('does not report completion when OFF returns a short page before the declared end', async () => {
+  services([native]);
+  const fetcher = fetch;
+  vi.stubGlobal('fetch', async (url: string, init?: RequestInit) =>
+    url.includes('openfoodfacts') ? Response.json({ products: [native], count: 150 }) : fetcher(url, init));
+  await expect(importOff(noPause, cache)).rejects.toThrow(/incomplete.*short page/);
+});
+
+it('restarts from validated segments when a Romanian segment contains another comma', async () => {
+  services([{ ...foreign, ingredients_text: 'skimmed milk powder; sugar' }]);
+  ai.mockImplementation(() => response(JSON.stringify(['lapte praf, degresat', 'zahăr'])));
+  databaseFails = true;
+  await expect(importOff(noPause, cache)).rejects.toThrow('503');
+  databaseFails = false;
+  expect(await importOff(noPause, cache)).toMatchObject({ inserted: 1 });
+  expect(written[0]?.ingredients_text).toBe('lapte praf, degresat; zahăr');
+  expect(ai).toHaveBeenCalledTimes(1);
+});
+
+it('reuses validated legacy flat checkpoints without another translation call', async () => {
+  const { createHash } = await import('node:crypto');
+  const id = createHash('sha256').update(JSON.stringify([foreign.code, foreign.ingredients_text, process.env.AI_MODEL || 'deepseek-v4.1-flash:free', 1])).digest('hex');
+  writeFileSync(cache, JSON.stringify({ [id]: 'lapte, zahăr' }));
+  services([foreign]);
+  expect(await importOff(noPause, cache)).toMatchObject({ inserted: 1 });
+  expect(ai).not.toHaveBeenCalled();
 });

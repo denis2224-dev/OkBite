@@ -51,3 +51,15 @@ test('photo recovery is bound to the selected local project API', async () => {
   assert.throws(() => localApiUrl(config.replace('okbite-r2-review', 'unrelated'), 'http://127.0.0.1:59431'), /Refusing/);
   assert.throws(() => localApiUrl('project_id = "okbite"', 'http://127.0.0.1:59431'), /local project API/);
 });
+
+test('CLI v3 recovery verification targets only the configured disposable local database', async () => {
+  const { localRecoveryTestArgs } = await import('../local-project.mjs');
+  const config = 'project_id = "okbite-r2-review"\n[db]\nport = 58432\n';
+  assert.deepEqual(localRecoveryTestArgs(config, 'okbite_restore_aabbcc001122'), [
+    'test', 'db', '--yes', '--remote=postgresql://postgres:postgres@127.0.0.1:58432/okbite_restore_aabbcc001122?sslmode=disable',
+  ]);
+  for (const target of ['postgres', 'okbite', 'https://hosted.supabase.co', 'okbite_restore_abc;dropdb']) {
+    assert.throws(() => localRecoveryTestArgs(config, target), /disposable/);
+  }
+  assert.throws(() => localRecoveryTestArgs(config.replace('okbite-r2-review', 'unrelated'), 'okbite_restore_aabbcc001122'), /Refusing/);
+});

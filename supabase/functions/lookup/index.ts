@@ -1,5 +1,6 @@
 import { z } from 'npm:zod@3.23.8';
 import { Code, LookupResponse, Uuid } from '../_shared/contract.ts';
+import { normalizeCode } from '../_shared/ean/index.ts';
 import { loadProduct } from '../_lib/db.ts';
 import { cors, fail, HttpError, json, logEvent, readDeviceId, withCors } from '../_lib/http.ts';
 
@@ -18,6 +19,7 @@ export function createHandler(deps = { loadProduct, logEvent }) {
         const params = new URL(req.url).searchParams;
         const parsed = querySchema.safeParse(Object.fromEntries(params));
         if (params.size !== 1 || !parsed.success) throw new HttpError(400);
+        if ('code' in parsed.data && !normalizeCode(parsed.data.code)) throw new HttpError(400);
         const result = await deps.loadProduct(parsed.data);
         const body = LookupResponse.parse(
           result ? { status: 'found', ...result } : { status: 'not_found' },

@@ -1,6 +1,6 @@
 # data/
 
-Hand-checked content. `pnpm data:check` must report `0 errors` before merge; `pnpm data:load` (C5) refuses to run otherwise.
+Checked content and drafts are kept separately. `pnpm data:check` validates development data and may pass with an empty checked knowledge base. `pnpm data:load` refuses invalid data; it does not imply release readiness.
 
 - `categories.json`: shelf categories and their Nutri-Score kind.
 - `ingredients.json`: **checked** ingredient explanations only. Every entry needs `checkedBy` and `checkedAt`.
@@ -31,6 +31,89 @@ Beverages with a non-nutritive sweetener must include `ingredientsText` in the
 fixture so their sweetener points are tested. The field is optional/nullable for
 existing fixtures; do not invent ingredient text or human verification.
 
-### Status (2026-11-05)
+### Evidence status (2026-11-09)
 
-`score-fixtures.json` holds 31 entries (A 5, B 5, C 9, D 6, E 6; 5 beverages, 3 cheeses, 4 fats/oils/nuts, 1 water), each computed by Claude with the official calculator (FPS/SpF updated-algorithm workbook, health.belgium.be copy) on the Open Food Facts revision named in `checkedWith`. Our engine matches all 31. Rusu Serghei re-checked the first 25 on 2026-11-05; the 6 added after that (2 cheeses, Barilla Capellini, Vis beans, Floris sunflower oil, Activia natur) still say "not yet checked". Kept only in the draft: Yaw (label kJ and kcal disagree), the mango drink (saturates missing) and the orange juice filed as a general food.
+The current 31 fixture records carry historical `checkedWith` prose: 25 claim a
+human recheck on 2026-11-05 and six explicitly remain unchecked. This text alone
+is not independently verified human approval. The scoring track owns corrections,
+calculator evidence, fixture coverage and `data/score-*`; do not replace missing
+human review with an agent assertion. Counts and classifications must be rechecked
+after integrating that track.
+
+## Explicit release gate
+
+Run `pnpm data:check --release` before a content release. It requires:
+
+- At least 150 valid checked ingredient records, real nonfuture review dates,
+  opened source URLs, no blank content or matcher-equivalent name/alias collisions.
+- The `necunoscut` fallback category needed by the importer.
+- At least 30 distinct score fixtures: at least five per letter A–E, four
+  beverages, three cheeses, three fats/oils/nuts, one water, and non-null
+  kcal/saturated fat/sugar/salt calculator inputs for non-water fixtures. Water
+  uses its dedicated score path and may keep those nutrients null.
+- A current human review record for every fixture in
+  `score-fixtures.review.json` (owned by the scoring track). Each record has
+  `fixtureSha256`, `checkedBy`, `checkedAt` (`YYYY-MM-DD`) and `source` (the
+  official calculator/report URL actually opened by the reviewer). Compute the
+  digest with exported `scoreFixtureDigest(fixture)` from `scripts/check-data.ts`:
+  SHA-256 of `JSON.stringify(ScoreFixture.parse(fixture))`. Changing any scoring
+  input, expected output or provenance invalidates the record. Never manufacture
+  records by parsing `checkedWith` prose.
+
+`pnpm data:load --release` applies this gate before any writes. Ordinary loading
+remains available for local development; it loads only `ingredients.json`, never
+`ingredients.draft.json`. These commands check recorded evidence and content
+coverage; a green result still needs independent human approval.
+
+There are **0 checked ingredients and 172 drafts**. All draft sources have an
+HTTPS link, which does not establish that the explanation is supported or that
+any human opened it. Human reviewers still need to open each cited annex/page,
+check that it supports the whole explanation (not only the allergen/additive
+classification), correct Romanian text and aliases, confirm allergens, then add
+their actual reviewer/date and move approved entries to the checked file. Review
+at least 150 for the content gate; review all 172 to finish the draft backlog.
+
+## Import operation and local verification
+
+Load categories before importing: a fresh seed does not contain the importer’s
+`necunoscut` category. The importer searches products **sold in Moldova** across
+four language partitions; valid imported barcodes are retained alongside 484
+codes. OFF `_100g` nutrient values are already normalized per 100 g/ml, including
+when the source table was entered per serving. Never substitute `_serving` or
+raw values for absent `_100g` fields. Missing/invalid nutrients remain null.
+Liquid package unit `ml` or explicit `100ml` selects the 100 ml label.
+[OFF field definitions](https://github.com/openfoodfacts/openfoodfacts-server/blob/main/html/data-fields.txt)
+explain the normalized units. All imported products remain unverified.
+
+Romanian text is preferred; foreign ingredients require an explicitly configured
+translation key. Translations preserve segments, numbers, E codes and trace
+clauses, and combine detected allergens with OFF declarations. These mechanical
+checks cannot prove a translation’s meaning: human label checks remain necessary.
+No key means foreign rows are reported as skipped. Existing foreign codes are
+checked before translating; insert-only conflict handling protects existing rows,
+including races. Repeated runs insert zero existing codes.
+
+The ignored `OFF_TRANSLATION_CACHE` (default
+`.superpowers/off-import/translations.json`) saves validated translations before
+database writes by atomic rename. Version 2 entries retain the validated model
+segments, including punctuation within a segment. Legacy flat entries are reused
+only when their boundaries can still be validated; ambiguous legacy entries stop
+for inspection instead of silently requesting another translation. After
+interruption, rerun with the same cache
+and model: committed rows are skipped and cached translations are reused.
+Corrupt checkpoints fail closed; restore a known-good copy or remove the affected
+entry only after inspection. Do not delete the cache casually: translation work
+would be repeated. A reported partition above OFF’s 1000-result cap requires a
+smaller partition/export before claiming complete coverage. Pagination is not a
+snapshot: later source changes may require another pass. Concurrent importers
+must use distinct cache files; a shared checkpoint is not a multi-writer lock.
+
+`import-off.integration.test.ts` is opt-in and accepts only the disposable C5
+fixture at `http://127.0.0.1:64431` via `C5_LOCAL_URL` and `C5_LOCAL_KEY`. Copy
+`supabase/` to a new temporary project (omit `.temp/` and `.env*`), use unique ID
+`okbite-c5-data-20261109`, unused API/DB ports 64431/64432 and PG17. Keep checked-in
+defaults unchanged. Run the scripts suite with those local-only variables to
+exercise actual PostgREST loading, duplicate/repeated runs, null nutrients,
+checksum rejection, interrupted inserts and durable translation reuse. OFF/AI
+answers are disposable fixtures, with no hosted import or provider job. It cleans
+its rows afterward; ordinary `pnpm test:scripts` skips this integration test.

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { TextInput, View } from 'react-native';
-import { NUTRIENT_KEYS, ProductInput } from '@okbite/shared';
+import { NUTRIENT_KEYS, normalizeCode, ProductInput } from '@okbite/shared';
 import { Body, Button } from '../../ui';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
@@ -60,7 +60,10 @@ export function ProductEditor({
       code: code.trim() || null,
       nutrients,
     });
-    if (!parsed.success) {
+    if (
+      !parsed.success ||
+      (parsed.data.code !== null && normalizeCode(parsed.data.code) !== parsed.data.code)
+    ) {
       setError(ro.app.admin.invalid);
       return;
     }

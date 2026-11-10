@@ -1,5 +1,5 @@
 {
-  "imports": { "@supabase/supabase-js": "npm:@supabase/supabase-js@2" },
+  "imports": { "@supabase/supabase-js": "npm:@supabase/supabase-js@2.118.0" },
   "nodeModulesDir": "none",
   "lock": false,
   "compilerOptions": { "strict": true },

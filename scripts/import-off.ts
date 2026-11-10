@@ -13,18 +13,19 @@ import {
 import { existingCodes, upsert } from './load-data';
 
 const OffProductSchema = z.object({
-  code: z.string().optional(),
-  product_name: z.string().optional(),
-  product_name_ro: z.string().optional(),
-  brands: z.string().optional(),
-  quantity: z.string().optional(),
-  ingredients_text: z.string().optional(),
-  ingredients_text_ro: z.string().optional(),
-  lang: z.string().optional(),
-  nutrition_data_per: z.string().optional(),
-  nutriments: z.record(z.unknown()).optional(),
-  allergens_tags: z.array(z.string()).optional(),
-  traces_tags: z.array(z.string()).optional(),
+  code: z.string().nullish(),
+  product_name: z.string().nullish(),
+  product_name_ro: z.string().nullish(),
+  brands: z.string().nullish(),
+  quantity: z.string().nullish(),
+  ingredients_text: z.string().nullish(),
+  ingredients_text_ro: z.string().nullish(),
+  lang: z.string().nullish(),
+  product_quantity_unit: z.string().nullish(),
+  nutrition_data_per: z.string().nullish(),
+  nutriments: z.record(z.unknown()).nullish(),
+  allergens_tags: z.array(z.string()).nullish(),
+  traces_tags: z.array(z.string()).nullish(),
 });
 export type OffProduct = z.infer<typeof OffProductSchema>;
 type Pause = (ms: number) => Promise<void>;
@@ -34,7 +35,7 @@ type Pause = (ms: number) => Promise<void>;
 const PAGE_SIZE = 100;
 const FIELDS =
   'code,product_name,product_name_ro,brands,quantity,ingredients_text,ingredients_text_ro,lang,' +
-  'nutrition_data_per,nutriments,allergens_tags,traces_tags';
+  'nutrition_data_per,product_quantity_unit,nutriments,allergens_tags,traces_tags';
 const SEARCH = `https://world.openfoodfacts.org/api/v2/search?fields=${FIELDS}&page_size=${PAGE_SIZE}&countries_tags=en:moldova`;
 // OFF answers 401 past 1000 results of one search, so the 1928 Moldova products (8 Nov 2026) are split by
 // label language into searches of 577, 316, 860 and about 175 results.
@@ -80,7 +81,7 @@ const OFF_ALLERGENS: Record<string, Allergen> = {
 };
 
 const amount = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
-const text = (...values: (string | undefined)[]) =>
+const text = (...values: (string | null | undefined)[]) =>
   values.map((v) => v?.trim()).find((v) => v) ?? '';
 const sleep: Pause = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -90,16 +91,21 @@ const sleep: Pause = (ms) => new Promise((r) => setTimeout(r, ms));
  * Only Romanian ingredients text is taken: the allergen matcher reads Romanian, so English or Russian text would
  * show "no allergens" for a product that has them. importOff translates those first.
  */
-export function mapOffProduct(off: OffProduct): AddProductRequest | null {
+export function mapOffProduct(raw: unknown): AddProductRequest | null {
+  const parsed = OffProductSchema.safeParse(raw);
+  if (!parsed.success) return null;
+  const off = parsed.data;
   const code = off.code ? normalizeCode(off.code.trim()) : null;
   const name = text(off.product_name_ro, off.product_name);
-  if (!code || !name) return null;
+  const brand = text(off.brands?.split(',')[0]).slice(0, 80);
+  // The contract now allows '' for a shopper's unreadable brand; imports still need a real one.
+  if (!code || !name || !brand) return null;
   const n = off.nutriments ?? {};
-  const unit = off.nutrition_data_per === '100ml' ? 'ml' : 'g';
+  const unit = off.nutrition_data_per === '100ml' || off.product_quantity_unit === 'ml' ? 'ml' : 'g';
   const result = AddProductRequest.safeParse({
     code,
     name: name.slice(0, 120),
-    brand: text(off.brands?.split(',')[0]).slice(0, 80),
+    brand,
     quantity: text(off.quantity).slice(0, 30),
     unit,
     categorySlug: 'necunoscut',
@@ -134,7 +140,7 @@ export function toRow(
   source = 'Open Food Facts',
 ) {
   const found = detectAllergens(p.ingredientsText);
-  const fromOff = (t?: string[]) => (t ?? []).flatMap((id) => OFF_ALLERGENS[id] ?? []);
+  const fromOff = (t?: string[] | null) => (t ?? []).flatMap((id) => OFF_ALLERGENS[id] ?? []);
   const contains = new Set([...found.allergens, ...fromOff(tags.allergens_tags)]);
   const traces = new Set([...found.mayContain, ...fromOff(tags.traces_tags)]);
   const n = p.nutrients;
@@ -173,7 +179,7 @@ const eCodes = (s: string) =>
   JSON.stringify(
     (s.match(/\bE[ -]*\d{3,4}[a-z]?\b/gi) ?? []).map((e) => e.replace(/[ -]/g, '').toUpperCase()),
   );
-function parseTranslation(raw: string, source: string): string | null {
+function parseTranslation(raw: string, source: string): string[] | null {
   const parts = source.split(SEPARATORS);
   const input = parts.filter((_, i) => i % 2 === 0);
   const parsed = z.array(z.string().trim().min(1).max(3000)).safeParse(
@@ -198,7 +204,11 @@ function parseTranslation(raw: string, source: string): string | null {
     )
       return null;
   }
-  return parts.map((part, i) => (i % 2 ? part : parsed.data[i / 2])).join('');
+  return parsed.data;
+}
+
+function joinTranslation(segments: string[], source: string): string {
+  return source.split(SEPARATORS).map((part, i) => (i % 2 ? part : segments[i / 2])).join('');
 }
 
 function retryDelay(res: Response | null, fallback: number): number {
@@ -211,12 +221,17 @@ function retryDelay(res: Response | null, fallback: number): number {
 
 /** A local atomic checkpoint keeps completed AI work reusable even when a database write fails. */
 function checkpoint(path: string | null) {
-  const schema = z.record(z.string());
-  const values =
-    path && existsSync(path) ? schema.parse(JSON.parse(readFileSync(path, 'utf8'))) : {};
+  const entry = z.union([z.string(), z.object({ version: z.literal(2), segments: z.array(z.string()) }).strict()]);
+  const schema = z.record(entry);
+  let values: z.infer<typeof schema>;
+  try {
+    values = path && existsSync(path) ? schema.parse(JSON.parse(readFileSync(path, 'utf8'))) : {};
+  } catch {
+    throw new Error('translation checkpoint: invalid JSON or entries; restore a valid checkpoint before resuming');
+  }
   return {
     get: (key: string) => values[key],
-    save(key: string, value: string) {
+    save(key: string, value: z.infer<typeof entry>) {
       values[key] = value;
       if (!path) return;
       mkdirSync(dirname(path), { recursive: true });
@@ -230,11 +245,11 @@ function checkpoint(path: string | null) {
  * Romanian ingredients text from the model, or null when it gives no complete answer.
  * Throws when the provider refuses the request or stays busy, so the import stops and can resume.
  */
-export async function translateIngredients(
+async function translateSegments(
   source: string,
   key: string,
   pause: Pause = sleep,
-): Promise<string | null> {
+): Promise<string[] | null> {
   const body = JSON.stringify({
     model: process.env.AI_MODEL || AI_MODEL,
     max_tokens: 4000, // room for the model's reasoning before the answer
@@ -276,6 +291,12 @@ export async function translateIngredients(
     }
     await pause(retryDelay(res, AI_PAUSE_MS * 2 ** tries));
   }
+}
+
+/** Returns validated Romanian text; the importer also persists its original segment boundaries. */
+export async function translateIngredients(source: string, key: string, pause: Pause = sleep): Promise<string | null> {
+  const segments = await translateSegments(source, key, pause);
+  return segments ? joinTranslation(segments, source) : null;
 }
 
 /**
@@ -329,6 +350,9 @@ export async function importOff(
           `${languages}: search exceeds the 1000-result limit; use a smaller partition or OFF export`,
         );
 
+      if (count > 0 && products.length < PAGE_SIZE && (page - 1) * PAGE_SIZE + products.length < count)
+        throw incomplete(`${languages} page ${page}: short page before the declared result count; retry or use an OFF export`);
+
       const rows: ReturnType<typeof toRow>[] = [];
       const foreign: { off: OffProduct; code: string }[] = [];
       for (const off of products) {
@@ -345,7 +369,11 @@ export async function importOff(
         else if (probe) foreign.push({ off, code });
       }
       n.mapped += rows.length;
-      n.inserted += await upsert('products', rows, 'code', true);
+      const write = async (batch: ReturnType<typeof toRow>[]) => {
+        try { return await upsert('products', batch, 'code', true); }
+        catch (e) { throw incomplete(`${languages} page ${page}: ${(e as Error).message}`); }
+      };
+      n.inserted += await write(rows);
 
       let failure: Error | null = null;
       if (foreign.length && !key) n.untranslated += foreign.length;
@@ -359,12 +387,19 @@ export async function importOff(
             .digest('hex');
           let ro: string | null;
           try {
-            ro = cache.get(id) ?? null;
-            if (!ro) {
+            const cached = cache.get(id);
+            // Legacy flat strings are reusable only when their boundaries still validate.
+            // Ambiguous legacy entries fail closed for inspection; never pay to replace them silently.
+            let segments = cached ? parseTranslation(JSON.stringify(typeof cached === 'string'
+              ? cached.split(SEPARATORS).filter((_, i) => i % 2 === 0) : cached.segments), source) : null;
+            if (cached && !segments)
+              throw new Error('translation checkpoint: cached text fails source validation; restore or remove this entry before resuming');
+            if (!segments) {
               await pause(AI_PAUSE_MS);
-              ro = await translateIngredients(source, key!, pause);
-              if (ro) cache.save(id, ro);
+              segments = await translateSegments(source, key!, pause);
+              if (segments) cache.save(id, { version: 2, segments });
             }
+            ro = segments ? joinTranslation(segments, source) : null;
           } catch (e) {
             failure = e as Error;
             break;
@@ -373,7 +408,7 @@ export async function importOff(
           if (m) {
             n.mapped++;
             n.translated++;
-            n.inserted += await upsert('products', [toRow(m, off, TRANSLATED)], 'code', true);
+            n.inserted += await write([toRow(m, off, TRANSLATED)]);
           } else n.untranslated++;
         }
       }

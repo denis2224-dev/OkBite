@@ -36,11 +36,20 @@ jobs:
           git diff --exit-code -- supabase/functions/_shared
           test -z "$(git ls-files --others --exclude-standard supabase/functions/_shared)"
       - run: pnpm --filter mobile web
-      - name: Test offline browser shell with local demo fixtures
+      - name: Test unknown product flows and offline shell on iPhone and Android viewports
+        env:
+          EXPO_PUBLIC_NUTRITION_ENRICHMENT: '1' # Local stubs only; hosted previews retain the backend-readiness gate.
+          EXPO_PUBLIC_GUIDED_ADD: '1' # Same: the guided unknown-product entry stays off outside the stub build.
         run: |
           pnpm exec playwright install --with-deps chromium webkit
           pnpm e2e:web:build
           pnpm e2e:web
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: browser-failure-traces
+          path: test-results/
+          retention-days: 7
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: web-export
@@ -84,6 +93,7 @@ jobs:
           export SUPABASE_URL="$API_URL"
           export SUPABASE_ANON_KEY="$ANON_KEY"
           export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
+          export SUPABASE_JWT_SECRET="$JWT_SECRET"
           export OKBITE_RUN_INTEGRATION=1
           if [ -f supabase/tests/local-cors.mjs ]; then
             node supabase/tests/local-cors.mjs

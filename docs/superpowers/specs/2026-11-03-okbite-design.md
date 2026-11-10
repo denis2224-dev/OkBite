@@ -1,8 +1,12 @@
 # OkBite — Design Spec
 
-Date: 2026-11-04 (revised: native iPhone + Android app, photo-first flow) · Status: approved for planning
+Date: 2026-11-04 (revised: 2026-11-09, Task U0 draft proposal for Denis/Sergiu/David/Stas approval; U1 contract merged in #115) · Status: draft proposal for review
 Prototype (source of truth for look, copy and states): `docs/prototype/Main.dc.html` · https://claude.ai/artifact/5rY8DhLtDRH67SQzXMyP8s
 Team plan (roles, timeline): https://claude.ai/artifact/XQm9DtD4aXXZBCi6sJfGQ4
+
+> **Revision note (9 Nov 2026 — Task U0 draft proposal)**:
+> - **Summary**: Specifies the unknown product flow improvements. Front photo is required (reusing identify photo or prompting on barcode entry), ingredients photo is required, followed by four explicit answers to the nutrition question (separate photo, same photo, no table, skip for now). Added draft lifecycle rules, null nutrient semantics, idempotency on save, enrichment constraints for unverified products, U1 contract proposals for R2 confirmation, and eight comprehensive acceptance criteria.
+> - **Status**: Draft proposal submitted for review and approval by Denis, Sergiu, David, and Stas. The U1 contract (§7) merged in #115; `unit` stays required (9 Nov), so a flow without a nutrition table asks g/ml with one tap.
 
 ## 1. What OkBite is
 
@@ -13,7 +17,7 @@ The core flow:
 1. The shopper **photographs the product**.
 2. The app looks for a **barcode in the photo**. If it finds one, it looks the product up by code. If not, AI reads the **brand, name and quantity from the pack**, the backend searches the database, and the shopper confirms the match.
 3. **Found** → the shopper gets the answer: allergens, "may contain" traces, a 0–100 nutrition score with up to three reasons, per-portion values against an adult daily reference, every ingredient explained with a source, and a comparison with another product of the same category.
-4. **Not found** → the app asks the shopper to photograph the **ingredients list and the nutrition table**. AI reads them, the shopper corrects anything unclear, gets the answer immediately, and the product is **added to the database at once**, visible to everyone and marked "Neverificat" until the team verifies it.
+4. **Not found** → front photo required (reusing the front photo taken during identification; barcode-only entry adds a front-photo step while preserving the scanned barcode), ingredients photo required, then **four explicit answers to the nutrition question**: (a) yes, separate photo; (b) table is in the ingredients photo; (c) no table on packaging; (d) skip for now. A short confirmation screen shows captured photos and extracted values; editing on tap, category optional. Preserves manual-entry fallback (#104) behind "Scriu eu textul" when AI read fails, along with existing lifecycle guards. Retaking one photo keeps all other photos and already-extracted results. Missing optional nutrition must never imply blurry photography or camera failure. The product is **added to the database at once**, visible to everyone and marked "Neverificat" until the team verifies it.
 
 The shopper can also **scan the barcode directly** with the live camera, or type it, as an alternative entry.
 
@@ -33,8 +37,8 @@ History works offline. No shopper accounts. Romanian only. Target: both stores l
 | `/product/[id]/ingredients` | Ingredients explained, grouped | 4 · Ingrediente |
 | `/product/[id]/label` | Label photo and text | (sheet in 3 · Rezultat) |
 | `/compare` | Compare two products of one category | 5 · Comparație |
-| `/add` | Two shots: ingredients list, then nutrition table (option "Sunt pe aceeași poză") | 6 · Fotografierea etichetei |
-| `/add/review` | Confirm extracted text and product name/brand/quantity, then save | 6b · Confirmarea textului extras, OCR neclar |
+| `/add` | Multi-step photo capture: front photo required (reused from identify, or captured if entered via barcode), ingredients photo required, then nutrition choice (separate photo / table in ingredients photo / no table / skip for now). Retaking one photo keeps all other photos/results. Manual fallback ("Scriu eu textul", #104) available if AI read fails. | 6 · Fotografierea etichetei |
+| `/add/review` | Short confirmation screen: displays photos and extracted values (brand, name, quantity, ingredients, optional nutrition, optional category; editing on tap). Missing optional nutrition never displays blurry-photo warnings. Publishes an unverified product only after explicit confirmation. | 6b · Confirmarea textului extras, OCR neclar |
 | `/history` | On-device history, clear all | 7 · Istoric |
 | (state) | Offline: photo or code kept, retried when online | Fără conexiune |
 | `/about`, `/privacy`, `/terms`, `/method` | About the data, privacy, terms, score method | — |
@@ -43,8 +47,13 @@ History works offline. No shopper accounts. Romanian only. Target: both stores l
 ## 3. Data rules
 
 - A product has an internal `id` (UUID). `code` (EAN-8/EAN-13) is optional and unique when present: products added from a photo without a visible barcode have no code.
-- Product `status`: `verified` (checked by the team), `unverified` (added by a shopper, visible with a "Neverificat" badge), `hidden` (removed by the team).
-- Nutrients per 100 g (solids) or 100 ml (drinks): `kcal, fat, sat, sugar, salt, protein, fiber, fruitVegPct`; any may be `null`.
+- Product `status`: `verified` (checked by the team), `unverified` (added by a shopper, visible with a "Neverificat" badge), `hidden` (removed by the team). Confirmed saved products remain unverified / "Neverificat" and immediately visible to all shoppers.
+- Nutrients per 100 g (solids) or 100 ml (drinks): `kcal, fat, sat, sugar, salt, protein, fiber, fruitVegPct`; all nutrients may be `null`. Missing values never default or convert to zero.
+- Category: optional on submission; if unconfirmed or `necunoscut`, no score is calculated.
+- Brand: may be unreadable or missing from packaging without mandatory typing or keyboard entry. If essential product identity or ingredients cannot be read, offer a targeted retake and preserve a local draft; never invent identity to satisfy validation.
+- Draft lifecycle: unfinished additions are device-only drafts and are never published as products. Private photo uploads for extraction do not publish a product.
+- Save idempotency: retrying the same save (network retry, re-submission, double-tap) must reuse the original ingredients-photo identity to prevent duplicate records.
+- Nutrition enrichment: allows updating an existing product record later only while it remains `unverified` and all nutrient fields are currently `null`, submitted from the contributing device; enrichment only fills null fields and strictly preserves existing product `status`.
 - Daily reference for an adult: 2000 kcal, 90 g sugars, 20 g saturated fat, 6 g salt.
 - Allergens: the 14 EU allergens, with these Romanian names: `Gluten, Crustacee, Ouă, Pește, Arahide, Soia, Lapte, Fructe cu coajă lemnoasă, Țelină, Muștar, Susan, Dioxid de sulf și sulfiți, Lupin, Moluște`.
 - Ingredient groups: `base`, `fat`, `taste`, `add`, `cult` (names from the prototype).
@@ -55,7 +64,11 @@ History works offline. No shopper accounts. Romanian only. Target: both stores l
 
 - Nutri-Score **2023** points and letter with the official algorithm (general foods incl. cheese and red meat, fats/oils/nuts, beverages), from Santé publique France's update reports.
 - 0–100 by letter band, linear inside the band's points range for that kind: A 100…80, B 79…60, C 59…40, D 39…20, E 19…0. Open-ended bands use the kind's minimum/maximum possible points.
-- Grade: `good` ≥ 60, `medium` 40–59, `low` < 40; `unavailable` when kcal, sugar, sat or salt is null.
+- Grade: `good` ≥ 60, `medium` 40–59, `low` < 40; `unavailable` ("Date insuficiente") when kcal, sugar, sat, or salt is null, or when category is unconfirmed / `necunoscut`. Missing values never become zero, and no score is computed without approved inputs and category.
+- Do not change the scoring algorithm or invent medical/nutrition facts.
+- Ingredients analysis is independent of the nutrition score: allergens and ingredient insights are presented even when nutrition values are missing or the score is unavailable.
+- Clear distinction between literal label transcription and sourced ingredient explanations.
+- An unknown allergen or missing label text is never proof of absence; allergen status reflects only confirmed findings.
 - Up to 3 reasons (`good`/`bad`/`neutral`, Romanian, with the real numbers).
 - Always show "Calculat la 100 g; nu indică riscul unei boli." Never use the Nutri-Score logo.
 
@@ -96,12 +109,16 @@ Exact types live in `packages/shared/src/contract.ts` (R2, Task C1).
 |---|---|---|---|
 | `lookup` | GET `?code=` or `?id=` | — | `LookupResponse` |
 | `identify` | POST | `IdentifyRequest` | `IdentifyResponse` |
-| `read-label` | POST | `ReadLabelRequest` | `ReadLabelResponse` |
-| `add-product` | POST | `AddProductRequest` | `LookupResponse` (status `found`, product `unverified`) |
+| `read-label` | POST | `ReadLabelRequest` (`nutrition`: `separate` \| `same_photo` \| `none` \| `skipped`; absent = old client) | `ReadLabelResponse` (`reasons`: one `FieldReason` per nutrient and `ingredientsText`) |
+| `read-label` (enrich read) | POST | `EnrichReadLabelRequest` (nutrition photo only, `ingredientsImage: null`) | `EnrichReadLabelResponse` (`ingredientsPhotoPath: null`) |
+| `add-product` | POST | `AddProductRequest` (`categorySlug` optional, defaults to `necunoscut`; `brand` may be `''`) | `LookupResponse` (status `found`, product `unverified`) |
+| `enrich-product` | POST | `EnrichProductRequest` (`productId`, `unit`, `nutrients`, `nutritionPhotoPath`) | `LookupResponse` |
 | `report` | POST | `ReportRequest` | `{ status: 'ok' }` |
 | `moderate` | POST (moderator JWT) | `ModerateRequest` | `{ status: 'ok' }` |
 
 Errors: HTTP 4xx/5xx with `{ error: 'bad_request' | 'rate_limited' | 'not_found' | 'unauthorized' | 'upstream_failed' | 'duplicate', message }`.
+
+`FieldReason`: `read`, `not_printed`, `not_photographed`, `unreadable`, `no_per_100`, `failed`. A field that is not `read` is `null`, never `0`. `unclear` stays in `ReadLabelResponse` for old clients.
 
 ## 8. Store and non-functional requirements
 
@@ -112,3 +129,14 @@ Errors: HTTP 4xx/5xx with `{ error: 'bad_request' | 'rate_limited' | 'not_found'
 - Time from photo to answer for a known product: under 3 s on 4G.
 - Privacy: no accounts, no location; photos go to the Claude API for reading and are stored for the product record (stated in the privacy policy and in App Store / Play data-safety forms); EXIF stripped.
 - Store needs: Apple Developer Program and Google Play developer accounts, privacy policy URL, support email, screenshots for 6.7" iPhone and Android phone, age rating questionnaires.
+
+## 9. Acceptance criteria
+
+1. **Unknown product creation from front + ingredients photos without mandatory keyboard input**: Shoppers can photograph the front of the pack and the ingredients list, and save the product without being forced to type brand, product name, or category.
+2. **Nutrition question asked only after both photos with all four choices**: The nutrition prompt appears strictly after both front and ingredients photos have been acquired, presenting four distinct choices: separate photo, table in ingredients photo, no table on packaging, and skip for now.
+3. **"No table" and "skip for now" save ingredients-only without misleading nutrition warning**: Choosing "no table" or "skip for now" saves the product with ingredients analysis only, without triggering misleading warnings about blurry photography or camera errors.
+4. **"Yes" and "same-photo" retain only printed nutrition and score conditionally**: Selecting a separate photo or same-photo mode records only values physically printed on the label, and shows a nutrition score only when approved nutrient inputs and a confirmed category permit it (otherwise showing "Date insuficiente").
+5. **Unreadable optional table offers retake or continue ingredients-only**: If the nutrition table cannot be parsed by AI, the shopper is given the choice to retake the nutrition photo or proceed with ingredients only, preserving all other captured photos and already-extracted data.
+6. **Missing nutrients stay null, never zero or invented**: All absent or unread nutrients remain strictly `null`; they are never coerced to `0`, substituted with defaults, or fabricated.
+7. **Enrichment updates same ID conditionally, retries prevent duplicates, drafts restore locally**: Later nutrition enrichment updates the existing product ID only if it remains `unverified` and all nutrient fields are currently `null`. Network retries or rapid double-taps reuse original photo identities and prevent duplicate records. Reloading the app restores any local draft without automatically resubmitting pending AI read requests.
+8. **Physical verification on iPhone and Android**: Validated on actual iPhone (Safari web + installed app) and Android phone (Chrome web + installed app), in light and dark mode, and at 200% font scaling, with verifiable execution evidence (commit SHA, device model, OS version, mode, test outcome, screenshots) and zero fabricated test results.

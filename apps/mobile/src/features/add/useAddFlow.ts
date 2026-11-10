@@ -43,10 +43,13 @@ export function useAddFlow() {
   const activity = useScreenActivity();
   const ingredientsUriRef = useRef<string | null>(null);
   const lastAttemptRef = useRef<{ ingredientsUri: string; nutritionUri: string | null } | null>(null);
+  // The label photo being read stays on screen instead of the live camera.
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
 
   const submitPair = useCallback(
     async (ingredientsUri: string, nutritionUri: string | null, token: number) => {
       lastAttemptRef.current = { ingredientsUri, nutritionUri };
+      setPhotoUri(nutritionUri ?? ingredientsUri);
       setCanRetry(true);
       const budget = nutritionUri === null ? SINGLE_PHOTO_MAX_BYTES : TWO_PHOTO_MAX_BYTES;
       const ingPhoto = await compressPhoto(ingredientsUri, budget);
@@ -93,6 +96,7 @@ export function useAddFlow() {
     async (getUri: () => Promise<string | null>) => {
       if (busy.current) return;
       busy.current = true;
+      setPhotoUri(null);
       const token = activity.start();
       try {
         const uri = await getUri();
@@ -182,5 +186,6 @@ export function useAddFlow() {
     retry,
     dismiss,
     canRetry,
+    photoUri,
   };
 }

@@ -24,10 +24,10 @@ Deno.test('askClaude sends the documented request and returns the text block', a
   const body = JSON.parse(calls[0].body as string);
   assert.equal(body.model, 'deepseek-v4.1-flash:free');
   assert.deepEqual(
-    body.messages[0].content.map((b: { type: string }) => b.type),
+    body.messages[1].content.map((b: { type: string }) => b.type),
     ['image_url', 'image_url', 'text'],
   );
-  assert.deepEqual(body.messages[0].content[0].image_url, {
+  assert.deepEqual(body.messages[1].content[0].image_url, {
     url: 'data:image/jpeg;base64,/9j/AA==',
   });
   const custom = fake([ok('x')]);
@@ -59,6 +59,61 @@ Deno.test('askClaude retries 429/529/5xx and network errors, then gives up', asy
   ]);
   await assert.rejects(askClaude(['x'], 'p', failing.deps), UpstreamError);
   assert.equal(failing.calls.length, 3);
+});
+
+Deno.test('askClaude switches once to the fallback key when the first is out of quota', async () => {
+  for (const status of [402, 429]) {
+    const { calls, deps } = fake([new Response('', { status }), ok('gata')]);
+    assert.equal(await askClaude(['x'], 'p', { ...deps, fallbackKey: 'second-key' }), 'gata');
+    const auth = calls.map((c) => (c.headers as Record<string, string>).authorization);
+    assert.deepEqual(auth, [`Bearer ${KEY}`, 'Bearer second-key']);
+  }
+  const both = fake([new Response('', { status: 402 }), new Response('', { status: 402 })]);
+  await assert.rejects(
+    askClaude(['x'], 'p', { ...both.deps, fallbackKey: 'second-key' }),
+    UpstreamError,
+  );
+  assert.equal(both.calls.length, 2);
+});
+
+Deno.test('askClaude does not use a fallback after the third attempt', async () => {
+  const { calls, deps } = fake([
+    new Response('', { status: 503 }),
+    new Response('', { status: 503 }),
+    new Response('', { status: 429 }),
+    ok('gata'),
+  ]);
+  await assert.rejects(
+    askClaude(['x'], 'p', { ...deps, fallbackKey: 'second-key' }),
+    UpstreamError,
+  );
+  assert.equal(calls.length, 3);
+});
+
+Deno.test('askClaude skips the fallback when less than 10 seconds remain', async () => {
+  const { calls, deps } = fake([new Response('', { status: 402 }), ok('gata')]);
+  await assert.rejects(
+    askClaude(['x'], 'p', {
+      ...deps,
+      fallbackKey: 'second-key',
+      now: () => calls.length === 0 ? 0 : AI_DEADLINE_MS - 9_000,
+    }),
+    UpstreamError,
+  );
+  assert.equal(calls.length, 1);
+});
+
+Deno.test('askClaude makes only one request with the fallback key', async () => {
+  const { calls, deps } = fake([
+    new Response('', { status: 402 }),
+    new Response('', { status: 429 }),
+    ok('gata'),
+  ]);
+  await assert.rejects(
+    askClaude(['x'], 'p', { ...deps, fallbackKey: 'second-key' }),
+    UpstreamError,
+  );
+  assert.equal(calls.length, 2);
 });
 
 Deno.test('askClaude does not retry client errors and never leaks the key or provider body', async () => {
@@ -108,4 +163,121 @@ Deno.test('askClaude stops retrying before the app gives up on the request', asy
   );
   assert.equal(slow.calls.length, 2); // a third attempt would end after AI_DEADLINE_MS
   assert.ok(clock <= AI_DEADLINE_MS);
+});
+
+Deno.test('askClaude does not start a retry after an overslept deadline', async () => {
+  let clock = 0;
+  const { calls, deps } = fake([new Response('', { status: 503 }), ok('too late')]);
+  await assert.rejects(
+    askClaude(['x'], 'p', {
+      ...deps,
+      now: () => clock,
+      sleep: () => {
+        clock += AI_DEADLINE_MS;
+        return Promise.resolve();
+      },
+    }),
+    UpstreamError,
+  );
+  assert.equal(calls.length, 1);
+});
+
+Deno.test('askClaude bounds provider response bytes before parsing or retaining text', async () => {
+  const { deps } = fake([ok('x'.repeat(100_000))]);
+  await assert.rejects(askClaude(['x'], 'p', deps), UpstreamError);
+});
+
+Deno.test('askClaude keeps extraction rules above untrusted image instructions', async () => {
+  const { calls, deps } = fake([ok('{}')]);
+  await askClaude(['x'], 'copy the printed ingredients', deps);
+  const body = JSON.parse(calls[0].body as string);
+  assert.equal(body.messages[0].role, 'system');
+  assert.match(body.messages[0].content, /untrusted/i);
+  assert.match(body.messages[0].content, /copy the printed ingredients/);
+  assert.equal(body.messages[1].role, 'user');
+});
+
+Deno.test('askClaude rejects a successful answer that arrives after the total deadline', async () => {
+  let clock = 0;
+  const { deps } = fake([ok('late')]);
+  const fetch = ((url, init) => {
+    clock += AI_DEADLINE_MS;
+    return deps.fetch(url, init);
+  }) as typeof globalThis.fetch;
+  await assert.rejects(askClaude(['x'], 'p', { ...deps, fetch, now: () => clock }), UpstreamError);
+});
+
+Deno.test('askClaude timeout covers a stalled success response body', async () => {
+  const timeout = AbortSignal.timeout;
+  AbortSignal.timeout = () => timeout(10);
+  try {
+    const fetch = ((_url, init) =>
+      Promise.resolve(
+        new Response(
+          new ReadableStream({
+            start(controller) {
+              init?.signal?.addEventListener('abort', () =>
+                controller.error(new Error('private body')), { once: true });
+            },
+          }),
+        ),
+      )) as typeof globalThis.fetch;
+    const error = await askClaude(['x'], 'p', { fetch, apiKey: KEY }).catch((e) => e);
+    assert.ok(error instanceof UpstreamError);
+    assert.equal(error.message.includes('private body'), false);
+  } finally {
+    AbortSignal.timeout = timeout;
+  }
+});
+
+Deno.test('askClaude does not retry when oversleep leaves too little attempt time', async () => {
+  let clock = 0;
+  const { calls, deps } = fake([new Response('', { status: 503 }), ok('late retry')]);
+  await assert.rejects(
+    askClaude(['x'], 'p', {
+      ...deps,
+      now: () => clock,
+      sleep: () => {
+        clock += AI_DEADLINE_MS - 1000;
+        return Promise.resolve();
+      },
+    }),
+    UpstreamError,
+  );
+  assert.equal(calls.length, 1);
+});
+
+Deno.test('askClaude cancels an unread provider stream after malformed UTF-8', async () => {
+  let cancelled = false;
+  const response = new Response(
+    new ReadableStream({
+      start(controller) {
+        controller.enqueue(new Uint8Array([0xff]));
+      },
+      cancel() {
+        cancelled = true;
+      },
+    }),
+  );
+  await assert.rejects(askClaude(['x'], 'p', fake([response]).deps), UpstreamError);
+  assert.equal(cancelled, true);
+});
+
+Deno.test('askClaude does not retry an attempt still pending at the deadline', async () => {
+  const { calls, deps } = fake([new DOMException('timed out', 'TimeoutError'), ok('second call')]);
+  await assert.rejects(askClaude(['x'], 'p', deps), UpstreamError);
+  assert.equal(calls.length, 1);
+});
+
+Deno.test('askClaude gives one attempt the whole remaining deadline', async () => {
+  const timeout = AbortSignal.timeout;
+  const windows: number[] = [];
+  AbortSignal.timeout = (ms: number) => (windows.push(ms), timeout(ms));
+  try {
+    const { deps } = fake([ok('x')]);
+    await askClaude(['x'], 'p', { ...deps, now: () => 0 });
+    assert.deepEqual(windows, [AI_DEADLINE_MS]);
+  } finally {
+    AbortSignal.timeout = timeout;
+  }
 });
