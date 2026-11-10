@@ -34,18 +34,19 @@ export async function unknownStub(req, res, url, example, categories) {
   }
   const product = example.product;
   const empty = Object.fromEntries(Object.keys(product.nutrients).map(key => [key, null]));
+  const partialUnbranded = session.scenario === 'partial-unbranded';
   if (name === 'identify') json(res, { status: 'not_found',
-    read: { name: product.name, brand: product.brand, quantity: product.quantity, code: null }, photoPath: `${id}/front.jpg` });
+    read: { name: product.name, brand: partialUnbranded ? null : product.brand, quantity: product.quantity, code: null }, photoPath: `${id}/front.jpg` });
   if (name === 'read-label') {
     const absent = input.nutrition === 'none' || input.nutrition === 'skipped';
     const unreadable = session.scenario === 'unreadable';
-    const nutrients = absent || unreadable ? empty : product.nutrients;
+    const nutrients = absent || unreadable ? empty : partialUnbranded ? { ...product.nutrients, fiber: null, fruitVegPct: null } : product.nutrients;
     // U1: a field is 'read' exactly when it has a value.
-    const why = unreadable ? 'unreadable' : input.nutrition === 'skipped' ? 'not_photographed' : 'not_printed';
+    const why = unreadable || (partialUnbranded && !absent) ? 'unreadable' : input.nutrition === 'skipped' ? 'not_photographed' : 'not_printed';
     const reason = key => nutrients[key] === null ? why : 'read';
     json(res, { ingredientsText: input.ingredientsImage === null ? null : product.ingredientsText, unit: 'g',
       nutrients,
-      unclear: unreadable ? Object.keys(empty) : [],
+      unclear: unreadable ? Object.keys(empty) : partialUnbranded && !absent ? ['fiber', 'fruitVegPct'] : [],
       ingredientsPhotoPath: input.ingredientsImage === null ? null : `${id}/ingredients.jpg`,
       nutritionPhotoPath: absent ? null : `${id}/nutrition.jpg`,
       reasons: { ...Object.fromEntries(Object.keys(empty).map(key => [key, reason(key)])),

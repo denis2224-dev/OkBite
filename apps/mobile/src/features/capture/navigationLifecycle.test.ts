@@ -1,4 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
+
+jest.mock('../offline/photos', () => ({ keepPhoto: async (uri: string) => `kept:${uri}`, removePhoto: async () => {} }));
 import { useCaptureFlow } from './useCaptureFlow';
 import { useAddFlow } from '../add/useAddFlow';
 import { useScanLookup } from '../scan/useScanLookup';

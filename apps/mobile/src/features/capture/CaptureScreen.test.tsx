@@ -1,4 +1,6 @@
 import React from 'react';
+
+jest.mock('../offline/photos', () => ({ keepPhoto: async (uri: string) => `kept:${uri}`, removePhoto: async () => {} }));
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { render, fireEvent, screen, act } from '@testing-library/react-native';
 import { Linking, StyleSheet } from 'react-native';

@@ -6,7 +6,7 @@ import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { StatusPanel } from '../capture/StatusPanel';
 import { useScreenActivity } from '../capture/useScreenActivity';
-import { productRoute } from '../identify/routes';
+import { productRoute, type AddInitialValues } from '../identify/routes';
 import { completeUnknownDraft } from './completeUnknownDraft';
 import { getAvailableCategories, initializeAvailableCategories } from './draftStore';
 import { ReviewForm } from './ReviewForm';
@@ -106,6 +106,15 @@ export function UnknownReviewScreen() {
     });
   };
 
+  const handleManualRetake = async (identity: AddInitialValues) => {
+    const token = activity.start();
+    const updated = { ...draft, initial: { ...draft.initial, ...identity } };
+    if (!await saveUnknownDraftIfCurrent(updated)) throw new Error('stale_draft');
+    if (!activity.isCurrent(token)) return;
+    setDraft(updated);
+    handleRetake('ingredients');
+  };
+
   if (manual) {
     return (
       <ReviewForm
@@ -113,7 +122,7 @@ export function UnknownReviewScreen() {
         initial={draft.initial}
         categories={categories}
         onSubmit={handleConfirm}
-        onRetake={() => handleRetake('ingredients')}
+        onRetake={handleManualRetake}
       />
     );
   }

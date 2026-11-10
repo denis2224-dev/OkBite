@@ -15,7 +15,7 @@ import { ro } from '../../copy/ro';
 import { writeHistory } from '../history/db';
 import AddScreen from '../../../app/add/index';
 import ReviewRouteScreen from '../../../app/add/review';
-import { addProductRoute } from '../identify/routes';
+import { addProductRoute, setGuidedAddEnabled } from '../identify/routes';
 import { useAddFlow } from './useAddFlow';
 import {
   clearAddReviewDraft,
@@ -121,6 +121,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
 
   beforeEach(() => {
     jest.resetAllMocks();
+    setGuidedAddEnabled(false); // These tests exercise the explicit legacy rollback.
     clearAddReviewDraft();
     // Simulate uninitialized store before /add flow runs: useAddFlow must initialize real categories before opening /add/review
     setAvailableCategories([]);

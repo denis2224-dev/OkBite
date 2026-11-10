@@ -21,6 +21,9 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
   const [draftId, setDraftId] = useState<string>(() => randomUUID());
   const [error, setError] = useState<string | null>(null);
   const [restoredFromDraft, setRestoredFromDraft] = useState(false);
+  const [draftConflict, setDraftConflict] = useState(false);
+  const [discardError, setDiscardError] = useState(false);
+  const [sessionVersion, setSessionVersion] = useState(0);
   const draftIdRef = useRef<string>(draftId);
   const initialRef = useRef(initial);
   const retakeRef = useRef(retakeKind);
@@ -48,6 +51,12 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
         draftIdRef.current = nextDraftId;
         setDraftId(nextDraftId);
         setRestoredFromDraft(Boolean(stored));
+        const incoming = initialRef.current;
+        const conflict = Boolean(stored && (incoming.unknownDraftId
+          ? incoming.unknownDraftId !== stored.id
+          : (incoming.code && incoming.code !== stored.initial.code) ||
+            (incoming.photoPath && incoming.photoPath !== stored.initial.photoPath)));
+        setDraftConflict(conflict);
         const flow = createGuidedFlow(
           initialRef.current,
           {
@@ -92,7 +101,7 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
         unsubscribe = flow.subscribe(next => {
           if (active) setState(next);
         });
-        if (retakeRef.current) flow.retake(retakeRef.current);
+        if (retakeRef.current && !conflict) flow.retake(retakeRef.current);
         setController({ ...flow,
           capturePhoto: uri => runFocused(() => flow.capturePhoto(uri)),
           chooseNutrition: mode => runFocused(() => flow.chooseNutrition(mode)),
@@ -113,20 +122,28 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
       unsubscribe?.();
       activeFlow?.cancel();
     };
-  }, []);
+  }, [sessionVersion]);
 
   const discardDraft = async () => {
     const currentId = draftIdRef.current;
     const photos = state?.photos;
+    try { await clearUnknownDraft(currentId); }
+    catch { setDiscardError(true); return; }
     controller?.cancel();
-    await clearUnknownDraft(currentId);
     if (photos && !initialRef.current.queueId) {
       for (const id of new Set(Object.values(photos))) {
         if (id) await removePhoto(id).catch(() => {});
       }
     }
     setRestoredFromDraft(false);
+    setDraftConflict(false);
+    setDiscardError(false);
+    retakeRef.current = undefined;
+    setState(null);
+    setController(null);
+    setSessionVersion(version => version + 1);
   };
 
-  return { state, controller, draftId, error, restoredFromDraft, discardDraft };
+  return { state, controller, draftId, error, restoredFromDraft, draftConflict, discardError,
+    resumeDraft: () => setDraftConflict(false), discardDraft };
 }

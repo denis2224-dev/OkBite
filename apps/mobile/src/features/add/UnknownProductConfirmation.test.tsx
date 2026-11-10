@@ -75,6 +75,22 @@ it('targets only the unreadable photo and keeps edited data available', async ()
   expect(input.photos).toEqual(photos);
 });
 
+it.each([true, false])('keeps a partially read table without optional-nutrient warnings (reasons: %s)', async withReasons => {
+  const input = props({ label: { ...label, nutrients: { ...nutrients, kcal: 74, fat: 0.07, sat: 0.03, sugar: 13.4, salt: 0.07, protein: 2.1 },
+    unclear: ['fiber', 'fruitVegPct'], ...(withReasons ? { reasons: { fiber: 'unreadable', fruitVegPct: 'unreadable' } } : {}) } });
+  await render(<UnknownProductConfirmation {...input} />);
+  expect(screen.queryByText(ro.add.nutritionUnreadable)).toBeNull();
+  expect(screen.queryByRole('button', { name: ro.review.nutrients.fiber })).toBeNull();
+  await fireEvent.press(screen.getByRole('button', { name: ro.add.confirmSave }));
+  expect(input.onConfirm).toHaveBeenCalledWith(expect.objectContaining({ brand: '', nutrients: input.label.nutrients }));
+});
+
+it('offers nutrition retake when a core value is unreadable in a partially read table', async () => {
+  await render(<UnknownProductConfirmation {...props({ label: { ...label, nutrients: { ...nutrients, kcal: 74 },
+    reasons: { salt: 'unreadable' }, unclear: ['salt'] } })} />);
+  expect(screen.getByText(ro.add.nutritionUnreadable)).toBeTruthy();
+});
+
 it('offers front retake and manual ingredients fallback without opening a keyboard', async () => {
   const input = props({ initial: { ...initial, name: null }, label: { ...label, ingredientsText: null }, onManual: jest.fn() });
   await render(<UnknownProductConfirmation {...input} />);

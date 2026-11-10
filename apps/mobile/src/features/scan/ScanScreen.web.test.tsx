@@ -50,12 +50,12 @@ describe('ScanScreen (web)', () => {
     expect(mockPush).toHaveBeenCalledWith('/capture');
   });
 
-  it('looks up a manually typed code and sends an unknown one to identify', async () => {
+  it('looks up a manually typed code and sends an unknown one to guided add', async () => {
     (api.lookup as unknown as jest.Mock<(...a: unknown[]) => Promise<unknown>>).mockResolvedValue(lookupNotFound);
     await render(<ScanScreenWeb />);
     await fireEvent.changeText(screen.getByLabelText(ro.scan.manualTitle), CODE);
     await fireEvent.press(screen.getByRole('button', { name: ro.scan.search }));
-    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/identify', params: { source: 'code', code: CODE } });
+    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add', params: { flow: 'guided', code: CODE } });
   });
 
   it('uses themed text for the scan heading and working status message', async () => {

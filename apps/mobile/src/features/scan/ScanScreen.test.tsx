@@ -111,7 +111,7 @@ describe('ScanScreen', () => {
     expect(lookup).toHaveBeenCalledTimes(2);
   });
 
-  it('sends an unknown manually typed code to identify and a typo nowhere', async () => {
+  it('sends an unknown manually typed code to guided add and a typo nowhere', async () => {
     lookup.mockResolvedValue(lookupNotFound);
     await render(<ScanScreen />);
     const input = screen.getByLabelText(ro.scan.manualTitle);
@@ -121,7 +121,7 @@ describe('ScanScreen', () => {
     expect(mockReplace).not.toHaveBeenCalled();
     await fireEvent.changeText(input, CODE);
     await fireEvent.press(screen.getByRole('button', { name: ro.scan.search }));
-    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/identify', params: { source: 'code', code: CODE } });
+    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add', params: { flow: 'guided', code: CODE } });
   });
 
   it('offers a retry when the camera fails to start', async () => {
