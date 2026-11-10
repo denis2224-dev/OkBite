@@ -20,6 +20,35 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/brand-icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "description": "Scanezi codul de bare și afli scorul nutrițional, alergenii și ce înseamnă fiecare ingredient.",
+  "categories": [
+    "food",
+    "health",
+    "shopping"
+  ],
+  "orientation": "portrait",
+  "screenshots": [
+    {
+      "src": "/screenshot-home.png",
+      "sizes": "780x1688",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Ecranul principal OkBite"
+    },
+    {
+      "src": "/screenshot-product.png",
+      "sizes": "780x1688",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Rezultatul unui produs"
     }
   ]
 }
