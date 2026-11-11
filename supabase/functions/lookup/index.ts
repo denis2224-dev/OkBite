@@ -39,7 +39,8 @@ export function createHandler(overrides: Partial<typeof defaults> = {}) {
         let result = await deps.loadProduct(parsed.data);
         // offFallback never throws; a saved OFF product is then read like any other.
         if (!result && 'code' in parsed.data && (await deps.offFallback(parsed.data.code))) {
-          result = await deps.loadProduct(parsed.data);
+          // The OFF path must never produce a 502.
+          result = await deps.loadProduct(parsed.data).catch(() => null);
         }
         const body = LookupResponse.parse(
           result ? { status: 'found', ...result } : { status: 'not_found' },
@@ -54,10 +55,9 @@ export function createHandler(overrides: Partial<typeof defaults> = {}) {
         response = json(body);
       }
     } catch (error) {
-      response =
-        error instanceof HttpError
-          ? fail(error.error, error.message, error.status)
-          : fail('upstream_failed', 'Serviciul nu este disponibil momentan.', 502);
+      response = error instanceof HttpError
+        ? fail(error.error, error.message, error.status)
+        : fail('upstream_failed', 'Serviciul nu este disponibil momentan.', 502);
     }
     return withCors(req, response);
   };

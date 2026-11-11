@@ -123,6 +123,22 @@ Deno.test('cache and insert failures never break the lookup', async () => {
   assert.equal(await offFallback(code, { fetch: miss, store: broken }), false);
 });
 
+Deno.test('a failing read after the OFF save is not_found, never 502', async () => {
+  let loads = 0;
+  const handler = createHandler({
+    loadProduct: async () => {
+      if (loads++ === 0) return null;
+      throw new Error('read failed');
+    },
+    logEvent: async () => {},
+    offFallback: async () => true,
+  });
+  const res = await handler(req());
+  assert.equal(res.status, 200);
+  assert.deepEqual(LookupResponse.parse(await res.json()), { status: 'not_found' });
+  assert.equal(loads, 2);
+});
+
 Deno.test('two parallel lookups for the same unknown code create one product', async () => {
   const t = await setup(async () => ok(offProduct));
   const [a, b] = await Promise.all([t.handler(req()), t.handler(req())]);
