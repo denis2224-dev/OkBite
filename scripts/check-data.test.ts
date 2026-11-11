@@ -83,6 +83,26 @@ describe('checkData', () => {
   });
 });
 
+describe('additive risk (N5)', () => {
+  const efsa = 'https://www.efsa.europa.eu/en/efsajournal/pub/4787';
+  const withIngredient = (extra: object) => ({ ...ok(), ingredients: [{ ...ingredient, ...extra }] });
+  it('accepts an additive with a risk and its source, or with no risk', () => {
+    expect(checkData(withIngredient({ risk: 'low', riskSource: efsa })).errors).toEqual([]);
+    expect(checkData(withIngredient({ risk: null, riskSource: null })).errors).toEqual([]);
+  });
+  it('reports an additive with a risk but no riskSource', () => {
+    expect(checkData(withIngredient({ risk: 'high' })).errors.join()).toMatch(/riskSource/);
+    expect(checkData(withIngredient({ risk: 'high', riskSource: null })).errors.join()).toMatch(/riskSource/);
+  });
+  it('reports a risk on an ingredient that is not an additive', () => {
+    const errors = checkData(withIngredient({ group: 'base', risk: 'low', riskSource: efsa })).errors;
+    expect(errors.join()).toMatch(/only additives/);
+  });
+  it('reports a risk level outside low, moderate, high', () => {
+    expect(checkData(withIngredient({ risk: 'none', riskSource: efsa })).errors).not.toEqual([]);
+  });
+});
+
 describe('readData', () => {
   it('turns a missing file, bad JSON or a non-array into errors instead of crashing', async () => {
     const { mkdtempSync, writeFileSync } = await import('node:fs');

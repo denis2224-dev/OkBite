@@ -68,6 +68,54 @@ the app's method page copies this section.
   Facts or the team) come from the N1 contract; each needs its own source a human opened.
 - Every score is shown with "Calculat la 100 g; nu indică riscul unei boli."
 
+## Additive risk (N5)
+
+`risk` (`low` | `moderate` | `high`) and `riskSource` go only on ingredients with group `add`;
+`pnpm data:check` fails on a risk without `riskSource` or on a non-additive with a risk. The only
+sources are EFSA food additive re-evaluation opinions (EFSA Journal) and the EU additives database.
+The level follows what the opinion says, never our own reading of other studies:
+
+- **low**: EFSA found no safety concern at the reported uses: exposure stays below the ADI in every
+  population group, or no numerical ADI is needed.
+- **moderate**: EFSA kept or set an ADI and found that exposure at the reported uses can exceed it
+  for at least one population group (for example toddlers at high consumption).
+- **high**: EFSA could not confirm safety at the current uses, or found a safety concern for the
+  additive itself (for example genotoxicity). None of the current additives meet this.
+- **null** (not assessed): no EFSA re-evaluation opinion yet, or none a human could open. The
+  score lists it but takes nothing off.
+
+A level goes into `ingredients.json` only after a human opened `riskSource` and confirmed it; that
+person then updates `checkedBy` and `checkedAt` on the entry.
+
+### Drafts, not confirmed (2026-11-11)
+
+Agent drafts from the opinion abstracts. None is in `ingredients.json` yet.
+
+| Ingredient | Draft risk | riskSource | What the opinion says |
+| --- | --- | --- | --- |
+| `dioxid-de-carbon-e290` | null | — | No EFSA re-evaluation opinion found. |
+| `colorant-caramel-e150d` | moderate | https://doi.org/10.2903/j.efsa.2012.3030 | 2011 opinion (https://doi.org/10.2903/j.efsa.2011.2004) set group ADI 300 and E 150c ADI 100 mg/kg bw; the 2012 refined exposure still exceeds the E 150c ADI for toddlers and high consumers. E 150d alone no longer exceeds, but this entry's aliases also match e150a–c. |
+| `acid-fosforic-e338` | moderate | https://doi.org/10.2903/j.efsa.2019.5674 | Group ADI 40 mg P/kg bw; exposure exceeded it for infants, toddlers and children at the mean. |
+| `acid-citric-e330` | null | — | Not yet re-evaluated (EFSA 2018 list). |
+| `citrati-de-sodiu-e331` | null | — | Not yet re-evaluated (EFSA 2018 list). |
+| `aspartam-e951` | low | https://doi.org/10.2903/j.efsa.2013.3496 | ADI 40 mg/kg bw kept; no safety concern at current exposure. |
+| `acesulfam-k-e950` | low | https://doi.org/10.2903/j.efsa.2025.9317 | ADI raised to 15 mg/kg bw; highest exposure below the ADI in all groups. The entry's `source` (pub/9398) opens an unrelated pesticide report: fix it. |
+| `ciclamat-de-sodiu-e952` | null | — | No EFSA re-evaluation opinion found. |
+| `sucraloza-e955` | low | https://doi.org/10.2903/j.efsa.2026.9854 | No safety concern at reported uses; exposure below the ADI. |
+| `zaharina-e954` | low | https://doi.org/10.2903/j.efsa.2024.9044 | ADI 9 mg/kg bw; exposure below it in all groups (Remsen-Fahlberg process). |
+| `glicozide-steviolice-e960a` | moderate | https://doi.org/10.2903/j.efsa.2024.9045 | ADI 4 mg/kg bw kept; exposure already exceeds it for toddlers at the 95th percentile (also https://doi.org/10.2903/j.efsa.2014.3639). |
+| `benzoat-de-sodiu-e211` | moderate | https://doi.org/10.2903/j.efsa.2016.4433 | Group ADI 5 mg/kg bw; exceeded by toddlers and children, mainly through flavoured drinks. |
+| `sorbat-de-potasiu-e202` | low | https://doi.org/10.2903/j.efsa.2019.5625 | Group ADI raised to 11 mg/kg bw; authorised uses do not exceed it (Reg. (EU) 2020/268). |
+| `amidon-modificat` | low | https://doi.org/10.2903/j.efsa.2017.4911 | No safety concern; no numerical ADI needed. |
+| `pectina-e440` | low | https://doi.org/10.2903/j.efsa.2017.4866 | No safety concern; no numerical ADI needed. |
+| `carmin-e120` | low | https://doi.org/10.2903/j.efsa.2015.4288 | ADI 2.5 mg carminic acid/kg bw; refined exposure below it for all groups. EFSA notes allergic reactions without a threshold. |
+| `lecitina-din-soia-e322` | low | https://doi.org/10.2903/j.efsa.2017.4742 | No numerical ADI needed; no safety concern above one year of age. |
+| `bicarbonat-de-sodiu-e500` | null | — | Not yet re-evaluated (EFSA 2018 list). |
+| `acid-ascorbic-e300` | low | https://doi.org/10.2903/j.efsa.2015.4087 | Title confirmed; the agent could not open the conclusion. Check that it says no safety concern / no numerical ADI before confirming. |
+
+Processing: `import-off` stores OFF `nova_group` as `nova_group` with `nova_source: 'off'` only when
+it is 1, 2, 3 or 4; anything else stays null (unknown), as `productScore` expects.
+
 ## Explicit release gate
 
 Run `pnpm data:check --release` before a content release. It requires:

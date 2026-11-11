@@ -18,6 +18,13 @@ const CheckedIngredient = IngredientEntry.extend({
   slug: nonblank.regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/), name: nonblank,
   aliases: z.array(nonblank), role: nonblank, explanation: nonblank,
   source: nonblank, checkedBy: nonblank,
+  // shortcut: N1 names (Ingredient.risk/riskSource) declared here until N1's contract merges; then drop these two lines.
+  risk: z.enum(['low', 'moderate', 'high']).nullable().optional(),
+  riskSource: z.string().url().nullable().optional(),
+}).superRefine((i, ctx) => {
+  if (!i.risk) return;
+  if (i.group !== 'add') ctx.addIssue({ code: 'custom', path: ['risk'], message: 'only additives (group add) carry a risk' });
+  if (!i.riskSource) ctx.addIssue({ code: 'custom', path: ['riskSource'], message: 'a risk needs the riskSource a human opened' });
 });
 
 const DATA_DIR = join(import.meta.dirname, '..', 'data');
@@ -61,7 +68,7 @@ export function checkData(data: DataFiles = readData()): { errors: string[] } {
   }
   const slugs = new Set<string>();
   const aliases = new Map<string, string>();
-  const keys = CheckedIngredient.pick({ slug: true, name: true, aliases: true });
+  const keys = CheckedIngredient.innerType().pick({ slug: true, name: true, aliases: true });
   for (const { slug, name, aliases: names } of parsed(data.ingredients, keys)) {
     if (slugs.has(slug)) errors.push(`ingredients.json: duplicate slug ${slug}`);
     slugs.add(slug);
