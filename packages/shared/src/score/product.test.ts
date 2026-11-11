@@ -29,7 +29,28 @@ describe('productScore weights', () => {
     const r = productScore(p, n);
     expect(r.score).toBe(Math.round(n.score! * 0.6) + 30 + 10);
     expect(100 - sum(r)).toBe(r.score);
-    expect(r.deductions.map((d) => d.key).sort()).toEqual(['kcal', 'sugar']);
+    expect(r.deductions.map((d) => d.key).sort()).toEqual(['kcal', 'nutrition_other', 'sugar']);
+  });
+
+  it('blames a negative only for the points it costs; the Nutri-Score baseline is nutrition_other', () => {
+    // 4 g sugar = 1 Nutri-Score point: B (79) instead of A (80) → 47 of 60 instead of 48.
+    const sugary = run(water({ category: { scoreKind: 'general' }, nutrients: { ...zero, sugar: 4 } }));
+    expect(sugary.score).toBe(87);
+    expect(sugary.deductions).toEqual([{ key: 'sugar', points: 1 }, { key: 'nutrition_other', points: 12 }]);
+    // Nothing bad at all: the whole nutrition loss is nutrition_other.
+    const plain = run(water({ category: { scoreKind: 'general' }, nutrients: zero }));
+    expect(plain.deductions).toEqual([{ key: 'nutrition_other', points: 12 }]);
+  });
+
+  it('counts protein lost to the ≥ 11 negative-points rule against the negatives', () => {
+    // 1800 kJ-ish, 25 g sugar, 6 g sat, 2 g salt: negatives ≥ 11 so the 12 g protein is not counted.
+    const n = { ...zero, kcal: 450, sugar: 25, sat: 6, salt: 2, protein: 12 };
+    const p = water({ category: { scoreKind: 'general' }, nutrients: n });
+    const without = computeScore({ ...n, kcal: 0, sugar: 0, sat: 0, salt: 0 }, 'general', '');
+    const r = run(p);
+    const other = r.deductions.find((d) => d.key === 'nutrition_other')?.points ?? 0;
+    expect(other).toBe(60 - Math.round(without.score! * 0.6));
+    expect(100 - sum(r)).toBe(r.score);
   });
 
   it('takes 10 per high-risk and 5 per moderate additive, floor 0', () => {
@@ -64,6 +85,40 @@ describe('productScore weights', () => {
     const r = run(water({ ingredients: [add('E171', 'high')] }));
     expect(r.score).toBe(49);
     expect(r.tier).toBe('fair');
+    expect(r.deductions).toEqual([{ key: 'additive', points: 10, detail: 'E171' }, { key: 'cap', points: 41 }]);
+  });
+
+  it('treats a NOVA level outside 1–4 as unknown', () => {
+    for (const level of [0, 5, 2.5, Number.NaN]) {
+      const r = run(water({ processing: { level }, ingredients: [add('E250', 'moderate')] }));
+      expect(r.score).toBe(94);
+      expect(r.deductions).toEqual([{ key: 'additive', points: 6, detail: 'E250' }]);
+    }
+  });
+
+  it('only additives take additive points or trigger the cap', () => {
+    const r = run(water({ ingredients: [{ name: 'ulei de palmier', group: 'fat', risk: 'high' }, { name: 'x', group: null, risk: 'moderate' }] }));
+    expect(r).toEqual({ score: 100, tier: 'excellent', deductions: [] });
+  });
+
+  it('counts a repeated additive once', () => {
+    const r = run(water({ ingredients: [add('E250', 'moderate'), add('e250 ', 'moderate'), { ...add('nitrit de sodiu', 'moderate'), slug: 'e250' }, { ...add('E250', 'moderate'), slug: 'e250' }] }));
+    expect(r.score).toBe(95);
+    expect(r.deductions).toEqual([{ key: 'additive', points: 5, detail: 'E250' }]);
+  });
+
+  it('never moves rounding leftovers onto a whole-number deduction', () => {
+    // Four nutrition parts that each round down: their leftovers must stay in nutrition, not make processing −12.
+    const nutrients = { kcal: 393, fat: 77, sat: 4.1, sugar: 14.4, salt: 0.5, protein: 25, fiber: 1, fruitVegPct: 67 };
+    const r = run(water({ category: { scoreKind: 'cheese' }, nutrients, processing: { level: 4 }, ingredients: [add('E250', 'moderate')] }));
+    expect(r.deductions.find((d) => d.key === 'processing')?.points).toBe(10);
+    expect(r.deductions.find((d) => d.key === 'additive')?.points).toBe(5);
+    expect(100 - sum(r)).toBe(r.score);
+  });
+
+  it('keeps the highest risk when copies of an additive disagree', () => {
+    const r = run(water({ ingredients: [add('E171', null), add('E171', 'high'), add('E171', 'low')] }));
+    expect(r.score).toBe(49);
     expect(r.deductions).toEqual([{ key: 'additive', points: 10, detail: 'E171' }, { key: 'cap', points: 41 }]);
   });
 

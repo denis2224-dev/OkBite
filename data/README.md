@@ -49,15 +49,17 @@ the app's method page copies this section.
 
 | Part | Worth | Rule |
 | --- | --- | --- |
-| Nutrition | 60 | `round(Nutri-Score 0–100 × 0.6)`. The loss is split over the Nutri-Score negative points (sugar, saturated fat, salt, energy; beverage sweetener points count as "other nutrition"). |
-| Additives | 30 | −10 per high-risk additive, −5 per moderate, never below 0. Low risk takes nothing off. An additive whose risk is not assessed takes nothing off but is listed. |
-| Processing | 10 | NOVA group 1 or 2: 10, group 3: 5, group 4: 0. NOVA unknown: this part is left out and nutrition plus additives are scaled from 90 to 100. |
+| Nutrition | 60 | `round(Nutri-Score 0–100 × 0.6)`. The loss has two parts. What the bad nutrients cost (the score the product would get with no energy, sugar, saturated fat, salt or sweeteners, minus its real score) is split over sugar, saturated fat, salt and energy in proportion to their Nutri-Score points; beverage sweetener points count as "other nutrition". The rest is "other nutrition": little fibre, protein, fruit or vegetables, or a category that cannot reach A (drinks other than water start at B). |
+| Additives | 30 | −10 per high-risk additive, −5 per moderate, never below 0. Low risk takes nothing off. An additive whose risk is not assessed takes nothing off but is listed. Only ingredients in the additive group count, each once (same slug or name); if copies disagree, the highest risk counts. |
+| Processing | 10 | NOVA group 1 or 2: 10, group 3: 5, group 4: 0. NOVA unknown (missing, or not 1–4): this part is left out and nutrition plus additives are scaled from 90 to 100, so a moderate additive shows as −6 and a high-risk one as −11. |
 | Cap | — | Any high-risk additive caps the total at 49. |
 
 - Nutrition unavailable (missing kcal, sugar, saturated fat or salt): no score at all, as today.
   A missing value is never counted as 0.
-- Deductions are reported after scaling and rounding, so 100 minus their sum is always the score;
-  rounding leftovers go to the largest deduction. They carry keys only
+- Deductions are reported after scaling and rounding, so 100 minus their sum is always the score.
+  Rounding uses largest remainder: every deduction is rounded down and the missing points go to the
+  biggest fractions, so whole-number deductions (−10 processing, −5 additive) stay exact and none
+  moves more than 1 point. They carry keys only
   (`sugar`, `sat`, `salt`, `kcal`, `nutrition_other`, `additive`, `processing`, `cap`); the app
   translates them.
 - Tiers: excellent 80–100, good 60–79, fair 40–59, poor 20–39, bad 0–19. The Nutri-Score letter
