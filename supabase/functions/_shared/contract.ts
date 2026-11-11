@@ -23,6 +23,8 @@ export const Category = z.object({ slug: z.string(), name: z.string(), scoreKind
 export const Ingredient = z.object({
   slug: z.string().nullable(), name: z.string(), group: IngredientGroup.nullable(), role: z.string().nullable(),
   explanation: z.string().nullable(), source: z.string().nullable(), allergen: Allergen.nullable(),
+  // Only additives (group 'add') carry a risk; null = not assessed. Optional so old payloads parse.
+  risk: z.enum(['low', 'moderate', 'high']).nullable().optional(), riskSource: z.string().url().nullable().optional(),
 }); // slug null = not in the knowledge base yet ("Explicație în curând")
 export const Product = z.object({
   id: Uuid, code: Code.nullable(), status: ProductStatus,
@@ -32,6 +34,8 @@ export const Product = z.object({
   allergens: z.array(Allergen), mayContain: z.array(Allergen),
   imageUrl: z.string().url().nullable(), labelImageUrl: z.string().url().nullable(),
   source: z.string(), addedAt: IsoDate, verifiedAt: IsoDate.nullable(),
+  // NOVA group from Open Food Facts or the team; null = unknown, never derived in the app.
+  processing: z.object({ level: z.number().int().min(1).max(4), source: z.enum(['off', 'team']) }).nullable().optional(),
 });
 export const ScoreReason = z.object({ tone: z.enum(['good', 'bad', 'neutral']), title: z.string(), detail: z.string() });
 export const Grade = z.enum(['good', 'medium', 'low', 'unavailable']);
