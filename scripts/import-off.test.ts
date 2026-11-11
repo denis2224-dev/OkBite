@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { importOff as runImportOff, type OffProduct } from './import-off';
 import { loadData } from './load-data';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { gzipSync } from 'node:zlib';
 const importOff = (pause?: (ms: number) => Promise<void>) => runImportOff(pause, null);
 
 const off: OffProduct = {
@@ -254,6 +258,49 @@ describe('importOff and loadData against stubbed services', () => {
       }),
     ).toMatchObject({ mapped: 1, inserted: 1 });
     expect(pauses).toEqual([6500, 6500, 6500, 6500]); // one retry, then the pause before each other query
+  });
+
+  it('dry run counts Romania products from the OFF export without writing or translating', async () => {
+    vi.stubEnv('AI_API_KEY', 'k');
+    const ro = (p: OffProduct) => JSON.stringify({ ...p, countries_tags: ['en:romania', 'en:moldova'] });
+    const file = join(mkdtempSync(join(tmpdir(), 'off-export-')), 'products.jsonl.gz');
+    writeFileSync(
+      file,
+      gzipSync(
+        [
+          ro(off), // new
+          ro({ ...off, code: '5901234123457' }), // already in our database
+          ro(ru), // foreign: would need translation
+          JSON.stringify({ ...off, code: '5449000131805', countries_tags: ['en:moldova'] }), // not sold in Romania
+          '{"countries_tags":["en:romania"], broken',
+        ].join('\n'),
+      ),
+    );
+    stubFetch([], new Set(['5901234123457']));
+    expect(await runImportOff(noPause, null, { country: 'romania', file, write: false })).toEqual({
+      mapped: 2,
+      inserted: 1,
+      translated: 0,
+      untranslated: 1,
+    });
+    expect(inserts()).toEqual([]);
+    expect(aiCalls()).toEqual([]);
+    expect(calls.filter((c) => c.url.includes('openfoodfacts'))).toEqual([]);
+  });
+
+  it('dry run over the search API names the country and writes nothing', async () => {
+    stubFetch([off]);
+    expect(await runImportOff(noPause, null, { write: false })).toMatchObject({ mapped: 1, inserted: 1 });
+    expect(inserts()).toEqual([]);
+    const off1 = calls.find((c) => c.url.includes('openfoodfacts'))!;
+    expect(new URL(off1.url).searchParams.get('countries_tags')).toBe('en:moldova');
+    expect(new Headers(off1.init?.headers).get('user-agent')).toBe('OkBite/1.0 (https://github.com/denis2224-dev/OkBite)');
+  });
+
+  it('refuses a Romania import without the export file', async () => {
+    stubFetch([]);
+    await expect(runImportOff(noPause, null, { country: 'romania' })).rejects.toThrow('romania needs --file');
+    expect(calls).toEqual([]);
   });
 
   it('requires the Supabase environment', async () => {

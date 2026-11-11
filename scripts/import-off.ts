@@ -1,6 +1,9 @@
 import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { createReadStream, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { createInterface } from 'node:readline';
+import { parseArgs } from 'node:util';
+import { createGunzip } from 'node:zlib';
 import { dirname } from 'node:path';
 import { z } from 'zod';
 import { IngredientEntry } from '../packages/shared/src/index';
@@ -19,7 +22,7 @@ type Pause = (ms: number) => Promise<void>;
 // Open Food Facts search API v2: products sold in Moldova (local and imported).
 // The barcode-prefix search (codes_tags=484x...) was dropped: OFF answers it with 503 most of the time.
 const PAGE_SIZE = 100;
-const SEARCH = `https://world.openfoodfacts.org/api/v2/search?fields=${OFF_FIELDS}&page_size=${PAGE_SIZE}&countries_tags=en:moldova`;
+const SEARCH = `https://world.openfoodfacts.org/api/v2/search?fields=${OFF_FIELDS}&page_size=${PAGE_SIZE}`;
 // OFF answers 401 past 1000 results of one search, so the 1928 Moldova products (8 Nov 2026) are split by
 // label language into searches of 577, 316, 860 and about 175 results.
 const LANGUAGES = [
@@ -185,31 +188,18 @@ export async function translateIngredients(source: string, key: string, pause: P
   return segments ? joinTranslation(segments, source) : null;
 }
 
-/**
- * Pages through OFF and inserts new codes; existing codes are skipped, so a second run inserts 0.
- * Products without Romanian ingredients are translated once with AI_API_KEY; codes already saved are not re-sent.
- */
-export async function importOff(
-  pause: Pause = sleep,
-  cachePath: string | null = process.env.OFF_TRANSLATION_CACHE ||
-    '.superpowers/off-import/translations.json',
-) {
-  await existingCodes([]); // fail before OFF/AI calls when database configuration is missing
-  const cache = checkpoint(cachePath);
-  const seen = new Set<string>();
-  const key = process.env.AI_API_KEY;
-  const n = { mapped: 0, inserted: 0, translated: 0, untranslated: 0 };
-  const incomplete = (why: string) =>
-    new Error(
-      `Open Food Facts import incomplete (${n.mapped} usable, ${n.inserted} new, ` +
-        `${n.translated} translated; re-run to resume): ${why}`,
-    );
+type Page = { label: string; products: OffProduct[] };
+type Fail = (why: string) => Error;
+export type Country = 'moldova' | 'romania';
+
+/** OFF search pages for one country, split by label language to stay under the 1000-result cap. */
+async function* searchPages(country: Country, pause: Pause, incomplete: Fail): AsyncGenerator<Page> {
   let requests = 0;
   for (const languages of LANGUAGES) {
     for (let page = 1; ; page++) {
       if (requests++) await pause(PAUSE_MS);
       const get = () =>
-        fetch(`${SEARCH}&languages_tags=${languages}&page=${page}`, {
+        fetch(`${SEARCH}&countries_tags=en:${country}&languages_tags=${languages}&page=${page}`, {
           headers: { 'user-agent': OFF_USER_AGENT },
           signal: AbortSignal.timeout(60_000),
         });
@@ -238,84 +228,160 @@ export async function importOff(
 
       if (count > 0 && products.length < PAGE_SIZE && (page - 1) * PAGE_SIZE + products.length < count)
         throw incomplete(`${languages} page ${page}: short page before the declared result count; retry or use an OFF export`);
-
-      const rows: ReturnType<typeof toRow>[] = [];
-      const foreign: { off: OffProduct; code: string }[] = [];
-      for (const off of products) {
-        const m = map(off);
-        // Usable once translated: only the Romanian ingredients text is missing.
-        const probe = m
-          ? null
-          : text(off.ingredients_text).length >= 3 &&
-            map({ ...off, ingredients_text_ro: 'tbd' });
-        const code = m?.code ?? (probe ? probe.code : null);
-        if (!code || seen.has(code)) continue;
-        seen.add(code);
-        if (m) rows.push(toRow(m));
-        else if (probe) foreign.push({ off, code });
-      }
-      n.mapped += rows.length;
-      const write = async (batch: ReturnType<typeof toRow>[]) => {
-        try { return await upsert('products', batch, 'code', true); }
-        catch (e) { throw incomplete(`${languages} page ${page}: ${(e as Error).message}`); }
-      };
-      n.inserted += await write(rows);
-
-      let failure: Error | null = null;
-      if (foreign.length && !key) n.untranslated += foreign.length;
-      else if (foreign.length) {
-        const saved = await existingCodes(foreign.map((f) => f.code));
-        n.mapped += saved.size;
-        for (const { off, code } of foreign.filter((f) => !saved.has(f.code))) {
-          const source = text(off.ingredients_text);
-          const id = createHash('sha256')
-            .update(JSON.stringify([code, source, process.env.AI_MODEL || AI_MODEL, 1]))
-            .digest('hex');
-          let ro: string | null;
-          try {
-            const cached = cache.get(id);
-            // Legacy flat strings are reusable only when their boundaries still validate.
-            // Ambiguous legacy entries fail closed for inspection; never pay to replace them silently.
-            let segments = cached ? parseTranslation(JSON.stringify(typeof cached === 'string'
-              ? cached.split(SEPARATORS).filter((_, i) => i % 2 === 0) : cached.segments), source) : null;
-            if (cached && !segments)
-              throw new Error('translation checkpoint: cached text fails source validation; restore or remove this entry before resuming');
-            if (!segments) {
-              await pause(AI_PAUSE_MS);
-              segments = await translateSegments(source, key!, pause);
-              if (segments) cache.save(id, { version: 2, segments });
-            }
-            ro = segments ? joinTranslation(segments, source) : null;
-          } catch (e) {
-            failure = e as Error;
-            break;
-          }
-          const m = ro ? map({ ...off, ingredients_text_ro: ro }) : null;
-          if (m) {
-            n.mapped++;
-            n.translated++;
-            n.inserted += await write([toRow(m, TRANSLATED)]);
-          } else n.untranslated++;
-        }
-      }
-      if (failure) throw incomplete(failure.message);
-      console.log(
-        `${languages} page ${page}: ${n.mapped} usable, ${n.inserted} new, ${n.translated} translated`,
-      );
+      yield { label: `${languages} page ${page}`, products };
       if (products.length < PAGE_SIZE || (count > 0 && page * PAGE_SIZE >= count)) break;
     }
+  }
+}
+
+/**
+ * Products sold in one country from OFF's JSONL export (openfoodfacts-products.jsonl.gz), read as a stream.
+ * No OFF requests; a line that is not valid JSON or fails the OffProduct schema is skipped.
+ */
+async function* exportPages(file: string, country: Country): AsyncGenerator<Page> {
+  const tag = `"en:${country}"`;
+  const lines = createInterface({ input: createReadStream(file).pipe(createGunzip()), crlfDelay: Infinity });
+  let batch: OffProduct[] = [];
+  let pages = 0;
+  for await (const line of lines) {
+    if (!line.includes(tag)) continue; // cheap filter before parsing
+    let raw: unknown;
+    try { raw = JSON.parse(line); } catch { continue; }
+    const tags = (raw as { countries_tags?: unknown }).countries_tags;
+    const off = OffProduct.safeParse(raw);
+    if (!Array.isArray(tags) || !tags.includes(`en:${country}`) || !off.success) continue;
+    batch.push(off.data);
+    if (batch.length === PAGE_SIZE) {
+      yield { label: `export batch ${++pages}`, products: batch };
+      batch = [];
+    }
+  }
+  if (batch.length) yield { label: `export batch ${++pages}`, products: batch };
+}
+
+export interface ImportOptions {
+  country?: Country;
+  /** OFF JSONL export; required for romania, whose ~50k products exceed what the search API returns. */
+  file?: string | null;
+  /** false = dry run: count what would be inserted or translated; no writes, no AI calls. */
+  write?: boolean;
+}
+
+/**
+ * Pages through OFF and inserts new codes; existing codes are skipped, so a second run inserts 0.
+ * Products without Romanian ingredients are translated once with AI_API_KEY; codes already saved are not re-sent.
+ * In a dry run, inserted and untranslated count what a write run would insert and send for translation.
+ */
+export async function importOff(
+  pause: Pause = sleep,
+  cachePath: string | null = process.env.OFF_TRANSLATION_CACHE ||
+    '.superpowers/off-import/translations.json',
+  { country = 'moldova', file = null, write = true }: ImportOptions = {},
+) {
+  if (country === 'romania' && !file)
+    throw new Error('romania needs --file: OFF search returns at most 1000 results per query');
+  await existingCodes([]); // fail before OFF/AI calls when database configuration is missing
+  const cache = checkpoint(cachePath);
+  const seen = new Set<string>();
+  const key = process.env.AI_API_KEY;
+  const n = { mapped: 0, inserted: 0, translated: 0, untranslated: 0 };
+  const incomplete = (why: string) =>
+    new Error(
+      `Open Food Facts import incomplete (${n.mapped} usable, ${n.inserted} new, ` +
+        `${n.translated} translated; re-run to resume): ${why}`,
+    );
+  const pages = file ? exportPages(file, country) : searchPages(country, pause, incomplete);
+  for await (const { label, products } of pages) {
+    const rows: ReturnType<typeof toRow>[] = [];
+    const foreign: { off: OffProduct; code: string }[] = [];
+    for (const off of products) {
+      const m = map(off);
+      // Usable once translated: only the Romanian ingredients text is missing.
+      const probe = m
+        ? null
+        : text(off.ingredients_text).length >= 3 &&
+          map({ ...off, ingredients_text_ro: 'tbd' });
+      const code = m?.code ?? (probe ? probe.code : null);
+      if (!code || seen.has(code)) continue;
+      seen.add(code);
+      if (m) rows.push(toRow(m));
+      else if (probe) foreign.push({ off, code });
+    }
+    n.mapped += rows.length;
+    if (!write) {
+      const saved = await existingCodes([...rows, ...foreign].map((r) => r.code!));
+      n.inserted += rows.filter((r) => !saved.has(r.code)).length;
+      n.mapped += foreign.filter((f) => saved.has(f.code)).length;
+      n.untranslated += foreign.filter((f) => !saved.has(f.code)).length;
+      console.log(`${label}: ${n.mapped} usable, ${n.inserted} would be new, ${n.untranslated} need translation`);
+      continue;
+    }
+    const save = async (batch: ReturnType<typeof toRow>[]) => {
+      try { return await upsert('products', batch, 'code', true); }
+      catch (e) { throw incomplete(`${label}: ${(e as Error).message}`); }
+    };
+    n.inserted += await save(rows);
+
+    let failure: Error | null = null;
+    if (foreign.length && !key) n.untranslated += foreign.length;
+    else if (foreign.length) {
+      const saved = await existingCodes(foreign.map((f) => f.code));
+      n.mapped += saved.size;
+      for (const { off, code } of foreign.filter((f) => !saved.has(f.code))) {
+        const source = text(off.ingredients_text);
+        const id = createHash('sha256')
+          .update(JSON.stringify([code, source, process.env.AI_MODEL || AI_MODEL, 1]))
+          .digest('hex');
+        let ro: string | null;
+        try {
+          const cached = cache.get(id);
+          // Legacy flat strings are reusable only when their boundaries still validate.
+          // Ambiguous legacy entries fail closed for inspection; never pay to replace them silently.
+          let segments = cached ? parseTranslation(JSON.stringify(typeof cached === 'string'
+            ? cached.split(SEPARATORS).filter((_, i) => i % 2 === 0) : cached.segments), source) : null;
+          if (cached && !segments)
+            throw new Error('translation checkpoint: cached text fails source validation; restore or remove this entry before resuming');
+          if (!segments) {
+            await pause(AI_PAUSE_MS);
+            segments = await translateSegments(source, key!, pause);
+            if (segments) cache.save(id, { version: 2, segments });
+          }
+          ro = segments ? joinTranslation(segments, source) : null;
+        } catch (e) {
+          failure = e as Error;
+          break;
+        }
+        const m = ro ? map({ ...off, ingredients_text_ro: ro }) : null;
+        if (m) {
+          n.mapped++;
+          n.translated++;
+          n.inserted += await save([toRow(m, TRANSLATED)]);
+        } else n.untranslated++;
+      }
+    }
+    if (failure) throw incomplete(failure.message);
+    console.log(`${label}: ${n.mapped} usable, ${n.inserted} new, ${n.translated} translated`);
   }
   return n;
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  importOff().then(
+  const { values } = parseArgs({
+    options: { country: { type: 'string', default: 'moldova' }, file: { type: 'string' }, write: { type: 'boolean', default: false } },
+  });
+  const country = z.enum(['moldova', 'romania']).parse(values.country);
+  const write = values.write ?? false;
+  if (!write) console.log('Dry run: nothing is written and nothing is translated. Add --write to import.');
+  importOff(sleep, undefined, { country, file: values.file ?? null, write }).then(
     ({ mapped, inserted, translated, untranslated }) =>
       console.log(
-        `Open Food Facts: ${mapped} usable products, ${inserted} new, ${translated} translated to Romanian` +
-          (untranslated
-            ? `, ${untranslated} skipped${process.env.AI_API_KEY ? ' (no usable translation)' : ' (set AI_API_KEY to translate them)'}`
-            : ''),
+        write
+          ? `Open Food Facts (${country}): ${mapped} usable products, ${inserted} new, ${translated} translated to Romanian` +
+              (untranslated
+                ? `, ${untranslated} skipped${process.env.AI_API_KEY ? ' (no usable translation)' : ' (set AI_API_KEY to translate them)'}`
+                : '')
+          : `Open Food Facts (${country}), dry run: ${mapped} usable products (${mapped - inserted} already saved), ` +
+              `${inserted} would be new, ${untranslated} more would need translation to Romanian`,
       ),
     (e: Error) => {
       console.error(e.message);
