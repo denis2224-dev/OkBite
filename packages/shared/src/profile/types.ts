@@ -1,0 +1,8 @@
+import type { Allergen } from '../contract';
+
+export type Goal = 'health' | 'allergies' | 'family' | 'weight' | 'other';
+// Only things we can detect on a label or from Open Food Facts.
+export type AvoidKey = 'added_sugar' | 'sweeteners' | 'ultra_processed' | 'colourings' | 'palm_oil';
+export type Profile = { goals: Goal[]; allergens: Allergen[]; avoid: AvoidKey[]; onboarded: boolean };
+
+export const EMPTY_PROFILE: Profile = { goals: [], allergens: [], avoid: [], onboarded: false };

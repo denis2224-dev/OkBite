@@ -4,3 +4,4 @@ export * from './score';
 export * from './ean';
 export * from './allergens';
 export * from './ingredients';
+export * from './profile/types';
