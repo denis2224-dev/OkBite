@@ -3,9 +3,25 @@ import { Code, LookupResponse, Uuid } from '../_shared/contract.ts';
 import { normalizeCode } from '../_shared/ean/index.ts';
 import { loadProduct } from '../_lib/db.ts';
 import { cors, fail, HttpError, json, logEvent, readDeviceId, withCors } from '../_lib/http.ts';
+import { adminClient } from '../_lib/client.ts';
+import { offFallback, supabaseOffStore } from '../_lib/off.ts';
 
 const querySchema = z.union([z.object({ id: Uuid }).strict(), z.object({ code: Code }).strict()]);
-export function createHandler(deps = { loadProduct, logEvent }) {
+const defaults = {
+  loadProduct,
+  logEvent,
+  async offFallback(code: string): Promise<boolean> {
+    let db;
+    try {
+      db = adminClient();
+    } catch {
+      return false; // Without the service role nothing could be saved, so skip OFF.
+    }
+    return await offFallback(code, { fetch, store: supabaseOffStore(db) });
+  },
+};
+export function createHandler(overrides: Partial<typeof defaults> = {}) {
+  const deps = { ...defaults, ...overrides };
   return async (req: Request): Promise<Response> => {
     const preflight = cors(req);
     if (preflight) return preflight;
@@ -20,7 +36,11 @@ export function createHandler(deps = { loadProduct, logEvent }) {
         const parsed = querySchema.safeParse(Object.fromEntries(params));
         if (params.size !== 1 || !parsed.success) throw new HttpError(400);
         if ('code' in parsed.data && !normalizeCode(parsed.data.code)) throw new HttpError(400);
-        const result = await deps.loadProduct(parsed.data);
+        let result = await deps.loadProduct(parsed.data);
+        // offFallback never throws; a saved OFF product is then read like any other.
+        if (!result && 'code' in parsed.data && (await deps.offFallback(parsed.data.code))) {
+          result = await deps.loadProduct(parsed.data);
+        }
         const body = LookupResponse.parse(
           result ? { status: 'found', ...result } : { status: 'not_found' },
         );
@@ -34,9 +54,10 @@ export function createHandler(deps = { loadProduct, logEvent }) {
         response = json(body);
       }
     } catch (error) {
-      response = error instanceof HttpError
-        ? fail(error.error, error.message, error.status)
-        : fail('upstream_failed', 'Serviciul nu este disponibil momentan.', 502);
+      response =
+        error instanceof HttpError
+          ? fail(error.error, error.message, error.status)
+          : fail('upstream_failed', 'Serviciul nu este disponibil momentan.', 502);
     }
     return withCors(req, response);
   };
