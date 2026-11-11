@@ -27,6 +27,7 @@ const OffProductSchema = z.object({
   categories_tags: z.array(z.string()).nullish(),
   allergens_tags: z.array(z.string()).nullish(),
   traces_tags: z.array(z.string()).nullish(),
+  nova_group: z.unknown(), // anything but an integer 1..4 is dropped to null by toRow
 });
 export type OffProduct = z.infer<typeof OffProductSchema>;
 type Pause = (ms: number) => Promise<void>;
@@ -36,7 +37,7 @@ type Pause = (ms: number) => Promise<void>;
 const PAGE_SIZE = 100;
 const FIELDS =
   'code,product_name,product_name_ro,brands,quantity,ingredients_text,ingredients_text_ro,lang,' +
-  'nutrition_data_per,product_quantity_unit,nutriments,categories_tags,allergens_tags,traces_tags';
+  'nutrition_data_per,product_quantity_unit,nutriments,categories_tags,allergens_tags,traces_tags,nova_group';
 const SEARCH = `https://world.openfoodfacts.org/api/v2/search?fields=${FIELDS}&page_size=${PAGE_SIZE}&countries_tags=en:moldova`;
 // OFF answers 401 past 1000 results of one search, so the 1928 Moldova products (8 Nov 2026) are split by
 // label language into searches of 577, 316, 860 and about 175 results.
@@ -179,7 +180,7 @@ export function mapOffProduct(raw: unknown): AddProductRequest | null {
  */
 export function toRow(
   p: AddProductRequest,
-  tags: Pick<OffProduct, 'allergens_tags' | 'traces_tags'> = {},
+  tags: Pick<OffProduct, 'allergens_tags' | 'traces_tags' | 'nova_group'> = {},
   source = 'Open Food Facts',
 ) {
   const found = detectAllergens(p.ingredientsText);
@@ -187,6 +188,7 @@ export function toRow(
   const contains = new Set([...found.allergens, ...fromOff(tags.allergens_tags)]);
   const traces = new Set([...found.mayContain, ...fromOff(tags.traces_tags)]);
   const n = p.nutrients;
+  const nova = [1, 2, 3, 4].includes(tags.nova_group as number) ? (tags.nova_group as number) : null;
   return {
     code: p.code,
     status: 'unverified',
@@ -207,6 +209,8 @@ export function toRow(
     ingredients_text: p.ingredientsText,
     allergens: ALLERGENS.filter((a) => contains.has(a)),
     may_contain: ALLERGENS.filter((a) => traces.has(a) && !contains.has(a)),
+    nova_group: nova,
+    nova_source: nova === null ? null : 'off',
     source,
   };
 }

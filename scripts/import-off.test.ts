@@ -125,6 +125,16 @@ describe('toRow', () => {
   });
 });
 
+describe('toRow processing (N5)', () => {
+  const p = mapOffProduct(off)!;
+  it.each([1, 2, 3, 4])('maps OFF nova_group %i with source off', (g) => {
+    expect(toRow(p, { nova_group: g })).toMatchObject({ nova_group: g, nova_source: 'off' });
+  });
+  it.each([0, 5, 2.5, '4', null, undefined, Number.NaN])('drops nova_group %j to null', (g) => {
+    expect(toRow(p, { nova_group: g })).toMatchObject({ nova_group: null, nova_source: null });
+  });
+});
+
 describe('importOff and loadData against stubbed services', () => {
   const calls: { url: string; init?: RequestInit }[] = [];
   beforeEach(() => {
