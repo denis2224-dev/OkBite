@@ -5,8 +5,9 @@ import { useCameraAccess } from '../capture/useCameraAccess';
 import { notificationAsync, NotificationFeedbackType } from 'expo-haptics';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
-import type { Palette } from '../../theme/tokens';
+import { fonts, type Palette } from '../../theme/tokens';
 import { StatusPanel, errorMessage } from '../capture/StatusPanel';
+import { ScanReticle } from './ScanReticle';
 import { ManualCode } from './ManualCode';
 import { useScanLookup } from './useScanLookup';
 
@@ -42,7 +43,7 @@ export default function ScanScreen() {
           onBarcodeScanned={({ data }) => { void onCameraCode(data); }}
           onMountError={() => setMountFailed(true)}
         />
-        <Text style={styles.frameHint}>{ro.scan.frameHint}</Text>
+        <ScanReticle />
       </>
     );
   }
@@ -69,9 +70,9 @@ export default function ScanScreen() {
 
 const createStyles = (colors: Palette) => StyleSheet.create({
   content: { flexGrow: 1, padding: 16, gap: 16, backgroundColor: colors.ground },
-  title: { fontSize: 22, fontWeight: '700', color: colors.ink },
-  preview: { minHeight: 280, borderRadius: 16, overflow: 'hidden', backgroundColor: colors.cameraBackground, justifyContent: 'center' },
-  frameHint: { position: 'absolute', bottom: 12, left: 12, right: 12, color: colors.cameraInk, textAlign: 'center' },
+  title: { fontSize: 22, lineHeight: 29, fontFamily: fonts.heading, color: colors.ink },
+  // Portrait preview: tall enough to aim at a shelf, capped so manual entry stays reachable.
+  preview: { width: '100%', aspectRatio: 3 / 4, minHeight: 280, maxHeight: 440, borderRadius: 20, overflow: 'hidden', backgroundColor: colors.cameraBackground, justifyContent: 'center' },
   status: { flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },
-  working: { color: colors.ink },
+  working: { color: colors.ink, fontFamily: fonts.body },
 });
