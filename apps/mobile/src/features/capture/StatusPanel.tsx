@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { Button } from '../../ui/Button';
+import { fonts } from '../../theme/tokens';
 
 export const errorMessage = (code?: string): string => {
   switch (code) {
@@ -79,6 +80,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
   },
-  title: { fontSize: 18, fontWeight: '700' },
-  message: { fontSize: 16 },
+  title: { fontSize: 18, lineHeight: 25, fontFamily: fonts.heading },
+  message: { fontSize: 16, lineHeight: 23, fontFamily: fonts.body },
 });

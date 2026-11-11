@@ -20,6 +20,6 @@ export function PressableOpacity({ style, onFocus, onBlur, onHoverIn, onHoverOut
   }}
   onBlur={event => { setFocused(false); onBlur?.(event); }}
   style={state => [{ minHeight: 44 }, typeof style === 'function' ? style(state) : style,
-   !props.disabled && (state.pressed ? { opacity: 0.6 } : hovered ? { opacity: 0.9 } : undefined),
+   !props.disabled && (state.pressed ? { opacity: 0.85, transform: [{ scale: 0.97 }] } : hovered ? { opacity: 0.9 } : undefined),
    focused ? { outlineWidth: 3, outlineColor: colors.focus, outlineOffset: 2, outlineStyle: 'solid' } : { outlineWidth: 0 }]} />;
 }
