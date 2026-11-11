@@ -2,22 +2,27 @@ import { View } from 'react-native';
 import type { Letter } from '@okbite/shared';
 import { Body } from '../../ui/Typography';
 import { useTheme } from '../../theme/useTheme';
+import { fonts } from '../../theme/tokens';
+import { letterTones } from '../../theme/letterTones';
 import { ro } from '../../copy/ro';
+
+const letters: Letter[] = ['A', 'B', 'C', 'D', 'E'];
 
 /** Our own letter tiles; this does not reproduce the official logo artwork. */
 export function NutriScoreScale({ letter }: { letter: Letter | null }) {
-  const { colors } = useTheme();
+  const { isDark } = useTheme();
+  const tones = isDark ? letterTones.dark : letterTones.light;
   if (letter === null) return null;
-  const tones = { A: 'good', B: 'good', C: 'medium', D: 'low', E: 'low' } as const;
   return <View accessible accessibilityRole="image" accessibilityLabel={`${ro.tiers.nutriScore}: ${letter}`} style={{ gap: 8, maxWidth: '100%' }}>
-    <Body style={{ fontWeight: '700', textAlign: 'center' }}>{ro.tiers.nutriScore}</Body>
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6 }}>
-      {(Object.keys(tones) as Letter[]).map(value => {
+    <Body style={{ fontFamily: fonts.bold, textAlign: 'center' }}>{ro.tiers.nutriScore}</Body>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: 4 }}>
+      {letters.map(value => {
         const selected = value === letter;
         const tone = tones[value];
-        return <View key={value} testID={`nutri-score-${value}`} style={{ minWidth: 36, paddingHorizontal: 8, paddingVertical: 6,
-          borderRadius: 8, backgroundColor: colors[`${tone}Bg`], borderWidth: 2, borderColor: selected ? colors[tone] : colors.transparent }}>
-          <Body style={{ textAlign: 'center', fontWeight: selected ? '800' : '500', color: colors[tone], fontSize: selected ? 22 : 18 }}>{value}</Body>
+        return <View key={value} testID={`nutri-score-${value}`} style={{ minWidth: selected ? 44 : 34, minHeight: selected ? 48 : 36, paddingHorizontal: 8,
+          justifyContent: 'center', borderRadius: selected ? 12 : 8, backgroundColor: selected ? tone.fg : tone.bg }}>
+          <Body style={{ textAlign: 'center', fontFamily: selected ? fonts.heading : fonts.bold, color: selected ? tones.onSelected : tone.fg,
+            fontSize: selected ? 24 : 16, lineHeight: selected ? 30 : 22 }}>{value}</Body>
         </View>;
       })}
     </View>
