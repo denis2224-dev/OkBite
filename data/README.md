@@ -88,9 +88,9 @@ The level follows what the opinion says, never our own reading of other studies:
 A level goes into `ingredients.json` only after a human opened `riskSource` and confirmed it; that
 person then updates `checkedBy` and `checkedAt` on the entry.
 
-### Drafts, not confirmed (2026-11-11)
+### Levels in `ingredients.json` (confirmed by Sergiu, 2026-11-11)
 
-Agent drafts from the opinion abstracts. None is in `ingredients.json` yet.
+Drafted by the agent from the opinion abstracts; Sergiu opened the sources and confirmed every row on 2026-11-11.
 
 | Ingredient | Draft risk | riskSource | What the opinion says |
 | --- | --- | --- | --- |
