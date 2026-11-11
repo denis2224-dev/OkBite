@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Image, View } from 'react-native';
 import { router } from 'expo-router';
 import { NUTRIENT_KEYS, resolveProductIngredients, type Product, type ScoreResult } from '@okbite/shared';
-import { AllergenChip, Badge, Body, Button, Card, Heading, useToast } from '../../ui';
+import { AllergenChip, Badge, Body, Button, Card, Heading, LinkRow, useToast } from '../../ui';
+import { fonts } from '../../theme/tokens';
 import { ro } from '../../copy/ro';
 import { isPreview } from '../../lib/preview';
 import { displayScore } from './displayScore';
@@ -52,9 +53,9 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
       </View>
       {!product.allergens.length && <Body>{ro.result.noAllergens}</Body>}
       {!!product.mayContain.length && <>
-        <Body>{ro.result.mayContain}</Body>
+        <Body style={{ fontFamily: fonts.bold }}>{ro.result.mayContain}</Body>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {product.mayContain.map(name => <AllergenChip key={name} name={name} />)}
+          {product.mayContain.map(name => <AllergenChip key={name} name={name} tone="trace" />)}
         </View>
       </>}
       <Body>{ro.result.missingAllergenNote}</Body>
@@ -65,10 +66,10 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
       <Heading style={{fontSize:18}}>{ro.result.transcribedLabel}</Heading>
       <Body selectable>{product.ingredientsText}</Body>
       {explainedIngredients.length > 0 && <View style={{ gap: 8, marginTop: 8 }}>
-        <Body style={{ fontWeight: '700' }}>{ro.result.explainedWithSource}</Body>
+        <Body style={{ fontFamily: fonts.bold }}>{ro.result.explainedWithSource}</Body>
         {explainedIngredients.map((item, idx) => (
           <View key={`${item.slug}:${idx}`} style={{ gap: 2 }}>
-            <Body style={{ fontWeight: '700' }}>{item.name}</Body>
+            <Body style={{ fontFamily: fonts.bold }}>{item.name}</Body>
             {item.role && <Body>{item.role}</Body>}
             {item.explanation && <Body>{item.explanation}</Body>}
           </View>
@@ -78,10 +79,12 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
     <SourceCard product={product} />
     {nutritionAdditionAvailable && product.status === 'unverified' && !hasNutrition &&
       <Button variant="secondary" onPress={() => router.push({pathname: '/add/nutrition', params: {productId: product.id}})}>{ro.result.addNutrition}</Button>}
-    <Button variant="secondary" onPress={() => router.push({ pathname: '/product/[id]/ingredients', params: { id: product.id } })}>{ro.ingredients.title}</Button>
-    <Button variant="secondary" onPress={() => router.push({ pathname: '/product/[id]/label', params: { id: product.id } })}>{ro.result.original}</Button>
-    <Button variant="secondary" onPress={() => router.push({ pathname: '/compare', params: { id: product.id } })}>{ro.result.compare}</Button>
-    {!isPreview && <Button variant="secondary" disabled={sharing} onPress={share}>{ro.share.button}</Button>}
+    <Card style={{ paddingVertical: 4, gap: 0 }}>
+      <LinkRow icon="book" label={ro.ingredients.title} hint={ro.result.ingredientsHint} onPress={() => router.push({ pathname: '/product/[id]/ingredients', params: { id: product.id } })} />
+      <LinkRow icon="camera" label={ro.result.original} last onPress={() => router.push({ pathname: '/product/[id]/label', params: { id: product.id } })} />
+    </Card>
+    <Button icon="compare" onPress={() => router.push({ pathname: '/compare', params: { id: product.id } })}>{ro.result.compare}</Button>
+    {!isPreview && <Button variant="secondary" icon="share" disabled={sharing} onPress={share}>{ro.share.button}</Button>}
     {shareFailed && <View style={{ gap: 8 }}>
       <Body accessibilityLiveRegion="polite">{ro.share.error}</Body>
       <Body selectable>{productShareUrl(product)}</Body>
