@@ -114,8 +114,19 @@ Agent drafts from the opinion abstracts. None is in `ingredients.json` yet.
 | `bicarbonat-de-sodiu-e500` | null | — | Rechecked 2026-11-11: same open call as E 330; no opinion. |
 | `acid-ascorbic-e300` | low | https://doi.org/10.2903/j.efsa.2015.4087 | Title confirmed; the agent could not open the conclusion. Check that it says no safety concern / no numerical ADI before confirming. |
 
-Processing: `import-off` stores OFF `nova_group` as `nova_group` with `nova_source: 'off'` only when
-it is 1, 2, 3 or 4; anything else stays null (unknown), as `productScore` expects.
+Processing: the OFF mapper turns OFF `nova_group` into `processing { level, source: 'off' }` (stored as
+`nova_group` / `nova_source`) only when it is 1, 2, 3 or 4; anything else stays null (unknown), as
+`productScore` expects.
+
+## Open Food Facts mapper (N22)
+
+`packages/shared/src/off/mapOffProduct.ts` maps one OFF product for both `import-off` and the lookup
+fallback (via `pnpm sync-shared`). It is pure: Zod-validated input, no fetch. `OFF_FIELDS` lists the
+fields to ask OFF for, and `OFF_USER_AGENT` names OkBite. Nutrients come only from `_100g` fields, so a
+per-serving-only product maps with those nutrients null (score unavailable). `additives_tags` become
+E-numbers matched against the additive aliases in `ingredients.json`; an unknown one keeps `slug: null`.
+These additives are not stored yet (no column). Imported rows carry the source `Open Food Facts (ODbL)`,
+and the mapper also returns the product page URL.
 
 ## Explicit release gate
 

@@ -66,7 +66,7 @@ localTest('loads and imports against disposable PostgREST, including restart and
     expect(await rest(`products?code=eq.${codes[0]}&select=name,status`)).toEqual([{ name: 'Reviewed fixture', status: 'verified' }]);
     const rows = await rest(`products?code=in.(${codes.join(',')})&select=code,status,source,ingredients_text`);
     expect(rows).toHaveLength(2);
-    expect(rows).toContainEqual({ code: codes[1], status: 'unverified', source: 'Open Food Facts (tradus automat)', ingredients_text: 'lapte, zahăr' });
+    expect(rows).toContainEqual({ code: codes[1], status: 'unverified', source: 'Open Food Facts (ODbL, tradus automat)', ingredients_text: 'lapte, zahăr' });
   } finally {
     vi.stubGlobal('fetch', network);
     await rest(`products?code=in.(${codes.join(',')})`, { method: 'DELETE' });

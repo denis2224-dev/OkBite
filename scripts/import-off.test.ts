@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { importOff as runImportOff, mapOffProduct, toRow, type OffProduct } from './import-off';
+import { importOff as runImportOff, type OffProduct } from './import-off';
 import { loadData } from './load-data';
 const importOff = (pause?: (ms: number) => Promise<void>) => runImportOff(pause, null);
 
@@ -20,120 +20,6 @@ const off: OffProduct = {
     proteins_100g: 3.6,
   },
 };
-
-describe('mapOffProduct', () => {
-  it('maps name, first brand, quantity and the per-100 g nutrients; absent ones stay null', () => {
-    expect(mapOffProduct(off)).toEqual({
-      code: '4840001000014',
-      name: 'Iaurt natural 2,5%',
-      brand: 'Livada Verde',
-      quantity: '400 g',
-      unit: 'g',
-      categorySlug: 'necunoscut',
-      ingredientsText: 'lapte normalizat, culturi lactice vii',
-      nutrients: {
-        kcal: 63,
-        fat: 2.5,
-        sat: 1.6,
-        sugar: 4.1,
-        salt: 0.1,
-        protein: 3.6,
-        fiber: null,
-        fruitVegPct: null,
-      },
-      photoPath: null,
-      ingredientsPhotoPath: '',
-      nutritionPhotoPath: null,
-    });
-  });
-
-  it('prefers the Romanian name and ingredients, and per 100 ml when OFF says so', () => {
-    const r = mapOffProduct({
-      ...off,
-      product_name_ro: 'Suc de mere',
-      ingredients_text_ro: 'suc de mere 100%',
-      nutrition_data_per: '100ml',
-    });
-    expect(r).toMatchObject({
-      name: 'Suc de mere',
-      ingredientsText: 'suc de mere 100%',
-      unit: 'ml',
-    });
-  });
-
-  it('keeps imported products sold in Moldova, not only 484 codes', () => {
-    expect(mapOffProduct({ ...off, code: '5901234123457' })?.code).toBe('5901234123457');
-  });
-
-  it.each([
-    ['a failing checksum', { code: '4840001000017' }],
-    ['no name', { product_name: ' ' }],
-    ['no brand', { brands: undefined }],
-    ['no ingredients text', { ingredients_text: '' }],
-    ['ingredients text that is not Romanian', { lang: 'en', ingredients_text: 'peanuts, sugar' }],
-  ])('returns null for %s', (_why, over) => expect(mapOffProduct({ ...off, ...over })).toBeNull());
-
-  it('ignores negative or non-numeric nutrient values', () => {
-    const r = mapOffProduct({ ...off, nutriments: { sugars_100g: '4', salt_100g: -1 } });
-    expect(r?.nutrients).toMatchObject({ sugar: null, salt: null });
-  });
-
-  it('maps Coca-Cola Zero and OFF category tags to real OkBite categories so beverage sweeteners are penalized', async () => {
-    const { computeScore } = await import('../packages/shared/src/index');
-    const cola = mapOffProduct({
-      code: '5449000131805',
-      product_name: 'Coca-Cola Zero Zahăr',
-      brands: 'Coca-Cola',
-      quantity: '500 ml',
-      nutrition_data_per: '100ml',
-      categories_tags: ['en:beverages', 'en:carbonated-drinks', 'en:sodas', 'en:colas'],
-      lang: 'ro',
-      ingredients_text_ro:
-        'Apă, dioxid de carbon, colorant E150d, acidifiant acid fosforic, îndulcitori (ciclamați, acesulfam K, aspartam), corector de aciditate citrați de sodiu, arome naturale, aromă cafeină.',
-      nutriments: {
-        'energy-kcal_100g': 0.2,
-        fat_100g: 0,
-        'saturated-fat_100g': 0,
-        sugars_100g: 0,
-        salt_100g: 0.02,
-        proteins_100g: 0,
-      },
-    });
-    expect(cola?.categorySlug).toBe('bauturi-racoritoare');
-    expect(cola?.unit).toBe('ml');
-    const scored = computeScore(cola!.nutrients, 'beverage', cola!.ingredientsText);
-    expect(scored.score).toBe(53);
-    expect(scored.letter).toBe('C');
-    expect(scored.grade).toBe('medium');
-    expect(scored.reasons).toContainEqual({
-      tone: 'bad',
-      title: 'Conține îndulcitori',
-      detail: 'Îndulcitori fără calorii în ingrediente',
-    });
-  });
-});
-
-describe('toRow', () => {
-  it('adds OFF allergen and trace tags to what the matcher finds, traces never repeating an allergen', () => {
-    const p = mapOffProduct(off)!;
-    expect(
-      toRow(p, {
-        allergens_tags: ['en:gluten', 'en:milk', 'en:unknown'],
-        traces_tags: ['en:nuts', 'en:milk'],
-      }),
-    ).toMatchObject({ allergens: ['Gluten', 'Lapte'], may_contain: ['Fructe cu coajă lemnoasă'] });
-  });
-});
-
-describe('toRow processing (N5)', () => {
-  const p = mapOffProduct(off)!;
-  it.each([1, 2, 3, 4])('maps OFF nova_group %i with source off', (g) => {
-    expect(toRow(p, { nova_group: g })).toMatchObject({ nova_group: g, nova_source: 'off' });
-  });
-  it.each([0, 5, 2.5, '4', null, undefined, Number.NaN])('drops nova_group %j to null', (g) => {
-    expect(toRow(p, { nova_group: g })).toMatchObject({ nova_group: null, nova_source: null });
-  });
-});
 
 describe('importOff and loadData against stubbed services', () => {
   const calls: { url: string; init?: RequestInit }[] = [];
@@ -207,7 +93,7 @@ describe('importOff and loadData against stubbed services', () => {
     expect(JSON.parse(String(insert.init?.body))[0]).toMatchObject({
       code: '4840001000014',
       status: 'unverified',
-      source: 'Open Food Facts',
+      source: 'Open Food Facts (ODbL)',
       category_slug: 'necunoscut',
       allergens: ['Lapte'],
       portion_label: '100 g',
@@ -253,7 +139,7 @@ describe('importOff and loadData against stubbed services', () => {
     expect(JSON.parse(String(inserts()[0]!.init?.body))[0]).toMatchObject({
       code: '4840001000021',
       ingredients_text: 'lapte, zahăr',
-      source: 'Open Food Facts (tradus automat)',
+      source: 'Open Food Facts (ODbL, tradus automat)',
       status: 'unverified',
       allergens: ['Lapte'],
       may_contain: ['Fructe cu coajă lemnoasă'],
@@ -395,25 +281,5 @@ describe('importOff and loadData against stubbed services', () => {
     expect(JSON.parse(String(calls[0]?.init?.body))).toEqual([
       { slug: 'iaurt', name: 'Iaurt', score_kind: 'general' },
     ]);
-  });
-});
-
-describe('OFF normalization boundaries', () => {
-  it('returns null rather than throwing for malformed direct inputs', () => {
-    for (const raw of [null, {}, { ...off, code: 123 }, { ...off, brands: [] }]) {
-      expect(() => mapOffProduct(raw as unknown as OffProduct)).not.toThrow();
-      expect(mapOffProduct(raw as unknown as OffProduct)).toBeNull();
-    }
-  });
-  it('accepts nullable optional OFF fields without losing an otherwise usable product', () => {
-    expect(mapOffProduct({ ...off, product_name_ro: null, ingredients_text_ro: null, quantity: null, nutriments: null } as unknown as OffProduct))
-      .toMatchObject({ name: off.product_name, quantity: '', nutrients: { kcal: null } });
-  });
-  it('uses normalized _100g fields even when the source table was entered per serving', () => {
-    expect(mapOffProduct({ ...off, nutrition_data_per: 'serving', nutriments: { sugars_100g: 10, sugars_serving: 2 } })?.nutrients.sugar).toBe(10);
-    expect(mapOffProduct({ ...off, nutrition_data_per: 'serving', nutriments: { sugars_serving: 2 } })?.nutrients.sugar).toBeNull();
-  });
-  it('keeps normalized OFF liquid nutrition per 100 ml when the package unit is ml', () => {
-    expect(mapOffProduct({ ...off, nutrition_data_per: '100g', product_quantity_unit: 'ml' } as OffProduct)?.unit).toBe('ml');
   });
 });
