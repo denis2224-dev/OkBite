@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { ErrorBody, LookupResponse } from '../_shared/contract.ts';
+import { ErrorBody, LookupResponse, type Product } from '../_shared/contract.ts';
 import { createHandler } from './index.ts';
 
 const id = 'c2000000-0000-4000-8000-000000000001';
@@ -129,6 +129,41 @@ Deno.test('optional analytics failures preserve found and not_found lookup respo
     );
     assert.equal(logged, 1);
     assert.equal(res.headers.get('access-control-allow-origin'), 'https://okbite.md');
+  }
+});
+
+Deno.test('lookup returns processing and additive risk when present and omits them when absent', async () => {
+  const records = JSON.parse(
+    await Deno.readTextFile(
+      new URL('../../../apps/mobile/src/test/preview-data.json', import.meta.url),
+    ),
+  );
+  const base = LookupResponse.parse({ status: 'found', ...records[0] });
+  if (base.status !== 'found') throw new Error('Expected found fixture');
+  const additive = {
+    slug: 'e250', name: 'E250', group: 'add' as const, role: 'conservant', explanation: 'x',
+    source: null, allergen: null, risk: 'moderate' as const,
+    riskSource: 'https://www.efsa.europa.eu/en/efsajournal/pub/4176',
+  };
+  const rich: Product = {
+    ...base.product,
+    processing: { level: 4, source: 'off' as const },
+    ingredients: [...base.product.ingredients, additive],
+  };
+  for (const product of [rich, base.product]) {
+    const res: Response = await createHandler({
+      loadProduct: async () => ({ product, score: base.score }),
+      logEvent: async () => {},
+    })(req());
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    if (product === rich) {
+      assert.deepEqual(body.product.processing, { level: 4, source: 'off' });
+      assert.deepEqual(body.product.ingredients.at(-1), additive);
+    } else {
+      assert.equal('processing' in body.product, false);
+      assert.equal(body.product.ingredients.some((i: object) => 'risk' in i), false);
+    }
   }
 });
 

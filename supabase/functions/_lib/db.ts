@@ -5,7 +5,7 @@ import { computeScore } from '../_shared/score/index.ts';
 
 // Explicit public columns: C2 deliberately denies SELECT * to shopper readers.
 const columns =
-  'id,code,status,name,brand,quantity,unit,portion_amount,portion_label,kcal,fat,sat,sugar,salt,protein,fiber,fruit_veg_pct,ingredients_text,allergens,may_contain,image_path,ingredients_photo_path,nutrition_photo_path,source,added_at,verified_at,category:categories(slug,name,scoreKind:score_kind)';
+  'id,code,status,name,brand,quantity,unit,portion_amount,portion_label,kcal,fat,sat,sugar,salt,protein,fiber,fruit_veg_pct,ingredients_text,allergens,may_contain,image_path,ingredients_photo_path,nutrition_photo_path,source,added_at,verified_at,nova_group,nova_source,category:categories(slug,name,scoreKind:score_kind)';
 export async function loadProduct(by: { id: string } | { code: string }): Promise<
   {
     product: Product;
@@ -22,14 +22,14 @@ export async function loadProduct(by: { id: string } | { code: string }): Promis
   if (error) throw new Error('Product lookup failed');
   if (!row || row.status === 'hidden') return null;
   const links = await db.from('product_ingredients').select(
-    'position,raw_name,ingredient:ingredients(slug,name,group:grp,role,explanation,source,allergen)',
+    'position,raw_name,ingredient:ingredients(slug,name,group:grp,role,explanation,source,allergen,risk,riskSource:risk_source)',
   ).eq('product_id', row.id).order('position');
   if (links.error) throw new Error('Ingredient lookup failed');
   // The untyped join infers an array; both sources are validated by Ingredient.parse below.
   let resolvedLinks: { position: number; raw_name: string; ingredient: unknown }[] = links.data ?? [];
   if (resolvedLinks.length === 0 && row.ingredients_text?.trim()) {
     const kbQuery = await db.from('ingredients').select(
-      'slug,name,aliases,group:grp,role,explanation,source,allergen',
+      'slug,name,aliases,group:grp,role,explanation,source,allergen,risk,riskSource:risk_source',
     );
     const mergedKb = new Map(BUILTIN_INGREDIENTS.map((entry) => [entry.slug, entry]));
     for (const dbEntry of kbQuery.data ?? []) {
@@ -94,6 +94,7 @@ export async function loadProduct(by: { id: string } | { code: string }): Promis
     source: row.source,
     addedAt: date(row.added_at),
     verifiedAt: row.verified_at ? date(row.verified_at) : null,
+    processing: row.nova_group == null ? null : { level: row.nova_group, source: row.nova_source },
   });
   return {
     product,

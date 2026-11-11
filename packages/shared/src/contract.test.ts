@@ -4,10 +4,49 @@ import {
   Code, Nutrients as NutrientsSchema, IdentifyResponse, AddProductRequest, ReadLabelResponse, Uuid, NUTRIENT_KEYS,
   Product, ScoreResult, LookupResponse, ReadLabelRequest, ReportRequest, ModerateRequest,
   ErrorCode, ErrorBody, IngredientEntry, IdentifyRequest, LABEL_FIELDS, FieldReason, EnrichReadLabelRequest,
-  EnrichReadLabelResponse, EnrichProductRequest, ProductInput,
+  EnrichReadLabelResponse, EnrichProductRequest, ProductInput, Ingredient,
 } from './contract';
 
 const n: Nutrients = { kcal: 63, fat: 2.5, sat: 1.6, sugar: 4.1, salt: 0.1, protein: 3.6, fiber: 0, fruitVegPct: null };
+
+describe('N1 redesign fields', () => {
+  const additive = { slug: 'e250', name: 'E250', group: 'add', role: 'conservant', explanation: 'x', source: 'https://example.org/e250', allergen: null };
+  const product = {
+    id: '0b6f3c1e-2d4a-4c8e-9f10-1a2b3c4d5e6f', code: null, status: 'unverified', name: 'Biscuiți', brand: 'X',
+    quantity: '200 g', category: { slug: 'biscuiti', name: 'Biscuiți', scoreKind: 'general' }, unit: 'g',
+    portion: { amount: 100, label: '100 g' }, nutrients: n, ingredientsText: 'făină', ingredients: [], allergens: [],
+    mayContain: [], imageUrl: null, labelImageUrl: null, source: 'test', addedAt: '2026-11-11', verifiedAt: null,
+  };
+  it('accepts an additive risk of low, moderate, high or null and rejects anything else', () => {
+    for (const risk of ['low', 'moderate', 'high', null]) {
+      expect(Ingredient.parse({ ...additive, risk }).risk).toBe(risk);
+    }
+    expect(Ingredient.safeParse({ ...additive, risk: 'medium' }).success).toBe(false);
+  });
+  it('requires riskSource to be a URL or null', () => {
+    const url = 'https://www.efsa.europa.eu/en/efsajournal/pub/4176';
+    expect(Ingredient.parse({ ...additive, risk: 'moderate', riskSource: url }).riskSource).toBe(url);
+    expect(Ingredient.parse({ ...additive, riskSource: null }).riskSource).toBeNull();
+    expect(Ingredient.safeParse({ ...additive, riskSource: 'EFSA' }).success).toBe(false);
+  });
+  it('takes a NOVA processing level 1 to 4 from off or team, or null', () => {
+    for (const level of [1, 2, 3, 4]) {
+      expect(Product.parse({ ...product, processing: { level, source: 'off' } }).processing).toEqual({ level, source: 'off' });
+    }
+    expect(Product.parse({ ...product, processing: { level: 3, source: 'team' } }).processing?.source).toBe('team');
+    expect(Product.parse({ ...product, processing: null }).processing).toBeNull();
+    for (const processing of [{ level: 0, source: 'off' }, { level: 5, source: 'off' }, { level: 2.5, source: 'off' },
+      { level: 2, source: 'app' }, { level: 2 }]) {
+      expect(Product.safeParse({ ...product, processing }).success).toBe(false);
+    }
+  });
+  it('still parses old payloads without the new fields and leaves them unset', () => {
+    const parsed = Product.parse({ ...product, ingredients: [additive] });
+    expect(parsed.processing).toBeUndefined();
+    expect(parsed.ingredients[0]?.risk).toBeUndefined();
+    expect(parsed.ingredients[0]?.riskSource).toBeUndefined();
+  });
+});
 
 describe('contract', () => {
   it('accepts EAN-8 and EAN-13 only', () => {
