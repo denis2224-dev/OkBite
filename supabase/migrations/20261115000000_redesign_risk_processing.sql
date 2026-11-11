@@ -2,7 +2,7 @@
 -- Null means not assessed / unknown. Checks keep bad rows from failing lookup's Zod parse.
 alter table public.ingredients
   add column risk text check (risk in ('low','moderate','high')),
-  add column risk_source text check (risk_source ~ '^https?://'),
+  add column risk_source text check (risk_source ~ '^https?://[^/\s?#]+'), -- needs a host, like Zod .url()
   -- Only additives carry a risk, and no risk without a source a human opened.
   add constraint ingredients_risk_additive_only check (risk is null or grp = 'add'),
   add constraint ingredients_risk_has_source check (risk is null or risk_source is not null);
