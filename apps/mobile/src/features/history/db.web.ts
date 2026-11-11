@@ -15,8 +15,14 @@ export async function writeHistory(id: string, json: string, savedAt: string): P
   ].sort((a, b) => b.savedAt.localeCompare(a.savedAt)).slice(0, 200), history);
   void requestPersistentStorage();
 }
-export async function deleteHistory(): Promise<void> {
-  await del('entries', history);
+export async function deleteHistory(id?: string): Promise<void> {
+  if (id === undefined) await del('entries', history);
+  else await update<Row[]>('entries', rows => (rows ?? []).filter(row => row.id !== id), history);
+}
+export async function restoreHistory(id: string, json: string, savedAt: string): Promise<void> {
+  await update<Row[]>('entries', rows => (rows ?? []).some(row => row.id === id) ? (rows ?? []) : [
+    ...(rows ?? []), { id, json, savedAt },
+  ].sort((a, b) => b.savedAt.localeCompare(a.savedAt)).slice(0, 200), history);
 }
 export async function putQueued(item: Omit<QueuedItem, 'status' | 'result'>): Promise<void> {
   await update<QueuedItem[]>('entries', rows => [...(rows ?? []), { ...item, status: 'pending', result: null }], queue);

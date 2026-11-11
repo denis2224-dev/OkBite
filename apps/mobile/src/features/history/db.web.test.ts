@@ -3,7 +3,7 @@ import { serialize, deserialize } from 'node:v8';
 import { Blob as mockBlob } from 'node:buffer';
 import { randomUUID as mockRandomUUID } from 'node:crypto';
 import { createStore, get, set } from 'idb-keyval';
-import { writeHistory, readHistory, deleteHistory, putQueued, listQueued, deleteQueued, markNeedsReview, setQueuedReview, resetQueued, markQueuedComplete } from './db.web';
+import { writeHistory, readHistory, deleteHistory, putQueued, listQueued, deleteQueued, markNeedsReview, setQueuedReview, resetQueued, markQueuedComplete, restoreHistory } from './db.web';
 import { enqueue, flushQueue, listNeedsReview, resolveQueued, listQueue, retryQueued } from '../offline/queue';
 import { api, ApiError } from '../../lib/api';
 import { foundYogurt } from '../../test/fixtures';
@@ -130,3 +130,17 @@ it('persists browser service errors and resolves them only after explicit retry'
   expect(await listQueue()).toEqual([]);
 });
 
+
+it('deletes one browser history row and restores only if absent, keeping queue untouched', async () => {
+  await writeHistory('a', '{"name":"original"}', '2026-11-05T00:00:01.000Z');
+  await writeHistory('b', '{"name":"other"}', '2026-11-05T00:00:02.000Z');
+  await putQueued({ id: 'pending', kind: 'code', payload: '12345670', createdAt: '2026-11-05T00:00:00.000Z' });
+  await deleteHistory('a');
+  expect(await readHistory()).toEqual([{ json: '{"name":"other"}' }]);
+  await restoreHistory('a', '{"name":"original"}', '2026-11-05T00:00:01.000Z');
+  expect(await readHistory()).toEqual([{ json: '{"name":"other"}' }, { json: '{"name":"original"}' }]);
+  await writeHistory('a', '{"name":"new scan"}', '2026-11-05T00:00:03.000Z');
+  await restoreHistory('a', '{"name":"original"}', '2026-11-05T00:00:01.000Z');
+  expect((await readHistory())[0]).toEqual({ json: '{"name":"new scan"}' });
+  expect((await listQueued())[0]?.id).toBe('pending');
+});

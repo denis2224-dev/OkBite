@@ -26,8 +26,16 @@ export async function writeHistory(id: string, json: string, savedAt: string): P
     await tx.runAsync('DELETE FROM history WHERE id NOT IN (SELECT id FROM history ORDER BY saved_at DESC,rowid DESC LIMIT 200)');
   });
 }
-export async function deleteHistory(): Promise<void> {
-  await (await getDatabase()).runAsync('DELETE FROM history');
+export async function deleteHistory(id?: string): Promise<void> {
+  const db = await getDatabase();
+  if (id === undefined) await db.runAsync('DELETE FROM history');
+  else await db.runAsync('DELETE FROM history WHERE id=?', id);
+}
+export async function restoreHistory(id: string, json: string, savedAt: string): Promise<void> {
+  await (await getDatabase()).withExclusiveTransactionAsync(async tx => {
+    await tx.runAsync('INSERT OR IGNORE INTO history (id,json,saved_at) VALUES (?,?,?)', id, json, savedAt);
+    await tx.runAsync('DELETE FROM history WHERE id NOT IN (SELECT id FROM history ORDER BY saved_at DESC,rowid DESC LIMIT 200)');
+  });
 }
 export type QueuedItem = { id: string; kind: 'photo' | 'code'; payload: string; createdAt: string; status: 'pending' | 'needs_review' | 'completed'; result: string | null; error?: string };
 export async function putQueued(item: Omit<QueuedItem, 'status' | 'result'>): Promise<void> {
