@@ -262,7 +262,8 @@ describe('importOff and loadData against stubbed services', () => {
 
   it('dry run counts Romania products from the OFF export without writing or translating', async () => {
     vi.stubEnv('AI_API_KEY', 'k');
-    const ro = (p: OffProduct) => JSON.stringify({ ...p, countries_tags: ['en:romania', 'en:moldova'] });
+    const ro = (p: OffProduct) =>
+      JSON.stringify({ ...p, countries_tags: ['en:romania', 'en:moldova'] });
     const file = join(mkdtempSync(join(tmpdir(), 'off-export-')), 'products.jsonl.gz');
     writeFileSync(
       file,
@@ -290,16 +291,23 @@ describe('importOff and loadData against stubbed services', () => {
 
   it('dry run over the search API names the country and writes nothing', async () => {
     stubFetch([off]);
-    expect(await runImportOff(noPause, null, { write: false })).toMatchObject({ mapped: 1, inserted: 1 });
+    expect(await runImportOff(noPause, null, { write: false })).toMatchObject({
+      mapped: 1,
+      inserted: 1,
+    });
     expect(inserts()).toEqual([]);
     const off1 = calls.find((c) => c.url.includes('openfoodfacts'))!;
     expect(new URL(off1.url).searchParams.get('countries_tags')).toBe('en:moldova');
-    expect(new Headers(off1.init?.headers).get('user-agent')).toBe('OkBite/1.0 (https://github.com/denis2224-dev/OkBite)');
+    expect(new Headers(off1.init?.headers).get('user-agent')).toBe(
+      'OkBite/1.0 (https://github.com/denis2224-dev/OkBite)',
+    );
   });
 
   it('refuses a Romania import without the export file', async () => {
     stubFetch([]);
-    await expect(runImportOff(noPause, null, { country: 'romania' })).rejects.toThrow('romania needs --file');
+    await expect(runImportOff(noPause, null, { country: 'romania' })).rejects.toThrow(
+      'romania needs --file',
+    );
     expect(calls).toEqual([]);
   });
 
