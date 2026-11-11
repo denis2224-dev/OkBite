@@ -1,9 +1,10 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { useGuidedAddSession } from './useGuidedAddSession';
-import { loadUnknownDraft, saveUnknownDraft } from './unknownDraft';
+import { clearUnknownDraft, loadUnknownDraft, saveUnknownDraft } from './unknownDraft';
 import { requestUnknownFlow } from './unknownFlowTransport';
 import { api } from '../../lib/api';
 import { NUTRIENT_KEYS } from '@okbite/shared';
+import { removePhoto } from '../offline/photos';
 const mockReplace = jest.fn();
 let mockDelayFocus = false;
 let mockFocus: (() => void | (() => void)) | undefined;
@@ -68,6 +69,38 @@ test('restores a pending read as interrupted without replay', async () => {
   expect(result.current.state?.stage).toBe('interrupted');
   expect(requestUnknownFlow).not.toHaveBeenCalled();
   expect(mockReplace).not.toHaveBeenCalled();
+});
+
+test('requires choosing a saved draft when a different barcode starts a new product', async () => {
+  jest.mocked(loadUnknownDraft).mockResolvedValueOnce({ version: 1, id: 'older-draft', initial: { ...initial, code: null },
+    stage: 'ingredients', nutritionMode: null, photos: { front: 'old-front', ingredients: null, nutrition: null }, label: null, readStatus: 'idle' });
+  const { result } = await renderHook(() => useGuidedAddSession(initial));
+  await act(async () => {});
+  expect(result.current.draftConflict).toBe(true);
+  expect(requestUnknownFlow).not.toHaveBeenCalled();
+});
+
+test('discarding a saved draft restarts a usable session for the incoming product', async () => {
+  jest.mocked(removePhoto).mockResolvedValue();
+  jest.mocked(loadUnknownDraft).mockResolvedValueOnce({ version: 1, id: 'older-draft', initial,
+    stage: 'ingredients', nutritionMode: null, photos: { front: 'old-front', ingredients: null, nutrition: null }, label: null, readStatus: 'idle' });
+  const { result } = await renderHook(() => useGuidedAddSession(initial));
+  await act(async () => {});
+  await act(async () => { await result.current.discardDraft(); });
+  expect(result.current.state?.initial).toMatchObject(initial);
+  await act(async () => { await result.current.controller!.capturePhoto('new-ingredients'); });
+  expect(result.current.state?.stage).toBe('nutrition_question');
+  expect(result.current.restoredFromDraft).toBe(false);
+});
+
+test('a failed draft deletion keeps the flow usable and reports the storage error', async () => {
+  jest.mocked(clearUnknownDraft).mockRejectedValueOnce(new Error('storage failed'));
+  const { result } = await renderHook(() => useGuidedAddSession(initial));
+  await act(async () => {});
+  await act(async () => { await result.current.discardDraft(); });
+  expect(result.current.discardError).toBe(true);
+  await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
+  expect(result.current.state?.stage).toBe('nutrition_question');
 });
 test('suppresses navigation when a read finishes after unmount', async () => {
   let finish!: (value: unknown) => void;

@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { render, renderHook, act, screen } from '@testing-library/react-native';
+import { AppState } from 'react-native';
 import { api } from '../../lib/api';
 import { ro } from '../../copy/ro';
 import AddScreen from '../../../app/add/index';
@@ -35,6 +36,7 @@ describe('useScanLookup', () => {
     mockParams.value = {};
     mockEnqueue.mockResolvedValue(undefined);
     jest.mocked(loadUnknownDraft).mockResolvedValue(null);
+    jest.spyOn(AppState, 'addEventListener').mockReturnValue({ remove: jest.fn() });
   });
 
   it('opens the product for a code that exists', async () => {
@@ -46,15 +48,15 @@ describe('useScanLookup', () => {
   });
 
   it('sends an unknown code to identify as local state with no photoPath', async () => {
+    setGuidedAddEnabled(false);
     lookup.mockResolvedValue(lookupNotFound);
     const { result } = await renderHook(() => useScanLookup());
     await act(async () => { await result.current.onManualCode('96385074'); });
     expect(mockReplace).toHaveBeenCalledWith({ pathname: '/identify', params: { source: 'code', code: '96385074' } });
   });
 
-  it('opens /add with flow=guided and scanned code on barcode not_found and reaches GuidedAddScreen at the front-photo step when guided add is enabled', async () => {
-    expect(GUIDED_ADD_ENABLED).toBe(false);
-    setGuidedAddEnabled(true);
+  it('defaults unknown barcode entry to the guided front-photo step', async () => {
+    expect(GUIDED_ADD_ENABLED).toBe(true);
     lookup.mockResolvedValue(lookupNotFound);
 
     const { result } = await renderHook(() => useScanLookup());
@@ -72,6 +74,19 @@ describe('useScanLookup', () => {
 
     expect(screen.getByText(ro.add.frontTitle)).toBeTruthy();
     expect(screen.getByText(ro.add.stepOf(1, 4))).toBeTruthy();
+  });
+
+  it('starts a direct /add visit at the guided front-photo step', async () => {
+    await render(React.createElement(AddScreen));
+    await act(async () => {});
+    expect(screen.getByText(ro.add.frontTitle)).toBeTruthy();
+  });
+
+  it('keeps explicit manual entry reachable with the guided default', async () => {
+    mockParams.value = { flow: 'manual' };
+    await render(React.createElement(AddScreen));
+    expect(screen.getByTestId('add-permission-loading')).toBeTruthy();
+    expect(screen.queryByText(ro.add.frontTitle)).toBeNull();
   });
 
   it('does not look up or navigate for an invalid code', async () => {

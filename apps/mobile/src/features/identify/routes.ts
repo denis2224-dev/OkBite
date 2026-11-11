@@ -24,8 +24,8 @@ export type AddRouteParams = {
   flow?: 'guided' | 'manual';
 };
 
-// Off in real builds until the backend is ready; the e2e stub build sets EXPO_PUBLIC_GUIDED_ADD=1.
-export const GUIDED_ADD_ENABLED = process.env.EXPO_PUBLIC_GUIDED_ADD === '1';
+// U1/U2a/U3 are integrated; keep an explicit rollback switch for older backends.
+export const GUIDED_ADD_ENABLED = process.env.EXPO_PUBLIC_GUIDED_ADD !== '0';
 let guidedAddOverride: boolean | null = null;
 export const isGuidedAddEnabled = (): boolean => guidedAddOverride ?? GUIDED_ADD_ENABLED;
 export const setGuidedAddEnabled = (enabled: boolean | null): void => {

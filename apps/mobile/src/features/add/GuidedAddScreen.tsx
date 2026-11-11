@@ -20,7 +20,7 @@ export function GuidedAddScreen() {
   const frontPhotoId = typeof rawParams.frontPhotoId === 'string' && rawParams.frontPhotoId.trim() ? rawParams.frontPhotoId.trim() : undefined;
   const retakeParam = rawParams.retake;
   const retakeKind = retakeParam === 'front' || retakeParam === 'ingredients' || retakeParam === 'nutrition' ? retakeParam : undefined;
-  const { state, controller, error, restoredFromDraft, discardDraft } = useGuidedAddSession(
+  const { state, controller, draftId, error, restoredFromDraft, draftConflict, discardError, resumeDraft, discardDraft } = useGuidedAddSession(
     {
       ...parsed,
       ...(frontPhotoId ? { frontPhotoId } : {}),
@@ -60,6 +60,25 @@ export function GuidedAddScreen() {
     );
   }
 
+  if (draftConflict) {
+    return <Screen title={ro.add.frontTitle}>
+      <Text style={{ color: colors.ink, fontSize: 16 }}>{state.initial.name}</Text>
+      {discardError ? <Text accessibilityRole="alert" style={{ color: colors.ink }}>{ro.add.draftSaveFailed}</Text> : null}
+      <StatusPanel message={ro.add.draftRestored} actions={[
+        { label: ro.add.resumeDraft, onPress: resumeDraft },
+        { label: ro.add.discardDraft, onPress: () => void discardDraft() },
+      ]} />
+    </Screen>;
+  }
+
+  if (state.stage === 'review') {
+    return <Screen title={ro.add.confirmTitle}>
+      <StatusPanel message={ro.add.draftRestored} actions={[
+        { label: ro.add.confirmTitle, onPress: () => router.replace({ pathname: '/add/review', params: { unknownDraftId: draftId } }) },
+      ]} />
+    </Screen>;
+  }
+
   const stageTitle =
     state.stage === 'front'
       ? ro.add.frontTitle
@@ -89,6 +108,7 @@ export function GuidedAddScreen() {
     <Screen title={stageTitle}>
       <Text style={{ color: colors.accent, fontSize: 13, fontWeight: '700' }}>{ro.add.stepOf(stepNumber, totalSteps)}</Text>
       {restoredFromDraft ? <Text style={{ color: colors.muted, fontSize: 14 }}>{ro.add.draftRestored}</Text> : null}
+      {discardError ? <Text accessibilityRole="alert" style={{ color: colors.ink }}>{ro.add.draftSaveFailed}</Text> : null}
 
       {state.stage === 'front' || state.stage === 'ingredients' || state.stage === 'nutrition' ? (
         <View style={{ gap: 12 }}>

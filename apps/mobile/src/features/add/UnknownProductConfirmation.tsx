@@ -11,6 +11,7 @@ import { CategoryPicker } from './CategoryPicker';
 import { parseAmount, unitForNutrient } from './parseAmount';
 import { UnknownConfirmationField } from './UnknownConfirmationField';
 import { UnknownConfirmationPhoto } from './UnknownConfirmationPhoto';
+import { getUnclearLabelFields } from './labelWarnings';
 
 export type UnknownProductProposal = Omit<AddProductRequest, 'unit' | 'categorySlug'> & { unit: Unit | null; categorySlug?: string };
 export type UnknownPhotoKind = 'front' | 'ingredients' | 'nutrition';
@@ -40,9 +41,8 @@ export function UnknownProductConfirmation({ initial, label, photos, categories,
   const [error, setError] = useState(false);
   const busy = useRef(false);
   const change = (next: UnknownProductProposal) => { setValue(next); setError(false); onChange?.(next); };
-  const unreadable = (field: string) => label.reasons?.[field] === 'unreadable' ||
-    (!label.reasons?.[field] && label.unclear.includes(field as ReadLabelResponse['unclear'][number]));
-  const nutritionUnreadable = NUTRIENT_KEYS.some(unreadable);
+  const unclear = getUnclearLabelFields(label);
+  const nutritionUnreadable = unclear.some(key => key !== 'ingredientsText');
   const visibleNutrients = NUTRIENT_KEYS.filter(key => label.nutrients[key] !== null);
   const essentialMissing = !value.ingredientsText.trim();
   const numericInvalid = Object.values(invalid).some(Boolean) ||
@@ -83,7 +83,7 @@ export function UnknownProductConfirmation({ initial, label, photos, categories,
     </View>
     <View style={card}>
       {field('ingredientsText', ro.review.ingredients)}
-      {essentialMissing || unreadable('ingredientsText') ? <>
+      {essentialMissing || unclear.includes('ingredientsText') ? <>
         <Text style={textStyle}>{ro.add.unreadableText}</Text>
         <ActionButton label={`${ro.add.retakePhoto}: ${ro.review.ingredients}`} onPress={() => onRetake('ingredients')} disabled={pending} />
       </> : null}

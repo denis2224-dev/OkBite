@@ -23,13 +23,14 @@ import type { AddInitialValues } from '../identify/routes';
 import { CategoryPicker } from './CategoryPicker';
 import { NutritionFields, getCompleteNutrientLabels } from './NutritionFields';
 import { parseAmount, unitForNutrient } from './parseAmount';
+import { getUnclearLabelFields } from './labelWarnings';
 
 export interface ReviewFormProps {
   label: ReadLabelResponse;
   initial: AddInitialValues;
   categories: readonly Category[];
   onSubmit: (request: AddProductRequestType) => void | Promise<void>;
-  onRetake?: (currentIdentity: AddInitialValues) => void;
+  onRetake?: (currentIdentity: AddInitialValues) => void | Promise<void>;
 }
 
 const UNITS: readonly Unit[] = ['g', 'ml'];
@@ -71,13 +72,14 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
 
   const detected = useMemo(() => detectAllergens(ingredientsText), [ingredientsText]);
   const nutrientLabels = getCompleteNutrientLabels();
-  const hasValidCategory = categorySlug !== null && categories.some((c) => c.slug === categorySlug);
+  const unclear = getUnclearLabelFields(label);
+  const hasValidCategory = categorySlug === null || categories.some((c) => c.slug === categorySlug);
   const canSave =
     !submitting &&
     nutrientLabels !== null &&
     unit !== null &&
     name.trim().length > 0 &&
-    brand.trim().length > 0 &&
+    brand.trim().length <= 80 &&
     ingredientsText.trim().length >= 3 &&
     hasValidCategory;
 
@@ -87,22 +89,27 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
     setFormError(null);
   };
 
-  const handleRetakePress = () => {
+  const handleRetakePress = async () => {
     if (submitting || inFlightRef.current || !onRetake) return;
     const trimmedCode = code.trim();
     const normalizedCode = trimmedCode ? normalizeCode(trimmedCode) : null;
-    onRetake({
-      code: normalizedCode ?? (trimmedCode ? initial.code : null),
-      brand: brand.trim() || null,
-      name: name.trim() || null,
-      quantity: quantity.trim() || null,
-      photoPath: initial.photoPath ? initial.photoPath.trim() || null : null,
-      ...(initial.queueId ? { queueId: initial.queueId } : {}),
-    });
+    setSubmitting(true);
+    try {
+      await onRetake({
+        code: normalizedCode ?? (trimmedCode ? initial.code : null),
+        brand: brand.trim() || null,
+        name: name.trim() || null,
+        quantity: quantity.trim() || null,
+        photoPath: initial.photoPath ? initial.photoPath.trim() || null : null,
+        ...(initial.queueId ? { queueId: initial.queueId } : {}),
+      });
+    }
+    catch { setFormError(ro.add.draftSaveFailed); }
+    finally { setSubmitting(false); }
   };
 
   const handleSubmit = async () => {
-    if (!canSave || inFlightRef.current || !categorySlug || !unit) return;
+    if (!canSave || inFlightRef.current || !unit) return;
 
     const trimmedCode = code.trim();
     const normalizedCode = trimmedCode ? normalizeCode(trimmedCode) : null;
@@ -143,7 +150,7 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
       brand: brand.trim(),
       quantity: quantity.trim(),
       unit,
-      categorySlug,
+      ...(categorySlug ? { categorySlug } : {}),
       ingredientsText: ingredientsText.trim(),
       nutrients: parsedNutrients,
       photoPath: initial.photoPath ? initial.photoPath.trim() || null : null,
@@ -171,14 +178,14 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
       <Text accessibilityRole="header" style={styles.title}>{ro.review.title}</Text>
       <Text style={styles.hint}>{ro.review.hint}</Text>
 
-      {label.unclear.length > 0 ? (
+      {unclear.length > 0 ? (
         <View accessibilityRole="alert" style={styles.unclearBanner}>
           <Text style={styles.unclearBannerTitle}>{ro.review.unclearTitle}</Text>
           <Text style={styles.unclearBannerText}>{ro.review.unclearText}</Text>
           {onRetake ? (
             <ActionButton
               label={ro.review.retakePhoto}
-              onPress={handleRetakePress}
+              onPress={() => void handleRetakePress()}
               disabled={submitting}
             />
           ) : null}
@@ -214,7 +221,7 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
 
       <View style={styles.card}>
         <Text style={styles.fieldLabel}>{ro.review.ingredients}</Text>
-        {label.unclear.includes('ingredientsText') ? (
+        {unclear.includes('ingredientsText') ? (
           <View testID="unclear-ingredientsText">
             <Text style={styles.unclearMark}>{ro.review.unclearField}</Text>
             <Text style={styles.unclearMark}>{ro.review.unreadMark}</Text>
@@ -245,12 +252,12 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
         <Text style={styles.muted}>{ro.review.allergensHint}</Text>
       </View>
 
-      <NutritionFields values={nutrientInputs} unclear={label.unclear} invalid={invalidNutrients} onChange={setNutrientField} />
+      <NutritionFields values={nutrientInputs} unclear={unclear} invalid={invalidNutrients} onChange={setNutrientField} />
 
       {formError ? <Text accessibilityRole="alert" style={styles.errorBanner}>{formError}</Text> : null}
 
       <ActionButton variant="primary" label={ro.review.save} onPress={() => { void handleSubmit(); }} disabled={!canSave} />
-      {onRetake ? <ActionButton variant="secondary" label={ro.review.retakePhotos} onPress={handleRetakePress} disabled={submitting} /> : null}
+      {onRetake ? <ActionButton variant="secondary" label={ro.review.retakePhotos} onPress={() => void handleRetakePress()} disabled={submitting} /> : null}
     </ScrollView>
   );
 }

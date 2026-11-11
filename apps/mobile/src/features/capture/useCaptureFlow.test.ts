@@ -56,7 +56,7 @@ describe('fixtures', () => {
 describe('useCaptureFlow', () => {
   beforeEach(() => {
     jest.resetAllMocks();
-    setGuidedAddEnabled(null);
+    setGuidedAddEnabled(false);
     jest.mocked(FileSystem.copyAsync).mockImplementation(async ({ from }: { from: string; to: string }) => {
       if (!from.startsWith('file://')) {
         throw new Error(`Refusing non-local URI in keepPhoto: ${from}`);

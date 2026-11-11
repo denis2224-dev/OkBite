@@ -151,3 +151,34 @@ test('per-photo retake navigates to /add with retake kind while keeping draft ed
   });
 });
 
+test('manual fallback persists edited identity before retaking ingredients', async () => {
+  jest.mocked(loadUnknownDraft).mockResolvedValueOnce({ ...storedDraft,
+    label: { ...storedDraft.label!, ingredientsText: null, unclear: ['ingredientsText'],
+      reasons: { ...storedDraft.label!.reasons!, ingredientsText: 'unreadable' } } });
+  await render(<UnknownReviewScreen />);
+  await act(async () => {});
+  await fireEvent.press(screen.getByRole('button', { name: ro.add.manualEntry }));
+  await fireEvent.changeText(screen.getByLabelText(ro.review.name), 'Denumire corectată');
+  await fireEvent.changeText(screen.getByLabelText(ro.review.brand), '');
+  await fireEvent.press(screen.getByRole('button', { name: ro.review.retakePhotos }));
+  expect(saveUnknownDraftIfCurrent).toHaveBeenLastCalledWith(expect.objectContaining({
+    initial: expect.objectContaining({ name: 'Denumire corectată', brand: null }),
+  }));
+  expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add', params: { unknownDraftId: 'draft-1', retake: 'ingredients' } });
+});
+
+test('manual retake does not navigate after leaving while draft persistence is pending', async () => {
+  jest.mocked(loadUnknownDraft).mockResolvedValueOnce({ ...storedDraft,
+    label: { ...storedDraft.label!, ingredientsText: null, unclear: ['ingredientsText'],
+      reasons: { ...storedDraft.label!.reasons!, ingredientsText: 'unreadable' } } });
+  let finish!: (saved: boolean) => void;
+  jest.mocked(saveUnknownDraftIfCurrent).mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+  const view = await render(<UnknownReviewScreen />);
+  await act(async () => {});
+  await fireEvent.press(screen.getByRole('button', { name: ro.add.manualEntry }));
+  await fireEvent.press(screen.getByRole('button', { name: ro.review.retakePhotos }));
+  await view.unmount();
+  await act(async () => { finish(true); });
+  expect(mockReplace).not.toHaveBeenCalled();
+});
+

@@ -86,6 +86,42 @@ test('readable separate table retains label values and shows a score', async ({ 
   });
 });
 
+test('direct add uses variant 1 and saves an unbranded partial table without optional warnings', async ({ page, session }) => {
+  await session.configure('partial-unbranded');
+  await page.goto('/add');
+  await expect(page.getByRole('heading', { name: ro.add.frontTitle, exact: true })).toBeVisible();
+  await expect(page.getByText(ro.add.nutritionQuestion, { exact: true })).toHaveCount(0);
+  await photo(page);
+  await expect(page.getByRole('heading', { name: ro.add.ingredientsTitle, exact: true })).toBeVisible();
+  await expect(page.getByText(ro.add.nutritionQuestion, { exact: true })).toHaveCount(0);
+  await photo(page);
+  await review(page, ro.add.nutritionYes);
+  await expect(page.getByText(ro.add.nutritionUnreadable, { exact: true })).toHaveCount(0);
+  await page.goto('/add');
+  await page.getByRole('button', { name: ro.add.confirmTitle, exact: true }).click();
+  await expect(page.getByRole('heading', { name: ro.add.confirmTitle, exact: true })).toBeVisible();
+  await page.goto(`/add?code=${example.product.code}`);
+  await page.getByRole('button', { name: ro.add.resumeDraft, exact: true }).click();
+  await page.getByRole('button', { name: ro.add.confirmTitle, exact: true }).click();
+  expect((await session.state()).calls.filter(call => call.name === 'read-label')).toHaveLength(1);
+  await page.getByRole('button', { name: ro.add.confirmSave, exact: true }).click();
+  const state = await session.state();
+  await result(page, state.productId);
+  const add = state.calls.find(call => call.name === 'add-product')!;
+  expect(add.body).toMatchObject({ brand: '', nutrients: { ...example.product.nutrients, fiber: null, fruitVegPct: null } });
+  expect(add.body).not.toHaveProperty('categorySlug');
+});
+
+test('discarding a different product draft starts a usable front-photo step', async ({ page, session }) => {
+  await begin(page); await review(page, ro.add.nutritionNone);
+  await page.goto('/add?code=96385074');
+  await page.getByRole('button', { name: ro.add.discardDraft, exact: true }).click();
+  await expect(page.getByRole('heading', { name: ro.add.frontTitle, exact: true })).toBeVisible();
+  await photo(page);
+  await expect(page.getByRole('heading', { name: ro.add.ingredientsTitle, exact: true })).toBeVisible();
+  expect((await session.state()).calls.filter(call => call.name === 'read-label')).toHaveLength(1);
+});
+
 test('unreadable optional table continues with ingredients without a blurry warning', async ({ page, session }) => {
   await session.configure('unreadable'); await begin(page);
   await page.getByRole('button', { name: ro.add.nutritionYes, exact: true }).click(); await photo(page);

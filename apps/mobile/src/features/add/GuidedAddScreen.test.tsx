@@ -1,6 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { NUTRIENT_KEYS } from '@okbite/shared';
+import { NUTRIENT_KEYS, ReadLabelResponse } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { GuidedAddScreen } from './GuidedAddScreen';
 import { loadUnknownDraft, saveUnknownDraft } from './unknownDraft';
@@ -162,4 +162,19 @@ test('shows explicit retry when a restored draft was interrupted mid-read', asyn
 
   expect(requestUnknownFlow).toHaveBeenCalledTimes(1);
   expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'draft-id' } });
+});
+
+test('offers a return to confirmation for a completed draft without replaying a read', async () => {
+  mockParams.value = {};
+  jest.mocked(loadUnknownDraft).mockResolvedValueOnce({
+    version: 1, id: 'ready-draft',
+    initial: { code: null, name: 'Pâine', brand: null, quantity: null, photoPath: 'device/front.jpg' },
+    stage: 'review', nutritionMode: 'none', photos: { front: 'kept:front', ingredients: 'kept:ing', nutrition: null },
+    label: ReadLabelResponse.parse({ ...baseLabel, nutritionPhotoPath: null }), readStatus: 'complete',
+  });
+  await render(<GuidedAddScreen />);
+  await act(async () => {});
+  expect(requestUnknownFlow).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByRole('button', { name: ro.add.confirmTitle }));
+  expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'ready-draft' } });
 });

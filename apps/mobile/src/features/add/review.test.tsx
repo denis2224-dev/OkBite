@@ -147,6 +147,24 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     resetAvailableCategories();
   });
 
+  it('saves a manual fallback without brand or category and retains null nutrition', async () => {
+    const onSubmit = jest.fn<(req: AddProductRequestType) => void>();
+    await render(<ReviewForm label={BASE_LABEL} initial={{ ...BASE_INITIAL, brand: null }} categories={[]} onSubmit={onSubmit} />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ brand: '', ingredientsText: BASE_INGREDIENTS, nutrients: BASE_LABEL.nutrients }));
+    expect(onSubmit.mock.calls[0]?.[0]?.categorySlug).toBeUndefined();
+  });
+
+  it.each([true, false])('does not call omitted optional fields blurry in manual fallback (reasons: %s)', async withReasons => {
+    const label = { ...BASE_LABEL, nutrients: { ...BASE_LABEL.nutrients, sugar: 13.4, fiber: null },
+      unclear: ['fiber', 'fruitVegPct'] as ReadLabelResponse['unclear'],
+      ...(withReasons ? { reasons: { kcal: 'read', fat: 'read', sat: 'read', sugar: 'read', salt: 'read', protein: 'read', fiber: 'unreadable', fruitVegPct: 'unreadable', ingredientsText: 'read' } as const } : {}) };
+    await render(<ReviewForm label={label} initial={BASE_INITIAL} categories={getAvailableCategories()} onSubmit={jest.fn<() => void>()} />);
+    expect(screen.queryByText(ro.review.unclearText)).toBeNull();
+    expect(screen.queryByTestId('unclear-fiber')).toBeNull();
+    expect(screen.queryByTestId('unclear-fruitVegPct')).toBeNull();
+  });
+
   it('loads real categories from data/categories.json validated with C1 before /add/review opens and never duplicates slugs', async () => {
     const catalog = getAvailableCategories();
     expect(catalog.length).toBe(rawCategoriesJson.length);
@@ -254,11 +272,12 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     expect(screen.queryByTestId('unclear-kcal')).toBeNull();
     expect(screen.getAllByText(ro.review.unclearField)).toHaveLength(2);
 
-    // Save is disabled until category is selected
+    // Category is optional for an unverified product.
     const saveButton = screen.getByRole('button', { name: ro.review.save });
-    expect(saveButton.props.accessibilityState?.disabled).toBe(true);
+    expect(saveButton.props.accessibilityState?.disabled).toBe(false);
     await fireEvent.press(saveButton);
-    expect(onSubmit).not.toHaveBeenCalled();
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ nutrients: BASE_LABEL.nutrients }));
+    expect(onSubmit.mock.calls[0]?.[0]?.categorySlug).toBeUndefined();
   });
 
   it('requires explicit unit selection when OCR returns unit: null instead of silently assuming g', async () => {
@@ -321,7 +340,7 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     expect(allergensBox.getByText('Susan')).toBeTruthy();
   });
 
-  it('explains unavailable categories using approved copy and prevents submission when categories is empty', async () => {
+  it('explains unavailable categories while allowing an unverified submission without one', async () => {
     const onSubmit = jest.fn<(req: AddProductRequestType) => void>();
     await render(
       <ReviewForm
@@ -334,9 +353,10 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
 
     expect(screen.getByText(ro.result.insufficientData)).toBeTruthy();
     const saveButton = screen.getByRole('button', { name: ro.review.save });
-    expect(saveButton.props.accessibilityState?.disabled).toBe(true);
+    expect(saveButton.props.accessibilityState?.disabled).toBe(false);
     await fireEvent.press(saveButton);
-    expect(onSubmit).not.toHaveBeenCalled();
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0]?.[0]?.categorySlug).toBeUndefined();
   });
 
   it('preserves numeric 0 vs null for empty nutrients, preserves null photoPath/nutritionPhotoPath, and validates with AddProductRequest', async () => {
@@ -489,7 +509,7 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
           resolveSubmit = resolve;
         }),
     );
-    const onRetake = jest.fn();
+    const onRetake = jest.fn<() => void>();
 
     await render(
       <ReviewForm

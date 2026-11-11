@@ -88,7 +88,7 @@ describe('IdentifyScreen and B3 flow', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    setGuidedAddEnabled?.(null);
+    setGuidedAddEnabled(false);
     jest.mocked(FileSystem.copyAsync).mockImplementation(async ({ from }: { from: string; to: string }) => {
       if (!from.startsWith('file://')) {
         throw new Error(`Refusing server storage path in keepPhoto: ${from}`);
@@ -368,8 +368,8 @@ describe('IdentifyScreen and B3 flow', () => {
   });
 
   it('uses the real offline/photos module without calling keepPhoto on server photoPath and reaches GuidedAddScreen at the ingredients step for identify not_found and "Nu e niciunul"', async () => {
-    expect(GUIDED_ADD_ENABLED).toBe(false);
-    setGuidedAddEnabled(true);
+    expect(GUIDED_ADD_ENABLED).toBe(true);
+    setGuidedAddEnabled(null);
     const keptFrontId = 'file:///doc/okbite-queue/front-uuid-1.jpg';
 
     const notFound = IdentifyResponse.parse({

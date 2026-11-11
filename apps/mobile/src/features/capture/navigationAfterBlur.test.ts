@@ -1,5 +1,7 @@
 // Audit R5-01: a response that arrives after the shopper left the screen must not navigate or replace a draft.
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+
+jest.mock('../offline/photos', () => ({ keepPhoto: async (uri: string) => `kept:${uri}`, removePhoto: async () => {} }));
 import { act, renderHook } from '@testing-library/react-native';
 import { api } from '../../lib/api';
 import { getAddReviewDraft } from '../add/draftStore';
