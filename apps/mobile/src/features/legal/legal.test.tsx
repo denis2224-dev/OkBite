@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
-import AboutPage from '../../../app/(info)/about';
+import AboutPage from '../../../app/(tabs)/about';
 import PrivacyPage from '../../../app/(info)/privacy';
 import TermsPage from '../../../app/(info)/terms';
 import MethodPage from '../../../app/(info)/method';
