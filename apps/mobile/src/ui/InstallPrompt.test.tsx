@@ -1,8 +1,13 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { InstallPrompt } from './InstallPrompt';
-import { InstallPromptProvider } from '../lib/installPrompt';
+import { InstallPromptProvider, useInstallPrompt } from '../lib/installPrompt';
 import { ro } from '../copy/ro';
+import { Button } from './Button';
 jest.mock('../lib/installPrompt', () => jest.requireActual('../lib/installPrompt.web'));
+function SettingsAction() {
+  const { openSheet } = useInstallPrompt();
+  return <Button onPress={openSheet}>{ro.pwa.install.title}</Button>;
+}
 let browser: EventTarget;
 beforeEach(() => {
   browser = new EventTarget();
@@ -36,7 +41,10 @@ it('shows only iOS guidance, hides installed apps, and remembers dismissal on re
   Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { platform: 'MacIntel', maxTouchPoints: 5 } });
   Object.defineProperty(browser, 'localStorage', { configurable: true, get: () => { throw new Error('blocked'); } });
   const view = await render(<InstallPrompt />, { wrapper: InstallPromptProvider });
+  expect(screen.queryByText(ro.pwa.install.iosHint)).toBeNull();
+  await fireEvent.press(screen.getByRole('button', { name: ro.pwa.install.title }));
   expect(screen.getByText(ro.pwa.install.iosHint)).toBeTruthy();
+  expect(screen.getByLabelText(ro.pwa.install.description).props.accessibilityViewIsModal).toBe(true);
   expect(screen.queryByRole('button', { name: ro.pwa.install.title })).toBeNull();
   await act(() => { browser.dispatchEvent(new Event('appinstalled')); });
   expect(screen.queryByText(ro.pwa.install.iosHint)).toBeNull();
@@ -45,6 +53,7 @@ it('shows only iOS guidance, hides installed apps, and remembers dismissal on re
   const storage = { getItem: jest.fn(() => stored), setItem: jest.fn((_key: string, value: string) => { stored = value; }) };
   Object.defineProperty(browser, 'localStorage', { configurable: true, value: storage });
   const second = await render(<InstallPrompt />, { wrapper: InstallPromptProvider });
+  await fireEvent.press(screen.getByRole('button', { name: ro.pwa.install.title }));
   await fireEvent.press(screen.getByRole('button', { name: ro.app.close }));
   expect(storage.setItem).toHaveBeenCalledWith('okbite.install.dismissed.v1', '1');
   await second.unmount();
@@ -55,4 +64,18 @@ it('shows only iOS guidance, hides installed apps, and remembers dismissal on re
   Object.defineProperty(browser, 'localStorage', { configurable: true, get: () => { throw new Error('blocked'); } });
   await render(<InstallPrompt />, { wrapper: InstallPromptProvider });
   expect(screen.queryByText(ro.pwa.install.iosHint)).toBeNull();
+});
+
+it('allows an explicit settings action after dismissal without clearing the preference', async () => {
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { platform: 'iPhone', maxTouchPoints: 1 } });
+  const storage = { getItem: () => '1', setItem: jest.fn() };
+  Object.defineProperty(browser, 'localStorage', { configurable: true, value: storage });
+  await render(<><SettingsAction /><InstallPrompt /></>, { wrapper: InstallPromptProvider });
+  expect(screen.queryByText(ro.pwa.install.iosHint)).toBeNull();
+  await fireEvent.press(screen.getByRole('button', { name: ro.pwa.install.title }));
+  expect(screen.getByText(ro.pwa.install.iosHint)).toBeTruthy();
+  expect(storage.setItem).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByRole('button', { name: ro.app.close }));
+  expect(screen.queryByText(ro.pwa.install.iosHint)).toBeNull();
+  expect(storage.setItem).toHaveBeenCalledWith('okbite.install.dismissed.v1', '1');
 });

@@ -4,13 +4,17 @@ type InstallEvent = Event & {
   prompt(): Promise<unknown>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 };
-const InstallContext = createContext<ReturnType<typeof useBrowserInstallPrompt>>({ canInstall: false, isIos: false, isStandalone: false, install: async () => false });
+const InstallContext = createContext<ReturnType<typeof useBrowserInstallPrompt>>({ canInstall: false, isIos: false, isStandalone: false, install: async () => false, failed: false, installing: false, sheetOpen: false, openSheet: () => {}, closeSheet: () => {} });
 export function InstallPromptProvider({ children }: PropsWithChildren) {
   return createElement(InstallContext.Provider, { value: useBrowserInstallPrompt() }, children);
 }
 export function useInstallPrompt() { return useContext(InstallContext); }
 function useBrowserInstallPrompt() {
   const [canInstall, setCanInstall] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [failed, setFailed] = useState(false), [installing, setInstalling] = useState(false);
+  const openSheet = useCallback(() => setSheetOpen(true), []);
+  const closeSheet = useCallback(() => setSheetOpen(false), []);
   const [isIos] = useState(() => typeof navigator !== 'undefined' && (['iPhone', 'iPad', 'iPod'].includes(navigator.platform) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)));
   const [isStandalone, setStandalone] = useState(false);
   const pending = useRef<InstallEvent | null>(null), standalone = useRef(false);
@@ -29,7 +33,7 @@ function useBrowserInstallPrompt() {
       refresh();
       if (standalone.current || seen.has(event) || typeof (event as InstallEvent).prompt !== 'function') return;
       event.preventDefault(); seen.add(event);
-      pending.current = event as InstallEvent; setCanInstall(true);
+      pending.current = event as InstallEvent; setCanInstall(true); setFailed(false);
     };
     const onInstalled = () => { installed = true; refresh(); };
     refresh();
@@ -48,13 +52,13 @@ function useBrowserInstallPrompt() {
   const install = useCallback(async () => {
     const event = pending.current;
     if (!event || standalone.current) return false;
-    pending.current = null; setCanInstall(false);
+    pending.current = null; setCanInstall(false); setInstalling(true); setFailed(false);
     try {
       const [, choice] = await Promise.all([event.prompt(), event.userChoice]);
       return choice?.outcome === 'accepted';
-    } catch { return null; } // null = the browser refused to show the prompt; false = user declined
+    } catch { setFailed(true); return null; } finally { setInstalling(false); } // null = the browser refused to show the prompt; false = user declined
   }, []);
-  return { canInstall, isIos, isStandalone, install };
+  return { canInstall, isIos, isStandalone, install, failed, installing, sheetOpen, openSheet, closeSheet };
 }
 
 let dismissedInSession = false;
