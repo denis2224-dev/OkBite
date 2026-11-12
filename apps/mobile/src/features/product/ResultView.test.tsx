@@ -5,6 +5,8 @@ import { foundYogurt } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
 import { api, ApiError } from '../../lib/api';
 import { router } from 'expo-router';
+import { StyleSheet } from 'react-native';
+import { light } from '../../theme/tokens';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 
@@ -148,4 +150,27 @@ it('orders nutrition summary before allergens, portions and the transcribed labe
   expect(position(ro.result.allergens)).toBeLessThan(position(ro.result.portion));
   expect(position(ro.result.portion)).toBeLessThan(position(ro.result.transcribedLabel));
   expect(position(ro.result.transcribedLabel)).toBeLessThan(position(ro.result.source));
+});
+
+it('separates declared allergens from possible traces', async () => {
+  await render(<ResultView product={{ ...foundYogurt.product, allergens: ['Lapte'], mayContain: ['Soia'] }} score={foundYogurt.score} />);
+  expect(screen.getByLabelText('Lapte')).toBeTruthy();
+  expect(screen.getByLabelText(`${ro.result.mayContain} Soia`)).toBeTruthy();
+});
+
+it('lists the detail pages as rows with hints and keeps one main action', async () => {
+  await render(<ResultView {...foundYogurt} />);
+  expect(screen.getByText(ro.result.ingredientsHint)).toBeTruthy();
+  const compare = screen.getByRole('button', { name: ro.result.compare });
+  expect(StyleSheet.flatten(compare.props.style).backgroundColor).toBe(light.primary);
+  for (const name of [ro.ingredients.title, ro.result.original]) {
+    expect(StyleSheet.flatten(screen.getByRole('button', { name }).props.style).backgroundColor).not.toBe(light.soft);
+  }
+});
+
+it('labels each score reason with its tone next to an icon', async () => {
+  await render(<ResultView {...foundYogurt} />);
+  const tones = { good: ro.score.positive, bad: ro.score.negative, neutral: ro.score.neutral } as const;
+  for (const reason of foundYogurt.score.reasons) expect(screen.getAllByTestId(`reason-tone-${reason.tone}`).length).toBeGreaterThan(0);
+  expect(screen.getAllByText(tones[foundYogurt.score.reasons[0]!.tone]).length).toBeGreaterThan(0);
 });
