@@ -123,7 +123,7 @@ export const redesignRo = {
   pending:'Profilul va fi disponibil după conectarea preferințelor locale.',
  },
  allergies: {
-  title:'Alergiile tale', lead:'Te avertizăm înainte de scor când un produs le conține.', allergensLabel:'Alergeni de urmărit',
+  title:'Alergiile tale', lead:'Te avertizăm înainte de scor când un produs le conține.', allergensLabel:'Alergeni de urmărit', avoidTitle:'Vreau să evit',
  },
  onboarding: {
   goalTitle:'Ce este important pentru tine?', allergensTitle:'Ce alergeni vrei să urmărești?', avoidTitle:'Ce vrei să eviți?',
