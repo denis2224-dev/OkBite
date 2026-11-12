@@ -128,6 +128,15 @@ E-numbers matched against the additive aliases in `ingredients.json`; an unknown
 These additives are not stored yet (no column). Imported rows carry the source `Open Food Facts (ODbL)`,
 and the mapper also returns the product page URL.
 
+`pnpm data:off` is a **dry run by default**: it reads OFF and our database, prints how many products are
+usable, already saved, new, or would need translation, and writes and translates nothing. Add `--write`
+to import. `--country moldova` (default) uses the search API, at most 10 searches a minute as OFF asks
+(6.5 s apart, not 1 per second). `--country romania` needs `--file <openfoodfacts-products.jsonl.gz>`,
+OFF's full JSONL export (https://static.openfoodfacts.org/data/openfoodfacts-products.jsonl.gz, 12.65 GB on
+2026-11-11): OFF listed 50,654 products sold in Romania that day, and one search returns at most 1000. The
+file is streamed and never unpacked, and it makes no OFF requests. Codes already in our database are
+skipped either way.
+
 ## Explicit release gate
 
 Run `pnpm data:check --release` before a content release. It requires:
