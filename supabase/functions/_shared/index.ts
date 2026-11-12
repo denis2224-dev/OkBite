@@ -6,3 +6,4 @@ export * from './ean/index.ts';
 export * from './allergens/index.ts';
 export * from './ingredients/index.ts';
 export * from './profile/types.ts';
+export * from './profile/match.ts';
