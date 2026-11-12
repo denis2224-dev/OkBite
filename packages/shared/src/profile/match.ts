@@ -1,0 +1,89 @@
+import { ALLERGENS, type Allergen, type Product } from '../contract';
+import { detectAllergens } from '../allergens';
+import { hasNonNutritiveSweetener } from '../score/sweeteners';
+import type { AvoidKey, Profile } from './types';
+
+export type MatchableProduct = Pick<Product, 'ingredientsText' | 'allergens' | 'mayContain'> & {
+  ingredients: { name: string; slug?: string | null }[];
+  processing?: { level: number } | null;
+};
+export type ProfileMatch = {
+  allergens: Allergen[];
+  mayContain: Allergen[];
+  avoid: { key: AvoidKey; because: string[] }[]; // because: ingredient names as written on the label
+  unknown: AvoidKey[];
+};
+type TextKey = Exclude<AvoidKey, 'ultra_processed'>;
+
+// Matched on lower-case text without diacritics. Added sugar leaves out lactose and polyols on purpose.
+const SUGAR = /\b(zahar|zaharoza|glucoza|fructoza|dextroza|miere|melasa|sirop de (porumb|malt|agave|artar))\b/;
+const COLOURING = /\be[\s-]?1\d\d(?!\d)/; // E100-E199; E1404 and other 4-digit starches stay out
+const PALM = /\b(palmier|palmist)\w*/; // not "palmitat" (E304, a vitamin form)
+const TEXT_TESTS: Record<TextKey, (plain: string) => boolean> = {
+  added_sugar: (s) => SUGAR.test(s),
+  sweeteners: hasNonNutritiveSweetener,
+  colourings: (s) => COLOURING.test(s),
+  palm_oil: (s) => PALM.test(s),
+};
+// Knowledge-base slugs from data/ingredients.json that mean the same thing. No colouring slugs: the
+// E150d entry has the bare alias "caramel", so a caramel filling would resolve to it.
+const SLUG_TESTS: Partial<Record<TextKey, (slug: string) => boolean>> = {
+  added_sugar: (s) => s === 'zahar',
+  palm_oil: (s) => s === 'ulei-de-palmier',
+};
+// A colouring named by its role, without an E-number: "colorant (caroteni)", "coloranți: caramel".
+const COLOURING_ROLE = /\bcoloran\S*\s*[:(]\s*([^,;()[\]]+)/gi;
+// "Poate conține …" / "urme de …" up to the end of the sentence: traces never count as an ingredient.
+const TRACES = /(poate\s+con[tțţ]ine|urme\s+de)[^.;\n]*/gi;
+// "fără …" negates only what follows it, up to "și"/"cu" or the item's end: "lapte praf fără grăsimi și miere".
+const NEGATED = /(?<!\p{L})f[aă]r[aă]\s+[^,;()[\]\n]*?(?=\s+(?:și|şi|si|cu)\s|[,;()[\]\n]|$)/giu;
+
+const plain = (s: string) => s.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').trim();
+const unnegated = (s: string) => plain(s.replace(NEGATED, ' '));
+const label = (p: MatchableProduct) => p.ingredientsText.replace(TRACES, ' ');
+
+function labelItems(p: MatchableProduct): string[] {
+  if (!p.ingredientsText.trim()) return p.ingredients.map((i) => i.name);
+  return label(p).split(/[,;:()[\]\n]|\.\s|\s+[sșş]i\/sau\s+/).map((s) => s.replace(/\.$/, '').trim()).filter(Boolean);
+}
+
+/** Which of the profile's allergens and avoid keys this product hits; keys we cannot check go to unknown. */
+export function matchProfile(
+  product: MatchableProduct,
+  profile: Pick<Profile, 'allergens' | 'avoid'> | null | undefined,
+): ProfileMatch {
+  const wanted = new Set(profile?.allergens ?? []);
+  const detected = detectAllergens(product.ingredientsText);
+  const contains = new Set([...product.allergens, ...detected.allergens]);
+  const traces = new Set([...product.mayContain, ...detected.mayContain]);
+  const allergens = ALLERGENS.filter((a) => wanted.has(a) && contains.has(a));
+  const mayContain = ALLERGENS.filter((a) => wanted.has(a) && traces.has(a) && !contains.has(a));
+
+  const items = labelItems(product);
+  // What each item still says once traces and "fără …" are taken out; every match runs on this.
+  const kept = items.map(unnegated);
+  const onLabel = (name: string) => !!plain(name) && kept.some((k) => k.includes(plain(name)));
+  const avoid: ProfileMatch['avoid'] = [];
+  const unknown: AvoidKey[] = [];
+  for (const key of profile?.avoid ?? []) {
+    if (key === 'ultra_processed') {
+      const level = product.processing?.level;
+      if (level === 4) avoid.push({ key, because: [] });
+      else if (level === undefined || ![1, 2, 3].includes(level)) unknown.push(key);
+      continue;
+    }
+    if (!items.length) { unknown.push(key); continue; }
+    const slugTest = SLUG_TESTS[key];
+    const causes = [
+      ...items.filter((_, n) => TEXT_TESTS[key](kept[n]!)),
+      // A resolved slug counts only if its name survives on the label (not in a trace clause, not after "fără").
+      ...product.ingredients.filter((i) => i.slug && slugTest?.(i.slug) && onLabel(i.name)).map((i) => i.name),
+      ...(key === 'colourings'
+        ? [...label(product).replace(NEGATED, ' ').matchAll(COLOURING_ROLE)].map((m) => m[1]!.trim()) : []),
+    ];
+    const seen = new Set<string>();
+    const because = causes.filter((c) => !seen.has(plain(c)) && seen.add(plain(c)));
+    if (because.length) avoid.push({ key, because });
+  }
+  return { allergens, mayContain, avoid, unknown };
+}
