@@ -1,7 +1,15 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { Allergen } from '../contract';
+import { matchIngredients, type IngredientKey } from '../ingredients';
 import { matchProfile, type MatchableProduct } from './match';
 import type { AvoidKey, Profile } from './types';
+
+const KB: IngredientKey[] = JSON.parse(readFileSync(new URL('../../../../data/ingredients.json', import.meta.url), 'utf8'));
+// A product as the database stores it: ingredients resolved against the knowledge base.
+const resolved = (text: string) => product(text, {
+  ingredients: matchIngredients(text, KB).map((m) => ({ name: m.rawName, slug: m.slug })),
+});
 
 const ALL_AVOID: AvoidKey[] = ['added_sugar', 'sweeteners', 'ultra_processed', 'colourings', 'palm_oil'];
 
@@ -71,6 +79,36 @@ describe('avoid keys', () => {
   it('ultra_processed hits on NOVA 4 and passes on 1 to 3', () => {
     expect(hit(product('x', { processing: { level: 4 } }), 'ultra_processed')).toEqual({ key: 'ultra_processed', because: [] });
     for (const level of [1, 2, 3]) expect(hit(product('x', { processing: { level } }), 'ultra_processed')).toBeUndefined();
+  });
+});
+
+describe('exclusions (Codex review of #164)', () => {
+  it('negates only the substance after "fără", not the rest of the item', () => {
+    expect(hit(product('apă, lapte praf fără grăsimi și miere'), 'added_sugar'))
+      .toEqual({ key: 'added_sugar', because: ['lapte praf fără grăsimi și miere'] });
+    expect(hit(product('iaurt, fără zahăr adăugat'), 'added_sugar')).toBeUndefined();
+  });
+
+  it('does not let resolved slugs bring back trace-clause ingredients', () => {
+    expect(resolved('apă, poate conține urme de zahăr, ulei de palmier').ingredients.map((i) => i.slug))
+      .toContain('ulei-de-palmier'); // the resolver does keep it
+    expect(hit(resolved('apă, poate conține urme de zahăr, ulei de palmier'), 'palm_oil')).toBeUndefined();
+    expect(hit(resolved('apă, poate conține urme de ulei de palmier, zahăr'), 'added_sugar')).toBeUndefined();
+    const p = product('ulei (rapiță). Poate conține urme de ulei de palmier.', { ingredients: [{ name: 'ulei de palmier', slug: 'ulei-de-palmier' }] });
+    expect(hit(p, 'palm_oil')).toBeUndefined(); // a shorter label item ("ulei") does not vouch for it
+  });
+
+  it('does not let resolved slugs bring back negated ingredients', () => {
+    expect(hit(resolved('biscuiți, fără ulei de palmier'), 'palm_oil')).toBeUndefined();
+  });
+
+  it('keeps resolved slugs that are on the label', () => {
+    expect(hit(resolved('făină, grăsime de palmier, sare'), 'palm_oil'))
+      .toEqual({ key: 'palm_oil', because: ['grăsime de palmier'] });
+  });
+
+  it('does not count a negated colouring role', () => {
+    expect(hit(product('apă, fără coloranți: caroteni'), 'colourings')).toBeUndefined();
   });
 });
 
