@@ -8,15 +8,15 @@ test('manifest shortcut opens the root Scan tab and matches the existing shell t
     shortcuts: [{ name: 'Scanează', short_name: 'Scanează', url: '/' }] });
 });
 
-test('iPhone guidance opens explicitly, stays reachable in dark landscape, and persists dismissal', async ({ page }) => {
+test('iPhone guidance opens explicitly, stays reachable in landscape, and persists dismissal', async ({ page }) => {
   await page.addInitScript(() => Object.defineProperty(navigator, 'platform', { value: 'iPhone' }));
-  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await expect(page.getByText(ro.pwa.install.iosHint)).toHaveCount(0);
   await page.getByRole('button', { name: ro.pwa.install.title, exact: true }).click();
   await expect(page.getByRole('dialog', { name: ro.pwa.install.title })).toBeVisible();
   await expect(page.getByText(ro.pwa.install.iosHint)).toBeVisible();
-  await page.screenshot({ path: test.info().outputPath('install-ios-dark.png') });
+  await page.screenshot({ path: test.info().outputPath('install-ios.png') });
   await page.setViewportSize({ width: 812, height: 375 });
   await page.evaluate(() => {
     const text = [...document.querySelectorAll<HTMLElement>('div,span')].filter(el => [...el.childNodes].some(node => node.nodeType === Node.TEXT_NODE && node.textContent?.trim()));
@@ -27,7 +27,7 @@ test('iPhone guidance opens explicitly, stays reachable in dark landscape, and p
   await close.scrollIntoViewIfNeeded();
   await expect(close).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
-  await page.screenshot({ path: test.info().outputPath('install-ios-dark-landscape-200.png') });
+  await page.screenshot({ path: test.info().outputPath('install-ios-landscape-200.png') });
   await page.keyboard.press('Escape');
   await expect(page.getByText(ro.pwa.install.iosHint)).toHaveCount(0);
   expect(await page.evaluate(() => localStorage.getItem('okbite.install.dismissed.v1'))).toBe('1');

@@ -1,5 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { SettingsScreen } from './SettingsScreen';
 import { ThemeProvider } from '../../theme/useTheme';
@@ -16,14 +15,12 @@ beforeEach(() => {
   Object.defineProperty(globalThis, 'window', { configurable: true, value: browser });
   Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { platform: 'Linux', maxTouchPoints: 0 } });
 });
-it('keeps missing language/reset integrations explicit and persists the chosen theme', async () => {
+it('keeps missing language/reset integrations explicit and offers no theme choice', async () => {
   await render(<SettingsScreen />, { wrapper: ThemeProvider });
   expect(screen.getByRole('button', { name: ro.settings.english })).toBeDisabled();
   expect(screen.getByText(ro.settings.pending)).toBeTruthy();
   expect(screen.queryByText(ro.settings.resetOnboarding)).toBeNull();
-  await fireEvent.press(screen.getByRole('button', { name: ro.settings.dark }));
-  expect(screen.getByRole('button', { name: ro.settings.dark }).props.accessibilityState.selected).toBe(true);
-  await waitFor(() => expect(AsyncStorage.setItem).toHaveBeenCalledWith('okbite.appearance', 'dark'));
+  for (const label of ['După telefon', 'Luminos', 'Întunecat', 'Aspect']) expect(screen.queryByText(label)).toBeNull();
 });
 it('passes language choices to N17 and opens existing legal destinations', async () => {
   const setLanguage = jest.fn();

@@ -8,8 +8,8 @@ const letters: Letter[] = ['A', 'B', 'C', 'D', 'E'];
 
 /** Our own thin A–E bar; this does not reproduce the official logo artwork. The current letter is filled, outlined and named. */
 export function NutriScoreScale({ letter }: { letter: Letter | null }) {
-  const { colors, isDark } = useTheme();
-  const tones = isDark ? letterTones.dark : letterTones.light;
+  const { colors } = useTheme();
+  const tones = letterTones;
   if (letter === null) return null;
   return <View accessible accessibilityRole="image" accessibilityLabel={`${ro.tiers.nutriScore}: ${letter}`}
     style={{ flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 14 }}>

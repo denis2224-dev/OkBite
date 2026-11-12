@@ -12,10 +12,10 @@ import type { HistoryEntry } from '../history/store';
 
 /** One recent product: letter tile, name, and either the tier word or the profile allergens it declares. */
 export function RecentScanRow({ entry, watched, last }: { entry: HistoryEntry; watched: readonly Allergen[]; last: boolean }) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { product } = entry;
   const { letter, grade } = displayScore(product, entry.score);
-  const tone = letter ? (isDark ? letterTones.dark : letterTones.light)[letter] : { fg: colors.neutral, bg: colors.neutralBg };
+  const tone = letter ? letterTones[letter] : { fg: colors.neutral, bg: colors.neutralBg };
   const matches = product.allergens.filter(allergen => watched.includes(allergen)).map(allergen => ro.allergens[allergen]);
   const warning = matches.length ? ro.result.containsAllergen(matches.join(', ')) : null;
   const label = [ro.history.open(product.name), letter ? `${ro.tiers.nutriScore} ${letter}` : null, ro.score[grade], warning].filter(Boolean).join('. ');

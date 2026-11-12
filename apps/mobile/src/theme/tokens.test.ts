@@ -1,4 +1,4 @@
-import { dark, light, type Palette } from './tokens';
+import { light } from './tokens';
 
 const luminance = (hex: string) => {
   const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
@@ -10,7 +10,8 @@ const contrast = (a: string, b: string) => {
   return (hi! + 0.05) / (lo! + 0.05);
 };
 
-describe.each([['light', light], ['dark', dark]] as [string, Palette][])('%s palette', (_name, colors) => {
+describe('light palette', () => {
+  const colors = light;
   it('draws the keyboard focus ring with at least 3:1 contrast on every page surface', () => {
     for (const background of [colors.ground, colors.surface, colors.soft]) {
       expect(contrast(colors.focus, background)).toBeGreaterThanOrEqual(3);

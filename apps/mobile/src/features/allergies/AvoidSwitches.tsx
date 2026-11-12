@@ -11,7 +11,7 @@ type Props = { selected: readonly AvoidKey[]; disabled: boolean; onToggle: (key:
 
 /** "Avoid" preferences as label + switch rows in one card, with hairline dividers. */
 export function AvoidSwitches({ selected, disabled, onToggle }: Props) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   return (
     <View style={[styles.card, { backgroundColor: colors.surface }]}>
       {AVOID_KEYS.map((key, index) => {
@@ -24,8 +24,8 @@ export function AvoidSwitches({ selected, disabled, onToggle }: Props) {
             <View style={[styles.track, on
               ? { backgroundColor: colors.primary, borderColor: colors.primary, alignItems: 'flex-end' }
               : { backgroundColor: colors.soft, borderColor: colors.border, alignItems: 'flex-start' }]}>
-              {/* On: lime knob on dark green (light), dark knob on lime (dark). Off: muted knob in dark for contrast. */}
-              <View style={[styles.knob, { backgroundColor: on ? colors.themeSelectedIcon : isDark ? colors.muted : colors.surface }]} />
+              {/* On: lime knob on dark green. Off: white knob on the soft track. */}
+              <View style={[styles.knob, { backgroundColor: on ? colors.themeSelectedIcon : colors.surface }]} />
             </View>
           </Pressable>
         );

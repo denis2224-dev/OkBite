@@ -5,15 +5,14 @@ import { ResultView } from './ResultView';
 import { foundYogurt } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
 import { roDate } from './SourceCard';
-import { light as mockLight, dark as mockDarkColors } from '../../theme/tokens';
+import { light as mockLight } from '../../theme/tokens';
 
-let mockDark = false;
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
-jest.mock('../../theme/useTheme', () => ({ useTheme: () => ({ colors: mockDark ? mockDarkColors : mockLight }) }));
+jest.mock('../../theme/useTheme', () => ({ useTheme: () => ({ colors: mockLight }) }));
 const empty = Object.fromEntries(NUTRIENT_KEYS.map(key => [key, null])) as typeof foundYogurt.product.nutrients;
 const product = { ...foundYogurt.product, status: 'unverified' as const, nutrients: empty };
-for (const dark of [false, true]) describe(dark ? 'dark partial result' : 'light partial result', () => {
-  beforeEach(() => { mockDark = dark; jest.clearAllMocks(); });
+describe('partial result', () => {
+  beforeEach(() => { jest.clearAllMocks(); });
   it('replaces absent nutrition with a neutral card while keeping ingredients and provenance', async () => {
     await render(<ResultView product={{...product, allergens: [], mayContain: ['Soia']}} score={foundYogurt.score} />);
     expect(screen.getByText(ro.result.nutritionUnavailable)).toBeTruthy();

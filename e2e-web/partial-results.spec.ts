@@ -15,7 +15,7 @@ async function doubledText(page: Page) {
     for (const [el, size, height] of sizes) { el.style.fontSize = `${parseFloat(size) * 2}px`; if (height !== 'normal') el.style.lineHeight = `${parseFloat(height) * 2}px`; }
   });
 }
-for (const mode of ['light', 'dark'] as const) {
+for (const mode of ['light'] as const) {
   test(`${mode}: missing, partial and unknown-category results at 200% text`, async ({ page }) => {
     await page.emulateMedia({colorScheme: mode});
     const errors: string[] = [];
