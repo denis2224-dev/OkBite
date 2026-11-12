@@ -26,10 +26,10 @@ const TEXT_TESTS: Record<TextKey, (plain: string) => boolean> = {
   colourings: (s) => COLOURING.test(s),
   palm_oil: (s) => PALM.test(s),
 };
-// Knowledge-base slugs from data/ingredients.json that mean the same thing.
+// Knowledge-base slugs from data/ingredients.json that mean the same thing. No colouring slugs: the
+// E150d entry has the bare alias "caramel", so a caramel filling would resolve to it.
 const SLUG_TESTS: Partial<Record<TextKey, (slug: string) => boolean>> = {
   added_sugar: (s) => s === 'zahar',
-  colourings: (s) => /-e1\d\d[a-z]?$/.test(s),
   palm_oil: (s) => s === 'ulei-de-palmier',
 };
 // A colouring named by its role, without an E-number: "colorant (caroteni)", "coloranți: caramel".

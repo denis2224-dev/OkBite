@@ -57,6 +57,13 @@ describe('avoid keys', () => {
     expect(hit(p, 'added_sugar')).toEqual({ key: 'added_sugar', because: ['Zahăr alb'] });
   });
 
+  it('does not take a caramel filling resolved to the E150d entry for a colouring', () => {
+    const p = product('caramel 11% (lapte condensat, zahăr), alune', {
+      ingredients: [{ name: 'caramel 11%', slug: 'colorant-caramel-e150d' }, { name: 'alune', slug: null }],
+    });
+    expect(hit(p, 'colourings')).toBeUndefined();
+  });
+
   it('lists each cause once', () => {
     expect(hit(product('zahăr, cacao, Zahăr'), 'added_sugar')).toEqual({ key: 'added_sugar', because: ['zahăr'] });
   });
