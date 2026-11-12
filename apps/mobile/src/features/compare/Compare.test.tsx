@@ -127,13 +127,13 @@ test('a card warns about a profile allergen only when that product declares it',
   await render(<Compare />);
   await choose(3); await choose(4);
   const cards = screen.getAllByTestId('compare-card');
-  expect(within(cards[0]!).getByText(design.profileWarning('Lapte'))).toBeTruthy();
+  expect(within(cards[0]!).getByText(design.profileWarning('lapte'))).toBeTruthy();
   // Product B only may contain traces of milk, which is not a declared match.
-  expect(within(cards[1]!).queryByText(design.profileWarning('Lapte'))).toBeNull();
+  expect(within(cards[1]!).queryByText(design.profileWarning('lapte'))).toBeNull();
 });
 
 test('no profile warning when the profile has no allergens', async () => {
   await render(<Compare />);
   await choose(3); await choose(4);
-  expect(screen.queryByText(design.profileWarning('Lapte'))).toBeNull();
+  expect(screen.queryByText(design.profileWarning('lapte'))).toBeNull();
 });

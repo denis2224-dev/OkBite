@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import type { Allergen } from '@okbite/shared';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { ro } from '../../copy/ro';
@@ -30,7 +31,7 @@ export function CompareVerdict({ better, allergens }: { better: boolean; allerge
     </View>}
     {matches.length > 0 && <View style={s.line}>
       <Icon name="alert" size={16} color={theme.colors.low} />
-      <Text style={[s.text, { color: theme.colors.low }]}>{copy.profileWarning(matches.join(', '))}</Text>
+      <Text style={[s.text, { color: theme.colors.low }]}>{copy.profileWarning(matches.map(name => (ro.allergens[name as Allergen] ?? name).toLocaleLowerCase()).join(', '))}</Text>
     </View>}
   </View></>;
 }
