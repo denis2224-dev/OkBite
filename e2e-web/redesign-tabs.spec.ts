@@ -8,8 +8,6 @@ test.describe('N9 five-tab redesign acceptance', () => {
   test.use({ serviceWorkers: 'block' });
 
   test('tabs appear in order with Scan selected at startup', async ({ page }) => {
-    // needs W2 (UI9-allergies-tab): without app/(tabs)/allergies.tsx the router drops the Alergii tab.
-    test.fixme(true, 'Enable after W2 (UI9-allergies-tab) merges app/(tabs)/allergies.tsx.');
     await page.goto('/');
     await expect(page.getByRole('tablist').getByRole('tab')).toHaveText(tabs);
     await expect(page.getByRole('tab', { name: 'Scanează', exact: true })).toHaveAttribute('aria-selected', 'true');
@@ -17,8 +15,6 @@ test.describe('N9 five-tab redesign acceptance', () => {
 
   for (const [name, heading] of [['Istoric', 'Istoric'], ['Compară', 'Comparație'], ['Alergii', 'Alergiile tale'], ['Profil', 'Profil']]) {
     test(`${name} opens its screen and can return to Scan`, async ({ page }) => {
-      // needs W2 (UI9-allergies-tab): the Alergii route and its heading land with that branch.
-      test.fixme(name === 'Alergii', 'Enable after W2 (UI9-allergies-tab) merges app/(tabs)/allergies.tsx.');
       await page.goto('/');
       await page.getByRole('tab', { name, exact: true }).click();
       await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible();

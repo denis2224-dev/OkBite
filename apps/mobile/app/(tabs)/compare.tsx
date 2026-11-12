@@ -1,4 +1,3 @@
-import { spacing } from '../../src/theme/tokens';
 import { useCallback, useMemo, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ScreenSafeArea as SafeAreaView } from '../../src/shared/ScreenSafeArea';
@@ -9,7 +8,9 @@ import { ro } from '../../src/copy/ro';
 import { listHistory, type HistoryEntry } from '../../src/features/history/store';
 import { displayScore } from '../../src/features/product/displayScore';
 import { ProductPicker } from '../../src/features/compare/ProductPicker';
-import { compareRows } from '../../src/features/compare/compare';
+import { betterOverall, compareRows } from '../../src/features/compare/compare';
+import { CompareCell } from '../../src/features/compare/CompareCell';
+import { CompareVerdict } from '../../src/features/compare/CompareVerdict';
 import { formatAmount } from '../../src/lib/format';
 import { useTheme } from '../../src/theme/useTheme';
 import { useHomeTheme } from '../../src/theme/home';
@@ -43,14 +44,15 @@ export default function Compare() {
   }, [id]));
   const rows = a && b ? compareRows(a.product, b.product) : [];
   if (a && b && rows.length) {
-    const products = [{ entry: a, label: copy.productA }, { entry: b, label: copy.productB }];
+    const products = [{ entry: a, label: copy.productA, side: 'a' }, { entry: b, label: copy.productB, side: 'b' }] as const;
+    const winner = betterOverall(a, b);
     const fromProduct = Boolean(id);
     return <SafeAreaView edges={fromProduct ? ['top', 'bottom', 'left', 'right'] : ['top', 'left', 'right']} style={styles.safe}>
       <View style={styles.frame}>
         <TabPageHeader title={copy.title} subtitle={copy.subtitle(a.product.category.name, a.product.unit)} back={fromProduct}/>
         <ScrollView style={styles.scroll} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
           {error && <Body accessibilityLiveRegion="polite">{ro.history.storageError}</Body>}
-          <View style={styles.products}>{products.map(({ entry, label }) => {
+          <View style={styles.products}>{products.map(({ entry, label, side }) => {
             const { product } = entry;
             const score = displayScore(product, entry.score);
             const grade = score.grade === 'unavailable' ? 'neutral' : score.grade;
@@ -61,6 +63,7 @@ export default function Compare() {
                 <Text style={styles.subtitle}>{product.brand}</Text>
                 {product.status === 'unverified' && <Text style={styles.subtitle}>{ro.result.unverified}</Text>}
               </View>
+              <CompareVerdict better={winner === side} allergens={product.allergens} />
               {score.score !== null && <View style={styles.score}><HomeChip background={theme.colors[`${grade}Bg`]} color={theme.colors[grade]}>{`${formatAmount(score.score)} · ${ro.score[score.grade]}`}</HomeChip></View>}
               <View testID="compare-card-reasons" style={styles.reasons}>
                 {score.score === null ? <>
@@ -87,7 +90,7 @@ export default function Compare() {
               const difference = row.a === null || row.b === null ? null : row.a === row.b ? copy.same : copy.difference(formatAmount(Math.abs(row.a - row.b)), unit);
               return <View key={row.key} accessibilityRole="row" style={styles.tableRow}>
                 <View accessibilityRole="rowheader" style={styles.nutrientColumn}><Text style={styles.nutrientName}>{row.key === 'sat' ? copy.saturated : ro.result.nutrients[row.key]}</Text>{difference !== null && <Text style={styles.difference}>{difference}</Text>}</View>
-                {(['a', 'b'] as const).map(side => <Text key={side} accessibilityRole="cell" style={[styles.value, row.key !== 'kcal' && row.better === side && styles.favorable]}>{row[side] === null ? '' : `${formatAmount(row[side])} ${unit}`}</Text>)}
+                {(['a', 'b'] as const).map(side => <CompareCell key={side} testID={`compare-cell-${row.key}-${side}`} value={row[side]} unit={unit} better={row.key !== 'kcal' && row.better === side} />)}
               </View>;
             })}
             <View style={styles.legend}><View style={styles.swatch} /><Text style={styles.legendText}>{copy.favorable}</Text></View>
@@ -136,10 +139,7 @@ export default function Compare() {
 
 const createStyles = (t: ComparisonTheme) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: t.colors.ground },
-  frame: { flex: 1, width: '100%', maxWidth: 430, alignSelf: 'center' }, loading: { opacity: 0 },
-  header: { minHeight: 64, paddingTop: spacing.headerTop, paddingHorizontal: 10, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  rootHeader: { paddingLeft: 16 }, back: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }, headerText: { flex: 1 },
-  title: { fontFamily: t.fonts.heading, fontSize: 20, lineHeight: 29, letterSpacing: -0.2, color: t.colors.ink },
+  frame: { flex: 1, width: '100%', maxWidth: 430, alignSelf: 'center' },
   subtitle: { fontFamily: t.fonts.body, fontSize: 13, lineHeight: 18.85, color: t.colors.muted },
   scroll: { flex: 1 }, body: { paddingHorizontal: 16, paddingBottom: 24 },
   products: { flexDirection: 'row', alignItems: 'stretch', gap: 12 }, productCard: { flex: 1, minWidth: 0, padding: 16 },
@@ -160,8 +160,6 @@ const createStyles = (t: ComparisonTheme) => StyleSheet.create({
   nutrientColumn: { flex: 1.25, minWidth: 0 }, valueColumn: { flex: 1, textAlign: 'center' },
   nutrientName: { fontFamily: t.fonts.bold, fontSize: 14, lineHeight: 20.3, color: t.colors.ink },
   difference: { fontFamily: t.fonts.body, fontSize: 12, lineHeight: 17.4, color: t.colors.muted },
-  value: { flex: 1, minWidth: 0, textAlign: 'center', fontFamily: t.fonts.semibold, fontSize: 15, lineHeight: 21.75, color: t.colors.ink, paddingVertical: 6, paddingHorizontal: 4, borderRadius: 10, overflow: 'hidden' },
-  favorable: { backgroundColor: t.colors.favorableBg, color: t.colors.favorable, fontFamily: t.fonts.extra },
   legend: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }, swatch: { width: 18, height: 14, borderRadius: 4, backgroundColor: t.colors.favorableBg },
   legendText: { flex: 1, fontFamily: t.fonts.body, fontSize: 12, lineHeight: 17.4, color: t.colors.muted },
   allergens: { marginTop: 12, backgroundColor: t.colors.warningBg, borderColor: t.colors.warningBorder },

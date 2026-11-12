@@ -11,7 +11,6 @@ import { tmpdir } from 'node:os';
    await page.goto('http://127.0.0.1:18766/');
    await page.getByRole('tab',{name:'Scanează',exact:true}).waitFor();
    await page.getByTestId('startup-artwork').waitFor({state:'hidden'});
-   // needs W2 (UI9-allergies-tab): Alergii only appears once app/(tabs)/allergies.tsx exists.
    assert.deepEqual(await page.getByRole('tab').allTextContents(),['Istoric','Compară','Scanează','Alergii','Profil']);
    assert.equal(await page.getByRole('tab',{name:'Scanează',exact:true}).getAttribute('aria-selected'),'true');
    if(scaled) await page.evaluate(()=>{ for(const el of document.querySelectorAll('[dir="auto"]')) { const style=getComputedStyle(el);el.style.fontSize=`${parseFloat(style.fontSize)*2}px`;el.style.lineHeight=`${parseFloat(style.lineHeight)*2}px`; }});

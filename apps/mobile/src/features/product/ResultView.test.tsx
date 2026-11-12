@@ -7,8 +7,14 @@ import { api, ApiError } from '../../lib/api';
 import { router } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { light } from '../../theme/tokens';
+import type { Profile } from '@okbite/shared';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
+let mockProfile: Profile = { goals: [], allergens: [], avoid: [], onboarded: true };
+jest.mock('../profile/useProfile', () => ({ useProfile: () => ({ profile: mockProfile, hydrated: true, error: null }) }));
+beforeEach(() => { mockProfile = { goals: [], allergens: [], avoid: [], onboarded: true }; });
+// Text and accessibility labels in render order.
+const inOrder = () => JSON.stringify(screen.toJSON());
 
 jest.mock('../../lib/api', () => ({ ...jest.requireActual('../../lib/api'), api: { report: jest.fn() } }));
 it('shows allergens, unverified provenance and the disclaimer', async () => {
@@ -126,11 +132,15 @@ it('re-scores Open Food Facts Coca-Cola Zero as a beverage (53/100) and analyzes
 
 
 
-it.each(['A', 'B', 'C', 'D', 'E'] as const)('shows the supplied Nutri-Score letter %s alongside the nutrition score', async letter => {
+it.each(['A', 'B', 'C', 'D', 'E'] as const)('shows the supplied Nutri-Score letter %s in the tile, on the bar and with the disclaimer under it', async letter => {
   await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter }} />);
+  expect(screen.getByText(letter)).toBeTruthy();
+  expect(screen.getByText(`${foundYogurt.score.score} ${ro.score.outOf}`)).toBeTruthy();
+  expect(screen.getByLabelText(ro.score.ringLabel(foundYogurt.score.score!, foundYogurt.score.grade))).toBeTruthy();
   expect(screen.getByLabelText(`Nutri-Score: ${letter}`)).toBeTruthy();
-  for (const value of ['A', 'B', 'C', 'D', 'E']) expect(screen.getByText(value)).toBeTruthy();
-  expect(screen.getByText(ro.score.disclaimer)).toBeTruthy();
+  const order = inOrder();
+  expect(order.indexOf(`Nutri-Score: ${letter}`)).toBeLessThan(order.indexOf(ro.score.disclaimer));
+  expect(order.indexOf(ro.score.disclaimer)).toBeLessThan(order.indexOf(ro.result.whyLetter(letter)));
 });
 it('does not present a stale letter when the nutrition score is unavailable', async () => {
   await render(<ResultView product={{ ...foundYogurt.product, nutrients: { ...foundYogurt.product.nutrients, salt: null } }} score={foundYogurt.score} />);
@@ -142,14 +152,49 @@ it('leaves an absent Nutri-Score letter unavailable without inventing one', asyn
   expect(screen.queryByLabelText(/Nutri-Score:/)).toBeNull();
   expect(screen.getByLabelText(ro.score.ringLabel(foundYogurt.score.score!, foundYogurt.score.grade))).toBeTruthy();
 });
-it('orders nutrition summary before allergens, portions and the transcribed label', async () => {
+it('orders the profile alert, score, reasons, allergens, portions and the transcribed label', async () => {
+  mockProfile = { ...mockProfile, allergens: ['Lapte'] };
+  await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter: 'B' }} />);
+  const order = inOrder();
+  const markers = [ro.result.profileAlertSub, ro.score.ringLabel(foundYogurt.score.score!, foundYogurt.score.grade), ro.result.whyLetter('B'),
+    ro.result.allergens, ro.result.portion, ro.result.transcribedLabel, ro.result.source].map(text => order.indexOf(text));
+  expect(markers.every(index => index >= 0)).toBe(true);
+  expect([...markers].sort((a, b) => a - b)).toEqual(markers);
+});
+
+it('shows no profile alert when the profile is empty', async () => {
+  await render(<ResultView product={{ ...foundYogurt.product, allergens: ['Lapte'], mayContain: ['Soia'] }} score={foundYogurt.score} />);
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(screen.queryByText(ro.result.profileAlertSub)).toBeNull();
+});
+it('raises a red alert for a declared allergen on the profile', async () => {
+  mockProfile = { ...mockProfile, allergens: ['Lapte', 'Gluten'] };
   await render(<ResultView {...foundYogurt} />);
-  const headings = screen.getAllByRole('header').map(node => node.props.children);
-  const position = (text: string) => headings.indexOf(text);
-  expect(position(ro.score.title)).toBeLessThan(position(ro.result.allergens));
-  expect(position(ro.result.allergens)).toBeLessThan(position(ro.result.portion));
-  expect(position(ro.result.portion)).toBeLessThan(position(ro.result.transcribedLabel));
-  expect(position(ro.result.transcribedLabel)).toBeLessThan(position(ro.result.source));
+  expect(screen.getByRole('alert')).toBeTruthy();
+  expect(screen.getByText(ro.result.containsAllergen(ro.allergens.Lapte.toLocaleLowerCase()))).toBeTruthy();
+  expect(screen.getByText(ro.result.profileAlertSub)).toBeTruthy();
+  expect(screen.getByTestId('profile-alert-contains')).toHaveStyle({ backgroundColor: light.lowBg });
+  expect(screen.queryByText(/Gluten/i)).toBeNull();
+});
+it('raises an amber outlined alert for a may-contain allergen on the profile', async () => {
+  mockProfile = { ...mockProfile, allergens: ['Soia'] };
+  await render(<ResultView product={{ ...foundYogurt.product, mayContain: ['Soia'] }} score={foundYogurt.score} />);
+  expect(screen.getByText(ro.result.mayContainAllergen(ro.allergens.Soia.toLocaleLowerCase()))).toBeTruthy();
+  expect(screen.getByTestId('profile-alert-trace')).toHaveStyle({ backgroundColor: light.warningBg, borderColor: light.warningBorder });
+  expect(screen.queryByTestId('profile-alert-contains')).toBeNull();
+});
+
+it('explains the letter with at most three supplied reasons, problems first, and sugar in teaspoons', async () => {
+  const score = { ...foundYogurt.score, letter: 'D' as const, reasons: [
+    { tone: 'good' as const, title: 'Bogat în fibre', detail: '6 g la 100 g' },
+    { tone: 'bad' as const, title: 'Mult zahăr', detail: '24 g la 100 g' },
+  ] };
+  await render(<ResultView product={{ ...foundYogurt.product, nutrients: { ...foundYogurt.product.nutrients, sugar: 8 } }} score={score} />);
+  expect(screen.getByText(ro.result.whyLetter('D'))).toBeTruthy();
+  const order = inOrder();
+  expect(order.indexOf('Mult zahăr')).toBeLessThan(order.indexOf('Bogat în fibre'));
+  expect(screen.getByText(`≈ ${ro.result.teaspoons.many('2')}`)).toBeTruthy();
+  expect(screen.getByTestId('reason-tone-bad')).toBeTruthy();
 });
 
 it('separates declared allergens from possible traces', async () => {

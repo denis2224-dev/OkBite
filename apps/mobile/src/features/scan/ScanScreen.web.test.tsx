@@ -9,16 +9,52 @@ import { CODE, lookupNotFound } from '../capture/__fixtures__/responses';
 import * as useScanLookupModule from './useScanLookup';
 
 const mockReplace = jest.fn();
+let mockFocused = true;
 const mockPush = jest.fn();
-const mockLive = { status: 'unsupported' as string, videoRef: jest.fn(), retry: jest.fn() };
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace, push: mockPush }), useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof import('react')>('react').useEffect(callback, [callback]) }));
+const mockLive = {
+  status: 'unsupported' as string,
+  videoRef: jest.fn<(video: HTMLVideoElement | null) => void>(),
+  retry: jest.fn(),
+};
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ replace: mockReplace, push: mockPush }),
+  useIsFocused: () => mockFocused,
+  useFocusEffect: (callback: () => void | (() => void)) =>
+    jest.requireActual<typeof import('react')>('react').useEffect(() => mockFocused ? callback() : undefined, [callback, mockFocused]),
+}));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
 jest.mock('./useWebLiveScan', () => ({ useWebLiveScan: () => mockLive }));
 
 describe('ScanScreen (web)', () => {
   beforeEach(() => {
     jest.resetAllMocks();
+    mockFocused = true;
     mockLive.status = 'unsupported';
+  });
+
+  it('releases the live preview on blur and restores it on focus', async () => {
+    mockLive.status = 'live';
+    const view = await render(<ScanScreenWeb />);
+    expect(screen.getByTestId('scan-preview')).toBeTruthy();
+    expect(mockLive.videoRef.mock.calls.at(-1)?.[0]).toBeTruthy();
+
+    mockFocused = false;
+    await view.rerender(<ScanScreenWeb />);
+    expect(screen.queryByTestId('scan-preview')).toBeNull();
+    expect(mockLive.videoRef.mock.calls.at(-1)?.[0]).toBeNull();
+    expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
+
+    mockFocused = true;
+    await view.rerender(<ScanScreenWeb />);
+    expect(screen.getByTestId('scan-preview')).toBeTruthy();
+    expect(mockLive.videoRef.mock.calls.at(-1)?.[0]).toBeTruthy();
+  });
+
+  it('offers the photo route while the standalone camera is live', async () => {
+    mockLive.status = 'live';
+    await render(<ScanScreenWeb />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.scan.photoLabel }));
+    expect(mockPush).toHaveBeenCalledWith('/capture');
   });
 
   it('without live support shows only the manual fallback and the photo flow, and does not claim live scanning', async () => {
@@ -61,6 +97,18 @@ describe('ScanScreen (web)', () => {
     expect(mockLive.retry).toHaveBeenCalled();
     await fireEvent.press(screen.getByRole('button', { name: ro.capture.title }));
     expect(mockPush).toHaveBeenCalledWith('/capture');
+  });
+
+  it('inside Scan home keeps manual entry closed while live and open when the camera is unavailable', async () => {
+    mockLive.status = 'live';
+    const view = await render(<ScanScreenWeb embedded />);
+    expect(screen.queryByRole('header', { name: ro.scan.title })).toBeNull();
+    expect(screen.queryByLabelText(ro.scan.manualTitle)).toBeNull();
+    await view.rerender(<ScanScreenWeb embedded manual />);
+    expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
+    mockLive.status = 'denied';
+    await view.rerender(<ScanScreenWeb embedded />);
+    expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
   });
 
   it('looks up a manually typed code and sends an unknown one to guided add', async () => {

@@ -122,7 +122,7 @@ export const redesignEn: RedesignCopy = {
   pending:'Your profile will be available once local preferences are connected.',
  },
  allergies: {
-  title:'Your allergies', lead:'We warn you before the score when a product contains them.', allergensLabel:'Allergens to watch',
+  title:'Your allergies', lead:'We warn you before the score when a product contains them.', allergensLabel:'Allergens to watch', avoidTitle:'I want to avoid',
  },
  onboarding: {
   goalTitle:'What matters to you?', allergensTitle:'Which allergens do you want to watch for?', avoidTitle:'What do you want to avoid?',
@@ -147,7 +147,8 @@ export const redesignEn: RedesignCopy = {
   sourcesTitle:'Our sources', sourcesBody:'Product packaging, Open Food Facts and reviewed explanations, each with its source shown.',
   promiseTitle:'Simple access', promiseBody:'Free, with no ads or advertising tracking. No account needed.',
  },
- scan: {aimHint:'Keep the barcode inside the frame', flashOn:'Turn flash on', flashOff:'Turn flash off', manualCode:'Manual code', photoLabel:'Photograph the label', loadingReader:'Preparing the reader…'},
+ scan: {aimHint:'Keep the barcode inside the frame', flashOn:'Turn flash on', flashOff:'Turn flash off', manualCode:'Manual code', photoLabel:'Photograph the label', loadingReader:'Preparing the reader…',
+  labelMode:'Label', seeAll:'See all'},
  result: {
   profileAllergens:'Allergens in your profile', profileMayContain:'May contain allergens in your profile',
   profileAvoid:'Ingredients you want to avoid', profileUnknown:'We cannot check all your preferences.',

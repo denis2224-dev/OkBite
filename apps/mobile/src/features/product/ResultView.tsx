@@ -8,6 +8,8 @@ import { ro } from '../../copy/ro';
 import { isPreview } from '../../lib/preview';
 import { displayScore } from './displayScore';
 import { ScoreCard } from './ScoreCard';
+import { WhyScore } from './WhyScore';
+import { ProfileAllergenAlert } from './ProfileAllergenAlert';
 import { PartialNutritionCard } from './PartialNutritionCard';
 import { PortionTable } from './PortionTable';
 import { SourceCard } from './SourceCard';
@@ -40,12 +42,12 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
     }
   };
   return <>
-    {product.imageUrl && <Image source={{ uri: product.imageUrl }} accessibilityLabel={product.name} style={{ width: '100%', height: 180 }} resizeMode="contain" />}
-    <Heading>{product.name}</Heading><Body>{product.brand} · {product.quantity}</Body>
+    <ProfileAllergenAlert product={product} />
+    {canShowScore ? <ScoreCard product={product} score={shownScore} /> : <><Heading>{product.name}</Heading><Body>{product.brand} · {product.quantity}</Body></>}
     {product.status === 'unverified' && <>
       <Badge tone="unverified">{ro.result.unverified}</Badge><Body>{ro.result.unverifiedNote}</Body>
     </>}
-    {canShowScore ? <ScoreCard score={shownScore} /> : <PartialNutritionCard product={product} />}
+    {canShowScore ? <WhyScore score={shownScore} sugar={product.nutrients.sugar} /> : <PartialNutritionCard product={product} />}
     <Card>
       <Heading style={{ fontSize: 18 }}>{ro.result.allergens}</Heading>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -62,6 +64,7 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
       <Body>{ro.result.allergyNote}</Body>
     </Card>
     {canShowScore && hasNutrition && <PortionTable product={product} />}
+    {product.imageUrl && <Image source={{ uri: product.imageUrl }} accessibilityLabel={product.name} style={{ width: '100%', height: 180 }} resizeMode="contain" />}
     <Card>
       <Heading style={{fontSize:18}}>{ro.result.transcribedLabel}</Heading>
       <Body selectable>{product.ingredientsText}</Body>

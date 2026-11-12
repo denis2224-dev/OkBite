@@ -110,6 +110,7 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
     return (
       <NotFound
         code={state.read.code}
+        guided={isGuidedAddEnabled() ? { needsFrontPhoto: !state.photoPath } : undefined}
         onAdd={() => {
           void openAdd(state.read, state.photoPath);
         }}
