@@ -1,5 +1,5 @@
 import { ALLERGENS, type Allergen, type Product } from '../contract';
-import { detectAllergens } from '../allergens';
+import { detectAllergens, splitLabelAllergens } from '../allergens';
 import { hasNonNutritiveSweetener } from '../score/sweeteners';
 import type { AvoidKey, Profile } from './types';
 
@@ -33,14 +33,15 @@ const SLUG_TESTS: Partial<Record<TextKey, (slug: string) => boolean>> = {
 };
 // A colouring named by its role, without an E-number: "colorant (caroteni)", "coloranți: caramel".
 const COLOURING_ROLE = /\bcoloran\S*\s*[:(]\s*([^,;()[\]]+)/gi;
-// "Poate conține …" / "urme de …" up to the end of the sentence: traces never count as an ingredient.
-const TRACES = /(poate\s+con[tțţ]ine|urme\s+de)[^.;\n]*/gi;
 // "fără …" negates only what follows it, up to "și"/"cu" or the item's end: "lapte praf fără grăsimi și miere".
 const NEGATED = /(?<!\p{L})f[aă]r[aă]\s+[^,;()[\]\n]*?(?=\s+(?:și|şi|si|cu)\s|[,;()[\]\n]|$)/giu;
 
 const plain = (s: string) => s.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').trim();
 const unnegated = (s: string) => plain(s.replace(NEGATED, ' '));
-const label = (p: MatchableProduct) => p.ingredientsText.replace(TRACES, ' ');
+const label = (p: MatchableProduct) => {
+  const { ingredients, declared } = splitLabelAllergens(p.ingredientsText);
+  return [ingredients, declared].filter(Boolean).join('; ');
+};
 
 function labelItems(p: MatchableProduct): string[] {
   if (!p.ingredientsText.trim()) return p.ingredients.map((i) => i.name);
