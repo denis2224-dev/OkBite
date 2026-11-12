@@ -115,7 +115,7 @@ describe('resumable import', () => {
     expect(written).toHaveLength(2);
     expect(written[0]).toMatchObject({
       status: 'unverified',
-      source: 'Open Food Facts (tradus automat)',
+      source: 'Open Food Facts (ODbL, tradus automat)',
     });
   });
   it('saves Romanian rows before a database lookup for foreign rows fails', async () => {
