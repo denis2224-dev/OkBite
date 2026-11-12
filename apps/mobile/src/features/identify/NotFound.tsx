@@ -37,7 +37,7 @@ export function NotFound({
           <Heading style={styles.nextTitle}>{ro.identify.nextTitle}</Heading>
           {steps.map((step, index) => (
             <View key={step} style={styles.stepRow}>
-              <View style={[styles.badge, { backgroundColor: colors.goodBg }]} aria-hidden>
+              <View style={[styles.badge, { backgroundColor: colors.goodBg }]}>
                 <Body style={[styles.badgeText, { color: colors.good }]}>{String(index + 1)}</Body>
               </View>
               <View style={styles.stepText}>
