@@ -18,3 +18,9 @@ it('retains keyboard focus through activation and omits a ring for pointer press
   await fireEvent(screen.getByRole('button'), 'pressIn', { currentTarget: { matches: () => false } });
   expect(StyleSheet.flatten(screen.getByRole('button').props.style).outlineWidth).toBe(0);
 });
+it('scales down slightly while pressed so the press is felt without washing out the control', async () => {
+  await render(<PressableOpacity testOnly_pressed accessibilityRole="button" accessibilityLabel="Acțiune"><Text>Acțiune</Text></PressableOpacity>);
+  const style = StyleSheet.flatten(screen.getByRole('button').props.style);
+  expect(style.transform).toEqual([{ scale: 0.97 }]);
+  expect(style.opacity).toBeGreaterThanOrEqual(0.8);
+});
