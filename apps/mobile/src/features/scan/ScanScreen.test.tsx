@@ -124,6 +124,22 @@ describe('ScanScreen', () => {
     expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add', params: { flow: 'guided', code: CODE } });
   });
 
+  it('inside Scan home drops the page title and keeps manual entry closed until asked', async () => {
+    const view = await render(<ScanScreen embedded />);
+    expect(screen.queryByText(ro.scan.title)).toBeNull();
+    expect(screen.queryByLabelText(ro.scan.manualTitle)).toBeNull();
+    expect(camera().props.enableTorch).toBe(false);
+    await view.rerender(<ScanScreen embedded manual torch />);
+    expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
+    expect(camera().props.enableTorch).toBe(true);
+  });
+
+  it('inside Scan home still offers manual entry when the camera is refused', async () => {
+    mockPermission.value = { granted: false, status: 'denied', canAskAgain: false };
+    await render(<ScanScreen embedded />);
+    expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
+  });
+
   it('offers a retry when the camera fails to start', async () => {
     await render(<ScanScreen />);
     await act(() => { (camera().props.onMountError as () => void)(); });
