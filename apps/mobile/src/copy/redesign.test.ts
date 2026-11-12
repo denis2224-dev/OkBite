@@ -1,9 +1,11 @@
-import { redesignRo } from './strings.ro';
-import { redesignEn } from './strings.en';
+import { redesignRo, roStrings } from './strings.ro';
+import { en, redesignEn } from './strings.en';
 import { ALLERGENS } from '@okbite/shared';
 import { ro } from './ro';
 
-const required = ['nav.scan', 'nav.profile', 'nav.settings', 'tiers.excellent', 'tiers.good', 'tiers.fair', 'tiers.poor', 'tiers.bad', 'tiers.why', 'tiers.nutriScore', 'ledger.sugar', 'ledger.sat', 'ledger.salt', 'ledger.kcal', 'ledger.nutrition_other', 'ledger.additive', 'ledger.processing', 'ledger.cap', 'processing.unknown', 'additives.notAssessed', 'profile.savedLocally', 'onboarding.skip', 'settings.resetOnboarding', 'about.methodBody', 'scan.flashOn', 'scan.flashOff', 'scan.loadingReader', 'history.search', 'history.noMatches', 'history.remove', 'history.removed', 'history.undo', 'history.removeError', 'history.restoreError'];
+const required = ['nav.scan', 'nav.profile', 'nav.settings', 'tiers.excellent', 'tiers.good', 'tiers.fair', 'tiers.poor', 'tiers.bad', 'tiers.why', 'tiers.nutriScore', 'ledger.sugar', 'ledger.sat', 'ledger.salt', 'ledger.kcal', 'ledger.nutrition_other', 'ledger.additive', 'ledger.processing', 'ledger.cap', 'processing.unknown', 'additives.notAssessed', 'profile.savedLocally', 'onboarding.skip', 'settings.resetOnboarding', 'about.methodBody', 'scan.flashOn', 'scan.flashOff', 'scan.loadingReader', 'history.search', 'history.noMatches', 'history.remove', 'history.removed', 'history.undo', 'history.removeError', 'history.restoreError',
+ 'nav.allergies', 'allergies.title', 'allergies.lead', 'allergies.allergensLabel', 'result.whyLetter', 'result.profileAlertSub',
+ 'result.containsAllergen', 'result.mayContainAllergen', 'compare.design.better', 'compare.design.betterValue', 'compare.design.profileWarning'];
 const get = (object: unknown, path: string): unknown => path.split('.').reduce<unknown>((value, key) => (value as Record<string, unknown> | undefined)?.[key], object);
 it.each(required)('makes the redesign key %s available to existing ro imports', path => {
  expect(get(ro, path)).toBeDefined();
@@ -37,6 +39,23 @@ it('keeps interpolation inputs in both languages', () => {
  expect(redesignEn.history.remove('Yogurt')).toContain('Yogurt');
  expect(redesignRo.additives.open('E100')).toContain('E100');
  expect(redesignEn.additives.open('E100')).toContain('E100');
+});
+it('words the five-tab, allergies, result and compare additions in both languages', () => {
+ expect(redesignRo.nav.allergies).toBe('Alergii');
+ expect(redesignEn.nav.allergies).toBe('Allergies');
+ expect(redesignRo.allergies.title).toBe('Alergiile tale');
+ expect(redesignRo.result.whyLetter('D')).toBe('De ce D');
+ expect(redesignEn.result.whyLetter('D')).toBe('Why D');
+ expect(redesignRo.result.containsAllergen('lapte')).toBe('Conține lapte');
+ expect(redesignEn.result.containsAllergen('milk')).toBe('Contains milk');
+ expect(redesignRo.result.mayContainAllergen('arahide')).toBe('Poate conține arahide');
+ expect(redesignEn.result.mayContainAllergen('peanuts')).toBe('May contain peanuts');
+ expect(roStrings.compare.design.better).toBe('Alegere mai bună');
+ expect(en.compare.design.better).toBe('Better choice');
+ expect(roStrings.compare.design.profileWarning('lapte')).toBe('Conține lapte, din lista ta');
+ expect(en.compare.design.profileWarning('milk')).toBe('Contains milk, from your list');
+ expect(en.compare.design.betterValue).toBe('Better value');
+ expect(JSON.stringify(roStrings.compare)).not.toMatch(/[şţŞŢ]/);
 });
 it('translates all 14 contract allergens without changing their storage keys', () => {
  expect(Object.keys(redesignEn.allergens)).toEqual([...ALLERGENS]);
