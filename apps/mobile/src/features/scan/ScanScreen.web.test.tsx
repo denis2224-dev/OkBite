@@ -63,6 +63,18 @@ describe('ScanScreen (web)', () => {
     expect(mockPush).toHaveBeenCalledWith('/capture');
   });
 
+  it('inside Scan home keeps manual entry closed while live and open when the camera is unavailable', async () => {
+    mockLive.status = 'live';
+    const view = await render(<ScanScreenWeb embedded />);
+    expect(screen.queryByRole('header', { name: ro.scan.title })).toBeNull();
+    expect(screen.queryByLabelText(ro.scan.manualTitle)).toBeNull();
+    await view.rerender(<ScanScreenWeb embedded manual />);
+    expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
+    mockLive.status = 'denied';
+    await view.rerender(<ScanScreenWeb embedded />);
+    expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
+  });
+
   it('looks up a manually typed code and sends an unknown one to guided add', async () => {
     (api.lookup as unknown as jest.Mock<(...a: unknown[]) => Promise<unknown>>).mockResolvedValue(lookupNotFound);
     await render(<ScanScreenWeb />);
