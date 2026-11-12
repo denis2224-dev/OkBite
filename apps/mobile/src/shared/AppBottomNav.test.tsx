@@ -1,5 +1,6 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { Keyboard } from 'react-native';
+import { Keyboard, StyleSheet } from 'react-native';
+import { light } from '../theme/tokens';
 import type { ComponentProps } from 'react';
 import { AppBottomNav } from './AppBottomNav';
 
@@ -36,4 +37,26 @@ it('leaves no tab falsely selected while the comparison route remains active', a
  const ui = await render(<AppBottomNav {...makeProps(5)} />);
  expect(ui.getAllByRole('tab')).toHaveLength(5);
  expect(ui.getAllByRole('tab').every(tab => !tab.props.accessibilityState.selected)).toBe(true);
+});
+it('draws every tab icon at the same size, the Scan tab included', async () => {
+ const ui = await render(<AppBottomNav {...makeProps(0)} />);
+ const sizes = ['about', 'history', 'index', 'profile', 'settings'].map(name => {
+  const { width, height } = StyleSheet.flatten(ui.getByTestId(`nav-icon-${name}`).props.style);
+  return `${width}x${height}`;
+ });
+ expect(new Set(sizes).size).toBe(1);
+});
+it.each([[0, 'about'], [2, 'index'], [4, 'settings']] as const)('marks only the current page (tab %i) with a filled indicator', async (index, current) => {
+ const ui = await render(<AppBottomNav {...makeProps(index)} />);
+ for (const name of ['about', 'history', 'index', 'profile', 'settings']) {
+  const { backgroundColor } = StyleSheet.flatten(ui.getByTestId(`nav-icon-${name}`).props.style);
+  expect(backgroundColor).toBe(name === current ? light.primary : light.transparent);
+ }
+});
+it('tints a tab the pointer hovers so it reads as clickable', async () => {
+ const ui = await render(<AppBottomNav {...makeProps(2)} />);
+ await fireEvent(ui.getByRole('tab', { name: 'Profil' }), 'hoverIn', {});
+ expect(StyleSheet.flatten(ui.getByTestId('nav-icon-profile').props.style).backgroundColor).toBe(light.soft);
+ await fireEvent(ui.getByRole('tab', { name: 'Profil' }), 'hoverOut', {});
+ expect(StyleSheet.flatten(ui.getByTestId('nav-icon-profile').props.style).backgroundColor).toBe(light.transparent);
 });
