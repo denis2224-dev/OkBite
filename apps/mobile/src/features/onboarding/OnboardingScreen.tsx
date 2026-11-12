@@ -18,16 +18,32 @@ const choices = {
   avoid: ['added_sugar', 'sweeteners', 'ultra_processed', 'colourings', 'palm_oil'],
 } satisfies { [K in (typeof fields)[number]]: readonly Profile[K][number][] };
 
+type Field = (typeof fields)[number];
+type ChoiceEdits = Partial<Record<Field, ReadonlyMap<string, boolean>>>;
+
+function applyChoices<T extends string>(
+  current: T[],
+  available: readonly T[],
+  edits?: ReadonlyMap<string, boolean>,
+): T[] {
+  if (!edits) return current;
+  const selected = current.filter((choice) => edits.get(choice) !== false);
+  for (const [choice, checked] of edits) {
+    const value = available.find((item) => item === choice);
+    if (checked && value !== undefined && !selected.includes(value)) selected.push(value);
+  }
+  return selected;
+}
+
 export function OnboardingScreen({ onComplete }: { onComplete?: () => void }) {
   const router = useRouter();
   const { colors } = useTheme();
   const { profile, setProfile, hydrated, error, retryHydration } = useProfile();
-  const [editedProfile, setEditedProfile] = useState<Profile | null>(null);
+  const [edits, setEdits] = useState<ChoiceEdits>({});
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [pending, setPending] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   const inFlight = useRef(false);
-  const draft = editedProfile ?? profile;
   const ready = hydrated;
   const field = fields[step];
   const blocked = !ready || pending;
@@ -54,7 +70,13 @@ export function OnboardingScreen({ onComplete }: { onComplete?: () => void }) {
     setPending(true);
     setSaveFailed(false);
     try {
-      await setProfile({ ...draft, onboarded: true });
+      await setProfile((latest) => ({
+        ...latest,
+        goals: applyChoices(latest.goals, choices.goals, edits.goals),
+        allergens: applyChoices(latest.allergens, choices.allergens, edits.allergens),
+        avoid: applyChoices(latest.avoid, choices.avoid, edits.avoid),
+        onboarded: true,
+      }));
       if (onComplete) onComplete();
       else router.replace('/');
     } catch {
@@ -66,11 +88,11 @@ export function OnboardingScreen({ onComplete }: { onComplete?: () => void }) {
 
   const toggle = (choice: string) => {
     if (!ready || inFlight.current) return;
-    setEditedProfile((previous) => {
-      const current = previous ?? profile;
-      const selected: readonly string[] = current[field];
-      const next = selected.includes(choice) ? selected.filter((item) => item !== choice) : [...selected, choice];
-      return { ...current, [field]: next };
+    setEdits((previous) => {
+      const next = new Map(previous[field]);
+      const selected: readonly string[] = profile[field];
+      next.set(choice, !(next.get(choice) ?? selected.includes(choice)));
+      return { ...previous, [field]: next };
     });
   };
 
@@ -105,7 +127,7 @@ export function OnboardingScreen({ onComplete }: { onComplete?: () => void }) {
         </View>
         <ScrollView contentContainerStyle={styles.choices}>
           {ready && choices[field].map((choice) => {
-            const selected = (draft[field] as readonly string[]).includes(choice);
+            const selected = edits[field]?.get(choice) ?? (profile[field] as readonly string[]).includes(choice);
             const label = field === 'allergens' ? ro.allergens[choice as Allergen] : ro.profile[choice as Goal | AvoidKey];
             return (
               <ToggleChip key={choice} text={label} selected={selected} disabled={blocked} onPress={() => toggle(choice)} />

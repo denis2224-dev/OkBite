@@ -148,7 +148,8 @@ export const redesignRo = {
   sourcesTitle:'Sursele noastre', sourcesBody:'Ambalajele produselor, Open Food Facts și explicațiile verificate, fiecare cu sursa indicată.',
   promiseTitle:'Acces simplu', promiseBody:'Gratuit, fără reclame și fără urmărire publicitară. Nu ai nevoie de cont.',
  },
- scan: {aimHint:'Încadrează codul de bare în chenar', flashOn:'Pornește blițul', flashOff:'Oprește blițul', manualCode:'Cod manual', photoLabel:'Fotografiază eticheta', loadingReader:'Se pregătește cititorul…'},
+ scan: {aimHint:'Încadrează codul de bare în chenar', flashOn:'Pornește blițul', flashOff:'Oprește blițul', manualCode:'Cod manual', photoLabel:'Fotografiază eticheta', loadingReader:'Se pregătește cititorul…',
+  labelMode:'Etichetă', seeAll:'Vezi tot'},
  result: {
   profileAllergens:'Alergeni din profilul tău', profileMayContain:'Poate conține alergeni din profilul tău',
   profileAvoid:'Ingrediente pe care vrei să le eviți', profileUnknown:'Nu putem verifica toate preferințele tale.',

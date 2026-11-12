@@ -1,18 +1,19 @@
 import { render, screen } from '@testing-library/react-native';
 import { ScoreCard } from './ScoreCard';
+import { WhyScore } from './WhyScore';
 import { PortionTable } from './PortionTable';
 import { SourceCard, roDate } from './SourceCard';
 import { foundYogurt } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
 
 it('shows unavailable instead of zero and always includes the disclaimer', async () => {
-  await render(<ScoreCard score={{ score: null, grade: 'unavailable', letter: null, reasons: [], missing: ['salt'] }} />);
+  await render(<ScoreCard product={foundYogurt.product} score={{ score: null, grade: 'unavailable', letter: null, reasons: [], missing: ['salt'] }} />);
   expect(screen.getByText(ro.result.scoreUnavailable)).toBeTruthy();
   expect(screen.queryByLabelText(/0 din 100/)).toBeNull();
   expect(screen.getByText(ro.score.disclaimer)).toBeTruthy();
 });
 it('shows the supplied score reasons without calculating a new score', async () => {
-  await render(<ScoreCard score={{ ...foundYogurt.score, reasons: [{ tone: 'neutral', title: 'Motiv de test', detail: 'Detaliu de test' }] }} />);
+  await render(<WhyScore score={{ ...foundYogurt.score, reasons: [{ tone: 'neutral', title: 'Motiv de test', detail: 'Detaliu de test' }] }} sugar={null} />);
   expect(screen.getByText('Motiv de test')).toBeTruthy();
   expect(screen.getByText('Detaliu de test')).toBeTruthy();
 });
