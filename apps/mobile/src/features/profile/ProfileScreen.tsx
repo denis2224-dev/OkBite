@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type PropsWithChildren } from 'react';
 import { View } from 'react-native';
 import { ALLERGENS, type Allergen, type AvoidKey, type Goal, type Profile } from '@okbite/shared';
 import { Screen } from '../../ui/Screen';
@@ -63,7 +63,7 @@ function ProfileChip({
   );
 }
 
-export function ProfileScreen() {
+export function ProfileScreen({ children }: PropsWithChildren) {
   const { profile, setProfile, hydrated, error, retryHydration } = useProfile();
   const { colors } = useTheme();
 
@@ -171,6 +171,7 @@ export function ProfileScreen() {
           </View>
         </Card>
       ))}
+      {children}
     </Screen>
   );
 }
