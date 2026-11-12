@@ -154,7 +154,7 @@ export const redesignRo = {
   profileAllergens:'Alergeni din profilul tău', profileMayContain:'Poate conține alergeni din profilul tău',
   profileAvoid:'Ingrediente pe care vrei să le eviți', profileUnknown:'Nu putem verifica toate preferințele tale.',
   nutriScoreLabel:'Litera Nutri-Score', closeSheet:'Închide analiza produsului',
-  whyLetter:(letter:string)=>`De ce ${letter}`, profileAlertSub:'Este în lista ta de alergii',
+  whyLetter:(letter:string)=>`De ce ${letter}`, ingredientsTile:'Ingrediente', portionTile:'Porție', profileAlertSub:'Este în lista ta de alergii',
   containsAllergen:(allergen:string)=>`Conține ${allergen}`, mayContainAllergen:(allergen:string)=>`Poate conține ${allergen}`,
  },
  history: {

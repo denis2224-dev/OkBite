@@ -4,7 +4,7 @@ import { ALLERGENS } from '@okbite/shared';
 import { ro } from './ro';
 
 const required = ['nav.scan', 'nav.profile', 'nav.settings', 'tiers.excellent', 'tiers.good', 'tiers.fair', 'tiers.poor', 'tiers.bad', 'tiers.why', 'tiers.nutriScore', 'ledger.sugar', 'ledger.sat', 'ledger.salt', 'ledger.kcal', 'ledger.nutrition_other', 'ledger.additive', 'ledger.processing', 'ledger.cap', 'processing.unknown', 'additives.notAssessed', 'profile.savedLocally', 'onboarding.skip', 'settings.resetOnboarding', 'about.methodBody', 'scan.flashOn', 'scan.flashOff', 'scan.loadingReader', 'history.search', 'history.noMatches', 'history.remove', 'history.removed', 'history.undo', 'history.removeError', 'history.restoreError',
- 'nav.allergies', 'allergies.title', 'allergies.lead', 'allergies.allergensLabel', 'allergies.avoidTitle', 'result.whyLetter', 'result.profileAlertSub',
+ 'nav.allergies', 'allergies.title', 'allergies.lead', 'allergies.allergensLabel', 'allergies.avoidTitle', 'result.whyLetter', 'result.ingredientsTile', 'result.portionTile', 'result.profileAlertSub',
  'result.containsAllergen', 'result.mayContainAllergen', 'compare.design.better', 'compare.design.betterValue', 'compare.design.profileWarning',
  'scan.labelMode', 'scan.seeAll'];
 const get = (object: unknown, path: string): unknown => path.split('.').reduce<unknown>((value, key) => (value as Record<string, unknown> | undefined)?.[key], object);

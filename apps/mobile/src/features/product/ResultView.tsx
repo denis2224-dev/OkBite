@@ -10,6 +10,8 @@ import { displayScore } from './displayScore';
 import { ScoreCard } from './ScoreCard';
 import { WhyScore } from './WhyScore';
 import { ProfileAllergenAlert } from './ProfileAllergenAlert';
+import { ResultTopBar } from './ResultTopBar';
+import { PortionSheet } from './PortionSheet';
 import { PartialNutritionCard } from './PartialNutritionCard';
 import { PortionTable } from './PortionTable';
 import { SourceCard } from './SourceCard';
@@ -21,12 +23,15 @@ import { productShareUrl } from '../share/productShareText';
 const enrichmentReady = process.env.EXPO_PUBLIC_NUTRITION_ENRICHMENT === '1';
 export function ResultView({ product, score, nutritionAdditionAvailable = enrichmentReady }: { product: Product; score: ScoreResult; nutritionAdditionAvailable?: boolean }) {
   const [report, setReport] = useState(false);
+  const [portion, setPortion] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [shareFailed, setShareFailed] = useState(false);
   const toast = useToast();
   const shownScore = displayScore(product, score);
   const hasNutrition = NUTRIENT_KEYS.some(key => product.nutrients[key] !== null);
   const canShowScore = shownScore.score !== null && shownScore.grade !== 'unavailable';
+  const showPortion = canShowScore && hasNutrition;
+  const tile = { flexGrow: 1, flexBasis: 150, paddingHorizontal: 12 };
   const explainedIngredients = resolveProductIngredients(product)
     .filter(item => Boolean(item.slug && item.explanation && item.source && /^https?:\/\//i.test(item.source)))
     .sort((a, b) => (a.group === 'add' ? 0 : 1) - (b.group === 'add' ? 0 : 1));
@@ -42,12 +47,25 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
     }
   };
   return <>
+    <ResultTopBar onShare={isPreview ? undefined : share} sharing={sharing} onReport={() => setReport(true)} />
+    {shareFailed && <View style={{ gap: 8 }}>
+      <Body accessibilityLiveRegion="polite">{ro.share.error}</Body>
+      <Body selectable>{productShareUrl(product)}</Body>
+    </View>}
     <ProfileAllergenAlert product={product} />
     {canShowScore ? <ScoreCard product={product} score={shownScore} /> : <><Heading>{product.name}</Heading><Body>{product.brand} · {product.quantity}</Body></>}
     {product.status === 'unverified' && <>
       <Badge tone="unverified">{ro.result.unverified}</Badge><Body>{ro.result.unverifiedNote}</Body>
     </>}
     {canShowScore ? <WhyScore score={shownScore} sugar={product.nutrients.sugar} /> : <PartialNutritionCard product={product} />}
+    <View testID="result-link-tiles" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+      <Card style={[tile, { paddingVertical: 4 }]}>
+        <LinkRow label={ro.result.ingredientsTile} last onPress={() => router.push({ pathname: '/product/[id]/ingredients', params: { id: product.id } })} />
+      </Card>
+      {showPortion && <Card style={[tile, { paddingVertical: 4 }]}>
+        <LinkRow label={ro.result.portionTile} last onPress={() => setPortion(true)} />
+      </Card>}
+    </View>
     <Card>
       <Heading style={{ fontSize: 18 }}>{ro.result.allergens}</Heading>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -63,7 +81,7 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
       <Body>{ro.result.missingAllergenNote}</Body>
       <Body>{ro.result.allergyNote}</Body>
     </Card>
-    {canShowScore && hasNutrition && <PortionTable product={product} />}
+    {showPortion && <PortionTable product={product} />}
     {product.imageUrl && <Image source={{ uri: product.imageUrl }} accessibilityLabel={product.name} style={{ width: '100%', height: 180 }} resizeMode="contain" />}
     <Card>
       <Heading style={{fontSize:18}}>{ro.result.transcribedLabel}</Heading>
@@ -83,16 +101,9 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
     {nutritionAdditionAvailable && product.status === 'unverified' && !hasNutrition &&
       <Button variant="secondary" onPress={() => router.push({pathname: '/add/nutrition', params: {productId: product.id}})}>{ro.result.addNutrition}</Button>}
     <Card style={{ paddingVertical: 4, gap: 0 }}>
-      <LinkRow icon="book" label={ro.ingredients.title} hint={ro.result.ingredientsHint} onPress={() => router.push({ pathname: '/product/[id]/ingredients', params: { id: product.id } })} />
       <LinkRow icon="camera" label={ro.result.original} last onPress={() => router.push({ pathname: '/product/[id]/label', params: { id: product.id } })} />
     </Card>
-    <Button icon="compare" onPress={() => router.push({ pathname: '/compare', params: { id: product.id } })}>{ro.result.compare}</Button>
-    {!isPreview && <Button variant="secondary" icon="share" disabled={sharing} onPress={share}>{ro.share.button}</Button>}
-    {shareFailed && <View style={{ gap: 8 }}>
-      <Body accessibilityLiveRegion="polite">{ro.share.error}</Body>
-      <Body selectable>{productShareUrl(product)}</Body>
-    </View>}
-    <Button variant="ghost" onPress={() => setReport(true)}>{ro.result.report}</Button>
     {report && <ReportSheet productId={product.id} onClose={() => setReport(false)} />}
+    {portion && <PortionSheet product={product} onClose={() => setPortion(false)} />}
   </>;
 }

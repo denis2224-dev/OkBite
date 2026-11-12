@@ -153,7 +153,7 @@ export const redesignEn: RedesignCopy = {
   profileAllergens:'Allergens in your profile', profileMayContain:'May contain allergens in your profile',
   profileAvoid:'Ingredients you want to avoid', profileUnknown:'We cannot check all your preferences.',
   nutriScoreLabel:'Nutri-Score letter', closeSheet:'Close product analysis',
-  whyLetter:(letter:string)=>`Why ${letter}`, profileAlertSub:'It is on your allergy list',
+  whyLetter:(letter:string)=>`Why ${letter}`, ingredientsTile:'Ingredients', portionTile:'Portion', profileAlertSub:'It is on your allergy list',
   containsAllergen:(allergen:string)=>`Contains ${allergen}`, mayContainAllergen:(allergen:string)=>`May contain ${allergen}`,
  },
  history: {
