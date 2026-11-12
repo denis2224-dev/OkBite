@@ -26,7 +26,7 @@ export function UnknownReviewScreen() {
 
   const [draft, setDraft] = useState<UnknownDraftSnapshot | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [manual, setManual] = useState(false);
+  const [manual, setManual] = useState(() => rawParams.manual === '1');
 
   useEffect(() => {
     let active = true;

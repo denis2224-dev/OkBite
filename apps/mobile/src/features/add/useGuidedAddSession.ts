@@ -89,9 +89,9 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
                 })
                 .catch(() => {});
             },
-            onReview() {
+            onReview(_snapshot, manual) {
               if (active && runtimeRef.current.activity.isCurrent(token)) {
-                runtimeRef.current.router.replace({ pathname: '/add/review', params: { unknownDraftId: draftIdRef.current } });
+                runtimeRef.current.router.replace({ pathname: '/add/review', params: { unknownDraftId: draftIdRef.current, ...(manual ? { manual: '1' } : {}) } });
               }
             },
           },
@@ -106,6 +106,7 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
           capturePhoto: uri => runFocused(() => flow.capturePhoto(uri)),
           chooseNutrition: mode => runFocused(() => flow.chooseNutrition(mode)),
           continueIngredientsOnly: () => runFocused(flow.continueIngredientsOnly),
+          enterLabelManually: () => runFocused(flow.enterLabelManually),
           retry: () => runFocused(flow.retry),
         });
         setState(flow.getState());

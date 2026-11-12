@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { render, renderHook, act, screen } from '@testing-library/react-native';
+import { render, renderHook, act, screen, fireEvent } from '@testing-library/react-native';
 import { AppState } from 'react-native';
 import { api } from '../../lib/api';
 import { ro } from '../../copy/ro';
@@ -18,9 +18,11 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockParams.value,
   useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof import('react')>('react').useEffect(callback, [callback]),
 }));
+jest.mock('expo-crypto', () => ({ randomUUID: () => 'draft-id' }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
 jest.mock('../offline/queue', () => ({ enqueue: (arg: unknown) => mockEnqueue(arg) }));
 jest.mock('../add/unknownDraft', () => ({
+  ...jest.requireActual<typeof import('../add/unknownDraftRepository')>('../add/unknownDraftRepository'),
   loadUnknownDraft: jest.fn(async () => null),
   saveUnknownDraft: jest.fn(async () => {}),
   clearUnknownDraft: jest.fn(async () => {}),
@@ -55,7 +57,7 @@ describe('useScanLookup', () => {
     expect(mockReplace).toHaveBeenCalledWith({ pathname: '/identify', params: { source: 'code', code: '96385074' } });
   });
 
-  it('defaults unknown barcode entry to the guided front-photo step', async () => {
+  it('asks for manual identity on unknown barcode entry before the guided front-photo step', async () => {
     expect(GUIDED_ADD_ENABLED).toBe(true);
     lookup.mockResolvedValue(lookupNotFound);
 
@@ -72,13 +74,19 @@ describe('useScanLookup', () => {
     await render(React.createElement(AddScreen));
     await act(async () => {});
 
+    await fireEvent.changeText(await screen.findByLabelText(ro.review.name), 'Denumire confirmată');
+    await fireEvent.changeText(screen.getByLabelText(ro.review.quantity), '375 g');
+    await fireEvent.press(screen.getByRole('button', { name: ro.add.next }));
     expect(screen.getByText(ro.add.frontTitle)).toBeTruthy();
     expect(screen.getByText(ro.add.stepOf(1, 4))).toBeTruthy();
   });
 
-  it('starts a direct /add visit at the guided front-photo step', async () => {
+  it('asks for manual identity on a direct /add visit before the guided front-photo step', async () => {
     await render(React.createElement(AddScreen));
     await act(async () => {});
+    await fireEvent.changeText(await screen.findByLabelText(ro.review.name), 'Denumire confirmată');
+    await fireEvent.changeText(screen.getByLabelText(ro.review.quantity), '375 g');
+    await fireEvent.press(screen.getByRole('button', { name: ro.add.next }));
     expect(screen.getByText(ro.add.frontTitle)).toBeTruthy();
   });
 
