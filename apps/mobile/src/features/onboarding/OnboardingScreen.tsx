@@ -8,6 +8,7 @@ import { ScreenSafeArea as SafeAreaView } from '../../shared/ScreenSafeArea';
 import { useTheme } from '../../theme/useTheme';
 import { Button } from '../../ui/Button';
 import { Body, Heading } from '../../ui/Typography';
+import { ToggleChip } from '../allergies/ToggleChip';
 import { useProfile } from '../profile/useProfile';
 
 const fields = ['goals', 'allergens', 'avoid'] as const;
@@ -107,18 +108,7 @@ export function OnboardingScreen({ onComplete }: { onComplete?: () => void }) {
             const selected = (draft[field] as readonly string[]).includes(choice);
             const label = field === 'allergens' ? ro.allergens[choice as Allergen] : ro.profile[choice as Goal | AvoidKey];
             return (
-              <Pressable key={choice} accessibilityRole="checkbox" accessibilityLabel={label}
-                accessibilityState={{ checked: selected, disabled: blocked }} disabled={blocked}
-                onPress={() => toggle(choice)}
-                style={[styles.chip, {
-                  backgroundColor: selected ? colors.primary : colors.surface,
-                  borderColor: selected ? colors.primary : colors.border,
-                  opacity: blocked ? 0.6 : 1,
-                }]}>
-                <Body style={{ color: selected ? colors.onPrimary : colors.ink, fontWeight: selected ? '700' : '500' }}>
-                  {label}
-                </Body>
-              </Pressable>
+              <ToggleChip key={choice} text={label} selected={selected} disabled={blocked} onPress={() => toggle(choice)} />
             );
           })}
         </ScrollView>
@@ -141,5 +131,4 @@ const styles = StyleSheet.create({
   error: { marginTop: 12, padding: 12, borderRadius: 12, borderWidth: 1, gap: 8 },
   title: { marginTop: 16, marginBottom: 20, gap: 6 },
   choices: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingBottom: 24 },
-  chip: { minHeight: 44, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 22, borderWidth: 1, justifyContent: 'center' },
 });
