@@ -1,7 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Body, Heading } from '../../ui';
+import { useIsFocused, useRouter } from 'expo-router';
+import { Body, Button, Heading } from '../../ui';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import type { Palette } from '../../theme/tokens';
@@ -15,6 +15,7 @@ import type { ScanScreenProps } from './ScanScreen';
 
 /** The browser has no torch control here, so `torch` is ignored. */
 export default function ScanScreenWeb({ embedded = false, manual = false }: ScanScreenProps = {}) {
+  const focused = useIsFocused();
   const { colors } = useTheme();
   const styles = createStyles(colors);
   const router = useRouter();
@@ -28,12 +29,13 @@ export default function ScanScreenWeb({ embedded = false, manual = false }: Scan
 
   const body = (
     <>
-      {cameraOn ? (
+      {focused && cameraOn ? (
         <View testID="scan-preview" style={embedded ? styles.embeddedPreview : styles.preview}>
           <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           {liveStatus === 'live' ? <ScanReticle /> : <ActivityIndicator style={StyleSheet.absoluteFill} color={colors.cameraInk} />}
         </View>
-      ) : (
+      ) : null}
+      {focused && !cameraOn ? (
         <StatusPanel
           message={liveStatus === 'unsupported' ? ro.scan.webManualOnly : cameraMessage(liveStatus)}
           actions={[
@@ -41,7 +43,7 @@ export default function ScanScreenWeb({ embedded = false, manual = false }: Scan
             { label: ro.capture.title, onPress: () => router.push('/capture') },
           ]}
         />
-      )}
+      ) : null}
       {working ? <View style={styles.status}><ActivityIndicator /><Body style={embedded ? { color: colors.cameraInk } : undefined}>{ro.capture.working}</Body></View> : null}
       {state.status === 'error' || state.status === 'offline' ? (
         <StatusPanel
@@ -61,6 +63,9 @@ export default function ScanScreenWeb({ embedded = false, manual = false }: Scan
     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Heading style={styles.title}>{ro.scan.title}</Heading>
       {body}
+      {cameraOn ? (
+        <Button variant="secondary" onPress={() => router.push('/capture')}>{ro.scan.photoLabel}</Button>
+      ) : null}
     </ScrollView>
   );
 }
