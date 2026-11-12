@@ -36,5 +36,3 @@ it('keeps one working admin entry and legal links reachable', async () => {
     expect(router.push).toHaveBeenCalledWith(`/${path}`);
   }
 });
-
-
