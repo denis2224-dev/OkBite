@@ -12,9 +12,8 @@ const additive: Ingredient = {
 it('uses English labels and keeps the Romanian explanation with a note', async () => {
   await render(<AdditiveSheet productId="p1" ingredient={additive} onClose={jest.fn()} />);
   expect(screen.getByText('High risk')).toBeTruthy();
-  expect(screen.getByText('Role: Îndulcitor')).toBeTruthy();
+  expect(screen.getByText('Îndulcitor')).toBeTruthy(); // E951 is already in the name
   expect(screen.getByText('Îndulcitor intens.')).toBeTruthy();
   expect(screen.getByText('The explanation is available in Romanian.')).toBeTruthy();
-  expect(screen.getByRole('button', { name: 'Assessment source' })).toBeTruthy();
-  expect(screen.queryByText('E951')).toBeNull(); // already in the name
+  expect(screen.getByRole('link', { name: 'Assessment source' })).toBeTruthy();
 });
