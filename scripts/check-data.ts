@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { z } from 'zod';
-import { CategoryEntry, IngredientEntry, ScoreFixture } from '../packages/shared/src/index';
+import { CategoryEntry, Ingredient, IngredientEntry, ScoreFixture } from '../packages/shared/src/index';
 
 export type DataFiles = {
   categories: unknown[];
@@ -18,9 +18,7 @@ const CheckedIngredient = IngredientEntry.extend({
   slug: nonblank.regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/), name: nonblank,
   aliases: z.array(nonblank), role: nonblank, explanation: nonblank,
   source: nonblank, checkedBy: nonblank,
-  // shortcut: N1 names (Ingredient.risk/riskSource) declared here until N1's contract merges; then drop these two lines.
-  risk: z.enum(['low', 'moderate', 'high']).nullable().optional(),
-  riskSource: z.string().url().nullable().optional(),
+  risk: Ingredient.shape.risk, riskSource: Ingredient.shape.riskSource, // N1 names; IngredientEntry has no risk yet
 }).superRefine((i, ctx) => {
   if (!i.risk) return;
   if (i.group !== 'add') ctx.addIssue({ code: 'custom', path: ['risk'], message: 'only additives (group add) carry a risk' });
