@@ -1,5 +1,5 @@
 import { previewEntries } from '../../test/fixtures';
-import { compareRows } from './compare';
+import { betterOverall, compareRows } from './compare';
 const a = previewEntries[0]!.product, b = previewEntries[1]!.product;
 
 test('compares the prototype yogurts with lower sugar and higher protein preferred', () => {
@@ -17,4 +17,16 @@ test('different categories, units and hidden products produce no comparison', ()
   expect(compareRows(a, previewEntries[3]!.product)).toEqual([]);
   expect(compareRows(a, { ...b, unit: 'ml' })).toEqual([]);
   expect(compareRows(a, { ...b, status: 'hidden' })).toEqual([]);
+});
+test('the overall verdict goes to the higher displayed score in the same category', () => {
+  const [yogurt, strawberry] = [previewEntries[0]!, previewEntries[1]!];
+  expect(betterOverall(yogurt, strawberry)).toBe('a');
+  expect(betterOverall(strawberry, yogurt)).toBe('b');
+});
+test('no overall verdict across categories, on a tie or when a score is withheld', () => {
+  const [yogurt, strawberry, , biscuit] = [previewEntries[0]!, previewEntries[1]!, previewEntries[2]!, previewEntries[3]!];
+  expect(betterOverall(yogurt, biscuit)).toBeNull();
+  expect(betterOverall(yogurt, { ...strawberry, score: yogurt.score })).toBeNull();
+  const incomplete = { ...strawberry, product: { ...strawberry.product, nutrients: { ...strawberry.product.nutrients, salt: null } } };
+  expect(betterOverall(yogurt, incomplete)).toBeNull();
 });
