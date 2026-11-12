@@ -39,6 +39,19 @@ describe('ScanScreen (web)', () => {
     expect(screen.getByText(ro.scan.frameHint)).toBeTruthy();
   });
 
+  it('frames a live camera in a tall preview with corner guides', async () => {
+    mockLive.status = 'live';
+    await render(<ScanScreenWeb />);
+    expect(screen.getByTestId('scan-reticle')).toBeTruthy();
+    const preview = screen.getByTestId('scan-preview');
+    expect(preview.props.style).toEqual(expect.objectContaining({ aspectRatio: 3 / 4 }));
+  });
+
+  it('shows no corner guides when the camera is unavailable', async () => {
+    await render(<ScanScreenWeb />);
+    expect(screen.queryByTestId('scan-reticle')).toBeNull();
+  });
+
   it('explains a refused camera, keeps manual entry, and can retry or take a photo', async () => {
     mockLive.status = 'denied';
     await render(<ScanScreenWeb />);

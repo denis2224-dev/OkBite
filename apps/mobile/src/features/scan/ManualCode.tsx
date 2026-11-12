@@ -3,7 +3,7 @@ import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { normalizeCode } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
-import type { Palette } from '../../theme/tokens';
+import { fonts, type Palette } from '../../theme/tokens';
 import { Button } from '../../ui/Button';
 
 export function ManualCode({ onSubmit, disabled }: { onSubmit: (code: string) => void; disabled?: boolean }) {
@@ -48,8 +48,8 @@ export function ManualCode({ onSubmit, disabled }: { onSubmit: (code: string) =>
 
 const createStyles = (colors: Palette) => StyleSheet.create({
   box: { gap: 8, padding: 16, backgroundColor: colors.ground },
-  title: { fontSize: 18, fontWeight: '700', color: colors.ink },
-  hint: { color: colors.muted },
-  error: { color: colors.low },
-  input: { minHeight: 44, borderWidth: 1, borderColor: colors.muted, backgroundColor: colors.surface, color: colors.ink, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16 },
+  title: { fontSize: 18, lineHeight: 25, fontFamily: fonts.heading, color: colors.ink },
+  hint: { fontFamily: fonts.body, color: colors.muted },
+  error: { fontFamily: fonts.medium, color: colors.low },
+  input: { borderWidth: 1, borderColor: colors.muted, backgroundColor: colors.surface, color: colors.ink, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, minHeight: 48, fontFamily: fonts.body, fontSize: 16, letterSpacing: 1 },
 });
