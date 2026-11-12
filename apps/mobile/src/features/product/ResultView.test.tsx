@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react-native';
 import { ResultView } from './ResultView';
 import { CompareAction } from './CompareAction';
 import { ReportSheet } from './ReportSheet';
@@ -60,7 +60,7 @@ it('withholds a fat-category score when total fat is missing', async () => {
 
 it('opens the real ingredient and original-label routes for the displayed product', async () => {
   await render(<ResultView {...foundYogurt} />);
-  await fireEvent.press(screen.getByRole('button', { name: ro.ingredients.title }));
+  await fireEvent.press(screen.getByRole('button', { name: ro.result.ingredientsTile }));
   expect(router.push).toHaveBeenLastCalledWith({ pathname: '/product/[id]/ingredients', params: { id: foundYogurt.product.id } });
   await fireEvent.press(screen.getByRole('button', { name: ro.result.original }));
   expect(router.push).toHaveBeenLastCalledWith({ pathname: '/product/[id]/label', params: { id: foundYogurt.product.id } });
@@ -204,12 +204,12 @@ it('separates declared allergens from possible traces', async () => {
   expect(screen.getByLabelText(`${ro.result.mayContain} Soia`)).toBeTruthy();
 });
 
-it('lists the detail pages as rows with hints and leaves the one main action to the fixed footer', async () => {
+it('lists the detail pages as short tiles and leaves the one main action to the fixed footer', async () => {
   await render(<ResultView {...foundYogurt} />);
-  expect(screen.getByText(ro.result.ingredientsHint)).toBeTruthy();
+  expect(screen.queryByText(ro.result.ingredientsHint)).toBeNull();
   expect(screen.queryByRole('button', { name: ro.result.compare })).toBeNull();
   expect(screen.queryByText(/alternative/i)).toBeNull();
-  for (const name of [ro.ingredients.title, ro.result.portion, ro.result.original]) {
+  for (const name of [ro.result.ingredientsTile, ro.result.portionTile, ro.result.original]) {
     expect(StyleSheet.flatten(screen.getByRole('button', { name }).props.style).backgroundColor).not.toBe(light.soft);
   }
 });
@@ -236,9 +236,13 @@ it('puts collapse, share and report in a top row of 44 pt icon buttons', async (
 });
 it('shows Ingrediente and Porție as two tiles side by side, and Porție opens the portion table', async () => {
   await render(<ResultView {...foundYogurt} />);
-  expect(screen.getByTestId('result-link-tiles')).toHaveStyle({ flexDirection: 'row' });
+  const tiles = screen.getByTestId('result-link-tiles');
+  expect(tiles).toHaveStyle({ flexDirection: 'row' });
+  // Mockup: just the word and a chevron, so long English labels never break mid-word.
+  expect(within(tiles).getAllByRole('button').map(button => button.props.accessibilityLabel)).toEqual([ro.result.ingredientsTile, ro.result.portionTile]);
+  expect(within(tiles).queryAllByTestId('link-row-icon')).toHaveLength(0);
   expect(screen.getAllByText(ro.result.portionNote)).toHaveLength(1);
-  await fireEvent.press(screen.getByRole('button', { name: ro.result.portion }));
+  await fireEvent.press(screen.getByRole('button', { name: ro.result.portionTile }));
   expect(screen.getAllByText(ro.result.portionNote)).toHaveLength(2);
   await fireEvent.press(screen.getByRole('button', { name: ro.nav.close }));
   expect(screen.getAllByText(ro.result.portionNote)).toHaveLength(1);

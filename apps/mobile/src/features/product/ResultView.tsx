@@ -60,10 +60,10 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
     {canShowScore ? <WhyScore score={shownScore} sugar={product.nutrients.sugar} /> : <PartialNutritionCard product={product} />}
     <View testID="result-link-tiles" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
       <Card style={[tile, { paddingVertical: 4 }]}>
-        <LinkRow icon="book" label={ro.ingredients.title} hint={ro.result.ingredientsHint} last onPress={() => router.push({ pathname: '/product/[id]/ingredients', params: { id: product.id } })} />
+        <LinkRow label={ro.result.ingredientsTile} last onPress={() => router.push({ pathname: '/product/[id]/ingredients', params: { id: product.id } })} />
       </Card>
       {showPortion && <Card style={[tile, { paddingVertical: 4 }]}>
-        <LinkRow icon="info" label={ro.result.portion} last onPress={() => setPortion(true)} />
+        <LinkRow label={ro.result.portionTile} last onPress={() => setPortion(true)} />
       </Card>}
     </View>
     <Card>
