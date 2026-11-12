@@ -4,7 +4,7 @@ import { ALLERGENS } from '@okbite/shared';
 import { ro } from './ro';
 
 const required = ['nav.scan', 'nav.profile', 'nav.settings', 'tiers.excellent', 'tiers.good', 'tiers.fair', 'tiers.poor', 'tiers.bad', 'tiers.why', 'tiers.nutriScore', 'ledger.sugar', 'ledger.sat', 'ledger.salt', 'ledger.kcal', 'ledger.nutrition_other', 'ledger.additive', 'ledger.processing', 'ledger.cap', 'processing.unknown', 'additives.notAssessed', 'profile.savedLocally', 'onboarding.skip', 'settings.resetOnboarding', 'about.methodBody', 'scan.flashOn', 'scan.flashOff', 'scan.loadingReader', 'history.search', 'history.noMatches', 'history.remove', 'history.removed', 'history.undo', 'history.removeError', 'history.restoreError',
- 'nav.allergies', 'allergies.title', 'allergies.lead', 'allergies.allergensLabel', 'result.whyLetter', 'result.profileAlertSub',
+ 'nav.allergies', 'allergies.title', 'allergies.lead', 'allergies.allergensLabel', 'allergies.avoidTitle', 'result.whyLetter', 'result.profileAlertSub',
  'result.containsAllergen', 'result.mayContainAllergen', 'compare.design.better', 'compare.design.betterValue', 'compare.design.profileWarning',
  'scan.labelMode', 'scan.seeAll'];
 const get = (object: unknown, path: string): unknown => path.split('.').reduce<unknown>((value, key) => (value as Record<string, unknown> | undefined)?.[key], object);
@@ -45,6 +45,8 @@ it('words the five-tab, allergies, result and compare additions in both language
  expect(redesignRo.nav.allergies).toBe('Alergii');
  expect(redesignEn.nav.allergies).toBe('Allergies');
  expect(redesignRo.allergies.title).toBe('Alergiile tale');
+ expect(redesignRo.allergies.avoidTitle).toBe('Vreau să evit');
+ expect(redesignEn.allergies.avoidTitle).toBe('I want to avoid');
  expect(redesignRo.result.whyLetter('D')).toBe('De ce D');
  expect(redesignEn.result.whyLetter('D')).toBe('Why D');
  expect(redesignRo.result.containsAllergen('lapte')).toBe('Conține lapte');
