@@ -21,7 +21,7 @@ export function AllergiesScreen() {
       <ProfileSaveError message={errorMessage} retry={retry} />
       <AllergenChips selected={profile.allergens} disabled={disabled} onToggle={(a) => toggle('allergens', a)} />
       <View style={{ gap: 8 }}>
-        <Heading style={{ fontSize: 18, lineHeight: 24 }}>{ro.profile.avoidTitle}</Heading>
+        <Heading style={{ fontSize: 18, lineHeight: 24 }}>{ro.allergies.avoidTitle}</Heading>
         <AvoidSwitches selected={profile.avoid} disabled={disabled} onToggle={(k) => toggle('avoid', k)} />
       </View>
       <Body style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>{ro.result.missingAllergenNote}</Body>

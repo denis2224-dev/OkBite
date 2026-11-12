@@ -25,7 +25,7 @@ async function renderReady() {
 
 it('renders the title, the 14 allergens, the avoid switches and both notes in Romanian', async () => {
   const screen = await renderReady();
-  for (const text of [ro.allergies.title, ro.allergies.lead, ro.profile.avoidTitle,
+  for (const text of [ro.allergies.title, ro.allergies.lead, ro.allergies.avoidTitle,
     ro.profile.savedLocally, ro.result.missingAllergenNote]) {
     expect(screen.getByText(text, { exact: false })).toBeTruthy();
   }

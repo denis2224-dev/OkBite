@@ -122,7 +122,7 @@ export const redesignEn: RedesignCopy = {
   pending:'Your profile will be available once local preferences are connected.',
  },
  allergies: {
-  title:'Your allergies', lead:'We warn you before the score when a product contains them.', allergensLabel:'Allergens to watch',
+  title:'Your allergies', lead:'We warn you before the score when a product contains them.', allergensLabel:'Allergens to watch', avoidTitle:'I want to avoid',
  },
  onboarding: {
   goalTitle:'What matters to you?', allergensTitle:'Which allergens do you want to watch for?', avoidTitle:'What do you want to avoid?',
