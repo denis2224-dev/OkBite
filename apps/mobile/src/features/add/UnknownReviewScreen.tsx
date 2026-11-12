@@ -13,6 +13,7 @@ import { ReviewForm } from './ReviewForm';
 import { loadUnknownDraft, saveUnknownDraftIfCurrent, type UnknownDraftSnapshot } from './unknownDraft';
 import { UnknownAddProductRequest } from './unknownFlowContract';
 import { requestUnknownFlow } from './unknownFlowTransport';
+import { reconcileLabelReasons } from './labelWarnings';
 import { UnknownProductConfirmation, type UnknownPhotoKind, type UnknownProductProposal } from './UnknownProductConfirmation';
 
 const useSafeSearchParams = useLocalSearchParams ?? (() => ({}));
@@ -78,12 +79,12 @@ export function UnknownReviewScreen() {
         quantity: proposal.quantity || null,
         ...(proposal.categorySlug ? { categorySlug: proposal.categorySlug } : {}),
       },
-      label: {
+      label: reconcileLabelReasons({
         ...draft.label!,
         ingredientsText: proposal.ingredientsText,
         unit: proposal.unit,
         nutrients: proposal.nutrients,
-      },
+      }),
     };
     setDraft(updated);
     void saveUnknownDraftIfCurrent(updated).catch(() => {});

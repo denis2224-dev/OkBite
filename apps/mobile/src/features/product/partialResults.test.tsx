@@ -23,6 +23,7 @@ describe('partial result', () => {
     expect(screen.getByText(ro.result.transcribedLabel)).toBeTruthy();
     expect(screen.getByText('Soia')).toBeTruthy();
     expect(screen.getByText(ro.result.missingAllergenNote)).toBeTruthy();
+    expect(screen.queryByText(ro.result.noAllergens)).toBeNull();
     expect(screen.getByText(product.source)).toBeTruthy();
     expect(screen.getByText(`${ro.result.added}: ${roDate(product.addedAt)}`)).toBeTruthy();
     expect(screen.getByText(ro.result.unverifiedNote)).toBeTruthy();

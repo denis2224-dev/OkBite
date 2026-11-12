@@ -6,6 +6,7 @@ import { lookupFound } from '../capture/__fixtures__/responses';
 import { clearUnknownDraft, loadUnknownDraft, saveUnknownDraftIfCurrent, type UnknownDraftSnapshot } from './unknownDraft';
 import { requestUnknownFlow } from './unknownFlowTransport';
 import { completeUnknownDraft } from './completeUnknownDraft';
+import { draftToGuided } from './guidedDraftAdapter';
 import { UnknownReviewScreen } from './UnknownReviewScreen';
 
 type Reasons = NonNullable<NonNullable<UnknownDraftSnapshot['label']>['reasons']>;
@@ -77,6 +78,21 @@ test('reload restores the saved draft without calling read-label again', async (
 
   expect(screen.getByText('Kefir Tradițional')).toBeTruthy();
   expect(requestUnknownFlow).not.toHaveBeenCalledWith('read-label', expect.anything(), expect.anything(), expect.anything());
+});
+
+test('a corrected failed ingredient read stays valid when the draft is restored for a retake', async () => {
+  jest.mocked(loadUnknownDraft).mockResolvedValueOnce({ ...storedDraft,
+    label: { ...storedDraft.label!, ingredientsText: null, unclear: ['ingredientsText'],
+      reasons: { ...storedDraft.label!.reasons!, ingredientsText: 'failed' } },
+  });
+  await render(<UnknownReviewScreen />);
+  const corrected = 'Făină de grâu. Poate conține urme de lapte.';
+  await fireEvent.press(screen.getByRole('button', { name: ro.review.ingredients }));
+  await fireEvent.changeText(screen.getByLabelText(ro.review.ingredients), corrected);
+  const saved = jest.mocked(saveUnknownDraftIfCurrent).mock.calls.at(-1)![0];
+  expect(draftToGuided(saved).label).toMatchObject({
+    ingredientsText: corrected, reasons: { ingredientsText: 'read' }, unclear: [],
+  });
 });
 
 test('double tap creates one add-product request, reuses ingredientsPhotoPath on retry, and clears draft only after found', async () => {

@@ -71,7 +71,7 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {product.allergens.map(name => <AllergenChip key={name} name={name} />)}
       </View>
-      {!product.allergens.length && <Body>{ro.result.noAllergens}</Body>}
+      {product.status === 'verified' && !product.allergens.length && <Body>{ro.result.noAllergens}</Body>}
       {!!product.mayContain.length && <>
         <Body style={{ fontFamily: fonts.bold }}>{ro.result.mayContain}</Body>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
