@@ -5,6 +5,7 @@ import { previewEntries } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
 import { ProductPicker } from './ProductPicker';
 import { router } from 'expo-router';
+import { StyleSheet } from 'react-native';
 const mockEntries = previewEntries.map(entry => ({ ...entry, savedAt: '2026-11-05T00:00:00.000Z' }));
 let mockId: string | undefined;
 let mockPending: Promise<typeof mockEntries> | undefined;
@@ -50,10 +51,11 @@ test('a different deep link does not show the old comparison while history is lo
   await result.rerender(<Compare />);
   expect(screen.queryByText('4,1 g')).toBeNull();
 });
-test('comparison preserves source, verification, declared allergens and possible traces', async () => {
+test('comparison cards keep allergens and traces but leave sources to the product page', async () => {
   await render(<Compare />);
   await choose(0); await choose(1);
-  expect(screen.getAllByText(previewEntries[0]!.product.source)).toHaveLength(2);
+  expect(screen.queryByText(ro.result.source)).toBeNull();
+  expect(screen.queryByText(previewEntries[0]!.product.source)).toBeNull();
   expect(screen.getAllByText('Lapte')).toHaveLength(2);
   expect(screen.getByText(ro.result.mayContain)).toBeTruthy();
 });
@@ -73,4 +75,22 @@ test('compatible comparison withholds a stale score for an incomplete label', as
     expect(screen.getByText(ro.result.scoreUnavailable)).toBeTruthy();
     expect(screen.getByText(ro.result.missing)).toBeTruthy();
   } finally { mockEntries[0] = original; }
+});
+
+test('each product card shows only name, brand, score, reasons and the disclaimer, laid out the same way', async () => {
+  await render(<Compare />);
+  await choose(0); await choose(1);
+  for (const index of [0, 1]) {
+    const { product } = previewEntries[index]!;
+    expect(screen.getByText(product.name)).toBeTruthy();
+    const initials = product.name.split(/\s+/).slice(0, 2).map(word => word[0]).join('').toLocaleUpperCase('ro');
+    expect(screen.queryByText(initials)).toBeNull();
+  }
+  const cards = screen.getAllByTestId('compare-card');
+  expect(cards).toHaveLength(2);
+  const styles = cards.map(card => StyleSheet.flatten(card.props.style));
+  expect(styles[0]).toEqual(styles[1]);
+  // The disclaimer sits at the foot of each card so both cards line up.
+  for (const footer of screen.getAllByTestId('compare-card-footer')) expect(StyleSheet.flatten(footer.props.style).marginTop).toBe('auto');
+  for (const reasons of screen.getAllByTestId('compare-card-reasons')) expect(StyleSheet.flatten(reasons.props.style).gap).toBeGreaterThanOrEqual(12);
 });

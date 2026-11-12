@@ -8,7 +8,6 @@ import { Body, Button, Card, Heading } from '../../src/ui';
 import { ro } from '../../src/copy/ro';
 import { listHistory, type HistoryEntry } from '../../src/features/history/store';
 import { displayScore } from '../../src/features/product/displayScore';
-import { SourceCard } from '../../src/features/product/SourceCard';
 import { ProductPicker } from '../../src/features/compare/ProductPicker';
 import { compareRows } from '../../src/features/compare/compare';
 import { formatAmount } from '../../src/lib/format';
@@ -55,16 +54,26 @@ export default function Compare() {
             const { product } = entry;
             const score = displayScore(product, entry.score);
             const grade = score.grade === 'unavailable' ? 'neutral' : score.grade;
-            return <HomeCard key={label} style={styles.productCard}>
+            return <HomeCard key={label} testID="compare-card" style={styles.productCard}>
               <Text style={styles.label}>{label}</Text>
-              <View style={styles.tile}><Text style={styles.initials}>{product.name.split(/\s+/).slice(0, 2).map(word => word[0]).join('').toLocaleUpperCase('ro')}</Text></View>
-              <Text style={styles.productName}>{product.name}</Text>
-              <Text style={styles.subtitle}>{product.brand}</Text>
+              <View style={styles.identity}>
+                <Text style={styles.productName}>{product.name}</Text>
+                <Text style={styles.subtitle}>{product.brand}</Text>
+                {product.status === 'unverified' && <Text style={styles.subtitle}>{ro.result.unverified}</Text>}
+              </View>
               {score.score !== null && <View style={styles.score}><HomeChip background={theme.colors[`${grade}Bg`]} color={theme.colors[grade]}>{`${formatAmount(score.score)} · ${ro.score[score.grade]}`}</HomeChip></View>}
-              {product.status === 'unverified' && <Text style={styles.subtitle}>{ro.result.unverified}</Text>}
-              {score.score === null ? <><Text style={styles.subtitle}>{ro.result.scoreUnavailable}</Text><Text style={styles.subtitle}>{ro.result.insufficient}</Text><Text style={styles.subtitle}>{ro.result.missing}</Text>{score.missing.map(key => <Text key={key} style={styles.subtitle}>{ro.result.nutrients[key]}</Text>)}</> : score.reasons.map((reason,index) => <View key={index}><Text style={styles.productName}>{reason.title}</Text><Text style={styles.subtitle}>{reason.detail}</Text></View>)}
-              <Text style={styles.subtitle}>{ro.score.disclaimer}</Text>
-              <SourceCard product={product}/>
+              <View testID="compare-card-reasons" style={styles.reasons}>
+                {score.score === null ? <>
+                  <Text style={styles.reasonTitle}>{ro.result.scoreUnavailable}</Text>
+                  <Text style={styles.reasonDetail}>{ro.result.insufficient}</Text>
+                  <Text style={styles.reasonDetail}>{ro.result.missing}</Text>
+                  {score.missing.map(key => <Text key={key} style={styles.reasonDetail}>{ro.result.nutrients[key]}</Text>)}
+                </> : score.reasons.map((reason, index) => <View key={index} style={styles.reason}>
+                  <Text style={styles.reasonTitle}>{reason.title}</Text>
+                  <Text style={styles.reasonDetail}>{reason.detail}</Text>
+                </View>)}
+              </View>
+              <View testID="compare-card-footer" style={styles.footer}><Text style={styles.disclaimer}>{ro.score.disclaimer}</Text></View>
             </HomeCard>;
           })}</View>
           <View style={styles.actions}>
@@ -133,11 +142,15 @@ const createStyles = (t: ComparisonTheme) => StyleSheet.create({
   title: { fontFamily: t.fonts.heading, fontSize: 20, lineHeight: 29, letterSpacing: -0.2, color: t.colors.ink },
   subtitle: { fontFamily: t.fonts.body, fontSize: 13, lineHeight: 18.85, color: t.colors.muted },
   scroll: { flex: 1 }, body: { paddingHorizontal: 16, paddingBottom: 24 },
-  products: { flexDirection: 'row', gap: 10 }, productCard: { flex: 1, minWidth: 0, padding: 14 },
+  products: { flexDirection: 'row', alignItems: 'stretch', gap: 12 }, productCard: { flex: 1, minWidth: 0, padding: 16 },
+  identity: { marginTop: 10, gap: 2 },
+  reasons: { marginTop: 16, gap: 16 }, reason: { gap: 4 },
+  reasonTitle: { fontFamily: t.fonts.extra, fontSize: 15, lineHeight: 20, color: t.colors.ink },
+  reasonDetail: { fontFamily: t.fonts.body, fontSize: 13, lineHeight: 19.5, color: t.colors.muted },
+  footer: { marginTop: 'auto', paddingTop: 14 },
+  disclaimer: { fontFamily: t.fonts.body, fontSize: 12, lineHeight: 17.4, color: t.colors.muted, paddingTop: 12, borderTopWidth: 1, borderTopColor: t.colors.separator },
   label: { fontFamily: t.fonts.extra, fontSize: 12, lineHeight: 17.4, letterSpacing: 0.84, textTransform: 'uppercase', color: t.colors.muted },
-  tile: { width: 48, height: 48, marginTop: 8, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  initials: { fontFamily: t.fonts.extra, fontSize: 15, lineHeight: 21.75, color: t.colors.ink },
-  productName: { marginTop: 8, fontFamily: t.fonts.extra, fontSize: 15, lineHeight: 18.75, color: t.colors.ink }, score: { marginTop: 8, alignSelf: 'flex-start' },
+  productName: { fontFamily: t.fonts.extra, fontSize: 16, lineHeight: 21, color: t.colors.ink }, score: { marginTop: 12, alignSelf: 'flex-start' },
   actions: { flexDirection: 'row', gap: 8, marginTop: 10 },
   secondary: { flex: 1, minWidth: 0, minHeight: 44, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 16, gap: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.mint },
   secondaryText: { flexShrink: 1, fontFamily: t.fonts.bold, fontSize: 14, lineHeight: 20.3, color: t.colors.primary, textAlign: 'center' },
