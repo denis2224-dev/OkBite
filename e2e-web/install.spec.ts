@@ -38,7 +38,7 @@ test('iPhone guidance opens explicitly, stays reachable in dark landscape, and p
 test('Android invitation installs directly and exposes browser rejection', async ({ page }) => {
   await page.addInitScript(() => Object.defineProperty(navigator, 'platform', { value: 'Linux' }));
   await page.goto('/');
-  await expect(page.getByRole('button', { name: ro.home.design.demo, exact: true })).toBeVisible();
+  await expect(page.getByRole('tab', { name: ro.nav.scan, exact: true })).toBeVisible();
   await page.evaluate(() => {
     window.dispatchEvent(Object.assign(new Event('beforeinstallprompt', { cancelable: true }), {
       prompt: async () => { throw new Error('Browser refused installation'); },
