@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { ResultView } from './ResultView';
+import { CompareAction } from './CompareAction';
 import { ReportSheet } from './ReportSheet';
 import { foundYogurt } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
@@ -9,7 +10,7 @@ import { StyleSheet } from 'react-native';
 import { light } from '../../theme/tokens';
 import type { Profile } from '@okbite/shared';
 
-jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
+jest.mock('expo-router', () => ({ router: { push: jest.fn(), back: jest.fn(), replace: jest.fn(), canGoBack: () => true } }));
 let mockProfile: Profile = { goals: [], allergens: [], avoid: [], onboarded: true };
 jest.mock('../profile/useProfile', () => ({ useProfile: () => ({ profile: mockProfile, hydrated: true, error: null }) }));
 beforeEach(() => { mockProfile = { goals: [], allergens: [], avoid: [], onboarded: true }; });
@@ -157,7 +158,7 @@ it('orders the profile alert, score, reasons, allergens, portions and the transc
   await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter: 'B' }} />);
   const order = inOrder();
   const markers = [ro.result.profileAlertSub, ro.score.ringLabel(foundYogurt.score.score!, foundYogurt.score.grade), ro.result.whyLetter('B'),
-    ro.result.allergens, ro.result.portion, ro.result.transcribedLabel, ro.result.source].map(text => order.indexOf(text));
+    ro.result.allergens, ro.result.portionNote, ro.result.transcribedLabel, ro.result.source].map(text => order.indexOf(text));
   expect(markers.every(index => index >= 0)).toBe(true);
   expect([...markers].sort((a, b) => a - b)).toEqual(markers);
 });
@@ -203,14 +204,44 @@ it('separates declared allergens from possible traces', async () => {
   expect(screen.getByLabelText(`${ro.result.mayContain} Soia`)).toBeTruthy();
 });
 
-it('lists the detail pages as rows with hints and keeps one main action', async () => {
+it('lists the detail pages as rows with hints and leaves the one main action to the fixed footer', async () => {
   await render(<ResultView {...foundYogurt} />);
   expect(screen.getByText(ro.result.ingredientsHint)).toBeTruthy();
-  const compare = screen.getByRole('button', { name: ro.result.compare });
-  expect(StyleSheet.flatten(compare.props.style).backgroundColor).toBe(light.primary);
-  for (const name of [ro.ingredients.title, ro.result.original]) {
+  expect(screen.queryByRole('button', { name: ro.result.compare })).toBeNull();
+  expect(screen.queryByText(/alternative/i)).toBeNull();
+  for (const name of [ro.ingredients.title, ro.result.portion, ro.result.original]) {
     expect(StyleSheet.flatten(screen.getByRole('button', { name }).props.style).backgroundColor).not.toBe(light.soft);
   }
+});
+it('makes "Compară cu alt produs" the primary action for this product', async () => {
+  await render(<CompareAction productId={foundYogurt.product.id} />);
+  const compare = screen.getByRole('button', { name: ro.result.compare });
+  expect(StyleSheet.flatten(compare.props.style).backgroundColor).toBe(light.primary);
+  await fireEvent.press(compare);
+  expect(router.push).toHaveBeenLastCalledWith({ pathname: '/compare', params: { id: foundYogurt.product.id } });
+});
+it('puts collapse, share and report in a top row of 44 pt icon buttons', async () => {
+  await render(<ResultView {...foundYogurt} />);
+  for (const name of [ro.result.closeSheet, ro.share.button, ro.result.report]) {
+    const style = StyleSheet.flatten(screen.getByRole('button', { name }).props.style);
+    expect(style.minWidth).toBeGreaterThanOrEqual(44);
+    expect(style.minHeight).toBeGreaterThanOrEqual(44);
+  }
+  const order = inOrder();
+  expect(order.indexOf(ro.result.report)).toBeLessThan(order.indexOf(ro.score.ringLabel(foundYogurt.score.score!, foundYogurt.score.grade)));
+  await fireEvent.press(screen.getByRole('button', { name: ro.result.closeSheet }));
+  expect(router.back).toHaveBeenCalled();
+  await fireEvent.press(screen.getByRole('button', { name: ro.result.report }));
+  expect(screen.getByLabelText(ro.result.reportLabel)).toBeTruthy();
+});
+it('shows Ingrediente and Porție as two tiles side by side, and Porție opens the portion table', async () => {
+  await render(<ResultView {...foundYogurt} />);
+  expect(screen.getByTestId('result-link-tiles')).toHaveStyle({ flexDirection: 'row' });
+  expect(screen.getAllByText(ro.result.portionNote)).toHaveLength(1);
+  await fireEvent.press(screen.getByRole('button', { name: ro.result.portion }));
+  expect(screen.getAllByText(ro.result.portionNote)).toHaveLength(2);
+  await fireEvent.press(screen.getByRole('button', { name: ro.nav.close }));
+  expect(screen.getAllByText(ro.result.portionNote)).toHaveLength(1);
 });
 
 it('labels each score reason with its tone next to an icon', async () => {
