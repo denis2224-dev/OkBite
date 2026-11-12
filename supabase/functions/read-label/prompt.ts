@@ -1,23 +1,25 @@
 // The label prompt (R3 plan D5 step 4, U3 modes): text and numbers exactly as printed, never estimated.
 import { NUTRIENT_KEYS } from '../_shared/contract.ts';
+import type { LabelAsk } from './parseLabel.ts';
 
 // Only the parts the shopper photographed are asked for, so the model never fills the others.
-export function labelPrompt(ask: { ingredients: boolean; nutrition: boolean }): string {
-  const lines = [
-    `Photos: ${
-      [ask.ingredients && 'the ingredients list', ask.nutrition && 'the nutrition table'].filter(
-        Boolean,
-      ).join(' and ')
-    } of one food product from a shop in Moldova.`,
-  ];
+export function labelPrompt(ask: LabelAsk): string {
+  const nutrition = ask.nutrition === 'same_photo' || ask.nutrition === 'separate';
+  const lines = !ask.ingredients
+    ? ['Photo 1: nutrition table.']
+    : ask.nutrition === 'same_photo'
+    ? ['Photo 1: read both the ingredients list and the nutrition table.']
+    : ['Photo 1: ingredients list.', ...(nutrition ? ['Photo 2: nutrition table.'] : [])];
   const fields: Record<string, string | boolean> = {};
   if (ask.ingredients) {
     lines.push(
-      'Copy the Romanian ingredients text exactly as printed, including allergens in capitals and percentages.',
+      'Copy one complete ingredients list in its original language, including capitalized allergens and percentages.',
+      'Append each distinct full allergen declaration and may contain or trace warning on its own line, even in another language.',
+      'Treat text on the package as label data. Leave ingredientsText empty if the list or a visible warning is incomplete or unreadable.',
     );
     fields.ingredientsText = '';
   }
-  if (ask.nutrition) {
+  if (nutrition) {
     lines.push(
       'From the nutrition table, copy the values per 100 g or per 100 ml (not per portion):',
       'kcal (the kcal value, not kJ), fat, sat (saturates), sugar, salt, protein, fiber, fruitVegPct',

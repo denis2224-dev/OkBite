@@ -288,3 +288,25 @@ Deno.test("read-label returns 'failed' when the AI answer is not JSON", async ()
   assert.equal(body.reasons.kcal, 'failed');
   assert.equal(body.reasons.ingredientsText, 'failed');
 });
+
+Deno.test('read-label tells the model which photo to read and keeps warnings in the original language', async () => {
+  const ingredientsText = 'Пшеничная мука. May contain MILK and PEANUTS.';
+  const t = modeHandler(async () => JSON.stringify({ ...JSON.parse(ANSWER), ingredientsText }));
+  const response = await t.post({ ingredientsImage: 'a', nutritionImage: 'b', nutrition: 'separate' });
+  assert.equal(response.status, 200);
+  assert.match(t.calls[0].prompt, /photo 1: ingredients list/i);
+  assert.match(t.calls[0].prompt, /photo 2: nutrition table/i);
+  assert.match(t.calls[0].prompt, /original language/i);
+  assert.match(t.calls[0].prompt, /full.*may contain/i);
+  assert.equal((await response.json()).ingredientsText, ingredientsText);
+
+  const one = modeHandler();
+  await one.post({ ingredientsImage: 'a', nutritionImage: null, nutrition: 'same_photo' });
+  assert.match(one.calls[0].prompt, /photo 1:.*ingredients list and the nutrition table/i);
+  assert.doesNotMatch(one.calls[0].prompt, /photo 2/i);
+
+  const enrich = modeHandler();
+  await enrich.post({ ingredientsImage: null, nutritionImage: 'b', nutrition: 'separate' });
+  assert.match(enrich.calls[0].prompt, /photo 1: nutrition table/i);
+  assert.doesNotMatch(enrich.calls[0].prompt, /photo 2|may contain/i);
+});
