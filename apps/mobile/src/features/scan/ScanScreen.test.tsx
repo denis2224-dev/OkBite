@@ -9,9 +9,16 @@ import ScanScreen from './ScanScreen';
 import { CODE, PRODUCT_ID, lookupFound, lookupNotFound } from '../capture/__fixtures__/responses';
 
 const mockReplace = jest.fn();
+const mockPush = jest.fn();
+let mockFocused = true;
 const mockPermission: { value: unknown } = { value: null };
 const mockRequestPermission = jest.fn();
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }), useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof import('react')>('react').useEffect(callback, [callback]) }));
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ replace: mockReplace, push: mockPush }),
+  useIsFocused: () => mockFocused,
+  useFocusEffect: (callback: () => void | (() => void)) =>
+    jest.requireActual<typeof import('react')>('react').useEffect(() => mockFocused ? callback() : undefined, [callback, mockFocused]),
+}));
 jest.mock('expo-haptics', () => ({ notificationAsync: jest.fn(async () => undefined), NotificationFeedbackType: { Success: 'success' } }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
 jest.mock('expo-camera', () => {
@@ -30,8 +37,29 @@ const detect = (data: string) => act(async () => { (camera().props.onBarcodeScan
 describe('ScanScreen', () => {
   beforeEach(() => {
     jest.resetAllMocks();
+    mockFocused = true;
     mockPermission.value = granted;
     (notificationAsync as unknown as AsyncMock).mockResolvedValue(undefined);
+  });
+
+  it('unmounts the native camera on blur and remounts it on focus', async () => {
+    const view = await render(<ScanScreen />);
+    expect(camera()).toBeTruthy();
+
+    mockFocused = false;
+    await view.rerender(<ScanScreen />);
+    expect(screen.queryByTestId('camera')).toBeNull();
+    expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
+
+    mockFocused = true;
+    await view.rerender(<ScanScreen />);
+    expect(camera()).toBeTruthy();
+  });
+
+  it('offers the photo route while the standalone camera is live', async () => {
+    await render(<ScanScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.scan.photoLabel }));
+    expect(mockPush).toHaveBeenCalledWith('/capture');
   });
 
   it('shows a spinner while the permission is unknown and never the denied copy', async () => {
@@ -53,6 +81,8 @@ describe('ScanScreen', () => {
     expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: ro.capture.openSettings }));
     expect(openSettings).toHaveBeenCalled();
+    await fireEvent.press(screen.getByRole('button', { name: ro.scan.photoLabel }));
+    expect(mockPush).toHaveBeenCalledWith('/capture');
   });
 
   it('reports a rejected native settings action and keeps manual entry', async () => {

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useIsFocused, useRouter } from 'expo-router';
 import { CameraView } from 'expo-camera';
 import { useCameraAccess } from '../capture/useCameraAccess';
 import { notificationAsync, NotificationFeedbackType } from 'expo-haptics';
 import { ro } from '../../copy/ro';
+import { Button } from '../../ui';
 import { useTheme } from '../../theme/useTheme';
 import { fonts, type Palette } from '../../theme/tokens';
 import { StatusPanel, errorMessage } from '../capture/StatusPanel';
@@ -17,6 +19,8 @@ const tapOnDetection = () => { void notificationAsync(NotificationFeedbackType.S
 export type ScanScreenProps = { embedded?: boolean; torch?: boolean; manual?: boolean };
 
 export default function ScanScreen({ embedded = false, torch = false, manual = false }: ScanScreenProps = {}) {
+  const focused = useIsFocused();
+  const router = useRouter();
   const { colors } = useTheme();
   const styles = createStyles(colors);
   const { permission, requestPermission, settingsAction, message } = useCameraAccess();
@@ -56,7 +60,7 @@ export default function ScanScreen({ embedded = false, torch = false, manual = f
 
   const body = (
     <>
-      <View style={embedded ? styles.embeddedPreview : styles.preview}>{preview}</View>
+      {focused ? <View style={embedded ? styles.embeddedPreview : styles.preview}>{preview}</View> : null}
       {working ? <View style={styles.status}><ActivityIndicator color={embedded ? colors.cameraInk : colors.primary} /><Text style={[styles.working, embedded && { color: colors.cameraInk }]}>{ro.capture.working}</Text></View> : null}
       {state.status === 'error' || state.status === 'offline' ? (
         <StatusPanel
@@ -76,6 +80,7 @@ export default function ScanScreen({ embedded = false, torch = false, manual = f
     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Text accessibilityRole="header" style={styles.title}>{ro.scan.title}</Text>
       {body}
+      <Button variant="secondary" onPress={() => router.push('/capture')}>{ro.scan.photoLabel}</Button>
     </ScrollView>
   );
 }
