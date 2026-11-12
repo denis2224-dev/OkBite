@@ -73,6 +73,7 @@ const OFF_CATEGORY_RULES: [RegExp, string][] = [
 ];
 
 const amount = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
+const kcalFromKj = (kj: number | null) => (kj === null ? null : Math.round((kj / 4.184) * 10) / 10);
 const text = (...values: (string | null | undefined)[]) =>
   values.map((v) => v?.trim()).find((v) => v) ?? '';
 const eKey = (s: string) => s.replace(/^[a-z]{2}:/, '').replace(/[\s-]/g, '').toLowerCase();
@@ -122,7 +123,8 @@ export function mapOffProduct(raw: unknown, ingredients: readonly AdditiveKey[] 
     categorySlug: inferCategorySlug(off, name, ingredientsText, unit),
     ingredientsText,
     nutrients: {
-      kcal: amount(n['energy-kcal_100g']),
+      // Many labels declare kJ only; 1 kcal = 4.184 kJ (Reg. (UE) nr. 1169/2011, Anexa XIV). Unitless energy stays null.
+      kcal: amount(n['energy-kcal_100g']) ?? kcalFromKj(amount(n['energy-kj_100g'])),
       fat: amount(n.fat_100g),
       sat: amount(n['saturated-fat_100g']),
       sugar: amount(n.sugars_100g),
