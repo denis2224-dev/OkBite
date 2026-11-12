@@ -1,11 +1,12 @@
 import { test, expect } from '@playwright/test';
 
-// R4 Settings tab regression; uses R1's local demo server, never live services.
+// R4 Settings regression (Setări opens from a row in Profil); uses R1's local demo server, never live services.
 test('theme choices expose their checked state and stay reachable in landscape', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 812, height: 375 });
   await page.goto('/');
-  await page.getByRole('tab', { name: 'Setări', exact: true }).click();
+  await page.getByRole('tab', { name: 'Profil', exact: true }).click();
+  await page.getByRole('button', { name: 'Setări', exact: true }).click();
   const dark = page.getByRole('radio', { name: 'Mod întunecat', exact: true });
   const light = page.getByRole('radio', { name: 'Mod luminos', exact: true });
   await expect(page.getByRole('radio', { name: 'După telefon', exact: true })).toHaveAttribute('aria-checked', 'true');

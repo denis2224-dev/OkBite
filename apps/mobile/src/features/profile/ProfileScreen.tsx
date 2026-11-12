@@ -1,3 +1,4 @@
+import type { PropsWithChildren } from 'react';
 import { View } from 'react-native';
 import type { Goal } from '@okbite/shared';
 import { Screen } from '../../ui/Screen';
@@ -12,7 +13,7 @@ import { useProfileEditor } from './useProfileEditor';
 const goals: readonly Goal[] = ['health', 'allergies', 'family', 'weight', 'other'];
 
 /** Goals only: allergens and "avoid" keys are edited in one place, the Allergies tab. */
-export function ProfileScreen() {
+export function ProfileScreen({ children }: PropsWithChildren) {
   const { colors } = useTheme();
   const { profile, toggle, disabled, errorMessage, retry } = useProfileEditor();
 
@@ -36,6 +37,7 @@ export function ProfileScreen() {
           ))}
         </View>
       </Card>
+      {children}
     </Screen>
   );
 }
