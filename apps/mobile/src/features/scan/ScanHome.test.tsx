@@ -9,6 +9,7 @@ const mockScanner = jest.fn((_props: { embedded?: boolean; torch?: boolean; manu
 jest.mock('./ScanScreen', () => ({ __esModule: true, default: (props: { embedded?: boolean; torch?: boolean; manual?: boolean }) => mockScanner(props) }));
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), navigate: jest.fn() } }));
 jest.mock('expo-status-bar', () => ({ StatusBar: () => null }));
+jest.mock('./RecentScans', () => ({ RecentScans: () => null }));
 
 const lastProps = () => mockScanner.mock.calls.at(-1)![0];
 

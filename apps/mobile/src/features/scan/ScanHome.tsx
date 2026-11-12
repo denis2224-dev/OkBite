@@ -6,9 +6,10 @@ import { useTheme } from '../../theme/useTheme';
 import ScanScreen from './ScanScreen';
 import { ScanHeader } from './ScanHeader';
 import { ScanModeSwitch } from './ScanModeSwitch';
+import { RecentScans } from './RecentScans';
 import { torchSupported } from './torchSupport';
 
-/** Scan tab: dark camera area with header and mode switch. `active` mounts the camera only while the tab is focused. */
+/** Scan tab: dark camera area with header and mode switch, then the recent-scans sheet. `active` mounts the camera only while the tab is focused. */
 export function ScanHome({ active }: { active: boolean }) {
   const { colors } = useTheme();
   const [torch, setTorch] = useState(false);
@@ -25,6 +26,7 @@ export function ScanHome({ active }: { active: boolean }) {
       <ScanModeSwitch onLabel={() => router.push('/capture')} />
       {active ? <ScanScreen embedded torch={torch} manual={manual} /> : null}
     </View>
+    <RecentScans active={active} />
   </ScrollView>;
 }
 
