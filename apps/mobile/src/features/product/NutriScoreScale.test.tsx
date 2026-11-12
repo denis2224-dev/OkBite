@@ -1,16 +1,14 @@
 import { render, screen } from '@testing-library/react-native';
 import { NutriScoreScale } from './NutriScoreScale';
-import { dark as mockDarkColors, light as mockLight } from '../../theme/tokens';
+import { light as mockLight } from '../../theme/tokens';
 import { letterTones } from '../../theme/letterTones';
 
-let mockDark = false;
 const letters = ['A', 'B', 'C', 'D', 'E'] as const;
-jest.mock('../../theme/useTheme', () => ({ useTheme: () => ({ isDark: mockDark, colors: mockDark ? mockDarkColors : mockLight }) }));
-for (const dark of [false, true]) describe(dark ? 'dark scale' : 'light scale', () => {
-  const tones = dark ? letterTones.dark : letterTones.light;
-  beforeEach(() => { mockDark = dark; });
+jest.mock('../../theme/useTheme', () => ({ useTheme: () => ({ colors: mockLight }) }));
+describe('scale', () => {
+  const tones = letterTones;
   it.each(letters)('fills and outlines only %s on a thin bar and announces its letter', async letter => {
-    const colors = dark ? mockDarkColors : mockLight;
+    const colors = mockLight;
     await render(<NutriScoreScale letter={letter} />);
     expect(screen.getByRole('image', { name: `Nutri-Score: ${letter}` })).toBeTruthy();
     expect(screen.getByTestId(`nutri-score-${letter}`)).toHaveStyle({ backgroundColor: tones[letter].fg, borderWidth: 2, borderColor: colors.ink });

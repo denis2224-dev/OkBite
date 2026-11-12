@@ -22,6 +22,9 @@ const load = (env: Record<string, string | undefined>) => {
 it('builds a complete production config', () => {
   expect(load(prod)).toMatchObject({ extra: { supabaseUrl: 'https://prod.supabase.co' } });
 });
+it('runs in light mode only, whatever the phone setting', () => {
+  expect(load(prod)).toMatchObject({ userInterfaceStyle: 'light' });
+});
 it.each([
   ['EXPO_PUBLIC_SUPABASE_URL', undefined],
   ['EXPO_PUBLIC_SUPABASE_ANON_KEY', ''],

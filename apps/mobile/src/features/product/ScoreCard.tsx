@@ -10,9 +10,9 @@ import { NutriScoreScale } from './NutriScoreScale';
 /** Letter tile, product name and tier, then the A–E bar with the disclaimer directly under it.
  * Compare's picker passes no product: it shows its own name line. */
 export function ScoreCard({ product, score }: { product?: Product; score: ScoreResult }) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const shown = score.score !== null && score.grade !== 'unavailable' ? { value: score.score, grade: score.grade } : null;
-  const tone = score.letter ? (isDark ? letterTones.dark : letterTones.light)[score.letter]
+  const tone = score.letter ? letterTones[score.letter]
     : shown ? { fg: colors[shown.grade], bg: colors[`${shown.grade}Bg`] } : null;
   return <View style={{ gap: 12 }}>
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 16 }}>
