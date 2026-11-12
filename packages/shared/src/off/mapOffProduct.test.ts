@@ -83,6 +83,14 @@ describe('mapOffProduct fixtures (N22)', () => {
     ).toBe(10);
   });
 
+  it('converts kJ-only energy to kcal (1 kcal = 4.184 kJ) and prefers a declared kcal', () => {
+    const kj = (n: Record<string, unknown>) => mapOffProduct({ ...off, nutriments: n })?.nutrients.kcal;
+    expect(kj({ 'energy-kj_100g': 852 })).toBe(203.6);
+    expect(kj({ 'energy-kj_100g': 852, 'energy-kcal_100g': 204 })).toBe(204);
+    expect(kj({ 'energy-kj_100g': -1 })).toBeNull();
+    expect(kj({ energy_100g: 852 })).toBeNull(); // unit not stated: never guessed
+  });
+
   it.each([undefined, null, 0, 5, 2.5, '4', Number.NaN])('leaves processing null for nova_group %j', (g) => {
     expect(mapOffProduct({ ...off, nova_group: g })?.processing).toBeNull();
     expect(toRow(mapOffProduct({ ...off, nova_group: g })!)).toMatchObject({ nova_group: null, nova_source: null });
