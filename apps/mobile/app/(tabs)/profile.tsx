@@ -1,5 +1,5 @@
-import { ProfileScreen } from '../../src/features/profile';
-
+import { ProfileLinks } from '../../src/features/profile/ProfileLinks';
+import { ProfileScreen } from '../../src/features/profile/ProfileScreen';
 export default function ProfileTab() {
- return <ProfileScreen />;
+ return <ProfileScreen><ProfileLinks /></ProfileScreen>;
 }

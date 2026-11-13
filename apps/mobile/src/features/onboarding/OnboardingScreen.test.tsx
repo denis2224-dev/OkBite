@@ -5,7 +5,7 @@ import type { GestureResponderEvent } from 'react-native';
 import { ro } from '../../copy/ro';
 import * as pressable from '../../shared/PressableOpacity';
 import * as store from '../profile/store';
-import { resetProfileHookState } from '../profile/useProfile';
+import { resetProfileHookState, useProfile } from '../profile/useProfile';
 import { OnboardingScreen } from './OnboardingScreen';
 
 jest.mock('../profile/db', () => jest.requireActual('../profile/db.web'));
@@ -77,6 +77,28 @@ it('persists the current selection when skipping', async () => {
   await fireEvent.press(screen.getByRole('button', { name: ro.onboarding.skip }));
   expect(await store.loadProfile()).toMatchObject({ goals: ['family'], onboarded: true });
   expect(mockReplace).toHaveBeenCalledWith('/');
+});
+
+it('preserves newer edits from another profile consumer when finishing', async () => {
+  await store.saveProfile(existing);
+  const skip = capturePress(ro.onboarding.skip);
+  let updateProfile!: ReturnType<typeof useProfile>['setProfile'];
+  function OtherConsumer() {
+    updateProfile = useProfile().setProfile;
+    return null;
+  }
+  const screen = await render(<><OnboardingScreen /><OtherConsumer /></>);
+  await fireEvent.press(await screen.findByRole('checkbox', { name: ro.profile.health }));
+  await fireEvent.press(screen.getByRole('checkbox', { name: ro.profile.allergies }));
+  await act(async () => {
+    const competing = updateProfile((profile) => ({
+      ...profile, goals: ['allergies', 'family'], allergens: ['Soia'],
+    }));
+    await Promise.all([competing, skip()]);
+  });
+  expect(await store.loadProfile()).toEqual({
+    ...existing, goals: ['family', 'health'], allergens: ['Soia'], onboarded: true,
+  });
 });
 
 it('disables Skip and Continue during hydration and preserves loaded preferences on Skip', async () => {

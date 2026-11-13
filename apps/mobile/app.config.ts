@@ -20,7 +20,7 @@ const config: ExpoConfig = {
   slug: 'okbite',
   scheme: 'okbite',
   version: '1.0.0',
-  userInterfaceStyle: 'automatic',
+  userInterfaceStyle: 'light',
   runtimeVersion: { policy: 'fingerprint' },
   ...(projectId ? { updates: { url: `https://u.expo.dev/${projectId}` } } : {}),
   icon: './assets/brand/app-icon.png',

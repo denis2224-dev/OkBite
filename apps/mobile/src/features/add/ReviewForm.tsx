@@ -232,7 +232,9 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
         <View testID="detected-allergens" style={styles.allergensSection}>
           <Text style={styles.subLabel}>{ro.review.allergensDetected}</Text>
           {detected.allergens.length === 0 && detected.mayContain.length === 0 ? (
-            <Text style={styles.muted}>{ro.review.allergensNone}</Text>
+            <Text style={styles.muted}>
+              {ingredientsText.trim() ? ro.review.allergensNone : ro.result.missingAllergenNote}
+            </Text>
           ) : (
             <View style={styles.chipRow}>
               {detected.allergens.map((alg) => (
@@ -242,7 +244,7 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
                 <View style={styles.chipRow}>
                   <Text style={styles.muted}>{ro.result.mayContain}</Text>
                   {detected.mayContain.map((alg) => (
-                    <View key={`may-${alg}`} style={styles.mayChip}><Text style={styles.mayChipText}>{alg}</Text></View>
+                    <AllergenChip key={`may-${alg}`} name={alg} tone="trace" />
                   ))}
                 </View>
               ) : null}
@@ -282,8 +284,6 @@ const createStyles = (colors: Palette) => StyleSheet.create({
   unitTextSelected: { color: colors.onPrimary },
   allergensSection: { gap: 6 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' },
-  mayChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: colors.neutralBg },
-  mayChipText: { fontSize: 13, fontWeight: '600', color: colors.neutral },
   muted: { fontSize: 13, color: colors.muted },
   errorBanner: { fontSize: 14, fontWeight: '700', color: colors.low },
 });

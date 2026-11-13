@@ -86,7 +86,7 @@
     "test:media": "node --test scripts/push-test-media.test.mjs",
     "test:web-env": "node --test scripts/check-web-env.test.mjs",
     "e2e:web": "playwright test -c e2e-web",
-    "e2e:web:build": "EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:18766 EXPO_PUBLIC_SUPABASE_ANON_KEY=demo-only pnpm --filter mobile exec expo export -p web --output-dir dist-e2e && OKBITE_WEB_OUTPUT=dist-e2e pnpm --filter mobile exec workbox generateSW workbox-config.cjs",
+    "e2e:web:build": "EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:18766 EXPO_PUBLIC_SUPABASE_ANON_KEY=demo-only pnpm --filter mobile exec expo export -p web --output-dir dist-e2e && pnpm --filter mobile exec node scripts/copy-barcode-wasm.cjs dist-e2e && OKBITE_WEB_OUTPUT=dist-e2e pnpm --filter mobile exec workbox generateSW workbox-config.cjs",
     "typecheck:e2e": "tsc --noEmit -p e2e-web/tsconfig.json"
   },
   "private": true,
