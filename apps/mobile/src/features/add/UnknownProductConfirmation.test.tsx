@@ -37,6 +37,39 @@ it('opens an editor on tap and emits corrected values before confirmation', asyn
   expect(input.onChange).toHaveBeenLastCalledWith(expect.objectContaining({ name: 'Denumire corectată', brand: '' }));
 });
 
+it('shows declared allergens and traces separately and updates them when the label is corrected', async () => {
+  const input = props({ label: { ...label, ingredientsText: 'Făină de grâu. Poate conține urme de lapte.' } });
+  await render(<UnknownProductConfirmation {...input} />);
+  expect(screen.getByRole('header', { name: ro.result.allergens })).toBeTruthy();
+  expect(screen.getByLabelText('Gluten')).toBeTruthy();
+  expect(screen.getByLabelText(`${ro.result.mayContain} Lapte`)).toBeTruthy();
+
+  const corrected = 'Făină de grâu, lapte. Poate conține urme de arahide.';
+  await fireEvent.press(screen.getByRole('button', { name: ro.review.ingredients }));
+  await fireEvent.changeText(screen.getByLabelText(ro.review.ingredients), corrected);
+  expect(screen.getByLabelText('Lapte')).toBeTruthy();
+  expect(screen.queryByLabelText(`${ro.result.mayContain} Lapte`)).toBeNull();
+  expect(screen.getByLabelText(`${ro.result.mayContain} Arahide`)).toBeTruthy();
+  await fireEvent.press(screen.getByRole('button', { name: ro.add.confirmSave }));
+  expect(input.onConfirm).toHaveBeenCalledWith(expect.objectContaining({ ingredientsText: corrected }));
+});
+
+it('detects multilingual allergens and traces for WHEAT flour and MILK and PEANUTS', async () => {
+  const input = props({ label: { ...label, ingredientsText: 'Ingredients: WHEAT flour. May contain MILK and PEANUTS.' } });
+  await render(<UnknownProductConfirmation {...input} />);
+  expect(screen.getByRole('header', { name: ro.result.allergens })).toBeTruthy();
+  expect(screen.getByLabelText('Gluten')).toBeTruthy();
+  expect(screen.getByRole('header', { name: ro.result.mayContain })).toBeTruthy();
+  expect(screen.getByLabelText(`${ro.result.mayContain} Lapte`)).toBeTruthy();
+  expect(screen.getByLabelText(`${ro.result.mayContain} Arahide`)).toBeTruthy();
+});
+
+it('shows that allergen information is incomplete when the ingredients could not be read', async () => {
+  await render(<UnknownProductConfirmation {...props({ label: { ...label, ingredientsText: null } })} />);
+  expect(screen.getByText(ro.result.missingAllergenNote)).toBeTruthy();
+  expect(screen.queryByText(ro.result.noAllergens)).toBeNull();
+});
+
 it('shows partial values with decimal commas and preserves printed zero', async () => {
   const input = props({ label: { ...label, unit: 'ml', nutrients: { ...nutrients, sugar: 13.2, salt: 0 } } });
   await render(<UnknownProductConfirmation {...input} />);

@@ -15,7 +15,7 @@ async function doubledText(page: Page) {
     for (const [el, size, height] of sizes) { el.style.fontSize = `${parseFloat(size) * 2}px`; if (height !== 'normal') el.style.lineHeight = `${parseFloat(height) * 2}px`; }
   });
 }
-for (const mode of ['light', 'dark'] as const) {
+for (const mode of ['light'] as const) {
   test(`${mode}: missing, partial and unknown-category results at 200% text`, async ({ page }) => {
     await page.emulateMedia({colorScheme: mode});
     const errors: string[] = [];
@@ -26,6 +26,7 @@ for (const mode of ['light', 'dark'] as const) {
     await expect(page.getByText(ro.result.nutritionUnavailable, {exact:true})).toBeAttached();
     await expect(page.getByText(ro.score.title, {exact:true})).toHaveCount(0);
     await expect(page.getByText(ro.result.portion, {exact:true})).toHaveCount(0);
+    await expect(page.getByRole('button', {name:ro.result.portionTile, exact:true})).toHaveCount(0);
     await expect(page.getByText(product.ingredientsText, {exact:true})).toBeAttached();
     await expect(page.getByText(ro.result.unverifiedNote, {exact:true})).toBeAttached();
     await expect(page.getByRole('button', {name:ro.result.addNutrition, exact:true})).toHaveCount(process.env.EXPO_PUBLIC_NUTRITION_ENRICHMENT === '1' ? 1 : 0);
@@ -58,7 +59,7 @@ for (const mode of ['light', 'dark'] as const) {
     await page.reload();
     await expect(page.getByText(ro.result.categoryUnconfirmed, {exact:true})).toBeAttached();
     await expect(page.getByText(ro.score.title, {exact:true})).toHaveCount(0);
-    await page.getByRole('button', {name:ro.ingredients.title, exact:true}).click();
+    await page.getByRole('button', {name:ro.result.ingredientsTile, exact:true}).click();
     await expect(page.getByText(ro.result.transcribedLabel, {exact:true})).toBeAttached();
     await expect(page.getByText(product.ingredientsText, {exact:true})).toBeAttached();
     expect(errors).toEqual([]);

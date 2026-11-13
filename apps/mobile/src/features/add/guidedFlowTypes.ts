@@ -3,9 +3,9 @@ import type { AddInitialValues } from '../identify/routes';
 import type { GuidedReadLabelRequest, GuidedReadLabelResponse, NutritionMode } from './unknownFlowContract';
 
 export type GuidedPhotoKind = 'front' | 'ingredients' | 'nutrition';
-export type GuidedFlowInitial = AddInitialValues & { frontPhotoId?: string };
+export type GuidedFlowInitial = AddInitialValues & { frontPhotoId?: string; identityConfirmed?: true };
 export interface GuidedFlowState {
-  stage: 'front' | 'ingredients' | 'nutrition_question' | 'nutrition' | 'nutrition_unreadable' | 'review' | 'working' | 'error' | 'interrupted';
+  stage: 'identity' | 'label_failed' | 'front' | 'ingredients' | 'nutrition_question' | 'nutrition' | 'nutrition_unreadable' | 'review' | 'working' | 'error' | 'interrupted';
   initial: GuidedFlowInitial;
   initialFrontRead: FrontRead;
   scannedCode: string | null;
@@ -23,6 +23,6 @@ export interface GuidedFlowDependencies {
   readLabel(request: GuidedReadLabelRequest): Promise<unknown>;
   onIdentify(response: IdentifyResponse, scannedCode: string | null, frontPhotoId: string): void;
   onFound(found: Extract<LookupResponse, { status: 'found' }>): void;
-  onReview(snapshot: GuidedFlowState): void;
+  onReview(snapshot: GuidedFlowState, manual?: boolean): void;
   persist?(snapshot: GuidedFlowState): Promise<void>;
 }

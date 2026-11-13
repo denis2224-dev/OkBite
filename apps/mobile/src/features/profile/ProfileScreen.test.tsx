@@ -44,23 +44,23 @@ beforeEach(async () => {
   resetProfileHookState();
 });
 
-it('shows the local privacy note and persists choices from all three groups', async () => {
+it('shows the local privacy note, edits goals only and persists them', async () => {
   await store.saveProfile(existing);
-  const labels = [ro.profile.health, ro.allergens.Lapte, ro.profile.added_sugar] as const;
+  const labels = [ro.profile.health, ro.profile.family] as const;
   const press = capturePress(...labels);
   const screen = await render(<ProfileScreen />);
-  for (const text of [ro.profile.title, ro.profile.savedLocally, ro.profile.goalTitle,
-    ro.profile.allergensTitle, ro.profile.avoidTitle]) {
+  for (const text of [ro.profile.title, ro.profile.savedLocally, ro.profile.goalTitle]) {
     expect(screen.getByText(text)).toBeTruthy();
+  }
+  // Allergens and avoid keys moved to the Allergies tab, so they are edited in one place.
+  for (const text of [ro.profile.allergensTitle, ro.profile.avoidTitle, ro.allergens.Lapte, ro.profile.palm_oil]) {
+    expect(screen.queryByText(text)).toBeNull();
   }
   for (const name of labels) {
     await screen.findByRole('checkbox', { name, disabled: false });
     await act(async () => { await press(name); });
   }
-  expect(await store.loadProfile()).toEqual({
-    goals: ['weight', 'health'], allergens: ['Soia', 'Lapte'],
-    avoid: ['sweeteners', 'added_sugar'], onboarded: true,
-  });
+  expect(await store.loadProfile()).toEqual({ ...existing, goals: ['weight', 'health', 'family'] });
 });
 
 it('recovers on the same mounted screen after a failed hydration retry', async () => {
@@ -118,23 +118,23 @@ it.each(['Retry', 'choice'] as const)('recovers from a failed preference write v
   expect(screen.queryByText(ro.errors.generic)).toBeNull();
 });
 
-it('retries a failed allergen edit without overwriting a newer onboarding reset', async () => {
+it('retries a failed goal edit without overwriting a newer onboarding reset', async () => {
   await store.saveProfile(existing);
-  const press = capturePress(ro.allergens.Lapte, ro.errors.retry);
+  const press = capturePress(ro.profile.health, ro.errors.retry);
   let other!: ReturnType<typeof useProfile>;
   function SecondConsumer() {
     other = useProfile();
     return null;
   }
   const screen = await render(<><ProfileScreen /><SecondConsumer /></>);
-  await screen.findByRole('checkbox', { name: ro.allergens.Lapte, disabled: false });
+  await screen.findByRole('checkbox', { name: ro.profile.health, disabled: false });
   jest.spyOn(store, 'saveProfile').mockRejectedValueOnce(failure);
-  await act(async () => { await press(ro.allergens.Lapte); });
+  await act(async () => { await press(ro.profile.health); });
   expect(screen.getByText(ro.errors.generic)).toBeTruthy();
   await act(async () => { await other.resetOnboarding(); });
   expect((await store.loadProfile()).onboarded).toBe(false);
   await act(async () => { await press(ro.errors.retry); });
   expect(await store.loadProfile()).toEqual({
-    ...existing, allergens: ['Soia', 'Lapte'], onboarded: false,
+    ...existing, goals: ['weight', 'health'], onboarded: false,
   });
 });

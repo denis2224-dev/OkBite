@@ -1,7 +1,13 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { renderHook, act } from '@testing-library/react-native';
 import { startLiveScan, useWebLiveScan } from './useWebLiveScan';
+import { createWasmBarcodeDetector } from './scannerStartup.web';
 import { createZxingReader } from '../capture/zxing.web';
+
+jest.mock('./scannerStartup.web', () => ({
+  ...jest.requireActual<typeof import('./scannerStartup.web')>('./scannerStartup.web'),
+  createWasmBarcodeDetector: jest.fn(async () => null),
+}));
 
 // Mock module loading only; exercise the real reader factory.
 jest.mock('../capture/zxing.web', () => ({
@@ -40,6 +46,15 @@ function fakeVideo() { return { play: jest.fn(async () => undefined), srcObject:
 const tick = () => act(async () => { await jest.advanceTimersByTimeAsync(250); });
 
 describe('ZXing live fallback', () => {
+  it('uses the WASM detector before the JavaScript reader when native decoding is unavailable', async () => {
+    install(jest.fn(async () => stream()));
+    delete g.BarcodeDetector;
+    jest.mocked(createWasmBarcodeDetector).mockResolvedValueOnce({ detect });
+    const stop = await startLiveScan(fakeVideo(), jest.fn());
+    expect(createWasmBarcodeDetector).toHaveBeenCalled();
+    expect(zxing.BrowserMultiFormatReader).not.toHaveBeenCalled();
+    stop?.();
+  });
   beforeEach(() => { jest.useFakeTimers(); zxing.BrowserMultiFormatReader.mockClear(); });
   afterEach(() => { jest.useRealTimers(); });
 

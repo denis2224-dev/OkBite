@@ -16,7 +16,7 @@ export type SettingsScreenProps = {
   resetOnboarding?: () => void;
 };
 export function SettingsScreen({ currentLanguage = 'ro', setLanguage, resetOnboarding }: SettingsScreenProps = {}) {
-  const { colors, preference, setPreference } = useTheme();
+  const { colors } = useTheme();
   const { canInstall, isIos, isStandalone, install } = useInstallPrompt();
   const [confirming, setConfirming] = useState(false);
   const [clearing, setClearing] = useState(false);
@@ -59,12 +59,6 @@ export function SettingsScreen({ currentLanguage = 'ro', setLanguage, resetOnboa
           {(['ro', 'en'] as const).map(language => <HomePressable key={language} label={ro.settings[language === 'ro' ? 'romanian' : 'english']} disabled={!setLanguage} aria-pressed={currentLanguage === language} accessibilityState={{ disabled: !setLanguage, selected: currentLanguage === language }} onPress={() => chooseLanguage(language)} style={[styles.choice, { backgroundColor: currentLanguage === language ? colors.primary : colors.surface, opacity: setLanguage ? 1 : 0.55 }]}><Body style={{ color: currentLanguage === language ? colors.onPrimary : colors.ink }}>{ro.settings[language === 'ro' ? 'romanian' : 'english']}</Body></HomePressable>)}
         </View>
         {(!setLanguage || languageError) && <Body accessibilityLiveRegion="polite" style={{ color: colors.muted }}>{ro.settings.pending}</Body>}
-      </Card>
-      <Card>
-        <Heading style={[styles.section, styles.sectionLabel, { color: colors.primary }]}>{ro.settings.theme}</Heading>
-        <View style={styles.choices}>
-          {(['system', 'light', 'dark'] as const).map(value => <HomePressable key={value} label={ro.settings[value]} aria-pressed={preference === value} accessibilityState={{ selected: preference === value }} onPress={() => setPreference(value)} style={[styles.choice, { backgroundColor: preference === value ? colors.primary : colors.surface }]}><Body style={{ color: preference === value ? colors.onPrimary : colors.ink }}>{ro.settings[value]}</Body></HomePressable>)}
-        </View>
       </Card>
       <Card>
         <HomePressable label={ro.settings.install} disabled={isStandalone || (!canInstall && !isIos) || installing} accessibilityState={{ disabled: isStandalone || (!canInstall && !isIos) || installing }} onPress={() => void requestInstall()} style={rowStyle}><Body style={styles.label}>{ro.settings.install}</Body><Icon name="arrow" color={colors.muted} /></HomePressable>

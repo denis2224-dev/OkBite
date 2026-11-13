@@ -1,3 +1,4 @@
+import { splitLabelAllergens } from '../allergens';
 import type { Category, Ingredient, IngredientEntry, Product } from '../contract';
 
 export type IngredientKey = Pick<IngredientEntry, 'slug' | 'name' | 'aliases'>;
@@ -208,9 +209,7 @@ export function matchIngredients(
   for (const entry of kb) {
     for (const name of [entry.name, ...entry.aliases]) names.set(normalized(name), entry.slug);
   }
-  const cleanedText = text
-    .replace(/^\s*ingrediente\s*:\s*/i, '')
-    .replace(/\.\s*(?:contine|conține|poate\s+contine|poate\s+conține|urme\s+de)\b[\s\S]*$/i, '');
+  const cleanedText = splitLabelAllergens(text).ingredients;
   const parts: string[] = [];
   let depth = 0;
   let start = 0;
