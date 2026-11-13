@@ -1,4 +1,3 @@
-import { spacing } from '../../theme/tokens';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Image, Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ScreenSafeArea as SafeAreaView } from '../../shared/ScreenSafeArea';
@@ -11,15 +10,18 @@ import { roDate } from '../product/SourceCard';
 import { displayScore } from '../product/displayScore';
 import { clearHistory, listHistory, removeFromHistory, restoreToHistory, type HistoryEntry } from './store';
 import { subscribeQueue } from '../offline/queue';
+import { TabPageHeader } from '../../shared/TabPageHeader';
 import { useToast } from '../../ui/Toast';
 import { historyTier } from './tierLabel';
 import { showStorageWarning } from '../../lib/storagePersistence';
+import { useStorageNoticeDismissal } from '../../lib/storageNotice';
 
 export function HistoryScreen() {
   const t = useHomeTheme();
   const copy = ro.history.design;
   const toast = useToast();
   const [query, setQuery] = useState('');
+  const [noticeDismissed, dismissNotice] = useStorageNoticeDismissal();
   const mutation = useRef(0);
   const styles = useMemo(() => createStyles(t), [t]);
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
@@ -106,15 +108,11 @@ export function HistoryScreen() {
 
   return <SafeAreaView edges={['top','left','right']} style={styles.safe}>
     <View style={styles.frame}>
-      <View style={styles.header}>
-        <Text accessibilityRole="header" style={styles.title}>{copy.title}</Text>
-        {entries.length > 0 && <HomePressable label={ro.history.clear} disabled={clearing} onPress={() => setConfirming(true)} style={styles.clear}><HomeIcon name="trash" size={18} color={t.colors.low}/><Text style={styles.clearText}>{ro.history.clear}</Text></HomePressable>}
-      </View>
+      <TabPageHeader title={copy.title} subtitle={copy.note} action={entries.length > 0 ? <HomePressable label={ro.history.clear} disabled={clearing} onPress={() => setConfirming(true)} style={styles.clear}><HomeIcon name="trash" size={18} color={t.colors.low}/><Text style={styles.clearText}>{ro.history.clear}</Text></HomePressable> : null} />
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        <Text style={styles.note}>{copy.note}</Text>
-        <TextInput accessibilityLabel={ro.history.search} placeholder={ro.history.search} placeholderTextColor={t.colors.muted} value={query} onChangeText={setQuery} style={styles.search}/>
-        {showStorageWarning ? <Card><Body>{ro.pwa.storageWarning}</Body></Card> : null}
+        {entries.length > 0 && <TextInput accessibilityLabel={ro.history.search} placeholder={ro.history.search} placeholderTextColor={t.colors.muted} value={query} onChangeText={setQuery} style={styles.search}/>}
+        {showStorageWarning && !noticeDismissed && entries.length > 0 ? <View style={styles.notice}><Text style={styles.noticeText}>{copy.storageNotice}</Text><HomePressable label={copy.dismissNotice} onPress={dismissNotice} style={styles.noticeClose}><HomeIcon name="close" size={18} color={t.colors.muted}/></HomePressable></View> : null}
         {loading && <Body accessibilityLiveRegion="polite">{ro.app.loading}</Body>}
         {error && !confirming && <Card><Body accessibilityRole="alert">{error === 'load' ? ro.history.loadError : ro.history.clearError}</Body>{error === 'load' && <Button variant="secondary" onPress={() => void load()}>{ro.app.retry}</Button>}</Card>}
         {!loading && !error && entries.length === 0 && <View style={styles.empty}>
@@ -159,13 +157,12 @@ export function HistoryScreen() {
 const createStyles=(t:HomeTheme)=>StyleSheet.create({
  safe:{flex:1,backgroundColor:t.colors.ground},frame:{flex:1,width:'100%',maxWidth:430,alignSelf:'center'},
  confirmation:{flex:1,backgroundColor:t.colors.scrim},confirmationContent:{flexGrow:1,justifyContent:'center',padding:16,width:'100%',maxWidth:430,alignSelf:'center'},
- header:{minHeight:64,paddingTop:spacing.headerTop,paddingHorizontal:16,paddingBottom:8,flexDirection:'row',flexWrap:'wrap',alignItems:'center',gap:8},
- title:{flex:1,fontFamily:t.fonts.heading,fontSize:32,lineHeight:44,letterSpacing:-0.22,color:t.colors.ink},
  clear:{minHeight:44,paddingVertical:4,paddingHorizontal:12,borderRadius:999,backgroundColor:t.colors.lowBg,flexDirection:'row',alignItems:'center',gap:6},clearText:{fontFamily:t.fonts.bold,fontSize:13,lineHeight:18.85,color:t.colors.low,flexShrink:1},
- body:{paddingHorizontal:16,paddingBottom:24,gap:12},note:{fontFamily:t.fonts.body,fontSize:13,lineHeight:18.85,color:t.colors.muted,marginBottom:0},
+ body:{paddingHorizontal:16,paddingBottom:24,gap:12},
  empty:{paddingVertical:56,paddingHorizontal:16,alignItems:'stretch'},emptyIcon:{width:72,height:72,borderRadius:36,alignSelf:'center',backgroundColor:t.colors.mint,alignItems:'center',justifyContent:'center',marginBottom:14},
  emptyTitle:{fontFamily:t.fonts.heading,fontSize:21,lineHeight:30.45,letterSpacing:-0.21,color:t.colors.ink,textAlign:'center',marginBottom:6},
  emptyText:{fontFamily:t.fonts.body,fontSize:14,lineHeight:20.3,color:t.colors.muted,textAlign:'center',marginBottom:18},
+ notice:{flexDirection:'row',alignItems:'center',gap:8},noticeText:{flex:1,fontFamily:t.fonts.body,fontSize:13,lineHeight:18.85,color:t.colors.muted},noticeClose:{minWidth:44,minHeight:44,alignItems:'center',justifyContent:'center'},
  search:{minHeight:48,padding:12,borderWidth:1,borderColor:t.colors.border,borderRadius:14,color:t.colors.ink,fontFamily:t.fonts.body,fontSize:16},
  historyCard:{padding:0},delete:{minHeight:48,padding:12,alignSelf:'flex-end'},thumbnail:{width:48,height:48,borderRadius:14},
  list:{gap:12},row:{minHeight:68,paddingVertical:10,paddingHorizontal:14,gap:12,flexDirection:'row',flexWrap:'wrap',alignItems:'center'},

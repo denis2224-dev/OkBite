@@ -4,7 +4,7 @@ test.each([
   'install.title', 'install.description', 'install.iosHint', 'install.failed',
   'update.title', 'update.apply', 'camera.iosDenied', 'camera.androidDenied',
   'camera.httpsRequired', 'camera.unavailable', 'camera.busy',
-  'scannerUnavailable', 'storageWarning', 'analysis.title', 'analysis.unknown',
+  'scannerUnavailable', 'analysis.title', 'analysis.unknown',
 ])('supplies Romanian PWA copy for %s', key => {
   expect(ro).toHaveProperty(`pwa.${key}`, expect.any(String));
 });
@@ -20,4 +20,8 @@ test('uses comma-below Romanian diacritics in browser guidance', () => {
   const copy: unknown = Reflect.get(ro, 'pwa');
   expect(copy).toBeDefined();
   expect(JSON.stringify(copy)).not.toMatch(/[şţŞŢ]/);
+});
+
+test('has no leftover always-visible storage warning key', () => {
+  expect(ro.pwa).not.toHaveProperty('storageWarning');
 });
