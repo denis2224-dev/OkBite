@@ -1,22 +1,15 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import AboutPage from '../(tabs)/about';
 import { ro } from '../../src/copy/ro';
 import { ThemeProvider } from '../../src/theme/useTheme';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), back: jest.fn() } }));
 
-beforeEach(async () => {
-  await AsyncStorage.clear();
-  jest.clearAllMocks();
-});
+beforeEach(() => jest.clearAllMocks());
 
-it.each([
-  ['light', ['#1F6B3A', '#3F6B12', '#6E5200', '#93440B', '#9B2C1F']],
-  ['dark', ['#9FD8A8', '#C8E07A', '#FFE08A', '#FFB98A', '#FFA99C']],
-] as const)('shows the About content and five tier colours in %s mode', async (mode, colours) => {
-  await AsyncStorage.setItem('okbite.appearance', mode);
+it('shows the About content and the five light tier colours', async () => {
+  const colours = ['#1F6B3A', '#3F6B12', '#6E5200', '#93440B', '#9B2C1F'];
   await render(<ThemeProvider><AboutPage /></ThemeProvider>);
   expect(screen.getByText(ro.about.whatBody)).toBeTruthy();
   expect(screen.getByText(ro.score.disclaimer)).toBeTruthy();

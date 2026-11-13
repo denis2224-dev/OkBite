@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { ro } from '../../copy/ro';
@@ -8,8 +8,8 @@ import { AdminEntry } from '../admin/AdminEntry';
 
 const tiers = ['excellent', 'good', 'fair', 'poor', 'bad'] as const;
 export type TierPalette = Record<typeof tiers[number], string>;
-export type AboutScreenProps = { tierPalette?: TierPalette };
-export function AboutScreen({ tierPalette }: AboutScreenProps = {}) {
+export type AboutScreenProps = { tierPalette?: TierPalette; children?: ReactNode };
+export function AboutScreen({ tierPalette, children }: AboutScreenProps = {}) {
   const { colors } = useTheme();
   const [sourceFailed, setSourceFailed] = useState(false);
   async function openSource() {
@@ -40,6 +40,7 @@ export function AboutScreen({ tierPalette }: AboutScreenProps = {}) {
       {sourceFailed ? <Body accessibilityRole="alert">{ro.app.retry}</Body> : null}
     </Card>
     <Card><Heading style={styles.heading}>{ro.about.promiseTitle}</Heading><Body>{ro.about.promiseBody}</Body></Card>
+    {children}
     <AdminEntry />
   </Screen>;
 }
