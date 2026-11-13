@@ -78,3 +78,12 @@ it('prevents duplicate deletion or cancellation while storage is busy', async ()
   await act(() => { finish(); });
   expect(screen.getByText(ro.history.cleared)).toBeTruthy();
 });
+it('orders the groups Language, App (clear history last), Info with sentence-case headings', async () => {
+  await render(<SettingsScreen setLanguage={jest.fn()} resetOnboarding={jest.fn()} />);
+  const headings = screen.getAllByRole('header').map(h => h.props.children);
+  expect(headings).toEqual([ro.settings.title, ro.settings.language, ro.settings.app, ro.settings.info]);
+  expect(ro.settings.language).toBe('Limbă');
+  const names = screen.getAllByRole('button').map(b => b.props.accessibilityLabel).filter(n => n !== 'Înapoi');
+  expect(names).toEqual([ro.settings.romanian, ro.settings.english, ro.settings.install, ro.settings.resetOnboarding, ro.settings.clearHistory, ro.settings.method, ro.settings.privacy, ro.settings.terms]);
+  expect(screen.getByText(ro.settings.version, { exact: false })).toBeTruthy();
+});
