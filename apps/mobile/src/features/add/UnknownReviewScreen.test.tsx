@@ -255,6 +255,10 @@ test('recalculates multilingual allergens and traces live before save and preser
   await view.unmount();
   await render(<ResultView product={savedResponse.product} score={savedResponse.score} />);
   expect(screen.getByText('Bona Vita Musli Crunchy cu fructe 30%')).toBeTruthy();
+  expect(screen.getByText(ro.result.allergens)).toBeTruthy();
+  expect(screen.getByText(ro.result.mayContain)).toBeTruthy();
+  expect(screen.getByText(ingredientsText)).toBeTruthy();
+  expect(screen.getAllByText(ro.result.unverified).length).toBeGreaterThanOrEqual(1);
   expect(screen.getByLabelText('Gluten')).toBeTruthy();
   expect(screen.getByLabelText(`${ro.result.mayContain} Lapte`)).toBeTruthy();
   expect(screen.getByLabelText(`${ro.result.mayContain} Arahide`)).toBeTruthy();
