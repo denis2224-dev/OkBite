@@ -5,8 +5,8 @@ import { router } from 'expo-router';
 import { ro } from '../../copy/ro';
 import { ScanHome } from './ScanHome';
 
-const mockScanner = jest.fn((_props: { embedded?: boolean; torch?: boolean; manual?: boolean }) => null);
-jest.mock('./ScanScreen', () => ({ __esModule: true, default: (props: { embedded?: boolean; torch?: boolean; manual?: boolean }) => mockScanner(props) }));
+const mockScanner = jest.fn((_props: { embedded?: boolean; torch?: boolean }) => null);
+jest.mock('./ScanScreen', () => ({ __esModule: true, default: (props: { embedded?: boolean; torch?: boolean }) => mockScanner(props) }));
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), navigate: jest.fn() } }));
 jest.mock('expo-status-bar', () => ({ StatusBar: () => null }));
 jest.mock('./RecentScans', () => ({ RecentScans: () => null }));
@@ -16,30 +16,20 @@ const lastProps = () => mockScanner.mock.calls.at(-1)![0];
 describe('ScanHome', () => {
   beforeEach(() => { jest.clearAllMocks(); });
 
-  it('shows the wordmark and labelled round buttons for flash and manual entry', async () => {
+  it('shows the wordmark and a labelled flash button; manual entry is a single row under the scanner, not a header button', async () => {
     await render(<ScanHome active />);
     expect(screen.getByRole('header', { name: ro.home.design.brand })).toBeTruthy();
     expect(screen.getByRole('button', { name: ro.scan.flashOn })).toBeTruthy();
-    const keyboard = screen.getByRole('button', { name: ro.scan.manual });
-    expect(keyboard.props.accessibilityState).toEqual(expect.objectContaining({ expanded: false }));
+    expect(screen.queryByRole('button', { name: ro.scan.manual })).toBeNull();
   });
 
   it('embeds the scanner and toggles the torch with the flash button', async () => {
     await render(<ScanHome active />);
-    expect(lastProps()).toEqual(expect.objectContaining({ embedded: true, torch: false, manual: false }));
+    expect(lastProps()).toEqual({ embedded: true, torch: false });
     await fireEvent.press(screen.getByRole('button', { name: ro.scan.flashOn }));
     expect(lastProps().torch).toBe(true);
     await fireEvent.press(screen.getByRole('button', { name: ro.scan.flashOff }));
     expect(lastProps().torch).toBe(false);
-  });
-
-  it('opens and closes manual barcode entry from the keyboard button', async () => {
-    await render(<ScanHome active />);
-    await fireEvent.press(screen.getByRole('button', { name: ro.scan.manual }));
-    expect(lastProps().manual).toBe(true);
-    expect(screen.getByRole('button', { name: ro.scan.manual }).props.accessibilityState).toEqual(expect.objectContaining({ expanded: true }));
-    await fireEvent.press(screen.getByRole('button', { name: ro.scan.manual }));
-    expect(lastProps().manual).toBe(false);
   });
 
   it('marks Barcode as the selected segment and sends Label to the photo flow', async () => {

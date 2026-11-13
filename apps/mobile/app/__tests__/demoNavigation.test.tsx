@@ -14,6 +14,7 @@ it('in demo mode the photo fallback opens /capture', async () => {
 it('in demo mode /scan remains directly reachable with its manual fallback', async () => {
  await renderRouter({ index: ScanTab, capture: Blank, scan: ScanRoute }, { initialUrl: '/scan' });
  expect(await screen.findByRole('header', { name: ro.scan.title })).toBeTruthy();
+ await fireEvent.press(screen.getByRole('button', { name: ro.scan.manual }));
  expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
  expect(screen).toHavePathname('/scan');
 });

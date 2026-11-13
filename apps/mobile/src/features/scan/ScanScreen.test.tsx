@@ -49,7 +49,7 @@ describe('ScanScreen', () => {
     mockFocused = false;
     await view.rerender(<ScanScreen />);
     expect(screen.queryByTestId('camera')).toBeNull();
-    expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
+    expect(screen.getByRole('button', { name: ro.scan.manual })).toBeTruthy();
 
     mockFocused = true;
     await view.rerender(<ScanScreen />);
@@ -69,17 +69,21 @@ describe('ScanScreen', () => {
     expect(screen.queryByText(ro.scan.deniedText)).toBeNull();
   });
 
-  it('keeps manual entry and settings access when the camera is refused', async () => {
+  it('asks for camera access with one line and one retry, and offers settings only after the retry fails', async () => {
     mockPermission.value = { granted: false, status: 'denied', canAskAgain: false };
     const openSettings = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined);
     await render(<ScanScreen />);
-    expect(screen.getByText(ro.scan.deniedText)).toBeTruthy();
+    expect(screen.getByText('Permite accesul la cameră ca să scanezi.')).toBeTruthy();
     const preview = StyleSheet.flatten(screen.getByText(ro.scan.deniedText).parent!.parent!.props.style);
     expect(preview.height).toBeUndefined();
     expect(preview.minHeight).toBe(280);
     expect(screen.queryByTestId('camera')).toBeNull();
-    expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: ro.capture.openSettings }));
+    expect(screen.getByRole('button', { name: ro.scan.manual })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: ro.capture.openSettings })).toBeNull();
+    const asked = mockRequestPermission.mock.calls.length;
+    await fireEvent.press(screen.getByRole('button', { name: 'Încearcă din nou' }));
+    expect(mockRequestPermission).toHaveBeenCalledTimes(asked + 1);
+    await fireEvent.press(await screen.findByRole('button', { name: ro.capture.openSettings }));
     expect(openSettings).toHaveBeenCalled();
     await fireEvent.press(screen.getByRole('button', { name: ro.scan.photoLabel }));
     expect(mockPush).toHaveBeenCalledWith('/capture');
@@ -89,9 +93,10 @@ describe('ScanScreen', () => {
     mockPermission.value = { granted: false, status: 'denied', canAskAgain: false };
     jest.spyOn(Linking, 'openSettings').mockRejectedValue(new Error('settings blocked'));
     await render(<ScanScreen />);
-    await fireEvent.press(screen.getByRole('button', { name: ro.capture.openSettings }));
+    await fireEvent.press(screen.getByRole('button', { name: ro.errors.retry }));
+    await fireEvent.press(await screen.findByRole('button', { name: ro.capture.openSettings }));
     expect(await screen.findByText('Nu am putut deschide setările. Permite accesul la cameră din setările aplicației.')).toBeTruthy();
-    expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
+    expect(screen.getByRole('button', { name: ro.scan.manual })).toBeTruthy();
   });
 
   it('scans EAN-13, EAN-8 and UPC-A only, with a visible-size preview', async () => {
@@ -144,6 +149,7 @@ describe('ScanScreen', () => {
   it('sends an unknown manually typed code to guided add and a typo nowhere', async () => {
     lookup.mockResolvedValue(lookupNotFound);
     await render(<ScanScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.scan.manual }));
     const input = screen.getByLabelText(ro.scan.manualTitle);
     await fireEvent.changeText(input, '4840001000017');
     await fireEvent.press(screen.getByRole('button', { name: ro.scan.search }));
@@ -154,19 +160,25 @@ describe('ScanScreen', () => {
     expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add', params: { flow: 'guided', code: CODE } });
   });
 
-  it('inside Scan home drops the page title and keeps manual entry closed until asked', async () => {
+  it('inside Scan home drops the page title and keeps manual entry one closed row until asked', async () => {
     const view = await render(<ScanScreen embedded />);
     expect(screen.queryByText(ro.scan.title)).toBeNull();
     expect(screen.queryByLabelText(ro.scan.manualTitle)).toBeNull();
+    expect(screen.queryByRole('button', { name: ro.scan.photoLabel })).toBeNull();
     expect(camera().props.enableTorch).toBe(false);
-    await view.rerender(<ScanScreen embedded manual torch />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.scan.manual }));
     expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
+    expect(screen.getByRole('button', { name: ro.scan.manual }).props.accessibilityState).toEqual(expect.objectContaining({ expanded: true }));
+    await fireEvent.press(screen.getByRole('button', { name: ro.scan.manual }));
+    expect(screen.queryByLabelText(ro.scan.manualTitle)).toBeNull();
+    await view.rerender(<ScanScreen embedded torch />);
     expect(camera().props.enableTorch).toBe(true);
   });
 
   it('inside Scan home still offers manual entry when the camera is refused', async () => {
     mockPermission.value = { granted: false, status: 'denied', canAskAgain: false };
     await render(<ScanScreen embedded />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.scan.manual }));
     expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
   });
 
@@ -174,7 +186,7 @@ describe('ScanScreen', () => {
     await render(<ScanScreen />);
     await act(() => { (camera().props.onMountError as () => void)(); });
     expect(screen.getByText(ro.errors.generic)).toBeTruthy();
-    expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
+    expect(screen.getByRole('button', { name: ro.scan.manual })).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: ro.errors.retry }));
     expect(screen.getByTestId('camera')).toBeTruthy();
   });
