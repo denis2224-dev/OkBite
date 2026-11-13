@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ALLERGENS, type Profile } from '@okbite/shared';
+import { StyleSheet } from 'react-native';
 import { ro } from '../../copy/ro';
 import * as store from '../profile/store';
 import { resetProfileHookState } from '../profile/useProfile';
@@ -33,6 +34,14 @@ it('renders the title, the 14 allergens, the avoid switches and both notes in Ro
   expect(screen.getAllByRole('checkbox')).toHaveLength(ALLERGENS.length);
   expect(screen.getAllByRole('switch')).toHaveLength(5);
   expect(screen.queryByText(ro.profile.goalTitle)).toBeNull();
+});
+
+it('renders the title like the Compare page title (22px) and the lead once', async () => {
+  const screen = await renderReady();
+  const style = StyleSheet.flatten(screen.getByRole('header', { name: ro.allergies.title }).props.style);
+  expect(style.fontSize).toBe(22);
+  expect(style.lineHeight).toBe(31.9);
+  expect(screen.getAllByText(ro.allergies.lead)).toHaveLength(1);
 });
 
 it('announces the checked state and saves a toggled allergen through useProfile', async () => {
