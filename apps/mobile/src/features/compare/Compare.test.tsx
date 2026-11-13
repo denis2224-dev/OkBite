@@ -69,6 +69,42 @@ test('an unverified selection keeps its status visible', async () => {
   expect(screen.getAllByText(ro.result.unverified)).toHaveLength(2);
 });
 
+test('uses trace tone for mayContain and missingAllergenNote when unverified', async () => {
+  const selected = mockEntries[0]!;
+  await render(<ProductPicker entries={mockEntries} selected={{
+    ...selected,
+    product: {
+      ...selected.product,
+      status: 'unverified',
+      ingredientsText: '',
+      allergens: [],
+      mayContain: ['Lapte', 'Arahide'],
+    },
+  }} onSelect={() => {}} />);
+  expect(screen.getByText(ro.result.missingAllergenNote)).toBeTruthy();
+  expect(screen.queryByText(ro.result.noAllergens)).toBeNull();
+  expect(screen.getByLabelText(`${ro.result.mayContain} Lapte`)).toBeTruthy();
+  expect(screen.getByLabelText(`${ro.result.mayContain} Arahide`)).toBeTruthy();
+  expect(screen.queryByLabelText('Lapte')).toBeNull();
+  expect(screen.queryByLabelText('Arahide')).toBeNull();
+});
+
+test('shows noAllergens for verified product with confirmed ingredients and no allergens', async () => {
+  const selected = mockEntries[0]!;
+  await render(<ProductPicker entries={mockEntries} selected={{
+    ...selected,
+    product: {
+      ...selected.product,
+      status: 'verified',
+      ingredientsText: 'Apă, sare',
+      allergens: [],
+      mayContain: [],
+    },
+  }} onSelect={() => {}} />);
+  expect(screen.getByText(ro.result.noAllergens)).toBeTruthy();
+  expect(screen.queryByText(ro.result.missingAllergenNote)).toBeNull();
+});
+
 test('compatible comparison withholds a stale score for an incomplete label', async () => {
   const original = mockEntries[0]!;
   mockEntries[0] = { ...original, product: { ...original.product, nutrients: { ...original.product.nutrients, salt: null } } };

@@ -46,3 +46,29 @@ export const SYNONYMS: Record<Allergen, RegExp> = {
   Moluște:
     /\b(molus(h)?t\w*|scoic\w*|midi\w*|calamar\w*|sepi[ae]|caracatits?\w*|stridi\w*|melc\w*)\b/,
 };
+
+// Additional label vocabulary, grouped under the existing allergens:
+// EN and CS: https://eur-lex.europa.eu/eli/reg/2011/1169/oj/eng
+// https://eur-lex.europa.eu/legal-content/CS/ALL/?uri=celex%3A32011R1169
+// RU: Moldova Law 279/2017, Appendix 1, https://faolex.fao.org/docs/pdf/mol183760_2017.pdf
+// Unicode word boundaries keep terms such as "milk" and "молоко" inside whole words.
+function word(pattern: RegExp): RegExp {
+  return new RegExp(`(?<![\\p{L}\\p{N}])(?:${pattern.source})(?![\\p{L}\\p{N}])`, 'u');
+}
+
+export const MULTILINGUAL_SYNONYMS: Record<Allergen, RegExp> = {
+  Gluten: word(/wheat|rye|barley|oats?|spelt|lepk(?:u|em)|lepek|psenic(?:e|i|na|ne|ny)|zit(?:o|a|ne)|jecmen(?:e|ny)?|oves|ovsa|ovesne|глютен(?:а|ом)?|пшениц(?:а|ы|у)|пшеничн(?:ая|ой|ые|ый)|рожь|ржи|ячмен(?:ь|я)|ов[её]с|овса/),
+  Crustacee: word(/crustaceans?|shrimps?|prawns?|lobsters?|korys[ui]|ракообразн(?:ые|ых)/),
+  Ouă: word(/eggs?|vejce|vajec|яйц(?:о|а)|яиц/),
+  Pește: word(/fish|ryb(?:a|y|i)?|рыб(?:а|ы|у|н(?:ый|ая|ое|ые))/),
+  Arahide: word(/peanuts?|arasid(?:y|u)?|burske\s+orisky|арахис(?:а|ом)?/),
+  Soia: word(/soy(?:a|beans?)?|soj(?:a|i|e|ove|ovych)|соя|сои|сою|соев(?:ый|ая|ое|ые)/),
+  Lapte: word(/(?<!coconut |almond |soy |soya |oat |rice )milk|whey|lactose|(?<!kokosove |mandlove |sojove |ovesne |ryzove )mlek(?:o|a|em)|laktoz(?:a|y)|(?<!кокосовое |кокосового |миндальное |миндального |соевое |соевого |овсяное |овсяного |рисовое |рисового )молок(?:о|а|ом)|лактоз(?:а|ы|у)/),
+  'Fructe cu coajă lemnoasă': word(/nuts?|almonds?|hazelnuts?|walnuts?|cashews?|pecans?|pistachios?|orech(?:y|u)|mandl(?:e|i)|pistaci(?:e|i)|(?<!кокосовые |кокосовых )орех(?:и|ов)|миндал(?:ь|я)|кешью|фисташ(?:ки|ек)/),
+  Țelină: word(/celery|celer(?:u|em)?|сельдер(?:ей|ея)/),
+  Muștar: word(/mustard|horcic(?:e|i)|горчиц(?:а|ы|у)/),
+  Susan: word(/sesame|sezam(?:u|ove|ovych)?|кунжут(?:а|ом)?/),
+  'Dioxid de sulf și sulfiți': word(/sul(?:f|ph)ur\s+dioxide|sulphites?|oxid\s+siricity|siricitany|диоксид\s+серы|сульфит(?:ы|ов)?/),
+  Lupin: word(/lupins?|lupina|lupiny|vlci\s+bob|люпин(?:а|ом)?/),
+  Moluște: word(/mollus(?:c|k)s?|mekkys(?:i|u)|моллюск(?:и|ов)/),
+};

@@ -10,6 +10,7 @@ import { Body } from '../../ui/Typography';
 import { StatusPanel, errorMessage } from '../capture/StatusPanel';
 import { addProductRoute, parseAddParams } from '../identify/routes';
 import { GuidedAddProgress } from './GuidedAddProgress';
+import { GuidedIdentityForm } from './GuidedIdentityForm';
 import { GuidedNutritionQuestion } from './GuidedNutritionQuestion';
 import { GuidedPhotoCapture } from './GuidedPhotoCapture';
 import { useGuidedAddSession } from './useGuidedAddSession';
@@ -70,6 +71,22 @@ export function GuidedAddScreen() {
       {discardError ? <Text accessibilityRole="alert" style={{ color: colors.ink }}>{ro.add.draftSaveFailed}</Text> : null}
       <StatusPanel message={ro.add.draftRestored} actions={[
         { label: ro.add.resumeDraft, onPress: resumeDraft },
+        { label: ro.add.discardDraft, onPress: () => void discardDraft() },
+      ]} />
+    </Screen>;
+  }
+
+  if (state.stage === 'identity') {
+    return <Screen title={ro.identify.addButton}>
+      <GuidedIdentityForm onConfirm={controller.confirmIdentity} />
+    </Screen>;
+  }
+
+  if (state.stage === 'label_failed') {
+    return <Screen title={ro.review.title}>
+      <StatusPanel message={ro.add.processingFailed} actions={[
+        { label: ro.add.retryRead, onPress: () => void controller.retry() },
+        { label: ro.add.manualEntry, onPress: () => void controller.enterLabelManually() },
         { label: ro.add.discardDraft, onPress: () => void discardDraft() },
       ]} />
     </Screen>;

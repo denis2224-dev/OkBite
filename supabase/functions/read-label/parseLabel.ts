@@ -30,6 +30,16 @@ const MAX: Record<NutrientKey, number> = {
   fruitVegPct: 100,
 };
 const UNIT = (key: NutrientKey) => key === 'kcal' ? 'kcal' : key === 'fruitVegPct' ? '%' : 'g';
+
+function canonicalUnit(unit: string): string {
+  const lower = unit.toLowerCase();
+  switch (lower) {
+    case 'г': return 'g';
+    case 'мл': return 'ml';
+    case 'ккал': return 'kcal';
+    default: return lower;
+  }
+}
 // Why a nutrient is null when the shopper did not photograph a table.
 const NOT_ASKED: Partial<Record<NutritionMode, FieldReason>> = {
   none: 'not_printed',
@@ -47,12 +57,12 @@ function amount(value: unknown, key: NutrientKey): number | null {
     : '';
   const text = key === 'kcal'
     ? rawText.replace(
-      /^(?:\d+(?:[.,]\d+)?\s*kj\s*(?:\/|\()?\s*)?(\d+(?:[.,]\d+)?\s*kcal)(?:\s*\)|\s*\/?\s*\d+(?:[.,]\d+)?\s*kj)?$/i,
+      /^(?:\d+(?:[.,]\d+)?\s*(?:kj|кдж)\s*(?:\/|\()?\s*)?(\d+(?:[.,]\d+)?\s*(?:kcal|ккал))(?:\s*\)|\s*\/?\s*\d+(?:[.,]\d+)?\s*(?:kj|кдж))?$/iu,
       '$1',
     )
     : rawText;
-  const m = text.match(/^(\d+(?:[.,]\d+)?)\s*([a-z%]*)$/i);
-  if (!m || (m[2] && m[2].toLowerCase() !== UNIT(key))) return null; // "20 kcal" is not a fat value
+  const m = text.match(/^(\d+(?:[.,]\d+)?)\s*([a-zа-я%]*)$/iu);
+  if (!m || (m[2] && canonicalUnit(m[2]) !== UNIT(key))) return null; // "20 kcal" is not a fat value
   const n = Number(m[1].replace(',', '.'));
   return n <= MAX[key] ? n : null;
 }
@@ -100,9 +110,10 @@ export function parseLabel(
       if (v === null) unclear.push(key);
     }
     const unitMatch = typeof o.unit === 'string'
-      ? o.unit.trim().match(/^(?:(?:per|la)\s+)?(?:100\s*)?(g|ml)$/i)
+      ? o.unit.trim().match(/^(?:(?:(?:per|la|на)\s+)?100\s*)?(g|ml|г|мл)$/iu)
       : null;
-    read.unit = !perPortionOnly && unitMatch ? (unitMatch[1].toLowerCase() as 'g' | 'ml') : null;
+    const unit = unitMatch && canonicalUnit(unitMatch[1]);
+    read.unit = !perPortionOnly && (unit === 'g' || unit === 'ml') ? unit : null;
   }
   if (ask.ingredients) {
     const text = typeof o.ingredientsText === 'string' ? o.ingredientsText.trim() : '';

@@ -181,6 +181,26 @@ integrationTest('add-product is immediately visible, derives allergens, publishe
     try { await f.cleanup(); } finally { await other.cleanup(); }
   }
 });
+integrationTest('add-product persists declared allergens and traces from a multilingual label', async () => {
+  const f = await fixture();
+  const ingredientsText = 'Ingredients: WHEAT flour. May contain MILK and PEANUTS.';
+  try {
+    const response = await post(addHandler, { ...f.input, ingredientsText }, f.device);
+    assert.equal(response.status, 200, await response.clone().text());
+    const result = LookupResponse.parse(await response.json());
+    if (result.status !== 'found') throw new Error('Expected committed product');
+    assert.deepEqual(result.product.allergens, ['Gluten']);
+    assert.deepEqual(result.product.mayContain, ['Arahide', 'Lapte']);
+    assert.equal(result.product.ingredientsText, ingredientsText);
+
+    const reopened = await loadProduct({ id: result.product.id });
+    assert.deepEqual(reopened?.product.allergens, ['Gluten']);
+    assert.deepEqual(reopened?.product.mayContain, ['Arahide', 'Lapte']);
+    assert.equal(reopened?.product.ingredientsText, ingredientsText);
+  } finally {
+    await f.cleanup();
+  }
+});
 integrationTest('foreign uploads, failed copies and rejected transactions leave no products, public photos or quota events', async () => {
   const f = await fixture();
   try {

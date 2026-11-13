@@ -28,12 +28,20 @@ const test = base.extend<{ session: {
 
 async function photo(page: Page) {
   // Existing icon is transport-only media; all label facts come from the approved demo fixture.
-  await page.locator('input[type="file"]').and(page.getByLabel(ro.add.gallery, { exact: true })).setInputFiles('apps/mobile/public/icon-192.png');
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: ro.add.gallery, exact: true }).click();
+  await (await chooser).setFiles('apps/mobile/public/icon-192.png');
+}
+async function fillIdentity(page: Page) {
+  await page.getByRole('textbox', { name: ro.review.name, exact: true }).fill(example.product.name);
+  await page.getByRole('textbox', { name: ro.review.quantity, exact: true }).fill(example.product.quantity);
+  await page.getByRole('button', { name: ro.add.next, exact: true }).click();
 }
 async function begin(page: Page) {
   await page.goto(`/identify?source=code&code=${example.product.code}`);
   await page.waitForFunction(() => !!navigator.serviceWorker.controller);
   await page.getByRole('button', { name: ro.identify.addButton, exact: true }).click();
+  await fillIdentity(page);
   await expect(page.getByRole('heading', { name: ro.add.frontTitle, exact: true })).toBeVisible();
   await expect(page.getByText(ro.add.nutritionQuestion, { exact: true })).toHaveCount(0);
   await photo(page);
@@ -89,6 +97,7 @@ test('readable separate table retains label values and shows a score', async ({ 
 test('direct add uses variant 1 and saves an unbranded partial table without optional warnings', async ({ page, session }) => {
   await session.configure('partial-unbranded');
   await page.goto('/add');
+  await fillIdentity(page);
   await expect(page.getByRole('heading', { name: ro.add.frontTitle, exact: true })).toBeVisible();
   await expect(page.getByText(ro.add.nutritionQuestion, { exact: true })).toHaveCount(0);
   await photo(page);
@@ -116,6 +125,7 @@ test('discarding a different product draft starts a usable front-photo step', as
   await begin(page); await review(page, ro.add.nutritionNone);
   await page.goto('/add?code=96385074');
   await page.getByRole('button', { name: ro.add.discardDraft, exact: true }).click();
+  await fillIdentity(page);
   await expect(page.getByRole('heading', { name: ro.add.frontTitle, exact: true })).toBeVisible();
   await photo(page);
   await expect(page.getByRole('heading', { name: ro.add.ingredientsTitle, exact: true })).toBeVisible();

@@ -28,9 +28,10 @@ export function ProductPicker({ entries, selected, category, excluded, onSelect 
     {selected && <>
       <Body>{ro.result.allergens}</Body>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{selected.product.allergens.map(name => <AllergenChip key={name} name={name} />)}</View>
-      {!selected.product.allergens.length && <Body>{ro.result.noAllergens}</Body>}
+      {!selected.product.allergens.length && <Body>{selected.product.status === 'verified' && selected.product.ingredientsText.trim()
+        ? ro.result.noAllergens : ro.result.missingAllergenNote}</Body>}
       {!!selected.product.mayContain.length && <><Body>{ro.result.mayContain}</Body><View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {selected.product.mayContain.map(name => <AllergenChip key={name} name={name} />)}</View></>}
+        {selected.product.mayContain.map(name => <AllergenChip key={name} name={name} tone="trace" />)}</View></>}
       <Body>{ro.result.allergyNote}</Body><SourceCard product={selected.product} />
     </>}
     {open && (!options.length ? <Body>{ro.history.empty}</Body> : options.map(entry => <Button key={entry.product.id} variant="ghost"
