@@ -4,6 +4,7 @@ import { launchImageLibraryAsync } from 'expo-image-picker';
 import { ReadLabelRequest, ReadLabelResponse } from '@okbite/shared';
 import { api } from '../../lib/api';
 import { compressPhoto } from '../capture/compressPhoto';
+import type { AnalysisFlowState } from '../capture/StatusPanel';
 import { useScreenActivity } from '../capture/useScreenActivity';
 import { parseAddParams } from '../identify/routes';
 import {
@@ -12,11 +13,7 @@ import {
   setAddReviewDraft,
 } from './draftStore';
 
-export type AddFlowState =
-  | { status: 'idle' }
-  | { status: 'working' }
-  | { status: 'offline' }
-  | { status: 'error'; code?: string };
+export type AddFlowState = AnalysisFlowState;
 
 type Camera = { takePictureAsync(): Promise<{ uri: string } | undefined> };
 
@@ -43,11 +40,24 @@ export function useAddFlow() {
   const activity = useScreenActivity();
   const ingredientsUriRef = useRef<string | null>(null);
   const lastAttemptRef = useRef<{ ingredientsUri: string; nutritionUri: string | null } | null>(null);
+  const pendingOutcomeRef = useRef(false);
   // The label photo being read stays on screen instead of the live camera.
   const [photoUri, setPhotoUri] = useState<string | null>(null);
 
+  const setFailure = useCallback(
+    (err: unknown, token: number) => {
+      const code = (err as { code?: string } | null)?.code;
+      const extra = pendingOutcomeRef.current ? { afterPending: true } : {};
+      if (activity.isCurrent(token)) {
+        setState(code === 'offline' ? { status: 'offline', ...extra } : { status: 'error', code, ...extra });
+      }
+    },
+    [activity],
+  );
+
   const submitPair = useCallback(
     async (ingredientsUri: string, nutritionUri: string | null, token: number) => {
+      pendingOutcomeRef.current = false;
       lastAttemptRef.current = { ingredientsUri, nutritionUri };
       setPhotoUri(nutritionUri ?? ingredientsUri);
       setCanRetry(true);
@@ -68,7 +78,15 @@ export function useAddFlow() {
       }
 
       if (!activity.isCurrent(token)) return;
-      const rawResponse = await api.readLabel(parsedReq.data);
+      const outcome = await api.readLabelOutcome(parsedReq.data);
+      let rawResponse: unknown;
+      if (outcome.status === 'pending') {
+        pendingOutcomeRef.current = true;
+        if (activity.isCurrent(token)) setState({ status: 'pending' });
+        rawResponse = await outcome.completion;
+      } else {
+        rawResponse = outcome.result;
+      }
       if (!activity.isCurrent(token)) return;
       const parsedRes = ReadLabelResponse.safeParse(rawResponse);
       if (
@@ -96,6 +114,7 @@ export function useAddFlow() {
     async (getUri: () => Promise<string | null>) => {
       if (busy.current) return;
       busy.current = true;
+      pendingOutcomeRef.current = false;
       setPhotoUri(null);
       const token = activity.start();
       try {
@@ -114,14 +133,13 @@ export function useAddFlow() {
         setState({ status: 'working' });
         await submitPair(ingredientsUriRef.current, uri, token);
       } catch (err) {
-        const code = (err as { code?: string } | null)?.code;
-        if (activity.isCurrent(token)) setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
+        setFailure(err, token);
       } finally {
         busy.current = false;
         if (!activity.isCurrent(token)) setState(IDLE); // no spinner left behind
       }
     },
-    [activity, step, submitPair],
+    [activity, setFailure, step, submitPair],
   );
 
   const takePhoto = useCallback(
@@ -148,13 +166,12 @@ export function useAddFlow() {
     try {
       await submitPair(ingredientsUriRef.current, null, token);
     } catch (err) {
-      const code = (err as { code?: string } | null)?.code;
-      if (activity.isCurrent(token)) setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
+      setFailure(err, token);
     } finally {
       busy.current = false;
       if (!activity.isCurrent(token)) setState(IDLE); // no spinner left behind
     }
-  }, [activity, submitPair]);
+  }, [activity, setFailure, submitPair]);
 
   const retry = useCallback(async () => {
     const attempt = lastAttemptRef.current;
@@ -165,13 +182,12 @@ export function useAddFlow() {
     try {
       await submitPair(attempt.ingredientsUri, attempt.nutritionUri, token);
     } catch (err) {
-      const code = (err as { code?: string } | null)?.code;
-      if (activity.isCurrent(token)) setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
+      setFailure(err, token);
     } finally {
       busy.current = false;
       if (!activity.isCurrent(token)) setState(IDLE); // no spinner left behind
     }
-  }, [activity, submitPair]);
+  }, [activity, setFailure, submitPair]);
 
   const dismiss = useCallback(() => {
     if (!busy.current) setState(IDLE);
@@ -185,7 +201,7 @@ export function useAddFlow() {
     submitSamePhoto,
     retry,
     dismiss,
-    canRetry,
+    canRetry: canRetry && state.status !== 'pending',
     photoUri,
   };
 }
