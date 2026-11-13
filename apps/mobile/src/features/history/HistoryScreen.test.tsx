@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { HistoryScreen } from './HistoryScreen';
 import { clearHistory, listHistory, type HistoryEntry } from './store';
@@ -195,4 +196,12 @@ it('withholds a cached score when required nutrition data is missing', async () 
   await render(<HistoryScreen />);
   await waitFor(() => expect(screen.getByText(ro.result.scoreUnavailable)).toBeTruthy());
   expect(screen.queryByText(ro.history.score(entry.score.score!))).toBeNull();
+});
+
+it('renders the title and subtitle through the shared tab page header', async () => {
+  await render(<HistoryScreen />);
+  await screen.findByText(entry.product.name);
+  const title = screen.getByRole('header', { name: ro.history.design.title });
+  expect(StyleSheet.flatten(title.props.style).fontSize).toBe(22);
+  expect(screen.getByText(ro.history.design.note)).toBeTruthy();
 });
