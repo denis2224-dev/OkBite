@@ -1,5 +1,6 @@
 import { renderHook, waitFor, act } from '@testing-library/react-native';
 import { useProduct } from './useProduct';
+import { rememberLookup, freshLookup } from './freshLookup';
 import { api, ApiError } from '../../lib/api';
 import { foundYogurt } from '../../test/fixtures';
 import { saveToHistory, getFromHistory } from '../history/store';
@@ -50,4 +51,14 @@ it('retries a failed lookup for the same product without changing the route', as
   await act(() => result.current.retry());
   await waitFor(() => expect(result.current.data?.product.id).toBe(foundYogurt.product.id));
   expect(api.lookup).toHaveBeenCalledTimes(2);
+});
+it('shows a result the scan just looked up without a second request, and still saves it', async () => {
+  rememberLookup(foundYogurt);
+  const { result } = await renderHook(() => useProduct(foundYogurt.product.id));
+  expect(result.current.data?.product.id).toBe(foundYogurt.product.id);
+  expect(result.current.loading).toBe(false);
+  expect(result.current.cached).toBeUndefined();
+  await waitFor(() => expect(saveToHistory).toHaveBeenCalledWith(foundYogurt));
+  expect(api.lookup).not.toHaveBeenCalled();
+  expect(freshLookup(foundYogurt.product.id)).toBeUndefined(); // a later visit fetches the current product
 });
