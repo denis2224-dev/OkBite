@@ -66,7 +66,7 @@ it('lets the numbered instructions grow with the text', async () => {
   expect(style(screen.getByText(ro.identify.notFoundTitle))).toMatchObject({ color: mockColors.ink });
 });
 it('themes manual entry and disables editing while a lookup is in flight', async () => {
-  await render(<ManualCode disabled onSubmit={jest.fn()} />);
+  await render(<ManualCode open onToggle={jest.fn()} disabled onSubmit={jest.fn()} />);
   const input = screen.getByLabelText(ro.scan.manualTitle);
   expect(style(input)).toMatchObject({ color: mockColors.ink, backgroundColor: mockColors.surface });
   expect(input.props.editable).toBe(false);

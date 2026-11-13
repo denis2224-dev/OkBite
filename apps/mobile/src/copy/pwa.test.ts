@@ -27,3 +27,11 @@ test('uses comma-below Romanian diacritics in browser guidance', () => {
 test('has no leftover always-visible storage warning key', () => {
   expect(ro.pwa).not.toHaveProperty('storageWarning');
 });
+test('keeps Scan home copy short and names the label path once', () => {
+  expect(ro.scan).toEqual(expect.objectContaining({
+    deniedText: 'Permite accesul la cameră ca să scanezi.', manual: 'Introdu codul',
+    manualPlaceholder: '8 sau 13 cifre', manualInvalid: 'Codul are 8 sau 13 cifre.', photoLabel: 'Fotografiază eticheta',
+  }));
+  expect(ro.scan).not.toHaveProperty('manualHint');
+  expect(ro.scan.webManualOnly).toContain('fotografiază eticheta');
+});

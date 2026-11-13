@@ -3,12 +3,18 @@ import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { normalizeCode } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
-import { fonts, type Palette } from '../../theme/tokens';
+import { fonts, radii, spacing, type Palette } from '../../theme/tokens';
+import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { Button } from '../../ui/Button';
+import { ScanIcon } from './ScanIcon';
 
-export function ManualCode({ onSubmit, disabled, autoFocus }: { onSubmit: (code: string) => void; disabled?: boolean; autoFocus?: boolean }) {
+type Props = { open: boolean; onToggle: () => void; onSubmit: (code: string) => void; disabled?: boolean; onDark?: boolean };
+
+/** One quiet "Introdu codul" row; pressing it expands the code field in place. `onDark` adapts it to the camera panel. */
+export function ManualCode({ open, onToggle, onSubmit, disabled, onDark }: Props) {
   const { colors } = useTheme();
   const styles = createStyles(colors);
+  const ink = onDark ? colors.cameraInk : colors.ink;
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -26,31 +32,38 @@ export function ManualCode({ onSubmit, disabled, autoFocus }: { onSubmit: (code:
 
   return (
     <View style={styles.box}>
-      <Text style={styles.title}>{ro.scan.manualTitle}</Text>
-      <Text style={styles.hint}>{ro.scan.manualHint}</Text>
-      <TextInput
-        accessibilityLabel={ro.scan.manualTitle}
-        accessibilityState={{ disabled: !!disabled }}
-        editable={!disabled}
-        autoFocus={autoFocus}
-        keyboardType="number-pad"
-        value={value}
-        onChangeText={handleChange}
-        onSubmitEditing={handleSubmit}
-        style={styles.input}
-      />
-      {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
-      <Button disabled={disabled} onPress={handleSubmit}>
-        {ro.scan.search}
-      </Button>
+      <Pressable accessibilityRole="button" accessibilityLabel={ro.scan.manual} accessibilityState={{ expanded: open }} onPress={onToggle}
+        style={[styles.row, { borderColor: onDark ? colors.hero : colors.border }]}>
+        <ScanIcon name="keyboard" size={20} color={ink} />
+        <Text style={[styles.rowText, { color: ink }]}>{ro.scan.manual}</Text>
+      </Pressable>
+      {open ? <>
+        <TextInput
+          accessibilityLabel={ro.scan.manualTitle}
+          accessibilityState={{ disabled: !!disabled }}
+          editable={!disabled}
+          autoFocus
+          keyboardType="number-pad"
+          placeholder={ro.scan.manualPlaceholder}
+          placeholderTextColor={colors.muted}
+          value={value}
+          onChangeText={handleChange}
+          onSubmitEditing={handleSubmit}
+          style={styles.input}
+        />
+        {error ? <Text accessibilityRole="alert" style={[styles.error, onDark && { color: colors.cameraInk }]}>{error}</Text> : null}
+        <Button disabled={disabled} onPress={handleSubmit}>
+          {ro.scan.search}
+        </Button>
+      </> : null}
     </View>
   );
 }
 
 const createStyles = (colors: Palette) => StyleSheet.create({
-  box: { gap: 8, padding: 16, borderRadius: 20, backgroundColor: colors.ground },
-  title: { fontSize: 18, lineHeight: 25, fontFamily: fonts.heading, color: colors.ink },
-  hint: { fontFamily: fonts.body, color: colors.muted },
+  box: { gap: spacing.sm },
+  row: { minHeight: 48, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radii.small, borderWidth: 1 },
+  rowText: { fontFamily: fonts.medium, fontSize: 16, lineHeight: 22, textAlign: 'center', flexShrink: 1 },
   error: { fontFamily: fonts.medium, color: colors.low },
-  input: { borderWidth: 1, borderColor: colors.muted, backgroundColor: colors.surface, color: colors.ink, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, minHeight: 48, fontFamily: fonts.body, fontSize: 16, letterSpacing: 1 },
+  input: { borderWidth: 1, borderColor: colors.muted, backgroundColor: colors.surface, color: colors.ink, borderRadius: radii.small, paddingHorizontal: 14, paddingVertical: 12, minHeight: 48, fontFamily: fonts.body, fontSize: 16, letterSpacing: 1 },
 });
