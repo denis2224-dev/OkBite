@@ -13,7 +13,7 @@ export function ToggleChip({ text, selected, disabled, onPress }: Props) {
   const fg = selected ? colors.onPrimary : colors.ink;
   return (
     <Pressable accessibilityRole="checkbox" accessibilityLabel={text}
-      accessibilityState={{ checked: selected, disabled }} disabled={disabled} onPress={onPress}
+      accessibilityState={{ checked: selected, selected, disabled }} disabled={disabled} onPress={onPress}
       style={[styles.chip, { backgroundColor: selected ? colors.primary : colors.soft, opacity: disabled ? 0.6 : 1 }]}>
       {selected && <Icon name="check" size={16} color={fg} />}
       <Body style={{ color: fg, fontFamily: selected ? fonts.bold : fonts.medium, flexShrink: 1 }}>{text}</Body>

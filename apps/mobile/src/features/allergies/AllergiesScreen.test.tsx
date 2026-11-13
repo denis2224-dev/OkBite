@@ -26,9 +26,10 @@ async function renderReady() {
 it('renders the title, the 14 allergens, the avoid switches and both notes in Romanian', async () => {
   const screen = await renderReady();
   for (const text of [ro.allergies.title, ro.allergies.lead, ro.allergies.avoidTitle,
-    ro.profile.savedLocally, ro.result.missingAllergenNote]) {
+    ro.allergies.allergensLabel, ro.result.missingAllergenNote]) {
     expect(screen.getByText(text, { exact: false })).toBeTruthy();
   }
+  expect(screen.queryByText(ro.profile.savedLocally, { exact: false })).toBeNull();
   expect(screen.getAllByRole('checkbox')).toHaveLength(ALLERGENS.length);
   expect(screen.getAllByRole('switch')).toHaveLength(5);
   expect(screen.queryByText(ro.profile.goalTitle)).toBeNull();
@@ -42,6 +43,17 @@ it('announces the checked state and saves a toggled allergen through useProfile'
   await act(async () => { await fireEvent.press(chip(ro.allergens.Lapte)); });
   await waitFor(() => expect(chip(ro.allergens.Lapte).props.accessibilityState.checked).toBe(true));
   expect(await store.loadProfile()).toEqual({ ...existing, allergens: ['Soia', 'Lapte'] });
+});
+
+it('marks selected chips with a check icon and the selected state, unselected without', async () => {
+  const screen = await renderReady();
+  const selected = screen.getByRole('checkbox', { name: ro.allergens.Soia });
+  const unselected = screen.getByRole('checkbox', { name: ro.allergens.Lapte });
+  expect(selected.props.accessibilityState.selected).toBe(true);
+  expect(unselected.props.accessibilityState.selected).toBe(false);
+  // The check icon is an extra child (svg) before the label.
+  expect(selected.children).toHaveLength(2);
+  expect(unselected.children).toHaveLength(1);
 });
 
 it('saves an avoid switch and announces it as a switch', async () => {

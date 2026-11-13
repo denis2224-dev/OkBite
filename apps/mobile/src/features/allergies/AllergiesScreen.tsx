@@ -16,10 +16,13 @@ export function AllergiesScreen() {
     <Screen back={false}>
       <View style={{ gap: 8 }}>
         <Heading style={{ fontSize: 30, lineHeight: 36 }}>{ro.allergies.title}</Heading>
-        <Body style={{ color: colors.muted }}>{`${ro.allergies.lead} ${ro.profile.savedLocally}.`}</Body>
+        <Body style={{ color: colors.muted }}>{ro.allergies.lead}</Body>
       </View>
       <ProfileSaveError message={errorMessage} retry={retry} />
-      <AllergenChips selected={profile.allergens} disabled={disabled} onToggle={(a) => toggle('allergens', a)} />
+      <View style={{ gap: 8 }}>
+        <Heading style={{ fontSize: 18, lineHeight: 24 }}>{ro.allergies.allergensLabel}</Heading>
+        <AllergenChips selected={profile.allergens} disabled={disabled} onToggle={(a) => toggle('allergens', a)} />
+      </View>
       <View style={{ gap: 8 }}>
         <Heading style={{ fontSize: 18, lineHeight: 24 }}>{ro.allergies.avoidTitle}</Heading>
         <AvoidSwitches selected={profile.avoid} disabled={disabled} onToggle={(k) => toggle('avoid', k)} />
