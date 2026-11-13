@@ -8,7 +8,7 @@ import { getAddReviewDraft } from '../add/draftStore';
 import { useAddFlow } from '../add/useAddFlow';
 import { useScanLookup } from '../scan/useScanLookup';
 import { useCaptureFlow } from './useCaptureFlow';
-import { CODE, identifyFound, lookupFound } from './__fixtures__/responses';
+import { CODE, completed, identifyFound, lookupFound, pendingOutcome } from './__fixtures__/responses';
 
 const mockReplace = jest.fn();
 let mockLeave: (() => void) | undefined;
@@ -25,7 +25,7 @@ jest.mock('expo-router', () => ({
 jest.mock('expo-image-picker', () => ({ launchImageLibraryAsync: jest.fn() }));
 jest.mock('./compressPhoto', () => ({ compressPhoto: async (uri: string) => ({ uri, base64: 'aGVsbG8=' }) }));
 jest.mock('./findBarcode', () => ({ findBarcode: async () => null }));
-jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn(), readLabel: jest.fn() } }));
+jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identifyOutcome: jest.fn(), readLabelOutcome: jest.fn() } }));
 jest.mock('../offline/queue', () => ({ enqueue: jest.fn() }));
 
 type AsyncMock = jest.Mock<(...a: unknown[]) => Promise<unknown>>;
@@ -45,17 +45,29 @@ describe('responses after leaving the screen', () => {
 
   it('capture does not replace the route the shopper moved to', async () => {
     const pending = deferred<unknown>();
-    (api.identify as unknown as AsyncMock).mockReturnValue(pending.promise);
+    (api.identifyOutcome as unknown as AsyncMock).mockReturnValue(pending.promise);
     const { result } = await renderHook(() => useCaptureFlow());
     let run!: Promise<void>;
     await act(async () => { run = result.current.takePhoto(camera); });
-    await act(async () => { mockLeave?.(); pending.resolve(identifyFound); await run; });
+    await act(async () => { mockLeave?.(); pending.resolve(completed(identifyFound)); await run; });
     expect(mockReplace).not.toHaveBeenCalled();
     expect(result.current.state.status).toBe('idle'); // no stuck spinner when the shopper returns
   });
 
+  it('capture ignores late completion after blur from a pending >55 s analysis', async () => {
+    const delayed = deferred<typeof identifyFound>();
+    (api.identifyOutcome as unknown as AsyncMock).mockResolvedValueOnce(pendingOutcome(delayed.promise));
+    const { result } = await renderHook(() => useCaptureFlow());
+    let run!: Promise<void>;
+    await act(async () => { run = result.current.takePhoto(camera); });
+    expect(result.current.state.status).toBe('pending');
+    await act(async () => { mockLeave?.(); delayed.resolve(identifyFound); await run; });
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(result.current.state.status).toBe('idle');
+  });
+
   it('a label read still opens review while the screen stays focused (control)', async () => {
-    (api.readLabel as unknown as AsyncMock).mockResolvedValue(label);
+    (api.readLabelOutcome as unknown as AsyncMock).mockResolvedValue(completed(label));
     const { result } = await renderHook(() => useAddFlow());
     await act(async () => { await result.current.takePhoto(camera); });
     await act(async () => { await result.current.submitSamePhoto(); });
@@ -64,13 +76,28 @@ describe('responses after leaving the screen', () => {
 
   it('a label read does not replace the draft or route after blur', async () => {
     const pending = deferred<unknown>();
-    (api.readLabel as unknown as AsyncMock).mockReturnValue(pending.promise);
+    (api.readLabelOutcome as unknown as AsyncMock).mockReturnValue(pending.promise);
     const { result } = await renderHook(() => useAddFlow());
     await act(async () => { await result.current.takePhoto(camera); });
     let run!: Promise<void>;
     await act(async () => { run = result.current.submitSamePhoto(); });
     const before = getAddReviewDraft();
-    await act(async () => { mockLeave?.(); pending.resolve(label); await run; });
+    await act(async () => { mockLeave?.(); pending.resolve(completed(label)); await run; });
+    expect(getAddReviewDraft()).toBe(before);
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(result.current.state.status).toBe('idle');
+  });
+
+  it('label capture ignores late completion after blur from a pending >55 s analysis', async () => {
+    const delayed = deferred<typeof label>();
+    (api.readLabelOutcome as unknown as AsyncMock).mockResolvedValueOnce(pendingOutcome(delayed.promise));
+    const { result } = await renderHook(() => useAddFlow());
+    await act(async () => { await result.current.takePhoto(camera); });
+    let run!: Promise<void>;
+    await act(async () => { run = result.current.submitSamePhoto(); });
+    expect(result.current.state.status).toBe('pending');
+    const before = getAddReviewDraft();
+    await act(async () => { mockLeave?.(); delayed.resolve(label); await run; });
     expect(getAddReviewDraft()).toBe(before);
     expect(mockReplace).not.toHaveBeenCalled();
     expect(result.current.state.status).toBe('idle');

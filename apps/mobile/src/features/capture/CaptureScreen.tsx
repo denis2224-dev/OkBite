@@ -6,7 +6,7 @@ import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { CameraView } from 'expo-camera';
 import { useCameraAccess } from './useCameraAccess';
 import { ro } from '../../copy/ro';
-import { ActionButton, StatusPanel, errorMessage } from './StatusPanel';
+import { ActionButton, AnalysisOverlay, StatusPanel } from './StatusPanel';
 import { useCaptureFlow } from './useCaptureFlow';
 
 export default function CaptureScreen() {
@@ -18,6 +18,7 @@ export default function CaptureScreen() {
   const [mountFailed, setMountFailed] = useState(false);
   const { state, takePhoto, pickFromGallery, retry, dismiss, canRetry, photoUri } = useCaptureFlow();
   const working = state.status === 'working';
+  const activeRequest = working || state.status === 'pending';
 
   const loading = !permission || permission.status === 'undetermined';
   const gallery = { label: ro.capture.gallery, onPress: () => { void pickFromGallery(); } };
@@ -30,14 +31,14 @@ export default function CaptureScreen() {
           <CameraView ref={camera} style={StyleSheet.absoluteFill} facing="back" onCameraReady={() => setReady(true)} onMountError={() => setMountFailed(true)} />
           <Text style={styles.hint}>{ro.capture.hint}</Text>
           <View style={styles.controls}>
-            <ActionButton {...gallery} disabled={working} />
+            <ActionButton {...gallery} disabled={activeRequest} />
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={ro.capture.shutter}
-              accessibilityState={{ disabled: !ready || working }}
-              disabled={!ready || working}
+              accessibilityState={{ disabled: !ready || activeRequest }}
+              disabled={!ready || activeRequest}
               onPress={() => { void takePhoto(camera.current); }}
-              style={[styles.shutter, (!ready || working) && styles.shutterOff]}
+              style={[styles.shutter, (!ready || activeRequest) && styles.shutterOff]}
             >
               <View style={styles.shutterInner} />
             </Pressable>
@@ -65,19 +66,15 @@ export default function CaptureScreen() {
       {working ? (
         <View style={[StyleSheet.absoluteFill, styles.overlay]}><ActivityIndicator size="large" color={colors.cameraInk} /><Text style={styles.overlayText}>{ro.capture.working}</Text></View>
       ) : null}
-      {state.status === 'error' || state.status === 'offline' ? (
-        <ScrollView testID="capture-error-recovery" style={StyleSheet.absoluteFill} contentContainerStyle={[styles.overlay, { flexGrow: 1 }]} keyboardShouldPersistTaps="handled">
-          <StatusPanel
-            title={state.status === 'offline' ? ro.offline.title : undefined}
-            message={state.status === 'offline' ? ro.offline.subtitle : errorMessage(state.code)}
-            actions={[
-              ...(canRetry ? [{ label: state.status === 'offline' ? ro.offline.retry : ro.errors.retry, onPress: () => { void retry(); } }] : []),
-              gallery,
-              { label: ro.nav.close, onPress: dismiss },
-            ]}
-          />
-        </ScrollView>
-      ) : null}
+      <AnalysisOverlay
+        state={state}
+        canRetry={canRetry}
+        onRetry={() => { void retry(); }}
+        gallery={gallery}
+        onDismiss={dismiss}
+        overlayStyle={styles.overlay}
+        testIDPrefix="capture"
+      />
     </View>
   );
 }

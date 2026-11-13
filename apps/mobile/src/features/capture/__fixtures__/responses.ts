@@ -1,5 +1,13 @@
 // Complete responses that satisfy the C1 schemas (@okbite/shared). Tests assert this, so a contract change fails loudly.
 import type { IdentifyResponse, LookupResponse } from '@okbite/shared';
+import type { AnalysisOutcome } from '../../../lib/analysisOutcome';
+
+export const completed = <T,>(result: T): AnalysisOutcome<T> => ({ status: 'completed', result });
+export const pendingOutcome = <T,>(completion: Promise<T>): AnalysisOutcome<T> => ({
+  status: 'pending',
+  retryAllowed: false,
+  completion,
+});
 
 export const PRODUCT_ID = '0b6f3c1e-2d4a-4c8e-9f10-1a2b3c4d5e6f';
 export const CODE = '4840001000014';
