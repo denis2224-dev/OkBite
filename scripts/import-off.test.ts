@@ -303,11 +303,9 @@ describe('importOff and loadData against stubbed services', () => {
     );
   });
 
-  it('refuses a Romania import without the export file', async () => {
+  it.each(['romania', 'russia', 'ukraine'] as const)('refuses a %s import without the export file', async (country) => {
     stubFetch([]);
-    await expect(runImportOff(noPause, null, { country: 'romania' })).rejects.toThrow(
-      'romania needs --file',
-    );
+    await expect(runImportOff(noPause, null, { country })).rejects.toThrow(`${country} needs --file`);
     expect(calls).toEqual([]);
   });
 

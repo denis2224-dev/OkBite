@@ -190,7 +190,8 @@ export async function translateIngredients(source: string, key: string, pause: P
 
 type Page = { label: string; products: OffProduct[] };
 type Fail = (why: string) => Error;
-export type Country = 'moldova' | 'romania';
+export const COUNTRIES = ['moldova', 'romania', 'russia', 'ukraine'] as const;
+export type Country = (typeof COUNTRIES)[number];
 
 /** OFF search pages for one country, split by label language to stay under the 1000-result cap. */
 async function* searchPages(country: Country, pause: Pause, incomplete: Fail): AsyncGenerator<Page> {
@@ -261,7 +262,7 @@ async function* exportPages(file: string, country: Country): AsyncGenerator<Page
 
 export interface ImportOptions {
   country?: Country;
-  /** OFF JSONL export; required for romania, whose ~50k products exceed what the search API returns. */
+  /** OFF JSONL export; required for every country but moldova, whose products exceed what the search API returns. */
   file?: string | null;
   /** false = dry run: count what would be inserted or translated; no writes, no AI calls. */
   write?: boolean;
@@ -278,8 +279,9 @@ export async function importOff(
     '.superpowers/off-import/translations.json',
   { country = 'moldova', file = null, write = true }: ImportOptions = {},
 ) {
-  if (country === 'romania' && !file)
-    throw new Error('romania needs --file: OFF search returns at most 1000 results per query');
+  // Only Moldova (~1.9k) fits the search API's language split; the others have 8k-50k products.
+  if (country !== 'moldova' && !file)
+    throw new Error(`${country} needs --file: OFF search returns at most 1000 results per query`);
   await existingCodes([]); // fail before OFF/AI calls when database configuration is missing
   const cache = checkpoint(cachePath);
   const seen = new Set<string>();
@@ -369,7 +371,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const { values } = parseArgs({
     options: { country: { type: 'string', default: 'moldova' }, file: { type: 'string' }, write: { type: 'boolean', default: false } },
   });
-  const country = z.enum(['moldova', 'romania']).parse(values.country);
+  const country = z.enum(COUNTRIES).parse(values.country);
   const write = values.write ?? false;
   if (!write) console.log('Dry run: nothing is written and nothing is translated. Add --write to import.');
   importOff(sleep, undefined, { country, file: values.file ?? null, write }).then(
