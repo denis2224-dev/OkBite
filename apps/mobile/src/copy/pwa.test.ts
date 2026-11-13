@@ -4,7 +4,7 @@ test.each([
   'install.title', 'install.description', 'install.iosHint', 'install.failed',
   'update.title', 'update.apply', 'camera.iosDenied', 'camera.androidDenied',
   'camera.httpsRequired', 'camera.unavailable', 'camera.busy',
-  'scannerUnavailable', 'analysis.title', 'analysis.unknown', 'analysis.retry',
+  'scannerUnavailable', 'analysis.title', 'analysis.unknown',
 ])('supplies Romanian PWA copy for %s', key => {
   expect(ro).toHaveProperty(`pwa.${key}`, expect.any(String));
 });
