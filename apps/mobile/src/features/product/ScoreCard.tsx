@@ -24,7 +24,7 @@ export function ScoreCard({ product, score }: { product?: Product; score: ScoreR
       <View style={{ flex: 1, minWidth: 160, gap: 2 }}>
         {product && <>
           <Heading numberOfLines={2} style={{ fontSize: 22, lineHeight: 28 }}>{product.name}</Heading>
-          <Body style={{ color: colors.muted }}>{[product.brand, product.quantity].filter(Boolean).join(' · ')}</Body>
+          <Body style={{ color: colors.muted }}>{[product.brand, product.quantity].filter(Boolean).join(', ')}</Body>
         </>}
         <Body style={{ color: colors.muted }}>{shown ? `${ro.score.title}: ${ro.score[shown.grade]}` : ro.result.scoreUnavailable}</Body>
       </View>

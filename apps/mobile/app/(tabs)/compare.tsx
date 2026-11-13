@@ -98,7 +98,7 @@ export default function Compare() {
           </HomeCard>
           <HomeCard style={styles.allergens}><Text accessibilityRole="header" style={styles.allergenTitle}>{ro.result.allergens}</Text><Text style={styles.allergenText}><Text style={styles.bold}>A:</Text> <Text>{a.product.allergens.join(', ') || copy.none}</Text></Text><Text style={[styles.allergenText, styles.allergenB]}><Text style={styles.bold}>B:</Text> <Text>{b.product.allergens.join(', ') || copy.none}</Text></Text></HomeCard>
           {products.map(({entry,label}) => entry.product.mayContain.length > 0 && <View key={label}><Text style={styles.allergenText}>{label} · <Text>{ro.result.mayContain}</Text></Text><Text style={styles.allergenText}>{entry.product.mayContain.join(', ')}</Text></View>)}
-          <Text style={styles.footnote}>{ro.result.allergyNote}</Text>
+          <Text style={styles.footnote}>{ro.result.missingAllergenNote}</Text>
           {isPreview && <Text style={styles.footnote}>{copy.footnote}</Text>}
           <Button variant="ghost" onPress={() => router.push('/capture')}>{ro.compare.photo}</Button>
         </ScrollView>

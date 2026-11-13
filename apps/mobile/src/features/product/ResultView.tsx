@@ -3,6 +3,7 @@ import { Image, View } from 'react-native';
 import { router } from 'expo-router';
 import { NUTRIENT_KEYS, resolveProductIngredients, type Product, type ScoreResult } from '@okbite/shared';
 import { AllergenChip, Badge, Body, Button, Card, Heading, LinkRow, useToast } from '../../ui';
+import { useTheme } from '../../theme/useTheme';
 import { fonts } from '../../theme/tokens';
 import { ro } from '../../copy/ro';
 import { isPreview } from '../../lib/preview';
@@ -16,6 +17,7 @@ import { PartialNutritionCard } from './PartialNutritionCard';
 import { PortionTable } from './PortionTable';
 import { SourceCard } from './SourceCard';
 import { ReportSheet } from './ReportSheet';
+import { ExplainedIngredient } from './ExplainedIngredient';
 import { shareProduct } from '../share/shareProduct';
 import { productShareUrl } from '../share/productShareText';
 
@@ -27,11 +29,11 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
   const [sharing, setSharing] = useState(false);
   const [shareFailed, setShareFailed] = useState(false);
   const toast = useToast();
+  const { colors } = useTheme();
   const shownScore = displayScore(product, score);
   const hasNutrition = NUTRIENT_KEYS.some(key => product.nutrients[key] !== null);
   const canShowScore = shownScore.score !== null && shownScore.grade !== 'unavailable';
   const showPortion = canShowScore && hasNutrition;
-  const tile = { flexGrow: 1, flexBasis: 150, paddingHorizontal: 12 };
   const explainedIngredients = resolveProductIngredients(product)
     .filter(item => Boolean(item.slug && item.explanation && item.source && /^https?:\/\//i.test(item.source)))
     .sort((a, b) => (a.group === 'add' ? 0 : 1) - (b.group === 'add' ? 0 : 1));
@@ -53,19 +55,12 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
       <Body selectable>{productShareUrl(product)}</Body>
     </View>}
     <ProfileAllergenAlert product={product} />
-    {canShowScore ? <ScoreCard product={product} score={shownScore} /> : <><Heading>{product.name}</Heading><Body>{product.brand} · {product.quantity}</Body></>}
-    {product.status === 'unverified' && <>
-      <Badge tone="unverified">{ro.result.unverified}</Badge><Body>{ro.result.unverifiedNote}</Body>
-    </>}
+    {canShowScore ? <ScoreCard product={product} score={shownScore} /> : <><Heading>{product.name}</Heading><Body>{[product.brand, product.quantity].filter(Boolean).join(', ')}</Body></>}
+    {product.status === 'unverified' && <View testID="unverified-badge" style={{ gap: 4 }}>
+      <Badge tone="unverified">{ro.result.unverified}</Badge>
+      <Body style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>{ro.result.unverifiedNote}</Body>
+    </View>}
     {canShowScore ? <WhyScore score={shownScore} sugar={product.nutrients.sugar} /> : <PartialNutritionCard product={product} />}
-    <View testID="result-link-tiles" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-      <Card style={[tile, { paddingVertical: 4 }]}>
-        <LinkRow label={ro.result.ingredientsTile} last onPress={() => router.push({ pathname: '/product/[id]/ingredients', params: { id: product.id } })} />
-      </Card>
-      {showPortion && <Card style={[tile, { paddingVertical: 4 }]}>
-        <LinkRow label={ro.result.portionTile} last onPress={() => setPortion(true)} />
-      </Card>}
-    </View>
     <Card>
       <Heading style={{ fontSize: 18 }}>{ro.result.allergens}</Heading>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -78,24 +73,21 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
           {product.mayContain.map(name => <AllergenChip key={name} name={name} tone="trace" />)}
         </View>
       </>}
-      <Body>{ro.result.missingAllergenNote}</Body>
-      <Body>{ro.result.allergyNote}</Body>
+      <Body style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>{ro.result.missingAllergenNote}</Body>
     </Card>
-    {showPortion && <PortionTable product={product} />}
     {product.imageUrl && <Image source={{ uri: product.imageUrl }} accessibilityLabel={product.name} style={{ width: '100%', height: 180 }} resizeMode="contain" />}
     <Card>
-      <Heading style={{fontSize:18}}>{ro.result.transcribedLabel}</Heading>
+      <Heading style={{ fontSize: 18 }}>{ro.result.transcribedLabel}</Heading>
       <Body selectable>{product.ingredientsText}</Body>
-      {explainedIngredients.length > 0 && <View style={{ gap: 8, marginTop: 8 }}>
+      {explainedIngredients.length > 0 && <View style={{ gap: 16, marginTop: 8 }}>
         <Body style={{ fontFamily: fonts.bold }}>{ro.result.explainedWithSource}</Body>
-        {explainedIngredients.map((item, idx) => (
-          <View key={`${item.slug}:${idx}`} style={{ gap: 2 }}>
-            <Body style={{ fontFamily: fonts.bold }}>{item.name}</Body>
-            {item.role && <Body>{item.role}</Body>}
-            {item.explanation && <Body>{item.explanation}</Body>}
-          </View>
-        ))}
+        {explainedIngredients.map((item, idx) => <ExplainedIngredient key={`${item.slug}:${idx}`} item={item} />)}
       </View>}
+    </Card>
+    {showPortion && <PortionTable product={product} />}
+    <Card testID="result-link-rows" style={{ paddingVertical: 4, gap: 0 }}>
+      <LinkRow label={ro.result.ingredientsTile} last={!showPortion} onPress={() => router.push({ pathname: '/product/[id]/ingredients', params: { id: product.id } })} />
+      {showPortion && <LinkRow label={ro.result.portionTile} last onPress={() => setPortion(true)} />}
     </Card>
     <SourceCard product={product} />
     {nutritionAdditionAvailable && product.status === 'unverified' && !hasNutrition &&
