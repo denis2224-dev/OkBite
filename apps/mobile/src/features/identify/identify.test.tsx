@@ -138,7 +138,7 @@ describe('IdentifyScreen and B3 flow', () => {
 
     expect(screen.getByText(ro.identify.confirmTitle)).toBeTruthy();
     expect(screen.getByText(CAND_1.name)).toBeTruthy();
-    expect(screen.getByText(`${CAND_1.brand} · ${CAND_1.quantity}`)).toBeTruthy();
+    expect(screen.getByText(`${CAND_1.brand}, ${CAND_1.quantity}`)).toBeTruthy();
     expect(screen.getByText(ro.identify.confirmHint)).toBeTruthy();
     expect(screen.getByLabelText(CAND_1.name)).toBeTruthy();
 
@@ -234,8 +234,8 @@ describe('IdentifyScreen and B3 flow', () => {
 
     expect(screen.getByText(ro.identify.notFoundTitle)).toBeTruthy();
     expect(screen.getByText(ro.identify.notFoundText)).toBeTruthy();
-    expect(screen.getByText(ro.identify.nextTitle)).toBeTruthy();
-    for (const step of ro.identify.nextSteps) {
+    for (const [index, step] of ro.identify.nextSteps.entries()) {
+      expect(screen.getByText(String(index + 1))).toBeTruthy();
       expect(screen.getByText(step)).toBeTruthy();
     }
 

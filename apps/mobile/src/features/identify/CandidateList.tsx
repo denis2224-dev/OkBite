@@ -35,7 +35,7 @@ export function CandidateList({
             {c.imageUrl ? <Image source={{ uri: c.imageUrl }} style={styles.thumb} /> : null}
             <View style={styles.info}>
               <Text style={styles.name}>{c.name}</Text>
-              <Text style={styles.meta}>{`${c.brand} · ${c.quantity}`}</Text>
+              <Text style={styles.meta}>{`${c.brand}, ${c.quantity}`}</Text>
             </View>
           </Pressable>
         ))}
