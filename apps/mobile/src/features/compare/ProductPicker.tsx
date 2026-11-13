@@ -4,12 +4,13 @@ import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import type { HistoryEntry } from '../history/store';
 import { AllergenChip, Badge, Body, Button, Card } from '../../ui';
 import { ro } from '../../copy/ro';
+import { fonts } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 import { ScoreCard } from '../product/ScoreCard';
 import { SourceCard } from '../product/SourceCard';
 
-export function ProductPicker({ entries, selected, category, excluded, onSelect }: {
-  entries: HistoryEntry[]; selected?: HistoryEntry; category?: string; excluded?: string; onSelect(entry: HistoryEntry): void;
+export function ProductPicker({ entries, selected, category, excluded, slot, onSelect }: {
+  slot?: string; entries: HistoryEntry[]; selected?: HistoryEntry; category?: string; excluded?: string; onSelect(entry: HistoryEntry): void;
 }) {
   const [open, setOpen] = useState(false);
   const { colors } = useTheme();
@@ -17,7 +18,8 @@ export function ProductPicker({ entries, selected, category, excluded, onSelect 
   const options = entries.filter(entry => entry.product.status !== 'hidden' && entry.product.id !== excluded)
     .sort((a, b) => Number(b.product.category.slug === category) - Number(a.product.category.slug === category));
   return <Card>
-    <Pressable accessibilityRole="button" accessibilityLabel={selected?.product.name ?? ro.compare.choose}
+    {slot && <Body style={{ fontFamily: fonts.bold }}>{slot}</Body>}
+    <Pressable accessibilityRole="button" accessibilityLabel={selected?.product.name ?? (slot ? `${slot}: ${ro.compare.choose}` : ro.compare.choose)}
       accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)}
       style={{ minHeight: 52, padding: 12, borderRadius: 16, backgroundColor: colors.soft, justifyContent: 'center' }}>
       <Body>{selected?.product.name ?? ro.compare.choose}</Body>
@@ -28,11 +30,11 @@ export function ProductPicker({ entries, selected, category, excluded, onSelect 
     {selected && <>
       <Body>{ro.result.allergens}</Body>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{selected.product.allergens.map(name => <AllergenChip key={name} name={name} />)}</View>
-      {!selected.product.allergens.length && <Body>{selected.product.status === 'verified' && selected.product.ingredientsText.trim()
-        ? ro.result.noAllergens : ro.result.missingAllergenNote}</Body>}
+      {!selected.product.allergens.length && selected.product.status === 'verified' && !!selected.product.ingredientsText.trim()
+        && <Body>{ro.result.noAllergens}</Body>}
       {!!selected.product.mayContain.length && <><Body>{ro.result.mayContain}</Body><View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {selected.product.mayContain.map(name => <AllergenChip key={name} name={name} tone="trace" />)}</View></>}
-      <Body>{ro.result.allergyNote}</Body><SourceCard product={selected.product} />
+      <Body>{ro.result.missingAllergenNote}</Body><SourceCard product={selected.product} />
     </>}
     {open && (!options.length ? <Body>{ro.history.empty}</Body> : options.map(entry => <Button key={entry.product.id} variant="ghost"
       onPress={() => { onSelect(entry); setOpen(false); }}>{`${entry.product.name} · ${entry.product.brand}`}</Button>))}

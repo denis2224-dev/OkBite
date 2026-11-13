@@ -3,7 +3,8 @@ import { Linking, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
-import { Body, Button, Card, Heading, Screen } from '../../ui';
+import { Body, Card, Heading, Screen } from '../../ui';
+import { LinkRow } from '../../ui/LinkRow';
 import { AdminEntry } from '../admin/AdminEntry';
 
 const tiers = ['excellent', 'good', 'fair', 'poor', 'bad'] as const;
@@ -18,28 +19,25 @@ export function AboutScreen({ tierPalette, children }: AboutScreenProps = {}) {
     catch { setSourceFailed(true); }
   }
   return <Screen title={ro.about.title}>
-    <Card style={{ backgroundColor: colors.hero, borderColor: colors.hero }}><Heading style={{ color: colors.heroText }}>{ro.about.whatTitle}</Heading><Body style={{ color: colors.heroText }}>{ro.about.whatBody}</Body></Card>
+    <Card style={{ backgroundColor: colors.hero, borderColor: colors.hero }}><Heading style={[styles.heading, { color: colors.heroText }]}>{ro.about.whatTitle}</Heading><Body style={{ color: colors.heroText }}>{ro.about.whatBody}</Body></Card>
     <Card>
-      <Heading style={styles.heading}>{ro.about.methodTitle}</Heading><Body>{ro.about.methodBody}</Body>
-      <Body style={{ color: colors.muted }}>{ro.score.disclaimer}</Body>
-      <Button variant="secondary" onPress={() => router.push('/method')}>{ro.settings.method}</Button>
-    </Card>
-    <Card>
-      <Heading style={styles.heading}>{ro.about.tiersTitle}</Heading><Body>{ro.about.tiersBody}</Body>
+      <Heading style={styles.heading}>{ro.about.scoreTitle}</Heading>
       <View style={styles.tiers}>
         {tiers.map(tier => <View key={tier} style={styles.tier}>
           {tierPalette ? <View style={[styles.dot, { backgroundColor: tierPalette[tier] }]} /> : null}
           <Body>{ro.tiers[tier]}</Body>
         </View>)}
       </View>
-    </Card>
-    <Card><Heading style={styles.heading}>{ro.about.nutriScoreTitle}</Heading><Body>{ro.about.nutriScoreBody}</Body></Card>
-    <Card>
-      <Heading style={styles.heading}>{ro.about.sourcesTitle}</Heading><Body>{ro.about.sourcesBody}</Body>
-      <Button variant="secondary" onPress={() => void openSource()}>{ro.about.sourcesTitle}</Button>
-      {sourceFailed ? <Body accessibilityRole="alert">{ro.app.retry}</Body> : null}
+      <Body style={{ color: colors.muted }}>{ro.score.disclaimer}</Body>
+      <LinkRow label={ro.settings.method} last onPress={() => router.push('/method')} />
     </Card>
     <Card><Heading style={styles.heading}>{ro.about.promiseTitle}</Heading><Body>{ro.about.promiseBody}</Body></Card>
+    <Card>
+      <LinkRow label={ro.about.sources} onPress={() => void openSource()} />
+      {sourceFailed ? <Body accessibilityRole="alert">{ro.app.retry}</Body> : null}
+      <LinkRow label={ro.nav.privacy} onPress={() => router.push('/privacy')} />
+      <LinkRow label={ro.nav.terms} last onPress={() => router.push('/terms')} />
+    </Card>
     {children}
     <AdminEntry />
   </Screen>;
