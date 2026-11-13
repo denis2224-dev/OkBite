@@ -22,8 +22,28 @@ it('shows allergens, unverified provenance and the disclaimer', async () => {
   await render(<ResultView product={{ ...foundYogurt.product, status: 'unverified', allergens: ['Lapte'], mayContain: ['Soia'] }} score={foundYogurt.score} />);
   expect(screen.getByText('Lapte')).toBeTruthy();
   expect(screen.getByText('Soia')).toBeTruthy();
-  expect(screen.getByText(ro.result.unverifiedNote)).toBeTruthy();
+  const badge = screen.getByTestId('unverified-badge');
+  expect(within(badge).getByText(ro.result.unverified)).toBeTruthy();
+  expect(within(badge).getByText(ro.result.unverifiedNote)).toBeTruthy();
   expect(screen.getByText(ro.score.disclaimer)).toBeTruthy();
+});
+it.each([
+  ['declared allergens', { allergens: ['Lapte' as const], mayContain: [] }],
+  ['no declared allergens', { allergens: [], mayContain: [] }],
+  ['traces only', { allergens: [], mayContain: ['Soia' as const] }],
+])('keeps exactly one allergen safety line with %s', async (_, allergens) => {
+  await render(<ResultView product={{ ...foundYogurt.product, ...allergens }} score={foundYogurt.score} />);
+  expect(screen.getAllByText(ro.result.missingAllergenNote)).toHaveLength(1);
+  expect(Object.keys(ro.result)).not.toContain('allergyNote');
+});
+it.each([['with', foundYogurt.product.nutrients], ['without', { ...foundYogurt.product.nutrients, salt: null }]])('shows brand and quantity %s a score without a middle-dot meta string', async (_, nutrients) => {
+  await render(<ResultView product={{ ...foundYogurt.product, nutrients }} score={foundYogurt.score} />);
+  expect(screen.getByText(`${foundYogurt.product.brand}, ${foundYogurt.product.quantity}`)).toBeTruthy();
+  expect(screen.queryByText(`${foundYogurt.product.brand} · ${foundYogurt.product.quantity}`)).toBeNull();
+});
+it('shows the score disclaimer exactly once', async () => {
+  await render(<ResultView {...foundYogurt} />);
+  expect(screen.getAllByText(ro.score.disclaimer)).toHaveLength(1);
 });
 it('never shows a zero score when required label values are missing', async () => {
   await render(<ResultView product={{ ...foundYogurt.product, nutrients: { ...foundYogurt.product.nutrients, salt: null } }} score={{ ...foundYogurt.score, score: 0, grade: 'low' }} />);
@@ -128,7 +148,9 @@ it('re-scores Open Food Facts Coca-Cola Zero as a beverage (53/100) and analyzes
   expect(screen.getByText('Conține îndulcitori')).toBeTruthy();
   expect(screen.getByText('aspartam')).toBeTruthy();
   expect(screen.getByText('Îndulcitor intens fără calorii (E951)')).toBeTruthy();
-  expect(screen.getByText('Acidifiant (E338)')).toBeTruthy();
+  // The name already says "acidifiant", so the role line is left out.
+  expect(screen.getByText('acidifiant: acid fosforic (E338)')).toBeTruthy();
+  expect(screen.queryByText('Acidifiant (E338)')).toBeNull();
 });
 
 
@@ -153,12 +175,12 @@ it('leaves an absent Nutri-Score letter unavailable without inventing one', asyn
   expect(screen.queryByLabelText(/Nutri-Score:/)).toBeNull();
   expect(screen.getByLabelText(ro.score.ringLabel(foundYogurt.score.score!, foundYogurt.score.grade))).toBeTruthy();
 });
-it('orders the profile alert, score, reasons, allergens, portions and the transcribed label', async () => {
+it('orders the profile alert, score, reasons, allergens, ingredients, portion, source and the original label', async () => {
   mockProfile = { ...mockProfile, allergens: ['Lapte'] };
   await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter: 'B' }} />);
   const order = inOrder();
   const markers = [ro.result.profileAlertSub, ro.score.ringLabel(foundYogurt.score.score!, foundYogurt.score.grade), ro.result.whyLetter('B'),
-    ro.result.allergens, ro.result.portionNote, ro.result.transcribedLabel, ro.result.source].map(text => order.indexOf(text));
+    ro.result.allergens, ro.result.transcribedLabel, ro.result.portionNote, ro.result.source, ro.result.original].map(text => order.indexOf(text));
   expect(markers.every(index => index >= 0)).toBe(true);
   expect([...markers].sort((a, b) => a - b)).toEqual(markers);
 });
@@ -234,18 +256,32 @@ it('puts collapse, share and report in a top row of 44 pt icon buttons', async (
   await fireEvent.press(screen.getByRole('button', { name: ro.result.report }));
   expect(screen.getByLabelText(ro.result.reportLabel)).toBeTruthy();
 });
-it('shows Ingrediente and Porție as two tiles side by side, and Porție opens the portion table', async () => {
+it('shows Ingrediente and Porție as full-width chevron rows in one card, and Porție opens the portion table', async () => {
   await render(<ResultView {...foundYogurt} />);
-  const tiles = screen.getByTestId('result-link-tiles');
-  expect(tiles).toHaveStyle({ flexDirection: 'row' });
-  // Mockup: just the word and a chevron, so long English labels never break mid-word.
-  expect(within(tiles).getAllByRole('button').map(button => button.props.accessibilityLabel)).toEqual([ro.result.ingredientsTile, ro.result.portionTile]);
-  expect(within(tiles).queryAllByTestId('link-row-icon')).toHaveLength(0);
+  const rows = screen.getByTestId('result-link-rows');
+  expect(rows).not.toHaveStyle({ flexDirection: 'row' });
+  const buttons = within(rows).getAllByRole('button');
+  expect(buttons.map(button => button.props.accessibilityLabel)).toEqual([ro.result.ingredientsTile, ro.result.portionTile]);
+  for (const button of buttons) expect(StyleSheet.flatten(button.props.style).minHeight).toBeGreaterThanOrEqual(44);
+  expect(within(rows).queryAllByTestId('link-row-icon')).toHaveLength(0);
   expect(screen.getAllByText(ro.result.portionNote)).toHaveLength(1);
   await fireEvent.press(screen.getByRole('button', { name: ro.result.portionTile }));
   expect(screen.getAllByText(ro.result.portionNote)).toHaveLength(2);
   await fireEvent.press(screen.getByRole('button', { name: ro.nav.close }));
   expect(screen.getAllByText(ro.result.portionNote)).toHaveLength(1);
+});
+it('explains each ingredient in one line and drops a role the name already says', async () => {
+  const ingredient = { group: 'add' as const, source: 'https://example.invalid/source', allergen: null };
+  await render(<ResultView product={{ ...foundYogurt.product, ingredients: [
+    { ...ingredient, slug: 'test-a', name: 'acid citric (E330)', role: 'Acid citric (E330)', explanation: 'Prima propoziție de test. A doua propoziție de test.' },
+    { ...ingredient, slug: 'test-b', name: 'aspartam', role: 'Îndulcitor de test (E951)', explanation: 'O singură propoziție de test.' },
+  ] }} score={foundYogurt.score} />);
+  expect(screen.getByText(ro.result.explainedWithSource)).toBeTruthy();
+  expect(screen.queryByText('Acid citric (E330)')).toBeNull();
+  expect(screen.getByText('Prima propoziție de test.')).toBeTruthy();
+  expect(screen.queryByText(/A doua propoziție/)).toBeNull();
+  expect(screen.getByText('Îndulcitor de test (E951)')).toBeTruthy();
+  expect(screen.getByText('O singură propoziție de test.')).toBeTruthy();
 });
 
 it('labels each score reason with its tone next to an icon', async () => {
