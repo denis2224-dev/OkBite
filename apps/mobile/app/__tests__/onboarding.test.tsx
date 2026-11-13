@@ -31,6 +31,7 @@ const routes = {
   '(tabs)/profile': () => null,
   '(tabs)/settings': SettingsProbe,
   '(tabs)/compare': () => null,
+  '(tabs)/allergies': () => null,
   onboarding: OnboardingRoute,
   'product/[id]': () => <Text>Deep link destination</Text>,
   'add/review': () => <Text>Deep link destination</Text>,
