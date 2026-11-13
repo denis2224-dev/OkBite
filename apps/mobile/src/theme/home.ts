@@ -1,5 +1,4 @@
-import { light, dark, fonts } from './tokens';
-import { useTheme } from './useTheme';
+import { light, fonts } from './tokens';
 export const homeTheme = {
   colors: { ...light, cardBorder: light.border, separator: light.divider },
   fonts: { ...fonts, body: 'Manrope_400Regular', semibold: fonts.medium, extra: 'Manrope_800ExtraBold', headingExtra: 'BricolageGrotesque_800ExtraBold' },
@@ -15,15 +14,7 @@ export type HomeTheme = {
   fonts: typeof homeTheme.fonts;
   tiles: readonly { background: string; foreground: string }[];
 };
-const darkHomeTheme: HomeTheme = {
-  ...homeTheme,
-  colors: { ...homeTheme.colors, ...dark, cardBorder: dark.border, separator: dark.divider },
-  tiles: [
-    { background: dark.goodBg, foreground: dark.good },
-    { background: dark.mediumBg, foreground: dark.medium },
-    { background: dark.lowBg, foreground: dark.low },
-  ],
-};
+/** Light only. */
 export function useHomeTheme(): HomeTheme {
-  return useTheme().isDark ? darkHomeTheme : homeTheme;
+  return homeTheme;
 }

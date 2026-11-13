@@ -6,7 +6,7 @@ import { useTheme } from '../../theme/useTheme';
 import { fonts, type Palette } from '../../theme/tokens';
 import { Button } from '../../ui/Button';
 
-export function ManualCode({ onSubmit, disabled }: { onSubmit: (code: string) => void; disabled?: boolean }) {
+export function ManualCode({ onSubmit, disabled, autoFocus }: { onSubmit: (code: string) => void; disabled?: boolean; autoFocus?: boolean }) {
   const { colors } = useTheme();
   const styles = createStyles(colors);
   const [value, setValue] = useState('');
@@ -32,6 +32,7 @@ export function ManualCode({ onSubmit, disabled }: { onSubmit: (code: string) =>
         accessibilityLabel={ro.scan.manualTitle}
         accessibilityState={{ disabled: !!disabled }}
         editable={!disabled}
+        autoFocus={autoFocus}
         keyboardType="number-pad"
         value={value}
         onChangeText={handleChange}
@@ -47,7 +48,7 @@ export function ManualCode({ onSubmit, disabled }: { onSubmit: (code: string) =>
 }
 
 const createStyles = (colors: Palette) => StyleSheet.create({
-  box: { gap: 8, padding: 16, backgroundColor: colors.ground },
+  box: { gap: 8, padding: 16, borderRadius: 20, backgroundColor: colors.ground },
   title: { fontSize: 18, lineHeight: 25, fontFamily: fonts.heading, color: colors.ink },
   hint: { fontFamily: fonts.body, color: colors.muted },
   error: { fontFamily: fonts.medium, color: colors.low },

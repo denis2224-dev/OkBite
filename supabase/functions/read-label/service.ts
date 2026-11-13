@@ -53,11 +53,7 @@ export function createService(deps = { adminClient, saveJpeg, askClaude }) {
       providerStarted = true;
       let read: LabelRead;
       try {
-        const prompt = labelPrompt({
-          ingredients: ask.ingredients,
-          nutrition: ask.nutrition === 'separate' || ask.nutrition === 'same_photo',
-        });
-        read = parseLabel(await deps.askClaude(images, prompt), ask);
+        read = parseLabel(await deps.askClaude(images, labelPrompt(ask)), ask);
       } catch (error) {
         if (error instanceof PreProviderError || !(error instanceof UpstreamError)) throw error;
         // Provider error, timeout or unusable answer: photos are kept and the shopper types it in (#104).

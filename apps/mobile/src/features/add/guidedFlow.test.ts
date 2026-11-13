@@ -1,3 +1,4 @@
+import { draftToGuided, guidedToDraft } from './guidedDraftAdapter';
 import { createGuidedFlow } from './guidedFlow';
 
 const initial = { code: null, brand: null, name: null, quantity: null, photoPath: 'uploads/front' };
@@ -14,7 +15,8 @@ function setup(response: unknown = label) {
     readLabel: jest.fn(async (_request: unknown): Promise<unknown> => response),
     onIdentify: jest.fn(), onFound: jest.fn(), onReview: jest.fn(), persist: jest.fn(async () => {}),
   };
-  return { deps, flow: createGuidedFlow(initial, deps) };
+  const snapshot = createGuidedFlow(initial, deps).getState();
+  return { deps, flow: createGuidedFlow(initial, deps, { ...snapshot, stage: 'ingredients' }) };
 }
 
 test.each(['separate', 'same_photo', 'none', 'skipped'] as const)('%s explicitly selects nutrition and submits once', async mode => {
@@ -67,6 +69,7 @@ test('code entry starts at front, retains scanned code and hands candidates back
   const { deps } = setup();
   deps.identify.mockResolvedValue({ status: 'candidates', candidates: [{ id: '00000000-0000-4000-8000-000000000001', name: 'read name', brand: 'read brand', quantity: '', imageUrl: null, similarity: 0.5 }], read: { brand: null, name: null, quantity: null, code: null }, photoPath: 'uploads/newfront' });
   const flow = createGuidedFlow({ ...initial, code: '4840001000014', photoPath: null }, deps);
+  await flow.confirmIdentity('Denumire confirmată', '375 g');
   expect(flow.getState().stage).toBe('front');
   await flow.capturePhoto('front');
   expect(flow.getState().initial.code).toBe('4840001000014');
@@ -114,6 +117,7 @@ test('a cancelled front request cannot identify or navigate after compression', 
   const { deps } = setup();
   deps.preparePhoto.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
   const flow = createGuidedFlow({ ...initial, photoPath: null }, deps);
+  await flow.confirmIdentity('Denumire confirmată', '375 g');
   const request = flow.capturePhoto('front'); flow.cancel();
   finish({ uri: 'front', base64: 'jpeg', bytes: 20 }); await request;
   expect(deps.identify).not.toHaveBeenCalled();
@@ -167,6 +171,7 @@ test('not-found front reading becomes the initial read without losing barcode me
   const { deps } = setup();
   deps.identify.mockResolvedValue({ status: 'not_found', read: { brand: 'read brand', name: null, quantity: null, code: null }, photoPath: 'uploads/newfront' });
   const flow = createGuidedFlow({ ...initial, code: '4840001000014', photoPath: null }, deps);
+  await flow.confirmIdentity('Denumire confirmată', '375 g');
   await flow.capturePhoto('front');
   expect(flow.getState()).toMatchObject({ stage: 'ingredients', initialFrontRead: { brand: 'read brand', code: '4840001000014' }, remotePhotoPath: 'uploads/newfront' });
 });
@@ -208,4 +213,44 @@ test('retaking ingredients photo after label read re-reads with existing nutriti
     label: expect.objectContaining({ ingredientsText: 'ingrediente noi' }),
   });
   expect(deps.readLabel).toHaveBeenCalledTimes(2);
+});
+
+test('restored confirmed identity survives a front-photo OCR and a later retake', async () => {
+  const { deps } = setup();
+  const entry = { ...initial, photoPath: null };
+  const flow = createGuidedFlow(entry, deps);
+  await flow.capturePhoto('blocked');
+  expect(deps.preparePhoto).not.toHaveBeenCalled();
+  await flow.confirmIdentity('Bona Vita Musli Crunchy cu fructe 30%', '375 g');
+  const resumed = createGuidedFlow(entry, deps, draftToGuided(guidedToDraft(flow.getState(), 'draft')));
+  deps.identify.mockResolvedValue({
+    status: 'not_found', read: { name: 'OCR name', quantity: '99 g', brand: null, code: null }, photoPath: 'uploads/front',
+  });
+  await resumed.capturePhoto('front');
+  await resumed.capturePhoto('ingredients');
+  await resumed.chooseNutrition('none');
+  resumed.retake('front');
+  await resumed.capturePhoto('new-front');
+  expect(resumed.getState()).toMatchObject({
+    stage: 'review', initial: { name: 'Bona Vita Musli Crunchy cu fructe 30%', quantity: '375 g' },
+    photos: { front: 'id:new-front', ingredients: 'id:ingredients' },
+  });
+  expect(deps.readLabel).toHaveBeenCalledTimes(1);
+});
+
+test('reload after provider failure waits for explicit retry and reuses the photos', async () => {
+  const failure = { ...label, ingredientsText: null, unclear: ['ingredientsText'], reasons: { ...reasons, ingredientsText: 'failed' } };
+  const { deps, flow } = setup(failure);
+  await flow.capturePhoto('ingredients');
+  await flow.chooseNutrition('none');
+  expect(deps.readLabel).toHaveBeenCalledTimes(1);
+  const restored = draftToGuided(guidedToDraft(flow.getState(), 'draft'));
+  expect(restored.stage).toBe('label_failed');
+  const resumed = createGuidedFlow(initial, deps, restored);
+  expect(deps.readLabel).toHaveBeenCalledTimes(1);
+  deps.readLabel.mockResolvedValueOnce(label);
+  await resumed.retry();
+  expect(deps.readLabel).toHaveBeenCalledTimes(2);
+  expect(deps.keepPhoto).toHaveBeenCalledTimes(1);
+  expect(resumed.getState().stage).toBe('review');
 });

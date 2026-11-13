@@ -76,6 +76,7 @@ jest.mock('expo-file-system/legacy', () => ({
   deleteAsync: jest.fn(async () => {}),
 }));
 jest.mock('../add/unknownDraft', () => ({
+  ...jest.requireActual<typeof import('../add/unknownDraftRepository')>('../add/unknownDraftRepository'),
   loadUnknownDraft: jest.fn(async () => null),
   saveUnknownDraft: jest.fn(async () => {}),
   clearUnknownDraft: jest.fn(async () => {}),
@@ -426,6 +427,9 @@ describe('IdentifyScreen and B3 flow', () => {
     mockParams.value = notFoundParams;
     await render(<AddScreen />);
     await act(async () => {});
+    await fireEvent.changeText(await screen.findByLabelText(ro.review.name), ORIGINAL_READ.name!);
+    await fireEvent.changeText(screen.getByLabelText(ro.review.quantity), ORIGINAL_READ.quantity!);
+    await fireEvent.press(screen.getByRole('button', { name: ro.add.next }));
     expect(screen.getByText(ro.add.ingredientsTitle)).toBeTruthy();
     expect(screen.getByText(ro.add.stepOf(1, 3))).toBeTruthy();
   });

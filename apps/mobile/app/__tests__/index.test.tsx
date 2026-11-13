@@ -29,12 +29,14 @@ it.each(['method', 'privacy', 'terms'] as const)('keeps %s reachable from the Ab
 });
 const routes = { '(tabs)/_layout': TabLayout, '(tabs)/index': ScanTab, '(tabs)/about': About,
   '(tabs)/history': () => <Text>history-test</Text>, '(tabs)/profile': Profile, '(tabs)/settings': Settings,
+  // The real Alergii screen lands with W2 (UI9-allergies-tab); a stub keeps the shell test independent of it.
+  '(tabs)/allergies': () => <Text>allergies-test</Text>,
   '(tabs)/compare': () => <Text>comparison-test</Text>, 'product/[id]': () => <Text>product-test</Text> };
 it('mounts five tabs and releases the scanner on blur', async () => {
  mockCameraMounted.mockClear(); mockCameraStopped.mockClear();
  await renderRouter(routes);
  expect((await screen.findByRole('tab', { name: 'Scanează' })).props.accessibilityState.selected).toBe(true);
- expect(screen.getAllByRole('tab')).toHaveLength(5);
+ expect(screen.getAllByRole('tab').map(tab => tab.props.accessibilityLabel)).toEqual(['Istoric', 'Compară', 'Scanează', 'Alergii', 'Profil']);
  await fireEvent.press(screen.getByRole('tab', { name: 'Istoric' }));
  expect(await screen.findByText('history-test')).toBeTruthy();
  expect(mockCameraStopped).toHaveBeenCalled();
@@ -51,4 +53,15 @@ it('preserves direct product deep links', async () => {
  await renderRouter(routes, { initialUrl: '/product/example' });
  expect(await screen.findByText('product-test')).toBeTruthy();
  expect(screen).toHavePathname('/product/example');
+});
+it.each([[ro.nav.settings, '/settings'], [ro.nav.about, '/about']] as const)('opens %s from a Profil row with no tab selected', async (label, path) => {
+ await renderRouter(routes, { initialUrl: '/profile' });
+ await fireEvent.press(await screen.findByRole('button', { name: label }));
+ expect(screen).toHavePathname(path);
+ expect(screen.getAllByRole('tab').every(tab => !tab.props.accessibilityState.selected)).toBe(true);
+});
+it.each(['/settings', '/about'])('keeps the %s deep link working', async path => {
+ await renderRouter(routes, { initialUrl: path });
+ expect(await screen.findAllByRole('tab')).toHaveLength(5);
+ expect(screen).toHavePathname(path);
 });

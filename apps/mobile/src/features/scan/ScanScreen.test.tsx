@@ -9,9 +9,16 @@ import ScanScreen from './ScanScreen';
 import { CODE, PRODUCT_ID, lookupFound, lookupNotFound } from '../capture/__fixtures__/responses';
 
 const mockReplace = jest.fn();
+const mockPush = jest.fn();
+let mockFocused = true;
 const mockPermission: { value: unknown } = { value: null };
 const mockRequestPermission = jest.fn();
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }), useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof import('react')>('react').useEffect(callback, [callback]) }));
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ replace: mockReplace, push: mockPush }),
+  useIsFocused: () => mockFocused,
+  useFocusEffect: (callback: () => void | (() => void)) =>
+    jest.requireActual<typeof import('react')>('react').useEffect(() => mockFocused ? callback() : undefined, [callback, mockFocused]),
+}));
 jest.mock('expo-haptics', () => ({ notificationAsync: jest.fn(async () => undefined), NotificationFeedbackType: { Success: 'success' } }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
 jest.mock('expo-camera', () => {
@@ -30,8 +37,29 @@ const detect = (data: string) => act(async () => { (camera().props.onBarcodeScan
 describe('ScanScreen', () => {
   beforeEach(() => {
     jest.resetAllMocks();
+    mockFocused = true;
     mockPermission.value = granted;
     (notificationAsync as unknown as AsyncMock).mockResolvedValue(undefined);
+  });
+
+  it('unmounts the native camera on blur and remounts it on focus', async () => {
+    const view = await render(<ScanScreen />);
+    expect(camera()).toBeTruthy();
+
+    mockFocused = false;
+    await view.rerender(<ScanScreen />);
+    expect(screen.queryByTestId('camera')).toBeNull();
+    expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
+
+    mockFocused = true;
+    await view.rerender(<ScanScreen />);
+    expect(camera()).toBeTruthy();
+  });
+
+  it('offers the photo route while the standalone camera is live', async () => {
+    await render(<ScanScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.scan.photoLabel }));
+    expect(mockPush).toHaveBeenCalledWith('/capture');
   });
 
   it('shows a spinner while the permission is unknown and never the denied copy', async () => {
@@ -53,6 +81,8 @@ describe('ScanScreen', () => {
     expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: ro.capture.openSettings }));
     expect(openSettings).toHaveBeenCalled();
+    await fireEvent.press(screen.getByRole('button', { name: ro.scan.photoLabel }));
+    expect(mockPush).toHaveBeenCalledWith('/capture');
   });
 
   it('reports a rejected native settings action and keeps manual entry', async () => {
@@ -122,6 +152,22 @@ describe('ScanScreen', () => {
     await fireEvent.changeText(input, CODE);
     await fireEvent.press(screen.getByRole('button', { name: ro.scan.search }));
     expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add', params: { flow: 'guided', code: CODE } });
+  });
+
+  it('inside Scan home drops the page title and keeps manual entry closed until asked', async () => {
+    const view = await render(<ScanScreen embedded />);
+    expect(screen.queryByText(ro.scan.title)).toBeNull();
+    expect(screen.queryByLabelText(ro.scan.manualTitle)).toBeNull();
+    expect(camera().props.enableTorch).toBe(false);
+    await view.rerender(<ScanScreen embedded manual torch />);
+    expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
+    expect(camera().props.enableTorch).toBe(true);
+  });
+
+  it('inside Scan home still offers manual entry when the camera is refused', async () => {
+    mockPermission.value = { granted: false, status: 'denied', canAskAgain: false };
+    await render(<ScanScreen embedded />);
+    expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
   });
 
   it('offers a retry when the camera fails to start', async () => {

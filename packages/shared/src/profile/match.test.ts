@@ -57,6 +57,14 @@ describe('avoid keys', () => {
     expect(hit(p, 'palm_oil')).toBeUndefined();
   });
 
+  it('keeps multilingual traces out of profile ingredient matches', () => {
+    const p = product('Ingredients: rice. May contain milk and E102.');
+    const result = matchProfile(p, profile(['colourings'], ['Lapte']));
+    expect(result.avoid).toEqual([]);
+    expect(result.allergens).toEqual([]);
+    expect(result.mayContain).toEqual(['Lapte']);
+  });
+
   it('uses knowledge-base slugs when the text alone misses', () => {
     const p = product('', {
       ingredients: [{ name: 'Grăsime vegetală', slug: 'ulei-de-palmier' }, { name: 'Zahăr alb', slug: 'zahar' }],
@@ -90,10 +98,16 @@ describe('exclusions (Codex review of #164)', () => {
   });
 
   it('does not let resolved slugs bring back trace-clause ingredients', () => {
-    expect(resolved('apă, poate conține urme de zahăr, ulei de palmier').ingredients.map((i) => i.slug))
-      .toContain('ulei-de-palmier'); // the resolver does keep it
-    expect(hit(resolved('apă, poate conține urme de zahăr, ulei de palmier'), 'palm_oil')).toBeUndefined();
+    const traceText = 'apă, poate conține urme de zahăr, ulei de palmier';
+    expect(resolved(traceText).ingredients.map((i) => i.slug)).not.toContain('ulei-de-palmier');
+    expect(hit(resolved(traceText), 'palm_oil')).toBeUndefined();
     expect(hit(resolved('apă, poate conține urme de ulei de palmier, zahăr'), 'added_sugar')).toBeUndefined();
+    // Older product links may already contain terms from an excluded trace clause.
+    const legacy = product(traceText, {
+      ingredients: [{ name: 'zahăr', slug: 'zahar' }, { name: 'ulei de palmier', slug: 'ulei-de-palmier' }],
+    });
+    expect(hit(legacy, 'palm_oil')).toBeUndefined();
+    expect(hit(legacy, 'added_sugar')).toBeUndefined();
     const p = product('ulei (rapiță). Poate conține urme de ulei de palmier.', { ingredients: [{ name: 'ulei de palmier', slug: 'ulei-de-palmier' }] });
     expect(hit(p, 'palm_oil')).toBeUndefined(); // a shorter label item ("ulei") does not vouch for it
   });

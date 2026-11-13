@@ -7,7 +7,7 @@ const sizes = [
   {name:'desktop', width:1440, height:900},
   {name:'ultrawide', width:2560, height:1080},
 ];
-for (const mode of ['light','dark'] as const) for (const size of sizes) {
+for (const mode of ['light'] as const) for (const size of sizes) {
   test(`${mode} ${size.name}: startup covers the viewport with uncropped artwork`, async ({ page }) => {
     await page.setViewportSize(size);
     await page.emulateMedia({colorScheme:mode});
