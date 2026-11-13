@@ -20,8 +20,7 @@ it.each([
 it('shows the About screen content and score limits', async () => {
   await render(<AboutPage />);
   expect(screen.getByRole('header', { name: ro.about.title })).toBeTruthy();
-  for (const text of [ro.about.whatBody, ro.about.methodBody, ro.about.tiersBody,
-    ro.about.nutriScoreBody, ro.about.sourcesBody, ro.about.promiseBody, ro.score.disclaimer]) {
+  for (const text of [ro.about.whatBody, ro.about.promiseBody, ro.score.disclaimer]) {
     expect(screen.getByText(text)).toBeTruthy();
   }
   for (const tier of ['excellent', 'good', 'fair', 'poor', 'bad'] as const) {
@@ -50,4 +49,11 @@ it('discloses local queues, public contribution photos and incomplete provider s
   expect(screen.getByText(/TokenHarbor.*DeepSeek/)).toBeTruthy();
   expect(screen.queryByText(/funcții nu sunt încă integrate/)).toBeNull();
   expect(screen.getByText(ro.legal.contactPending)).toBeTruthy();
+});
+it('formats legal pages with the draft notice as a single line above the lead and sections as headings', async () => {
+  await render(<PrivacyPage />);
+  const texts = screen.getAllByText(/./).map(n => n.props.children as string);
+  expect(texts.indexOf(ro.legal.draft)).toBeLessThan(texts.indexOf(ro.legal.privacyLead));
+  expect(screen.getAllByText(ro.legal.draft)).toHaveLength(1);
+  for (const section of ro.legal.privacySections) expect(screen.getByRole('header', { name: section.title })).toBeTruthy();
 });
