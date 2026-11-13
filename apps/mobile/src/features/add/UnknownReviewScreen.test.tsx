@@ -7,6 +7,7 @@ import { clearUnknownDraft, loadUnknownDraft, saveUnknownDraftIfCurrent, type Un
 import { requestUnknownFlow } from './unknownFlowTransport';
 import { completeUnknownDraft } from './completeUnknownDraft';
 import { draftToGuided } from './guidedDraftAdapter';
+import { ResultView } from '../product/ResultView';
 import { UnknownReviewScreen } from './UnknownReviewScreen';
 
 type Reasons = NonNullable<NonNullable<UnknownDraftSnapshot['label']>['reasons']>;
@@ -196,5 +197,70 @@ test('manual retake does not navigate after leaving while draft persistence is p
   await view.unmount();
   await act(async () => { finish(true); });
   expect(mockReplace).not.toHaveBeenCalled();
+});
+
+test('recalculates multilingual allergens and traces live before save and preserves them through reopened ResultView', async () => {
+  if (lookupFound.status !== 'found') throw new Error('Expected found fixture');
+  const ingredientsText = 'Ingredients: WHEAT flour. May contain MILK and PEANUTS.';
+  const savedProduct = {
+    ...lookupFound.product,
+    status: 'unverified' as const,
+    name: 'Bona Vita Musli Crunchy cu fructe 30%',
+    quantity: '375 g',
+    ingredientsText,
+    allergens: ['Gluten'] as const,
+    mayContain: ['Arahide', 'Lapte'] as const,
+  };
+  const savedResponse = { status: 'found' as const, product: { ...savedProduct, allergens: [...savedProduct.allergens], mayContain: [...savedProduct.mayContain] }, score: lookupFound.score };
+  jest.mocked(loadUnknownDraft).mockResolvedValueOnce({
+    ...storedDraft,
+    initial: { ...storedDraft.initial, name: 'Bona Vita Musli Crunchy cu fructe 30%', quantity: '375 g', identityConfirmed: true },
+    label: { ...storedDraft.label!, unit: 'g', ingredientsText: 'apă, sare' },
+  });
+  jest.mocked(requestUnknownFlow).mockResolvedValueOnce(savedResponse);
+
+  const view = await render(<UnknownReviewScreen />);
+  await act(async () => {});
+
+  await fireEvent.press(screen.getByRole('button', { name: ro.review.ingredients }));
+  await fireEvent.changeText(screen.getByLabelText(ro.review.ingredients), ingredientsText);
+
+  expect(screen.getByLabelText('Gluten')).toBeTruthy();
+  expect(screen.getByLabelText(`${ro.result.mayContain} Lapte`)).toBeTruthy();
+  expect(screen.getByLabelText(`${ro.result.mayContain} Arahide`)).toBeTruthy();
+  expect(screen.queryByLabelText('Lapte')).toBeNull();
+  expect(screen.queryByLabelText('Arahide')).toBeNull();
+
+  await act(async () => {
+    await fireEvent.press(screen.getByRole('button', { name: ro.add.confirmSave }));
+  });
+
+  expect(requestUnknownFlow).toHaveBeenCalledWith(
+    'add-product',
+    expect.anything(),
+    expect.anything(),
+    expect.objectContaining({
+      name: 'Bona Vita Musli Crunchy cu fructe 30%',
+      quantity: '375 g',
+      ingredientsText,
+    }),
+  );
+  expect(completeUnknownDraft).toHaveBeenCalledWith(
+    expect.objectContaining({
+      initial: expect.objectContaining({ name: 'Bona Vita Musli Crunchy cu fructe 30%', quantity: '375 g' }),
+    }),
+    savedResponse,
+  );
+
+  await view.unmount();
+  await render(<ResultView product={savedResponse.product} score={savedResponse.score} />);
+  expect(screen.getByText('Bona Vita Musli Crunchy cu fructe 30%')).toBeTruthy();
+  expect(screen.getByLabelText('Gluten')).toBeTruthy();
+  expect(screen.getByLabelText(`${ro.result.mayContain} Lapte`)).toBeTruthy();
+  expect(screen.getByLabelText(`${ro.result.mayContain} Arahide`)).toBeTruthy();
+  expect(screen.queryByLabelText('Lapte')).toBeNull();
+  expect(screen.queryByLabelText('Arahide')).toBeNull();
+  expect(screen.getByText(ro.result.missingAllergenNote)).toBeTruthy();
+  expect(screen.queryByText(ro.result.noAllergens)).toBeNull();
 });
 
