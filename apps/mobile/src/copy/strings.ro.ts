@@ -70,7 +70,7 @@ insufficientData:'Date insuficiente',title:'Analiza produsului',allergens:'Alerg
  pwa: {
   install: {
    title: 'Instalează OkBite',
-   description: 'Adaugă aplicația pe ecranul principal pentru acces mai ușor.',
+   action: 'Instalează',
    iosHint: 'Apasă Partajează, apoi Adaugă pe ecranul principal.',
    failed: 'Instalarea nu a pornit. Poți reîncerca din meniul browserului.',
   },
