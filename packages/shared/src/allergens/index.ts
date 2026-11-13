@@ -16,8 +16,13 @@ const NEGATED_MARKER = /(?<!\p{L})(?:f[aă]r[aă]|nu|no|without|free\s+from|bez|
 export function splitLabelAllergens(text: string): { ingredients: string; declared: string; traces: string } {
   const parts = { ingredients: [] as string[], declared: [] as string[], traces: [] as string[] };
   const markers = [...text.matchAll(LABEL_SECTION)];
+  const markerKind = (m: RegExpMatchArray): keyof typeof parts | 'other' =>
+    (m.groups?.traces || m[1]) ? 'traces'
+      : (m.groups?.ingredients || m[2]) ? 'ingredients'
+      : (m.groups?.declared || m[3]) ? 'declared'
+      : 'other';
   let section: keyof typeof parts | 'other' =
-    markers.some((marker) => marker.groups?.ingredients) ? 'other' : 'ingredients';
+    markers.some((marker) => markerKind(marker) === 'ingredients') ? 'other' : 'ingredients';
   let start = 0;
 
   const collect = (end: number) => {
@@ -28,12 +33,10 @@ export function splitLabelAllergens(text: string): { ingredients: string; declar
   };
 
   for (const marker of markers) {
-    if (marker.groups?.traces && NEGATED_MARKER.test(text.slice(start, marker.index))) continue;
+    const kind = markerKind(marker);
+    if (kind === 'traces' && NEGATED_MARKER.test(text.slice(start, marker.index))) continue;
     collect(marker.index);
-    section = marker.groups?.traces ? 'traces'
-      : marker.groups?.ingredients ? 'ingredients'
-      : marker.groups?.declared ? 'declared'
-      : 'other';
+    section = kind;
     start = marker.index + marker[0].length;
   }
   collect(text.length);

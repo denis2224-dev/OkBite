@@ -54,6 +54,16 @@ it('shows declared allergens and traces separately and updates them when the lab
   expect(input.onConfirm).toHaveBeenCalledWith(expect.objectContaining({ ingredientsText: corrected }));
 });
 
+it('detects multilingual allergens and traces for WHEAT flour and MILK and PEANUTS', async () => {
+  const input = props({ label: { ...label, ingredientsText: 'Ingredients: WHEAT flour. May contain MILK and PEANUTS.' } });
+  await render(<UnknownProductConfirmation {...input} />);
+  expect(screen.getByRole('header', { name: ro.result.allergens })).toBeTruthy();
+  expect(screen.getByLabelText('Gluten')).toBeTruthy();
+  expect(screen.getByRole('header', { name: ro.result.mayContain })).toBeTruthy();
+  expect(screen.getByLabelText(`${ro.result.mayContain} Lapte`)).toBeTruthy();
+  expect(screen.getByLabelText(`${ro.result.mayContain} Arahide`)).toBeTruthy();
+});
+
 it('shows that allergen information is incomplete when the ingredients could not be read', async () => {
   await render(<UnknownProductConfirmation {...props({ label: { ...label, ingredientsText: null } })} />);
   expect(screen.getByText(ro.result.missingAllergenNote)).toBeTruthy();
