@@ -9,13 +9,24 @@ import { ro } from '../../copy/ro';
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), canGoBack: () => false, replace: jest.fn() } }));
 beforeEach(() => jest.clearAllMocks());
 it.each([
-  [AboutPage, ro.nav.about], [PrivacyPage, ro.nav.privacy],
+  [PrivacyPage, ro.nav.privacy],
   [TermsPage, ro.nav.terms], [MethodPage, ro.nav.method],
 ])('renders an information page with revision and draft status', async (Page, title) => {
   await render(<Page />);
   expect(screen.getByRole('header', { name: title })).toBeTruthy();
   expect(screen.getByText(/Ultima actualizare/)).toBeTruthy();
   expect(screen.getByText(ro.legal.draft)).toBeTruthy();
+});
+it('shows the About screen content and score limits', async () => {
+  await render(<AboutPage />);
+  expect(screen.getByRole('header', { name: ro.about.title })).toBeTruthy();
+  for (const text of [ro.about.whatBody, ro.about.methodBody, ro.about.tiersBody,
+    ro.about.nutriScoreBody, ro.about.sourcesBody, ro.about.promiseBody, ro.score.disclaimer]) {
+    expect(screen.getByText(text)).toBeTruthy();
+  }
+  for (const tier of ['excellent', 'good', 'fair', 'poor', 'bad'] as const) {
+    expect(screen.getByText(ro.tiers[tier])).toBeTruthy();
+  }
 });
 it('keeps the About entry to the authenticated administration route', async () => {
   await render(<AboutPage />);
