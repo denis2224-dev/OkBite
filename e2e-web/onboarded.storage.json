@@ -1,0 +1,25 @@
+{
+ "cookies": [],
+ "origins": [
+  {
+   "origin": "http://127.0.0.1:18766",
+   "localStorage": [],
+   "indexedDB": [
+    {
+     "name": "okbite-profile",
+     "version": 1,
+     "stores": [
+      {
+       "name": "profile",
+       "autoIncrement": false,
+       "records": [
+        { "key": "profile", "value": "{\"goals\":[],\"allergens\":[],\"avoid\":[],\"onboarded\":true}" }
+       ],
+       "indexes": []
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
