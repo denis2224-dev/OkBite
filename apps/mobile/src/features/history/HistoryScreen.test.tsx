@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { HistoryScreen } from './HistoryScreen';
 import { clearHistory, listHistory, type HistoryEntry } from './store';
@@ -61,16 +62,56 @@ it('opens a clear confirmation dialog even with a long history', async () => {
   expect(screen.queryByLabelText(ro.history.clearTitle)).toBeNull();
   expect(clearHistory).not.toHaveBeenCalled();
 });
-it('explains browser storage retention in History', async () => {
-  await render(<HistoryScreen />);
-  expect(screen.getByText(ro.pwa.storageWarning)).toBeTruthy();
+function stubLocalStorage() {
+  const store = new Map<string, string>();
+  const before = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  Object.defineProperty(globalThis, 'window', { configurable: true, value: { localStorage: {
+    getItem: (key: string) => store.get(key) ?? null, setItem: (key: string, value: string) => { store.set(key, value); },
+  } } });
+  return () => { if (before) Object.defineProperty(globalThis, 'window', before); else Reflect.deleteProperty(globalThis, 'window'); };
+}
+it('shows a dismissible one-line browser storage notice once history has a product', async () => {
+  const restore = stubLocalStorage();
+  try {
+    await render(<HistoryScreen />);
+    await screen.findByText(ro.history.design.storageNotice);
+    await fireEvent.press(screen.getByRole('button', { name: ro.history.design.dismissNotice }));
+    expect(screen.queryByText(ro.history.design.storageNotice)).toBeNull();
+    await screen.unmount();
+    await render(<HistoryScreen />);
+    await screen.findByText(entry.product.name);
+    expect(screen.queryByText(ro.history.design.storageNotice)).toBeNull();
+  } finally { restore(); }
 });
-it('omits the browser warning and persistence request on native', async () => {
-  const native = jest.requireActual<typeof import('../../lib/storagePersistence')>('../../lib/storagePersistence');
-  jest.requireMock('../../lib/storagePersistence').showStorageWarning = native.showStorageWarning;
-  await native.requestPersistentStorage();
+it('does not show the storage notice while history is empty', async () => {
+  const restore = stubLocalStorage();
+  try {
+    jest.mocked(listHistory).mockResolvedValue([]);
+    await render(<HistoryScreen />);
+    await screen.findByText(ro.history.design.emptyTitle);
+    expect(screen.queryByText(ro.history.design.storageNotice)).toBeNull();
+  } finally { restore(); }
+});
+it('hides the search field while history is empty', async () => {
+  jest.mocked(listHistory).mockResolvedValue([]);
   await render(<HistoryScreen />);
-  expect(screen.queryByText(ro.pwa.storageWarning)).toBeNull();
+  await screen.findByText(ro.history.design.emptyTitle);
+  expect(screen.queryByLabelText(ro.history.search)).toBeNull();
+  expect(screen.getByText(ro.history.design.empty)).toBeTruthy();
+});
+it('shows the search field when history has products', async () => {
+  await render(<HistoryScreen />);
+  await screen.findByText(entry.product.name);
+  expect(screen.getByLabelText(ro.history.search)).toBeTruthy();
+});
+it('omits the storage notice on native', async () => {
+  const restore = stubLocalStorage();
+  try {
+    jest.requireMock('../../lib/storagePersistence').showStorageWarning = false;
+    await render(<HistoryScreen />);
+    await screen.findByText(entry.product.name);
+    expect(screen.queryByText(ro.history.design.storageNotice)).toBeNull();
+  } finally { restore(); }
 });
 it('shows loading before an empty saved history', async () => {
   const pending = deferred<HistoryEntry[]>();
@@ -155,4 +196,12 @@ it('withholds a cached score when required nutrition data is missing', async () 
   await render(<HistoryScreen />);
   await waitFor(() => expect(screen.getByText(ro.result.scoreUnavailable)).toBeTruthy());
   expect(screen.queryByText(ro.history.score(entry.score.score!))).toBeNull();
+});
+
+it('renders the title and subtitle through the shared tab page header', async () => {
+  await render(<HistoryScreen />);
+  await screen.findByText(entry.product.name);
+  const title = screen.getByRole('header', { name: ro.history.design.title });
+  expect(StyleSheet.flatten(title.props.style).fontSize).toBe(22);
+  expect(screen.getByText(ro.history.design.note)).toBeTruthy();
 });
