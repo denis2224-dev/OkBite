@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { render, fireEvent, screen } from '@testing-library/react-native';
 import { ReadLabelResponse } from '@okbite/shared';
-import { dark, light, type Palette } from '../../theme/tokens';
+import { light, type Palette } from '../../theme/tokens';
 import { ro } from '../../copy/ro';
 import { foundYogurt } from '../../test/fixtures';
 import { ReviewForm } from '../add/ReviewForm';
@@ -11,7 +11,7 @@ import { ConfirmMatch } from '../identify/ConfirmMatch';
 import { NotFound } from '../identify/NotFound';
 import { ManualCode } from '../scan/ManualCode';
 
-let mockColors: Palette = dark;
+let mockColors: Palette = light;
 jest.mock('../../theme/useTheme', () => ({ useTheme: () => ({ colors: mockColors }) }));
 const candidate = { id: foundYogurt.product.id, name: foundYogurt.product.name.repeat(8),
   brand: foundYogurt.product.brand, quantity: foundYogurt.product.quantity,
@@ -23,7 +23,7 @@ const initial = { name: candidate.name, brand: candidate.brand, quantity: candid
   code: foundYogurt.product.code, photoPath: null };
 const style = (node: { props: { style?: unknown } }) => StyleSheet.flatten(node.props.style as never);
 
-describe.each([['light', light], ['dark', dark]] as const)('%s theme', (_name, colors) => {
+describe.each([['light', light]] as const)('%s theme', (_name, colors) => {
   beforeEach(() => { mockColors = colors; });
   it('keeps review fields, selected categories and uncertain values readable', async () => {
     await render(<ReviewForm label={label} initial={initial}

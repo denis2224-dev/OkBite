@@ -1,11 +1,10 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-const tabs = ['Despre', 'Istoric', 'Scanează', 'Profil', 'Setări'];
+const tabs = ['Istoric', 'Compară', 'Scanează', 'Alergii', 'Profil'];
 const entry = JSON.parse(readFileSync('apps/mobile/src/test/preview-data.json', 'utf8'))[0];
 
 test.describe('N9 five-tab redesign acceptance', () => {
-  test.fixme(true, 'Enable when N3 mounts the five-tab shell; N15 verifies final onboarding and result integration.');
   test.use({ serviceWorkers: 'block' });
 
   test('tabs appear in order with Scan selected at startup', async ({ page }) => {
@@ -14,7 +13,7 @@ test.describe('N9 five-tab redesign acceptance', () => {
     await expect(page.getByRole('tab', { name: 'Scanează', exact: true })).toHaveAttribute('aria-selected', 'true');
   });
 
-  for (const [name, heading] of [['Despre', 'Despre OkBite'], ['Istoric', 'Istoric'], ['Profil', 'Profil'], ['Setări', 'Setări']]) {
+  for (const [name, heading] of [['Istoric', 'Istoric'], ['Compară', 'Comparație'], ['Alergii', 'Alergiile tale'], ['Profil', 'Profil']]) {
     test(`${name} opens its screen and can return to Scan`, async ({ page }) => {
       await page.goto('/');
       await page.getByRole('tab', { name, exact: true }).click();
@@ -25,6 +24,16 @@ test.describe('N9 five-tab redesign acceptance', () => {
     });
   }
 
+  for (const [row, heading] of [['Setări', 'Setări'], ['Despre', 'Despre']]) {
+    test(`Profil → ${row} row opens ${heading} with no tab selected`, async ({ page }) => {
+      await page.goto('/');
+      await page.getByRole('tab', { name: 'Profil', exact: true }).click();
+      await page.getByRole('button', { name: row, exact: true }).click();
+      await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible();
+      await expect(page.getByRole('tab', { name: 'Profil', exact: true })).toHaveAttribute('aria-selected', 'false');
+      await expect(page.locator('[role="tab"][aria-selected="true"]')).toHaveCount(0);
+    });
+  }
 });
 
 test('comparison remains reachable from a stubbed product result', async ({ page }) => {

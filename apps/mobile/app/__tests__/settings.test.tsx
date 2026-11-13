@@ -1,17 +1,18 @@
 import 'fake-indexeddb/auto';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
 import { router } from 'expo-router';
 import SettingsTab from '../(tabs)/settings';
 import { ThemeProvider } from '../../src/theme/useTheme';
 import { ro } from '../../src/copy/ro';
+import * as lang from '../../src/copy/lang';
 import * as profileStore from '../../src/features/profile/store';
 import { resetProfileHookState } from '../../src/features/profile/useProfile';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() } }));
 jest.mock('../../src/features/profile/db', () => jest.requireActual('../../src/features/profile/db.web'));
-jest.mock('../../src/copy/lang', () => jest.requireActual('../../src/copy/lang.web'));
+// The web module stands in for storage and reload; native keeps the selector disabled unless a test enables it.
+jest.mock('../../src/copy/lang', () => ({ __esModule: true, ...jest.requireActual('../../src/copy/lang.web'), languageSelectable: false }));
 
 beforeEach(async () => {
  jest.restoreAllMocks();
@@ -28,24 +29,15 @@ beforeEach(async () => {
  Object.defineProperty(globalThis, 'document', { configurable: true, value: { documentElement: { lang: 'ro' } } });
 });
 
-it('offers system, light and dark themes and restores the saved choice', async () => {
+it('offers no appearance choice: the app is light only', async () => {
  const ui = await render(<ThemeProvider><SettingsTab /></ThemeProvider>);
- expect(ui.getByRole('button', {name:ro.settings.system}).props.accessibilityState.selected).toBe(true);
- await fireEvent.press(ui.getByRole('button', {name:ro.settings.dark}));
- await waitFor(() => expect(ui.getByRole('button', {name:ro.settings.dark}).props.accessibilityState.selected).toBe(true));
- expect(ui.getByRole('button', {name:ro.settings.system}).props.accessibilityState.selected).toBe(false);
- await waitFor(async () => expect(await AsyncStorage.getItem('okbite.appearance')).toBe('dark'));
- await ui.unmount();
- const reopened = await render(<ThemeProvider><SettingsTab /></ThemeProvider>);
- await waitFor(() => expect(reopened.getByRole('button', {name:ro.settings.dark}).props.accessibilityState.selected).toBe(true));
- await fireEvent.press(reopened.getByRole('button', {name:ro.settings.light}));
- expect(reopened.getByRole('button', {name:ro.settings.light}).props.accessibilityState.selected).toBe(true);
- await fireEvent.press(reopened.getByRole('button', {name:ro.settings.system}));
- expect(reopened.getByRole('button', {name:ro.settings.system}).props.accessibilityState.selected).toBe(true);
+ expect(ui.queryByRole('radiogroup')).toBeNull();
+ expect(ui.queryAllByRole('radio')).toHaveLength(0);
+ for (const label of [ro.app.system, ro.app.light, ro.app.dark]) expect(ui.queryByRole('button', {name:label})).toBeNull();
 });
 
 it('enables the implemented web language setter and restores the selected language', async () => {
- jest.spyOn(Platform, 'select').mockImplementation(spec => spec.web ?? ('default' in spec ? spec.default : undefined));
+ jest.replaceProperty(lang, 'languageSelectable', true);
  window.localStorage.setItem('okbite.lang', 'en');
  const ui = await render(<SettingsTab />);
  expect(ui.getByRole('button', {name:ro.settings.english}).props.accessibilityState.selected).toBe(true);

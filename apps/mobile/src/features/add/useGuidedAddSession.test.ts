@@ -21,6 +21,10 @@ jest.mock('../capture/compressPhoto', () => ({ compressPhoto: async (uri: string
 jest.mock('../offline/photos', () => ({ keepPhoto: async (uri: string) => 'kept-' + uri, openPhoto: async (id: string) => ({ uri: id, release() {} }), removePhoto: jest.fn() }));
 const initial = { code: '4840001000014', name: 'Test product', brand: null, quantity: null, photoPath: 'device/front.jpg' };
 const label = { ingredientsText: 'ingredient test', unit: null, nutrients: Object.fromEntries(NUTRIENT_KEYS.map(key => [key, null])), unclear: [], ingredientsPhotoPath: 'device/ingredients.jpg', nutritionPhotoPath: null, reasons: Object.fromEntries([...NUTRIENT_KEYS, 'ingredientsText'].map(key => [key, key === 'ingredientsText' ? 'read' : 'not_printed'])) };
+type Controller = NonNullable<ReturnType<typeof useGuidedAddSession>['controller']>;
+async function confirmIdentity(controller: Controller) {
+  await act(async () => { await controller.confirmIdentity('Test product', '375 g'); });
+}
 beforeEach(() => { jest.clearAllMocks(); mockDelayFocus = false; mockFocus = undefined; jest.mocked(loadUnknownDraft).mockResolvedValue(null); jest.mocked(requestUnknownFlow).mockResolvedValue(label); });
 
 test.each(['before', 'after'])('opens confirmation when first focus arrives %s draft restoration', async ordering => {
@@ -30,6 +34,7 @@ test.each(['before', 'after'])('opens confirmation when first focus arrives %s d
   const { result } = await renderHook(() => useGuidedAddSession(initial));
   if (ordering === 'before') await act(async () => { mockFocus!(); finish(null); });
   else { await act(async () => { finish(null); }); await act(async () => { mockFocus!(); }); }
+  await confirmIdentity(result.current.controller!);
   await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
   await act(async () => { await result.current.controller!.chooseNutrition('none'); });
   expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'draft-id' } });
@@ -40,6 +45,7 @@ test('does not navigate when a read finishes after blur and refocus', async () =
   const { result } = await renderHook(() => useGuidedAddSession(initial));
   let blur: void | (() => void);
   await act(async () => { blur = mockFocus!(); });
+  await confirmIdentity(result.current.controller!);
   await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
   let finish!: (value: typeof label) => void;
   jest.mocked(requestUnknownFlow).mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
@@ -52,6 +58,7 @@ test('does not navigate when a read finishes after blur and refocus', async () =
 test('asks after ingredients and reads only after an explicit answer', async () => {
   const { result } = await renderHook(() => useGuidedAddSession(initial));
   await act(async () => {});
+  await confirmIdentity(result.current.controller!);
   expect(result.current.state?.stage).toBe('ingredients');
   await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
   expect(result.current.state?.stage).toBe('nutrition_question');
@@ -88,6 +95,7 @@ test('discarding a saved draft restarts a usable session for the incoming produc
   await act(async () => {});
   await act(async () => { await result.current.discardDraft(); });
   expect(result.current.state?.initial).toMatchObject(initial);
+  await confirmIdentity(result.current.controller!);
   await act(async () => { await result.current.controller!.capturePhoto('new-ingredients'); });
   expect(result.current.state?.stage).toBe('nutrition_question');
   expect(result.current.restoredFromDraft).toBe(false);
@@ -99,6 +107,7 @@ test('a failed draft deletion keeps the flow usable and reports the storage erro
   await act(async () => {});
   await act(async () => { await result.current.discardDraft(); });
   expect(result.current.discardError).toBe(true);
+  await confirmIdentity(result.current.controller!);
   await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
   expect(result.current.state?.stage).toBe('nutrition_question');
 });
@@ -107,6 +116,7 @@ test('suppresses navigation when a read finishes after unmount', async () => {
   jest.mocked(requestUnknownFlow).mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
   const { result, unmount } = await renderHook(() => useGuidedAddSession(initial));
   await act(async () => {});
+  await confirmIdentity(result.current.controller!);
   await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
   let reading!: Promise<void>;
   await act(async () => { reading = result.current.controller!.chooseNutrition('skipped'); });
@@ -134,6 +144,7 @@ test('sends front photo for barcode-only entry and shows identify candidates whi
   });
   const { result } = await renderHook(() => useGuidedAddSession({ ...initial, photoPath: null }));
   await act(async () => {});
+  await confirmIdentity(result.current.controller!);
   expect(result.current.state?.stage).toBe('front');
   await act(async () => { await result.current.controller!.capturePhoto('front-shot'); });
   expect(api.identifyOutcome).toHaveBeenCalledTimes(1);

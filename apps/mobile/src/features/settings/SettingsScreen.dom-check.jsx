@@ -24,15 +24,12 @@ function button(label) {
   expect(element).not.toBeNull();
   return element;
 }
-it('exposes the selected language and changing theme on the real web buttons', async () => {
+it('exposes the selected language on the real web buttons and offers no theme choice', async () => {
   const setLanguage = jest.fn();
   await act(() => root.render(<ThemeProvider><SettingsScreen currentLanguage="en" setLanguage={setLanguage} /></ThemeProvider>));
   expect(button(ro.settings.english).getAttribute('aria-pressed')).toBe('true');
   expect(button(ro.settings.romanian).getAttribute('aria-pressed')).toBe('false');
-  expect(button(ro.settings.system).getAttribute('aria-pressed')).toBe('true');
-  await act(() => button(ro.settings.dark).click());
-  expect(button(ro.settings.dark).getAttribute('aria-pressed')).toBe('true');
-  expect(button(ro.settings.system).getAttribute('aria-pressed')).toBe('false');
+  expect(document.getElementById('screen').textContent).not.toMatch(/Întunecat|După telefon/);
   await act(() => button(ro.settings.romanian).click());
   expect(setLanguage).toHaveBeenCalledWith('ro');
   await act(() => root.render(<ThemeProvider><SettingsScreen currentLanguage="ro" setLanguage={setLanguage} /></ThemeProvider>));

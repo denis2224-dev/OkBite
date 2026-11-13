@@ -1,5 +1,6 @@
 export type Language = 'ro' | 'en';
 const key = 'okbite.lang';
+export const languageSelectable: boolean = true;
 
 export function getLanguage(): Language {
   let saved: string | null = null;

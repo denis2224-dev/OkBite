@@ -1,8 +1,9 @@
 import React, { useRef, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Text } from 'react-native';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
-import { ActionButton } from '../capture/StatusPanel';
+import { Button } from '../../ui/Button';
+import { Card } from '../../ui/Card';
 import type { GuidedPhotoCaptureProps } from './GuidedPhotoCapture';
 export type { GuidedPhotoCaptureProps } from './GuidedPhotoCapture';
 
@@ -19,11 +20,11 @@ export function GuidedPhotoCapture({ onCapture, disabled = false }: GuidedPhotoC
     catch { setFailed(true); }
     finally { URL.revokeObjectURL(uri); input.value = ''; setBusy(false); }
   };
-  return <View style={{ gap: 12 }}>
+  return <Card>
     <input ref={camera} type="file" accept="image/*" capture="environment" aria-label={ro.capture.shutter} style={{ display: 'none' }} onChange={event => { void picked(event); }} />
     <input ref={gallery} type="file" accept="image/*" aria-label={ro.add.gallery} style={{ display: 'none' }} onChange={event => { void picked(event); }} />
-    <ActionButton label={ro.capture.shutter} disabled={disabled || busy} onPress={() => camera.current?.click()} />
-    <ActionButton label={ro.add.gallery} disabled={disabled || busy} onPress={() => gallery.current?.click()} />
+    <Button icon="camera" disabled={disabled || busy} onPress={() => camera.current?.click()}>{ro.capture.shutter}</Button>
+    <Button variant="secondary" disabled={disabled || busy} onPress={() => gallery.current?.click()}>{ro.add.gallery}</Button>
     {failed ? <Text accessibilityRole="alert" style={{ color: colors.ink }}>{ro.errors.generic}</Text> : null}
-  </View>;
+  </Card>;
 }
