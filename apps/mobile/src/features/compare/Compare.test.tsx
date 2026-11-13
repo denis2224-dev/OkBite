@@ -81,7 +81,7 @@ test('uses trace tone for mayContain and missingAllergenNote when unverified', a
       mayContain: ['Lapte', 'Arahide'],
     },
   }} onSelect={() => {}} />);
-  expect(screen.getByText(ro.result.missingAllergenNote)).toBeTruthy();
+  expect(screen.getAllByText(ro.result.missingAllergenNote)).toHaveLength(1);
   expect(screen.queryByText(ro.result.noAllergens)).toBeNull();
   expect(screen.getByLabelText(`${ro.result.mayContain} Lapte`)).toBeTruthy();
   expect(screen.getByLabelText(`${ro.result.mayContain} Arahide`)).toBeTruthy();
@@ -102,7 +102,8 @@ test('shows noAllergens for verified product with confirmed ingredients and no a
     },
   }} onSelect={() => {}} />);
   expect(screen.getByText(ro.result.noAllergens)).toBeTruthy();
-  expect(screen.queryByText(ro.result.missingAllergenNote)).toBeNull();
+  // The single check-the-package line stays even when no allergen is declared.
+  expect(screen.getAllByText(ro.result.missingAllergenNote)).toHaveLength(1);
 });
 
 test('compatible comparison withholds a stale score for an incomplete label', async () => {
