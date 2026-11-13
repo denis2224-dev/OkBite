@@ -11,20 +11,22 @@ const mockEntries = previewEntries.map(entry => ({ ...entry, savedAt: '2026-11-0
 let mockId: string | undefined;
 let mockAllergens: string[] = [];
 let mockPending: Promise<typeof mockEntries> | undefined;
-beforeEach(() => { mockId = undefined; mockPending = undefined; mockAllergens = []; });
+beforeEach(() => { mockId = undefined; mockPending = undefined; mockAllergens = []; mockIsPreview = false; });
+let mockIsPreview = false;
+jest.mock('../../lib/preview', () => ({ get isPreview() { return mockIsPreview; } }));
 jest.mock('../profile', () => ({ useProfile: () => ({ profile: { goals: [], allergens: mockAllergens, avoid: [], onboarded: true } }) }));
 jest.mock('../history/store', () => ({ listHistory: async () => mockPending ?? mockEntries }));
 jest.mock('expo-router', () => ({ useLocalSearchParams: () => ({ id: mockId }), router: { push: jest.fn(), canGoBack: () => true, back: jest.fn() },
   useFocusEffect: (effect: () => void | (() => void)) => mockUseEffect(effect, [effect]) }));
 
 async function choose(index: number) {
-  await fireEvent.press(screen.getAllByRole('button', { name: ro.compare.choose })[0]!);
+  await fireEvent.press(screen.getAllByRole('button', { name: new RegExp(ro.compare.choose) })[0]!);
   const product = previewEntries[index]!.product;
   await fireEvent.press(screen.getByRole('button', { name: `${product.name} · ${product.brand}` }));
 }
 test('renders the same-category comparison from history and announces picker expansion', async () => {
   await render(<Compare />);
-  const picker = screen.getAllByRole('button', { name: ro.compare.choose })[0]!;
+  const picker = screen.getAllByRole('button', { name: new RegExp(ro.compare.choose) })[0]!;
   await fireEvent.press(picker);
   expect(picker.props.accessibilityState.expanded).toBe(true);
   const product = previewEntries[0]!.product;
@@ -173,4 +175,36 @@ test('no profile warning when the profile has no allergens', async () => {
   await render(<Compare />);
   await choose(3); await choose(4);
   expect(screen.queryByText(design.profileWarning('lapte'))).toBeNull();
+});
+
+test('the live comparison does not show the illustrative-scores footnote', async () => {
+  await render(<Compare />);
+  await choose(0); await choose(1);
+  expect(screen.getAllByTestId('compare-card')).toHaveLength(2);
+  expect(screen.queryByText(design.footnote)).toBeNull();
+});
+
+test('demo mode keeps the illustrative-scores footnote', async () => {
+  mockIsPreview = true;
+  await render(<Compare />);
+  await choose(0); await choose(1);
+  expect(screen.getByText(design.footnote)).toBeTruthy();
+});
+
+test('the empty screen labels both slots, explains the rule once, and gives each pick button its own label', async () => {
+  await render(<Compare />);
+  expect(screen.getByText(design.hint)).toBeTruthy();
+  expect(screen.getByText(design.productA)).toBeTruthy();
+  expect(screen.getByText(design.productB)).toBeTruthy();
+  const a = screen.getByRole('button', { name: `${design.productA}: ${ro.compare.choose}` });
+  const b = screen.getByRole('button', { name: `${design.productB}: ${ro.compare.choose}` });
+  expect(a).not.toBe(b);
+  expect(within(a).getByText(ro.compare.choose)).toBeTruthy();
+});
+
+test('photographing another product is a quiet text button, not a filled one', async () => {
+  await render(<Compare />);
+  const photo = screen.getByRole('button', { name: ro.compare.photo });
+  expect(StyleSheet.flatten(photo.props.style).backgroundColor).toBe('transparent');
+  expect(StyleSheet.flatten(photo.props.style).borderWidth).toBe(0);
 });
