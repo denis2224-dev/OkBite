@@ -66,12 +66,15 @@ const numbers = (s: string) =>
   JSON.stringify((s.match(/\d+(?:[.,]\d+)?/g) ?? []).map((n) => n.replace(',', '.')));
 const eCodes = (s: string) =>
   JSON.stringify(
-    (s.match(/\bE[ -]*\d{3,4}[a-z]?\b/gi) ?? []).map((e) => e.replace(/[ -]/g, '').toUpperCase()),
+    // Cyrillic labels often write the code with Cyrillic Е (U+0415); the Romanian text uses Latin E.
+    (s.match(/(?<![\p{L}\d])[EЕeе][ -]*\d{3,4}[a-z]?(?![\p{L}\d])/gu) ?? []).map((e) =>
+      e.replace(/[ -]/g, '').replace(/^[Ееe]/, 'E').toUpperCase(),
+    ),
   );
-function parseTranslation(raw: string, source: string): string[] | null {
+export function parseTranslation(raw: string, source: string): string[] | null {
   const parts = source.split(SEPARATORS);
   const input = parts.filter((_, i) => i % 2 === 0);
-  const parsed = z.array(z.string().trim().min(1).max(3000)).safeParse(
+  const parsed = z.array(z.string().trim().max(3000)).safeParse(
     (() => {
       try {
         return JSON.parse(raw.replace(/^```\w*\s*|\s*```$/g, ''));
@@ -83,6 +86,8 @@ function parseTranslation(raw: string, source: string): string[] | null {
   if (!parsed.success || parsed.data.length !== input.length) return null;
   for (const [i, out] of parsed.data.entries()) {
     const original = input[i]!;
+    // A trailing or doubled separator leaves an empty piece; only that piece may stay empty.
+    if (!out !== !original.trim()) return null;
     if (
       /\p{Script=Cyrillic}/u.test(out) ||
       numbers(original) !== numbers(out) ||

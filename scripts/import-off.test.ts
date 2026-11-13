@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { importOff as runImportOff, type OffProduct } from './import-off';
+import { importOff as runImportOff, parseTranslation, type OffProduct } from './import-off';
 import { loadData } from './load-data';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -355,4 +355,12 @@ describe('importOff and loadData against stubbed services', () => {
       { slug: 'iaurt', name: 'Iaurt', score_kind: 'general' },
     ]);
   });
+});
+
+it('accepts an empty translation only for an empty label piece, and Cyrillic E-codes as Latin', () => {
+  expect(parseTranslation(JSON.stringify(['zahăr', '']), 'сахар, ')).toEqual(['zahăr', '']);
+  expect(parseTranslation(JSON.stringify(['zahăr', 'x']), 'сахар, ')).toBeNull();
+  expect(parseTranslation(JSON.stringify(['', '']), 'сахар, ')).toBeNull();
+  expect(parseTranslation(JSON.stringify(['emulgator E471']), 'эмульгатор Е471')).toEqual(['emulgator E471']);
+  expect(parseTranslation(JSON.stringify(['emulgator 471']), 'эмульгатор Е471')).toBeNull();
 });
