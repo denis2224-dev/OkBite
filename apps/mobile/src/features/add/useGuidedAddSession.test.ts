@@ -3,8 +3,12 @@ import { useGuidedAddSession } from './useGuidedAddSession';
 import { clearUnknownDraft, loadUnknownDraft, saveUnknownDraft } from './unknownDraft';
 import { requestUnknownFlow } from './unknownFlowTransport';
 import { api } from '../../lib/api';
+import type { AnalysisOutcome } from '../../lib/analysisOutcome';
 import { NUTRIENT_KEYS } from '@okbite/shared';
 import { removePhoto } from '../offline/photos';
+
+const completed = <T,>(result: T): AnalysisOutcome<T> => ({ status: 'completed', result });
+const pendingOutcome = <T,>(completion: Promise<T>): AnalysisOutcome<T> => ({ status: 'pending', retryAllowed: false, completion });
 const mockReplace = jest.fn();
 let mockDelayFocus = false;
 let mockFocus: (() => void | (() => void)) | undefined;
@@ -155,4 +159,67 @@ test('sends front photo for barcode-only entry and shows identify candidates whi
       payload: expect.stringContaining('4840001000014'),
     }),
   }));
+});
+
+test('waits on front identify completion after >55 s, blocks duplicate calls, and advances on late resolution', async () => {
+  let finish!: (res: unknown) => void;
+  jest.mocked(api.identifyOutcome).mockResolvedValueOnce(pendingOutcome(new Promise(resolve => { finish = resolve; })) as never);
+  const { result } = await renderHook(() => useGuidedAddSession({ ...initial, photoPath: null }));
+  await act(async () => {});
+  await confirmIdentity(result.current.controller!);
+  let running!: Promise<void>;
+  await act(async () => { running = result.current.controller!.capturePhoto('front-shot'); });
+  expect(result.current.frontPending).toBe('waiting');
+  expect(result.current.state?.stage).toBe('working');
+  await act(async () => {
+    await result.current.controller!.capturePhoto('front-shot-2');
+    await result.current.controller!.retry();
+  });
+  expect(api.identifyOutcome).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    finish({ status: 'not_found', read: { brand: 'Brand', name: null, quantity: null, code: null }, photoPath: 'device/front.jpg' });
+    await running;
+  });
+  expect(result.current.frontPending).toBe('none');
+  expect(result.current.state?.stage).toBe('ingredients');
+});
+
+test('surfaces pending retry state and allows explicit retry when late front identify rejects', async () => {
+  let rejectLate!: (err: unknown) => void;
+  jest.mocked(api.identifyOutcome)
+    .mockResolvedValueOnce(pendingOutcome(new Promise((_r, reject) => { rejectLate = reject; })) as never)
+    .mockResolvedValueOnce(completed({ status: 'not_found', read: { brand: null, name: null, quantity: null, code: null }, photoPath: 'device/front.jpg' }) as never);
+  const { result } = await renderHook(() => useGuidedAddSession({ ...initial, photoPath: null }));
+  await act(async () => {});
+  await confirmIdentity(result.current.controller!);
+  let running!: Promise<void>;
+  await act(async () => { running = result.current.controller!.capturePhoto('front-shot'); });
+  expect(result.current.frontPending).toBe('waiting');
+  await act(async () => {
+    rejectLate(Object.assign(new Error('upstream'), { code: 'upstream_failed' }));
+    await running;
+  });
+  expect(result.current.state?.stage).toBe('error');
+  expect(result.current.frontPending).toBe('retry');
+  await act(async () => { await result.current.controller!.retry(); });
+  expect(api.identifyOutcome).toHaveBeenCalledTimes(2);
+  expect(result.current.frontPending).toBe('none');
+  expect(result.current.state?.stage).toBe('ingredients');
+});
+
+test('suppresses front identify navigation when unmounted while pending', async () => {
+  let finish!: (res: unknown) => void;
+  jest.mocked(api.identifyOutcome).mockResolvedValueOnce(pendingOutcome(new Promise(resolve => { finish = resolve; })) as never);
+  const { result, unmount } = await renderHook(() => useGuidedAddSession({ ...initial, photoPath: null }));
+  await act(async () => {});
+  await confirmIdentity(result.current.controller!);
+  let running!: Promise<void>;
+  await act(async () => { running = result.current.controller!.capturePhoto('front-shot'); });
+  expect(result.current.frontPending).toBe('waiting');
+  await unmount();
+  await act(async () => {
+    finish({ status: 'candidates', candidates: [{ id: '00000000-0000-4000-8000-000000000001', name: 'Candidat', brand: 'Brand', quantity: '100 g', imageUrl: null, similarity: 0.7 }], read: { brand: 'Brand', name: 'Candidat', quantity: '100 g', code: null }, photoPath: 'device/front.jpg' });
+    await running;
+  });
+  expect(mockReplace).not.toHaveBeenCalled();
 });

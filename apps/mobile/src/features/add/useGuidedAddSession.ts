@@ -23,6 +23,7 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
   const [restoredFromDraft, setRestoredFromDraft] = useState(false);
   const [draftConflict, setDraftConflict] = useState(false);
   const [discardError, setDiscardError] = useState(false);
+  const [frontPending, setFrontPending] = useState<'none' | 'waiting' | 'retry'>('none');
   const [sessionVersion, setSessionVersion] = useState(0);
   const draftIdRef = useRef<string>(draftId);
   const initialRef = useRef(initial);
@@ -41,9 +42,11 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
     void loadUnknownDraft()
       .then(stored => {
         if (!active) return;
+        setFrontPending('none');
         let token = runtimeRef.current.activity.start();
         const runFocused = async (action: () => Promise<void>) => {
           if (flow.getState().stage === 'working') return;
+          setFrontPending('none');
           token = runtimeRef.current.activity.start();
           await action();
         };
@@ -66,7 +69,16 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
             async identify(base64) {
               const outcome = await api.identifyOutcome(base64);
               if (outcome && typeof outcome === 'object' && 'status' in outcome && outcome.status === 'pending' && 'completion' in outcome) {
-                throw new Error('interrupted');
+                const current = () => active && runtimeRef.current.activity.isCurrent(token);
+                if (current()) setFrontPending('waiting');
+                try {
+                  const result = await outcome.completion;
+                  if (current()) setFrontPending('none');
+                  return result;
+                } catch (err) {
+                  if (current()) setFrontPending('retry');
+                  throw err;
+                }
               }
               return outcome && typeof outcome === 'object' && 'result' in outcome ? outcome.result : outcome;
             },
@@ -99,7 +111,9 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
         );
         activeFlow = flow;
         unsubscribe = flow.subscribe(next => {
-          if (active) setState(next);
+          if (!active) return;
+          setState(next);
+          if (next.stage !== 'working' && next.stage !== 'error') setFrontPending('none');
         });
         if (retakeRef.current && !conflict) flow.retake(retakeRef.current);
         setController({ ...flow,
@@ -139,12 +153,13 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
     setRestoredFromDraft(false);
     setDraftConflict(false);
     setDiscardError(false);
+    setFrontPending('none');
     retakeRef.current = undefined;
     setState(null);
     setController(null);
     setSessionVersion(version => version + 1);
   };
 
-  return { state, controller, draftId, error, restoredFromDraft, draftConflict, discardError,
+  return { state, controller, draftId, error, restoredFromDraft, draftConflict, discardError, frontPending,
     resumeDraft: () => setDraftConflict(false), discardDraft };
 }
