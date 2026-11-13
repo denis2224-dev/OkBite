@@ -14,8 +14,10 @@ export type SettingsScreenProps = {
   currentLanguage?: 'ro' | 'en';
   setLanguage?: (language: 'ro' | 'en') => void;
   resetOnboarding?: () => void;
+  /** Shown as an alert at the top of the content, inside the safe area. */
+  alert?: string;
 };
-export function SettingsScreen({ currentLanguage = 'ro', setLanguage, resetOnboarding }: SettingsScreenProps = {}) {
+export function SettingsScreen({ currentLanguage = 'ro', setLanguage, resetOnboarding, alert }: SettingsScreenProps = {}) {
   const { colors } = useTheme();
   const { canInstall, isIos, isStandalone, install } = useInstallPrompt();
   const [confirming, setConfirming] = useState(false);
@@ -53,6 +55,7 @@ export function SettingsScreen({ currentLanguage = 'ro', setLanguage, resetOnboa
   const rowStyle = [styles.row, { borderColor: colors.divider }];
   return <>
     <Screen title={ro.settings.title}>
+      {alert ? <Body accessibilityRole="alert" style={{ color: colors.low }}>{alert}</Body> : null}
       <Card>
         <Heading style={[styles.section, styles.sectionLabel, { color: colors.primary }]}>{ro.settings.language}</Heading>
         <View style={styles.choices}>
