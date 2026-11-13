@@ -11,6 +11,7 @@ import { ProductPicker } from '../../src/features/compare/ProductPicker';
 import { betterOverall, compareRows } from '../../src/features/compare/compare';
 import { CompareCell } from '../../src/features/compare/CompareCell';
 import { CompareVerdict } from '../../src/features/compare/CompareVerdict';
+import { isPreview } from '../../src/lib/preview';
 import { formatAmount } from '../../src/lib/format';
 import { useTheme } from '../../src/theme/useTheme';
 import { useHomeTheme } from '../../src/theme/home';
@@ -98,8 +99,8 @@ export default function Compare() {
           <HomeCard style={styles.allergens}><Text accessibilityRole="header" style={styles.allergenTitle}>{ro.result.allergens}</Text><Text style={styles.allergenText}><Text style={styles.bold}>A:</Text> <Text>{a.product.allergens.join(', ') || copy.none}</Text></Text><Text style={[styles.allergenText, styles.allergenB]}><Text style={styles.bold}>B:</Text> <Text>{b.product.allergens.join(', ') || copy.none}</Text></Text></HomeCard>
           {products.map(({entry,label}) => entry.product.mayContain.length > 0 && <View key={label}><Text style={styles.allergenText}>{label} · <Text>{ro.result.mayContain}</Text></Text><Text style={styles.allergenText}>{entry.product.mayContain.join(', ')}</Text></View>)}
           <Text style={styles.footnote}>{ro.result.allergyNote}</Text>
-          <Text style={styles.footnote}>{copy.footnote}</Text>
-          <Button variant="secondary" onPress={() => router.push('/capture')}>{ro.compare.photo}</Button>
+          {isPreview && <Text style={styles.footnote}>{copy.footnote}</Text>}
+          <Button variant="ghost" onPress={() => router.push('/capture')}>{ro.compare.photo}</Button>
         </ScrollView>
       </View>
       <Modal visible={picker !== null} transparent animationType="none" onRequestClose={() => setPicker(null)}>
@@ -112,11 +113,11 @@ export default function Compare() {
   }
   return <SafeAreaView edges={id ? ['top','bottom','left','right'] : ['top','left','right']} style={styles.safe}>
    <View style={styles.frame}>
-    <TabPageHeader title={copy.title} subtitle={a ? copy.subtitle(a.product.category.name,a.product.unit) : undefined} back={Boolean(id)}/>
+    <TabPageHeader title={copy.title} subtitle={a ? copy.subtitle(a.product.category.name,a.product.unit) : copy.hint} back={Boolean(id)}/>
     <ScrollView style={styles.scroll} contentContainerStyle={[styles.body,{gap:16}]} keyboardShouldPersistTaps="handled">
     {error && <Body accessibilityLiveRegion="polite">{ro.history.storageError}</Body>}
-    <ProductPicker entries={entries} selected={a} excluded={b?.product.id} onSelect={entry => select({ id, a: entry, b })} />
-    <ProductPicker entries={entries} selected={b} category={a?.product.category.slug} excluded={a?.product.id} onSelect={entry => select({ id, a, b: entry })} />
+    <ProductPicker slot={copy.productA} entries={entries} selected={a} excluded={b?.product.id} onSelect={entry => select({ id, a: entry, b })} />
+    <ProductPicker slot={copy.productB} entries={entries} selected={b} category={a?.product.category.slug} excluded={a?.product.id} onSelect={entry => select({ id, a, b: entry })} />
     {a && b && (!rows.length ? <Body accessibilityLiveRegion="polite">{ro.compare.otherCategory}</Body> : <>
       <Heading style={{ fontSize: 18 }}>{ro.compare.per100(a.product.unit)}</Heading>
       {rows.map(row => <Card key={row.key}>
@@ -131,7 +132,7 @@ export default function Compare() {
         </View>
       </Card>)}
     </>)}
-    <Button variant="secondary" onPress={() => router.push('/capture')}>{ro.compare.photo}</Button>
+    <Button variant="ghost" onPress={() => router.push('/capture')}>{ro.compare.photo}</Button>
     </ScrollView>
    </View>
   </SafeAreaView>;

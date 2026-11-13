@@ -4,12 +4,13 @@ import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import type { HistoryEntry } from '../history/store';
 import { AllergenChip, Badge, Body, Button, Card } from '../../ui';
 import { ro } from '../../copy/ro';
+import { fonts } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 import { ScoreCard } from '../product/ScoreCard';
 import { SourceCard } from '../product/SourceCard';
 
-export function ProductPicker({ entries, selected, category, excluded, onSelect }: {
-  entries: HistoryEntry[]; selected?: HistoryEntry; category?: string; excluded?: string; onSelect(entry: HistoryEntry): void;
+export function ProductPicker({ entries, selected, category, excluded, slot, onSelect }: {
+  slot?: string; entries: HistoryEntry[]; selected?: HistoryEntry; category?: string; excluded?: string; onSelect(entry: HistoryEntry): void;
 }) {
   const [open, setOpen] = useState(false);
   const { colors } = useTheme();
@@ -17,7 +18,8 @@ export function ProductPicker({ entries, selected, category, excluded, onSelect 
   const options = entries.filter(entry => entry.product.status !== 'hidden' && entry.product.id !== excluded)
     .sort((a, b) => Number(b.product.category.slug === category) - Number(a.product.category.slug === category));
   return <Card>
-    <Pressable accessibilityRole="button" accessibilityLabel={selected?.product.name ?? ro.compare.choose}
+    {slot && <Body style={{ fontFamily: fonts.bold }}>{slot}</Body>}
+    <Pressable accessibilityRole="button" accessibilityLabel={selected?.product.name ?? (slot ? `${slot}: ${ro.compare.choose}` : ro.compare.choose)}
       accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)}
       style={{ minHeight: 52, padding: 12, borderRadius: 16, backgroundColor: colors.soft, justifyContent: 'center' }}>
       <Body>{selected?.product.name ?? ro.compare.choose}</Body>
