@@ -61,15 +61,49 @@ function useBrowserInstallPrompt() {
   return { canInstall, isIos, isStandalone, install, failed, installing, sheetOpen, openSheet, closeSheet };
 }
 
-let dismissedInSession = false;
-const dismissalKey = 'okbite.install.dismissed.v1';
+// The invitation waits until the shopper has opened this many different product results.
+export const INSTALL_AFTER_RESULTS = 2;
+const DISMISS_FOR_MS = 30 * 24 * 60 * 60 * 1000;
+const dismissalKey = 'okbite.install.dismissedAt.v1', resultsKey = 'okbite.install.results.v1';
+const read = (key: string) => { try { return window.localStorage.getItem(key); } catch { return null; } };
+const write = (key: string, value: string) => { try { window.localStorage.setItem(key, value); } catch {} };
+
+let dismissedAt: number | null = null, opened: string[] | null = null;
+const listeners = new Set<() => void>();
+const openedResults = () => {
+  if (!opened) {
+    try { const saved: unknown = JSON.parse(read(resultsKey) ?? '[]'); opened = Array.isArray(saved) ? saved.filter(id => typeof id === 'string') : []; }
+    catch { opened = []; }
+  }
+  return opened;
+};
+export function noteResultOpened(id: string): void {
+  const ids = openedResults();
+  if (ids.length >= INSTALL_AFTER_RESULTS || ids.includes(id)) return;
+  opened = [...ids, id];
+  write(resultsKey, JSON.stringify(opened));
+  listeners.forEach(listener => listener());
+}
+export function useResultsOpened(): number {
+  const [count, setCount] = useState(() => openedResults().length);
+  useEffect(() => {
+    const update = () => setCount(openedResults().length);
+    listeners.add(update); update();
+    return () => { listeners.delete(update); };
+  }, []);
+  return count;
+}
+export function resetInstallStateForTests(): void { dismissedAt = null; opened = null; }
+
+/** Dismissal hides the invitation for 30 days; a blocked storage still remembers it for this session. */
 export function useInstallDismissal(): readonly [boolean, () => void] {
   const [dismissed, setDismissed] = useState(() => {
-    try { if (window.localStorage.getItem(dismissalKey) === '1') dismissedInSession = true; } catch {}
-    return dismissedInSession;
+    const saved = Number(read(dismissalKey));
+    if (saved > 0 && saved > (dismissedAt ?? 0)) dismissedAt = saved;
+    return dismissedAt !== null && Date.now() - dismissedAt < DISMISS_FOR_MS;
   });
   return [dismissed, () => {
-    dismissedInSession = true; setDismissed(true);
-    try { window.localStorage.setItem(dismissalKey, '1'); } catch {}
+    dismissedAt = Date.now(); setDismissed(true);
+    write(dismissalKey, String(dismissedAt));
   }];
 }

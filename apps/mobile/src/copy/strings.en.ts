@@ -68,7 +68,7 @@ insufficientData:"Insufficient data",title:"Product analysis",allergens:"Declare
  pwa: {
   install: {
    title: "Install OkBite",
-   description: "Add the app to your home screen for easier access.",
+   action: "Install",
    iosHint: "Tap Share, then Add to Home Screen.",
    failed: "Installation did not start. Try again from the browser menu.",
   },
