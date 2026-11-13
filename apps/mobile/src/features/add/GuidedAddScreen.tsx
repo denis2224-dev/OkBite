@@ -25,7 +25,7 @@ export function GuidedAddScreen() {
   const frontPhotoId = typeof rawParams.frontPhotoId === 'string' && rawParams.frontPhotoId.trim() ? rawParams.frontPhotoId.trim() : undefined;
   const retakeParam = rawParams.retake;
   const retakeKind = retakeParam === 'front' || retakeParam === 'ingredients' || retakeParam === 'nutrition' ? retakeParam : undefined;
-  const { state, controller, draftId, error, restoredFromDraft, draftConflict, discardError, resumeDraft, discardDraft } = useGuidedAddSession(
+  const { state, controller, draftId, error, restoredFromDraft, draftConflict, discardError, frontPending, resumeDraft, discardDraft } = useGuidedAddSession(
     {
       ...parsed,
       ...(frontPhotoId ? { frontPhotoId } : {}),
@@ -156,17 +156,27 @@ export function GuidedAddScreen() {
       ) : null}
 
       {isWorking ? (
-        <Card style={{ alignItems: 'center', paddingVertical: spacing.xl }}>
-          <ActivityIndicator size="large" color={colors.primary} aria-hidden />
-          <Body role="status" accessibilityLiveRegion="polite" style={{ textAlign: 'center' }}>
-            {state.remotePhotoPath ? ro.add.reading : ro.add.readingFront}
-          </Body>
-        </Card>
+        frontPending === 'waiting' ? (
+          <StatusPanel title={ro.pwa.analysis.title} message={ro.pwa.analysis.unknown} actions={[]} />
+        ) : (
+          <Card style={{ alignItems: 'center', paddingVertical: spacing.xl }}>
+            <ActivityIndicator size="large" color={colors.primary} aria-hidden />
+            <Body role="status" accessibilityLiveRegion="polite" style={{ textAlign: 'center' }}>
+              {state.remotePhotoPath ? ro.add.reading : ro.add.readingFront}
+            </Body>
+          </Card>
+        )
       ) : null}
 
       {state.stage === 'interrupted' || state.stage === 'error' ? (
         <StatusPanel
-          message={state.stage === 'interrupted' ? ro.add.draftInterrupted : errorMessage(state.error)}
+          message={
+            state.stage === 'interrupted'
+              ? ro.add.draftInterrupted
+              : frontPending === 'retry'
+                ? `${errorMessage(state.error)}\n\n${ro.pwa.analysis.retry}`
+                : errorMessage(state.error)
+          }
           actions={[
             { label: ro.add.retryRead, onPress: () => void controller.retry() },
             { label: ro.add.manualEntry, onPress: openManualFallback },

@@ -2,9 +2,14 @@ import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { NUTRIENT_KEYS, ReadLabelResponse } from '@okbite/shared';
 import { ro } from '../../copy/ro';
+import { api } from '../../lib/api';
+import type { AnalysisOutcome } from '../../lib/analysisOutcome';
 import { GuidedAddScreen } from './GuidedAddScreen';
 import { loadUnknownDraft, saveUnknownDraft } from './unknownDraft';
 import { requestUnknownFlow } from './unknownFlowTransport';
+
+const completed = <T,>(result: T): AnalysisOutcome<T> => ({ status: 'completed', result });
+const pendingOutcome = <T,>(completion: Promise<T>): AnalysisOutcome<T> => ({ status: 'pending', retryAllowed: false, completion });
 
 const mockReplace = jest.fn();
 const mockParams: { value: Record<string, string | string[] | undefined> } = { value: {} };
@@ -214,6 +219,45 @@ test('provider failure preserves durable photos and allows manual review without
   expect(saveUnknownDraft).toHaveBeenLastCalledWith(expect.objectContaining({
     stage: 'review', photos: expect.objectContaining({ ingredients: 'kept:captured-photo' }),
   }));
+});
+
+test('shows >55 s pending message on front photo without retry, then advances to ingredients on late resolve', async () => {
+  mockParams.value = { code: '4840001000014' };
+  let finish!: (res: unknown) => void;
+  jest.mocked(api.identifyOutcome).mockResolvedValueOnce(pendingOutcome(new Promise(resolve => { finish = resolve; })) as never);
+
+  await render(<GuidedAddScreen />);
+  await fillIdentity();
+  await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
+
+  expect(await screen.findByText(ro.pwa.analysis.title)).toBeTruthy();
+  expect(screen.getByText(ro.pwa.analysis.unknown)).toBeTruthy();
+  expect(screen.queryByRole('button', { name: ro.add.retryRead })).toBeNull();
+
+  await act(async () => {
+    finish({ status: 'not_found', read: { brand: 'Brand', name: null, quantity: null, code: null }, photoPath: 'device/front.jpg' });
+  });
+  expect(screen.getByText(ro.add.ingredientsTitle)).toBeTruthy();
+});
+
+test('shows retry guidance and explicit retry after a pending front identify rejects', async () => {
+  mockParams.value = { code: '4840001000014' };
+  let rejectLate!: (err: unknown) => void;
+  jest.mocked(api.identifyOutcome)
+    .mockResolvedValueOnce(pendingOutcome(new Promise((_r, reject) => { rejectLate = reject; })) as never)
+    .mockResolvedValueOnce(completed({ status: 'not_found', read: { brand: null, name: null, quantity: null, code: null }, photoPath: 'device/front.jpg' }) as never);
+
+  await render(<GuidedAddScreen />);
+  await fillIdentity();
+  await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
+  expect(await screen.findByText(ro.pwa.analysis.title)).toBeTruthy();
+
+  await act(async () => {
+    rejectLate(Object.assign(new Error('upstream'), { code: 'upstream_failed' }));
+  });
+  expect(screen.getByText(new RegExp(ro.pwa.analysis.retry))).toBeTruthy();
+  await fireEvent.press(screen.getByRole('button', { name: ro.add.retryRead }));
+  expect(screen.getByText(ro.add.ingredientsTitle)).toBeTruthy();
 });
 
 async function fillIdentity() {
