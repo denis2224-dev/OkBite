@@ -44,7 +44,7 @@ test('offline hard navigation loads the shell and a product saved in IndexedDB',
   await page.evaluate(() => caches.delete('okbite-lookup'));
   await context.setOffline(true);
   await page.goto('/about');
-  await expect(page.getByRole('heading', { name: ro.nav.about, exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: ro.about.title, exact: true })).toBeVisible();
   await page.goto(`/product/${id}`);
   await expect(page.getByText('Iaurt natural 2,5%', { exact: true })).toBeVisible();
   await expect(page.getByText(ro.result.allergens, { exact: true })).toBeVisible();
