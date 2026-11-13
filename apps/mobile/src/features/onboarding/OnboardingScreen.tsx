@@ -123,7 +123,7 @@ export function OnboardingScreen({ onComplete }: { onComplete?: () => void }) {
         )}
         <View style={styles.title}>
           <Heading style={{ fontSize: 24, lineHeight: 32 }}>{title}</Heading>
-          <Body style={{ color: colors.muted }}>{step === 0 ? ro.onboarding.savedLocally : ro.onboarding.flagNote}</Body>
+          {step > 0 && <Body style={{ color: colors.muted }}>{ro.onboarding.flagNote}</Body>}
         </View>
         <ScrollView contentContainerStyle={styles.choices}>
           {ready && choices[field].map((choice) => {
@@ -134,7 +134,12 @@ export function OnboardingScreen({ onComplete }: { onComplete?: () => void }) {
             );
           })}
         </ScrollView>
-        <View style={{ paddingTop: 8 }}>
+        <View style={{ paddingTop: 8, gap: 8 }}>
+          {step === 2 && (
+            <Body style={{ color: colors.muted, fontSize: 13, lineHeight: 19, textAlign: 'center' }}>
+              {ro.onboarding.savedLocally}
+            </Body>
+          )}
           {step === 2 ? (
             <Button disabled={blocked} onPress={finish}>{ro.onboarding.done}</Button>
           ) : (
