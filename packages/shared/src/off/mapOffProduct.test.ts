@@ -259,3 +259,24 @@ describe('inferCategorySlug sweet spreads and desserts', () => {
     expect(slug(['en:salted-spreads', 'en:hummus'])).toBe('necunoscut');
   });
 });
+
+describe('inferCategorySlug everyday categories', () => {
+  const slug = (tags: string[]) => inferCategorySlug({ categories_tags: tags }, '', '', 'g');
+  it('maps sauces, pasta, fish, nuts, ready meals, produce, coffee/tea and plant drinks', () => {
+    expect(slug(['en:condiments', 'en:sauces', 'en:ketchup'])).toBe('sosuri-condimente');
+    expect(slug(['en:pastas'])).toBe('paste-fainoase');
+    expect(slug(['en:seafood', 'en:fishes'])).toBe('peste-fructe-de-mare');
+    expect(slug(['en:nuts-and-their-products', 'en:peanuts'])).toBe('nuci-seminte');
+    expect(slug(['en:meals', 'en:pizzas'])).toBe('mancare-preparata');
+    expect(slug(['en:vegetables', 'en:tomatoes-and-their-products'])).toBe('fructe-legume');
+    expect(slug(['en:hot-beverages', 'en:coffees'])).toBe('cafea-ceai');
+    expect(slug(['en:plant-based-milk-alternatives', 'en:soy-based-drinks'])).toBe('bauturi-vegetale');
+  });
+  it('keeps earlier rules first and leaves alcohol and supplements unscored', () => {
+    expect(slug(['en:sweet-spreads', 'en:hazelnut-spreads'])).toBe('ciocolata-si-dulciuri');
+    expect(slug(['en:canned-foods', 'en:vegetables'])).toBe('conserve');
+    expect(slug(['en:iced-teas', 'en:teas'])).toBe('bauturi-racoritoare');
+    expect(slug(['en:alcoholic-beverages', 'en:beers'])).toBe('necunoscut');
+    expect(slug(['en:dietary-supplements'])).toBe('necunoscut');
+  });
+});

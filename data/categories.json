@@ -85,6 +85,46 @@
     "scoreKind": "general"
   },
   {
+    "slug": "sosuri-condimente",
+    "name": "Sosuri și condimente",
+    "scoreKind": "general"
+  },
+  {
+    "slug": "paste-fainoase",
+    "name": "Paste făinoase",
+    "scoreKind": "general"
+  },
+  {
+    "slug": "fructe-legume",
+    "name": "Fructe și legume",
+    "scoreKind": "general"
+  },
+  {
+    "slug": "peste-fructe-de-mare",
+    "name": "Pește și fructe de mare",
+    "scoreKind": "general"
+  },
+  {
+    "slug": "mancare-preparata",
+    "name": "Mâncare preparată",
+    "scoreKind": "general"
+  },
+  {
+    "slug": "nuci-seminte",
+    "name": "Nuci și semințe",
+    "scoreKind": "fat"
+  },
+  {
+    "slug": "cafea-ceai",
+    "name": "Cafea și ceai",
+    "scoreKind": "beverage"
+  },
+  {
+    "slug": "bauturi-vegetale",
+    "name": "Băuturi vegetale",
+    "scoreKind": "beverage"
+  },
+  {
     "slug": "necunoscut",
     "name": "Necunoscut",
     "scoreKind": "general"
