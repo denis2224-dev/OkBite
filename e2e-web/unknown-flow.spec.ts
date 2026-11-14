@@ -61,11 +61,11 @@ async function result(page: Page, id: string, scored = false) {
   await expect(page.getByText(ro.result.unverifiedNote, { exact: true }).filter({ visible: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: ro.result.allergens, exact: true })).toBeVisible();
   if (scored) {
-    await expect(page.getByRole('img', { name: ro.score.ringLabel(example.score.score!, example.score.grade) })).toBeVisible();
+    await expect(page.getByTestId('product-score')).toHaveText(/^\d+ din 100 · \S/);
     await expect(page.getByText(ro.score.disclaimer, { exact: true }).filter({ visible: true })).toBeVisible();
   } else {
     await expect(page.getByText(ro.result.scoreUnavailable, { exact: true })).toBeVisible();
-    await expect(page.getByRole('img', { name: /din 100, calitate/ })).toHaveCount(0);
+    await expect(page.getByTestId('product-score')).toHaveCount(0);
   }
 }
 

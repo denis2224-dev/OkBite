@@ -18,7 +18,7 @@ function eyebrow({ slug, name, role }: Ingredient): string {
   return [code, role].filter(Boolean).join(' · ');
 }
 
-function RiskChip({ risk }: { risk: Ingredient['risk'] }) {
+export function RiskChip({ risk }: { risk: Ingredient['risk'] }) {
   const { colors } = useTheme();
   const [fg, bg] = risk === 'high' ? [colors.low, colors.lowBg] : risk === 'moderate' ? [colors.medium, colors.mediumBg]
     : risk === 'low' ? [colors.good, colors.goodBg] : [colors.neutral, colors.neutralBg];

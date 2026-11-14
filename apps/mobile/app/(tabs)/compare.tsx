@@ -7,6 +7,7 @@ import { Body, Button, Card, Heading } from '../../src/ui';
 import { ro } from '../../src/copy/ro';
 import { listHistory, type HistoryEntry } from '../../src/features/history/store';
 import { displayScore } from '../../src/features/product/displayScore';
+import { productScoreFor, tierGrade } from '../../src/features/product/productScoreFor';
 import { ProductPicker } from '../../src/features/compare/ProductPicker';
 import { betterOverall, compareRows } from '../../src/features/compare/compare';
 import { CompareCell } from '../../src/features/compare/CompareCell';
@@ -56,7 +57,8 @@ export default function Compare() {
           <View style={styles.products}>{products.map(({ entry, label, side }) => {
             const { product } = entry;
             const score = displayScore(product, entry.score);
-            const grade = score.grade === 'unavailable' ? 'neutral' : score.grade;
+            const scored = productScoreFor(product, entry.score);
+            const grade = tierGrade(scored.tier);
             return <HomeCard key={label} testID="compare-card" style={styles.productCard}>
               <Text style={styles.label}>{label}</Text>
               <View style={styles.identity}>
@@ -65,7 +67,7 @@ export default function Compare() {
                 {product.status === 'unverified' && <Text style={styles.subtitle}>{ro.result.unverified}</Text>}
               </View>
               <CompareVerdict better={winner === side} allergens={product.allergens} />
-              {score.score !== null && <View style={styles.score}><HomeChip background={theme.colors[`${grade}Bg`]} color={theme.colors[grade]}>{`${formatAmount(score.score)} · ${ro.score[score.grade]}`}</HomeChip></View>}
+              {scored.score !== null && scored.tier && <View style={styles.score}><HomeChip background={theme.colors[`${grade}Bg`]} color={theme.colors[grade]}>{`${formatAmount(scored.score)} · ${ro.tiers[scored.tier]}`}</HomeChip></View>}
               <View testID="compare-card-reasons" style={styles.reasons}>
                 {score.score === null ? <>
                   <Text style={styles.reasonTitle}>{ro.result.scoreUnavailable}</Text>

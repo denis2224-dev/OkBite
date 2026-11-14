@@ -5,6 +5,7 @@ import { HistoryScreen } from './HistoryScreen';
 import { clearHistory, listHistory, type HistoryEntry } from './store';
 import { foundYogurt } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
+import { productScoreFor } from '../product/productScoreFor';
 
 let mockFocus: () => () => void;
 let mockBlur: () => void;
@@ -46,7 +47,8 @@ it.each(['verified', 'unverified'] as const)('keeps score context and %s status 
   expect(screen.getByText(ro.score.disclaimer)).toBeTruthy();
   const row = screen.getByRole('button', { name: new RegExp(ro.history.open(product.name)) });
   expect(row.props.accessibilityLabel).toContain(product.brand);
-  expect(row.props.accessibilityLabel).toContain(ro.history.score(entry.score.score!));
+  expect(row.props.accessibilityLabel).toContain(ro.history.score(productScoreFor(entry.product, entry.score).score!));
+  expect(row.props.accessibilityLabel).toContain('86 din 100 · Excelent'); // same number as the result
   expect(row.props.accessibilityLabel).toContain(product.source);
   expect(row.props.accessibilityLabel).toContain(verification);
   expect(row.props.accessibilityLabel).toContain(ro.score.disclaimer);
@@ -195,7 +197,8 @@ it('withholds a cached score when required nutrition data is missing', async () 
   jest.mocked(listHistory).mockResolvedValue([{ ...entry, product: { ...entry.product, nutrients: { ...entry.product.nutrients, salt: null } } }]);
   await render(<HistoryScreen />);
   await waitFor(() => expect(screen.getByText(ro.result.scoreUnavailable)).toBeTruthy());
-  expect(screen.queryByText(ro.history.score(entry.score.score!))).toBeNull();
+  expect(screen.queryByText(/^\d+ · /)).toBeNull();
+  expect(screen.getByText('—')).toBeTruthy();
 });
 
 it('renders the title and subtitle through the shared tab page header', async () => {
