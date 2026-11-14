@@ -1,6 +1,6 @@
 import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
-import { createReadStream, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { appendFileSync, createReadStream, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { parseArgs } from 'node:util';
 import { createGunzip } from 'node:zlib';
@@ -66,12 +66,15 @@ const numbers = (s: string) =>
   JSON.stringify((s.match(/\d+(?:[.,]\d+)?/g) ?? []).map((n) => n.replace(',', '.')));
 const eCodes = (s: string) =>
   JSON.stringify(
-    (s.match(/\bE[ -]*\d{3,4}[a-z]?\b/gi) ?? []).map((e) => e.replace(/[ -]/g, '').toUpperCase()),
+    // Cyrillic labels often write the code with Cyrillic Е (U+0415); the Romanian text uses Latin E.
+    (s.match(/(?<![\p{L}\d])[EЕeе][ -]*\d{3,4}[a-z]?(?![\p{L}\d])/gu) ?? []).map((e) =>
+      e.replace(/[ -]/g, '').replace(/^[Ееe]/, 'E').toUpperCase(),
+    ),
   );
-function parseTranslation(raw: string, source: string): string[] | null {
+export function parseTranslation(raw: string, source: string): string[] | null {
   const parts = source.split(SEPARATORS);
   const input = parts.filter((_, i) => i % 2 === 0);
-  const parsed = z.array(z.string().trim().min(1).max(3000)).safeParse(
+  const parsed = z.array(z.string().trim().max(3000)).safeParse(
     (() => {
       try {
         return JSON.parse(raw.replace(/^```\w*\s*|\s*```$/g, ''));
@@ -83,6 +86,8 @@ function parseTranslation(raw: string, source: string): string[] | null {
   if (!parsed.success || parsed.data.length !== input.length) return null;
   for (const [i, out] of parsed.data.entries()) {
     const original = input[i]!;
+    // A trailing or doubled separator leaves an empty piece; only that piece may stay empty.
+    if (!out !== !original.trim()) return null;
     if (
       /\p{Script=Cyrillic}/u.test(out) ||
       numbers(original) !== numbers(out) ||
@@ -188,9 +193,13 @@ export async function translateIngredients(source: string, key: string, pause: P
   return segments ? joinTranslation(segments, source) : null;
 }
 
+const translationId = (code: string, source: string) =>
+  createHash('sha256').update(JSON.stringify([code, source, process.env.AI_MODEL || AI_MODEL, 1])).digest('hex');
+
 type Page = { label: string; products: OffProduct[] };
 type Fail = (why: string) => Error;
-export type Country = 'moldova' | 'romania';
+export const COUNTRIES = ['moldova', 'romania', 'russia', 'ukraine'] as const;
+export type Country = (typeof COUNTRIES)[number];
 
 /** OFF search pages for one country, split by label language to stay under the 1000-result cap. */
 async function* searchPages(country: Country, pause: Pause, incomplete: Fail): AsyncGenerator<Page> {
@@ -261,10 +270,14 @@ async function* exportPages(file: string, country: Country): AsyncGenerator<Page
 
 export interface ImportOptions {
   country?: Country;
-  /** OFF JSONL export; required for romania, whose ~50k products exceed what the search API returns. */
+  /** OFF JSONL export; required for every country but moldova, whose products exceed what the search API returns. */
   file?: string | null;
   /** false = dry run: count what would be inserted or translated; no writes, no AI calls. */
   write?: boolean;
+  /** Dry run only: append each product needing translation as a JSON line {id, code, lang, segments}. */
+  pendingPath?: string | null;
+  /** Use only translations already in the checkpoint (prepared without the AI key); skip the rest. */
+  cachedOnly?: boolean;
 }
 
 /**
@@ -276,10 +289,11 @@ export async function importOff(
   pause: Pause = sleep,
   cachePath: string | null = process.env.OFF_TRANSLATION_CACHE ||
     '.superpowers/off-import/translations.json',
-  { country = 'moldova', file = null, write = true }: ImportOptions = {},
+  { country = 'moldova', file = null, write = true, pendingPath = null, cachedOnly = false }: ImportOptions = {},
 ) {
-  if (country === 'romania' && !file)
-    throw new Error('romania needs --file: OFF search returns at most 1000 results per query');
+  // Only Moldova (~1.9k) fits the search API's language split; the others have 8k-50k products.
+  if (country !== 'moldova' && !file)
+    throw new Error(`${country} needs --file: OFF search returns at most 1000 results per query`);
   await existingCodes([]); // fail before OFF/AI calls when database configuration is missing
   const cache = checkpoint(cachePath);
   const seen = new Set<string>();
@@ -313,6 +327,13 @@ export async function importOff(
       n.inserted += rows.filter((r) => !saved.has(r.code)).length;
       n.mapped += foreign.filter((f) => saved.has(f.code)).length;
       n.untranslated += foreign.filter((f) => !saved.has(f.code)).length;
+      if (pendingPath) {
+        for (const { off, code } of foreign.filter((f) => !saved.has(f.code))) {
+          const source = text(off.ingredients_text);
+          const segments = source.split(SEPARATORS).filter((_, i) => i % 2 === 0);
+          appendFileSync(pendingPath, JSON.stringify({ id: translationId(code, source), code, lang: off.lang ?? null, segments }) + '\n');
+        }
+      }
       console.log(`${label}: ${n.mapped} usable, ${n.inserted} would be new, ${n.untranslated} need translation`);
       continue;
     }
@@ -323,15 +344,13 @@ export async function importOff(
     n.inserted += await save(rows);
 
     let failure: Error | null = null;
-    if (foreign.length && !key) n.untranslated += foreign.length;
+    if (foreign.length && !key && !cachedOnly) n.untranslated += foreign.length;
     else if (foreign.length) {
       const saved = await existingCodes(foreign.map((f) => f.code));
       n.mapped += saved.size;
       for (const { off, code } of foreign.filter((f) => !saved.has(f.code))) {
         const source = text(off.ingredients_text);
-        const id = createHash('sha256')
-          .update(JSON.stringify([code, source, process.env.AI_MODEL || AI_MODEL, 1]))
-          .digest('hex');
+        const id = translationId(code, source);
         let ro: string | null;
         try {
           const cached = cache.get(id);
@@ -341,6 +360,10 @@ export async function importOff(
             ? cached.split(SEPARATORS).filter((_, i) => i % 2 === 0) : cached.segments), source) : null;
           if (cached && !segments)
             throw new Error('translation checkpoint: cached text fails source validation; restore or remove this entry before resuming');
+          if (!segments && cachedOnly) {
+            n.untranslated++;
+            continue;
+          }
           if (!segments) {
             await pause(AI_PAUSE_MS);
             segments = await translateSegments(source, key!, pause);
@@ -367,12 +390,12 @@ export async function importOff(
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const { values } = parseArgs({
-    options: { country: { type: 'string', default: 'moldova' }, file: { type: 'string' }, write: { type: 'boolean', default: false } },
+    options: { country: { type: 'string', default: 'moldova' }, file: { type: 'string' }, write: { type: 'boolean', default: false }, pending: { type: 'string' }, 'cached-only': { type: 'boolean', default: false } },
   });
-  const country = z.enum(['moldova', 'romania']).parse(values.country);
+  const country = z.enum(COUNTRIES).parse(values.country);
   const write = values.write ?? false;
   if (!write) console.log('Dry run: nothing is written and nothing is translated. Add --write to import.');
-  importOff(sleep, undefined, { country, file: values.file ?? null, write }).then(
+  importOff(sleep, undefined, { country, file: values.file ?? null, write, pendingPath: values.pending ?? null, cachedOnly: values['cached-only'] ?? false }).then(
     ({ mapped, inserted, translated, untranslated }) =>
       console.log(
         write

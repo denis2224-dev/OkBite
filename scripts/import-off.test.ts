@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { importOff as runImportOff, type OffProduct } from './import-off';
+import { importOff as runImportOff, parseTranslation, type OffProduct } from './import-off';
 import { loadData } from './load-data';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
@@ -164,6 +164,26 @@ describe('importOff and loadData against stubbed services', () => {
     expect(aiCalls()).toEqual([]);
   });
 
+  it('lists what needs translation in a dry run, then imports only checkpoint translations without AI', async () => {
+    vi.stubEnv('AI_API_KEY', 'thk_live_test');
+    const dir = mkdtempSync(join(tmpdir(), 'off-'));
+    const [pending, cache] = [join(dir, 'pending.jsonl'), join(dir, 'translations.json')];
+    const other = { ...ru, code: '4840001000038' };
+    stubFetch([ru, other]);
+    await runImportOff(noPause, cache, { write: false, pendingPath: pending });
+    const jobs = readFileSync(pending, 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    expect(jobs.map((j) => [j.code, j.segments])).toEqual([[ru.code, ['молоко', 'сахар']], [other.code, ['молоко', 'сахар']]]);
+    writeFileSync(cache, JSON.stringify({ [jobs[0].id]: { version: 2, segments: ['lapte', 'zahăr'] } }));
+    expect(await runImportOff(noPause, cache, { cachedOnly: true })).toEqual({
+      mapped: 1,
+      inserted: 1,
+      translated: 1,
+      untranslated: 1, // no checkpoint entry: skipped, never sent to the AI
+    });
+    expect(aiCalls()).toEqual([]);
+    expect(JSON.parse(String(inserts()[0]!.init?.body))[0]).toMatchObject({ code: ru.code, ingredients_text: 'lapte, zahăr' });
+  });
+
   it('counts an unusable AI answer as untranslated and moves on', async () => {
     vi.stubEnv('AI_API_KEY', 'k');
     stubFetch([ru], new Set(), () => answer('lapte', 'length'));
@@ -303,11 +323,9 @@ describe('importOff and loadData against stubbed services', () => {
     );
   });
 
-  it('refuses a Romania import without the export file', async () => {
+  it.each(['romania', 'russia', 'ukraine'] as const)('refuses a %s import without the export file', async (country) => {
     stubFetch([]);
-    await expect(runImportOff(noPause, null, { country: 'romania' })).rejects.toThrow(
-      'romania needs --file',
-    );
+    await expect(runImportOff(noPause, null, { country })).rejects.toThrow(`${country} needs --file`);
     expect(calls).toEqual([]);
   });
 
@@ -337,4 +355,12 @@ describe('importOff and loadData against stubbed services', () => {
       { slug: 'iaurt', name: 'Iaurt', score_kind: 'general' },
     ]);
   });
+});
+
+it('accepts an empty translation only for an empty label piece, and Cyrillic E-codes as Latin', () => {
+  expect(parseTranslation(JSON.stringify(['zahăr', '']), 'сахар, ')).toEqual(['zahăr', '']);
+  expect(parseTranslation(JSON.stringify(['zahăr', 'x']), 'сахар, ')).toBeNull();
+  expect(parseTranslation(JSON.stringify(['', '']), 'сахар, ')).toBeNull();
+  expect(parseTranslation(JSON.stringify(['emulgator E471']), 'эмульгатор Е471')).toEqual(['emulgator E471']);
+  expect(parseTranslation(JSON.stringify(['emulgator 471']), 'эмульгатор Е471')).toBeNull();
 });
