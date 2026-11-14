@@ -183,3 +183,68 @@ describe('toRow', () => {
     expect(toRow(p, 'Open Food Facts (ODbL, tradus automat)').source).toBe('Open Food Facts (ODbL, tradus automat)');
   });
 });
+
+// Trimmed from the 2026 OFF JSONL export line for 5449000000996 (schema 1004: `nutriments` is empty).
+const cola: OffProduct = {
+  code: '5449000000996',
+  product_name: 'Coca-Cola',
+  brands: 'COCA-COLA SERVICES SA/NV',
+  quantity: '330 ml',
+  ingredients_text_ro: 'Apă, zahăr, dioxid de carbon, colorant E150d, acidifiant acid fosforic, arome naturale inclusiv cafeină.',
+  lang: 'es',
+  nutrition_data_per: 'serving',
+  product_quantity_unit: 'ml',
+  nutriments: {},
+  nutrition: {
+    aggregated_set: {
+      preparation: 'as_sold',
+      nutrients: {
+        'energy-kj': { source_per: '100ml', source: 'packaging', value: 180, value_computed: 180.2, unit: 'kJ' },
+        'energy-kcal': { source_per: '100ml', source: 'packaging', value_computed: 42.4, unit: 'kcal' },
+        fat: { source_per: '100ml', source: 'packaging', value: 0, unit: 'g' },
+        'saturated-fat': { source_per: '100ml', source: 'packaging', value: 0, unit: 'g' },
+        sugars: { source_per: '100ml', source: 'packaging', value: 10.6, unit: 'g' },
+        salt: { source_per: '100ml', source: 'packaging', value: 0, unit: 'g' },
+        proteins: { source_per: '100ml', source: 'packaging', value: 0, unit: 'g' },
+        fiber: { source_per: '100g', source: 'estimate', value: 0, unit: 'g' },
+      },
+    },
+  },
+};
+
+describe('mapOffProduct with the OFF schema-1004 nutrition set', () => {
+  it('reads per-100 ml drink nutrients from nutrition.aggregated_set, converting kJ-only energy', () => {
+    const p = mapOffProduct(cola)!;
+    expect(p.unit).toBe('ml');
+    expect(p.nutrients).toEqual({ kcal: 43, fat: 0, sat: 0, sugar: 10.6, salt: 0, protein: 0, fiber: null, fruitVegPct: null });
+    expect(computeScore(p.nutrients, 'general', p.ingredientsText).grade).not.toBe('unavailable');
+  });
+
+  it('ignores estimated, per-serving and prepared values, and keeps legacy _100g fields first', () => {
+    const agg = (nutrients: object, preparation = 'as_sold') => ({ ...cola, nutrition: { aggregated_set: { preparation, nutrients } } });
+    expect(mapOffProduct(agg({ sugars: { source_per: '100g', source: 'estimate', value: 9 } }))!.nutrients.sugar).toBeNull();
+    expect(mapOffProduct(agg({ sugars: { source_per: 'serving', source: 'packaging', value: 35 } }))!.nutrients.sugar).toBeNull();
+    expect(mapOffProduct(agg({ sugars: { source_per: '100g', source: 'packaging', value: 9 } }, 'prepared'))!.nutrients.sugar).toBeNull();
+    expect(mapOffProduct({ ...cola, nutriments: { sugars_100g: 10.9 } })!.nutrients.sugar).toBe(10.9);
+  });
+});
+
+describe('mapOffProduct anyLanguage (live lookup fallback)', () => {
+  const nutella = {
+    code: '3017620422003',
+    product_name: 'Nutella',
+    brands: 'Ferrero, Nutella',
+    lang: 'en',
+    ingredients_text: 'sugar, palm oil, hazelnuts 13%, skimmed milk powder 8.7%, lecithins (soy)',
+    allergens_tags: ['en:milk', 'en:nuts', 'en:soybeans'],
+  };
+
+  it('takes other-language ingredients only when OFF lists the allergens', () => {
+    expect(mapOffProduct(nutella)).toBeNull();
+    const p = mapOffProduct(nutella, [], { anyLanguage: true })!;
+    expect(p.ingredientsText).toBe(nutella.ingredients_text);
+    expect(p.allergens).toEqual(['Soia', 'Lapte', 'Fructe cu coajă lemnoasă']);
+    expect(mapOffProduct({ ...nutella, allergens_tags: [] }, [], { anyLanguage: true })).toBeNull();
+    expect(mapOffProduct({ ...nutella, allergens_tags: ['en:none'] }, [], { anyLanguage: true })).toBeNull();
+  });
+});
