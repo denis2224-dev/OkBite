@@ -61,6 +61,8 @@ const OFF_CATEGORY_RULES: [RegExp, string][] = [
   [/\b(yogurts|fermented-milk-products|kefir)\b/, 'iaurt'],
   [/\b(milks|flavored-milks)\b/, 'lapte'],
   [/\b(cheeses)\b/, 'branza'],
+  // Before butters/creams: creams also matches en:ice-creams.
+  [/\b(ice-creams|sorbets)\b/, 'inghetata'],
   [/\b(butters|creams|sour-creams)\b/, 'unt-si-smantana'],
   [/\b(biscuits|cookies|wafers)\b/, 'biscuiti'],
   [/\b(chocolates|candies|confectioneries|sweet-snacks)\b/, 'ciocolata-si-dulciuri'],
@@ -70,7 +72,8 @@ const OFF_CATEGORY_RULES: [RegExp, string][] = [
   [/\b(meats|prepared-meats|sausages|hams|salamis)\b/, 'mezeluri'],
   [/\b(vegetable-oils|sunflower-oils|olive-oils|fats)\b/, 'ulei'],
   [/\b(salty-snacks|chips|crisps|crackers)\b/, 'snacks-sarate'],
-  [/\b(ice-creams|sorbets)\b/, 'inghetata'],
+  // After ice cream so frozen desserts keep their category; Nutella is en:hazelnut-spreads.
+  [/\b(sweet-spreads|hazelnut-spreads|chocolate-spreads|jams|honeys|desserts|puddings)\b/, 'ciocolata-si-dulciuri'],
   [/\b(canned-foods|tinned-foods)\b/, 'conserve'],
 ];
 

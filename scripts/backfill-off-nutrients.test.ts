@@ -29,3 +29,16 @@ describe('patchFor', () => {
     expect(patchFor('{"code":"5449000000996", broken', codes)).toBeNull();
   });
 });
+
+describe('patchFor --categories', () => {
+  it('sets a category from OFF tags and leaves rows that still map to necunoscut alone', () => {
+    const codes = new Set(['3017620422003']);
+    const nutella = (tags: string[]) =>
+      JSON.stringify({ code: '3017620422003', product_name: 'Nutella', categories_tags: tags });
+    expect(patchFor(nutella(['en:sweet-spreads']), codes, 'categories')).toEqual({
+      code: '3017620422003',
+      patch: { category_slug: 'ciocolata-si-dulciuri' },
+    });
+    expect(patchFor(nutella(['en:groceries']), codes, 'categories')).toBeNull();
+  });
+});

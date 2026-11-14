@@ -12,6 +12,7 @@ import { adminClient, logEvent } from '../_lib/http.ts';
 import { releaseUsage, reserveUsage } from '../_lib/quota.ts';
 import { saveJpeg } from '../_lib/storage.ts';
 import { parseFront } from './parseFront.ts';
+import { dedupeCandidates, groupKey } from './dedupe.ts';
 import { FRONT_PROMPT } from './prompt.ts';
 
 type Db = ReturnType<typeof adminClient>;
@@ -24,22 +25,49 @@ const searchRow = z.object({
   similarity: z.number(),
 });
 
+const likeLiteral = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
+
+async function sameNameRows(db: Db, rows: z.infer<typeof searchRow>[]) {
+  const groups = [...new Map(rows.map((r) => [groupKey(r), r])).values()];
+  const found = await Promise.all(
+    groups.map(async (g) => {
+      const { data, error } = await db
+        .from('products')
+        .select('id,name,brand,quantity,image_path')
+        .eq('brand', g.brand)
+        .ilike('name', likeLiteral(g.name))
+        .neq('status', 'hidden')
+        .limit(50);
+      if (error) throw new Error('Product search failed');
+      return z
+        .array(searchRow.omit({ similarity: true }))
+        .parse(data)
+        .map((r) => ({ ...r, similarity: g.similarity }));
+    }),
+  );
+  return found.flat();
+}
+
 /** Up to 3 trigram matches (C2 search_products) for what Claude read on the front. */
 async function findCandidates(db: Db, read: FrontRead): Promise<Candidate[]> {
   const q = [read.brand, read.name].filter(Boolean).join(' ');
   if (!q) return [];
   const { data, error } = await db.rpc('search_products', { q, max_results: 3 });
   if (error) throw new Error('Product search failed');
-  return z.array(searchRow).parse(data).map((row) => ({
+  const rows = z.array(searchRow).parse(data);
+  // Other sizes of the same brand+name, which the 3-row search may have cut off.
+  const siblings = read.quantity ? await sameNameRows(db, rows) : [];
+  return dedupeCandidates(rows, siblings, read.quantity).map((row) => ({
     id: row.id,
     name: row.name,
     brand: row.brand,
     quantity: row.quantity,
     // Same rule as the lookup loader: only promoted product-bucket photos become public URLs.
-    imageUrl: row.image_path?.startsWith(`${row.id}/`) &&
-        /^[a-f0-9-]+\/[a-z][a-z0-9-]*\.jpg$/.test(row.image_path)
-      ? db.storage.from('products').getPublicUrl(row.image_path).data.publicUrl
-      : null,
+    imageUrl:
+      row.image_path?.startsWith(`${row.id}/`) &&
+      /^[a-f0-9-]+\/[a-z][a-z0-9-]*\.jpg$/.test(row.image_path)
+        ? db.storage.from('products').getPublicUrl(row.image_path).data.publicUrl
+        : null,
     similarity: Math.min(1, Math.max(0, row.similarity)),
   }));
 }
@@ -65,8 +93,8 @@ export function createService(deps = { adminClient, loadProduct, saveJpeg, askCl
         found
           ? { status: 'found', ...found, photoPath }
           : candidates.length
-          ? { status: 'candidates', candidates, read, photoPath }
-          : { status: 'not_found', read, photoPath },
+            ? { status: 'candidates', candidates, read, photoPath }
+            : { status: 'not_found', read, photoPath },
       );
       try {
         if (found) await deps.logEvent('identified', device, found.product.id);

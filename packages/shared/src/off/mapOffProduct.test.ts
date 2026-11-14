@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { computeScore } from '../score';
-import { OFF_FIELDS, mapOffProduct, toRow, type AdditiveKey, type OffProduct } from './mapOffProduct';
+import { OFF_FIELDS, inferCategorySlug, mapOffProduct, toRow, type AdditiveKey, type OffProduct } from './mapOffProduct';
 
 const off: OffProduct = {
   code: '4840001000014',
@@ -246,5 +246,16 @@ describe('mapOffProduct anyLanguage (live lookup fallback)', () => {
     expect(p.allergens).toEqual(['Soia', 'Lapte', 'Fructe cu coajă lemnoasă']);
     expect(mapOffProduct({ ...nutella, allergens_tags: [] }, [], { anyLanguage: true })).toBeNull();
     expect(mapOffProduct({ ...nutella, allergens_tags: ['en:none'] }, [], { anyLanguage: true })).toBeNull();
+  });
+});
+
+describe('inferCategorySlug sweet spreads and desserts', () => {
+  it('scores Nutella-like spreads, jams and desserts as sweets, frozen desserts as ice cream', () => {
+    const slug = (tags: string[]) => inferCategorySlug({ categories_tags: tags }, '', '', 'g');
+    expect(slug(['en:breakfasts', 'en:spreads', 'en:sweet-spreads', 'en:hazelnut-spreads'])).toBe('ciocolata-si-dulciuri');
+    expect(slug(['en:jams'])).toBe('ciocolata-si-dulciuri');
+    expect(slug(['en:dairy-desserts', 'en:puddings'])).toBe('ciocolata-si-dulciuri');
+    expect(slug(['en:frozen-desserts', 'en:ice-creams'])).toBe('inghetata');
+    expect(slug(['en:salted-spreads', 'en:hummus'])).toBe('necunoscut');
   });
 });
