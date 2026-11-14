@@ -76,6 +76,15 @@ const OFF_CATEGORY_RULES: [RegExp, string][] = [
   // After ice cream so frozen desserts keep their category; Nutella is en:hazelnut-spreads.
   [/\b(sweet-spreads|hazelnut-spreads|chocolate-spreads|jams|honeys|desserts|puddings)\b/, 'ciocolata-si-dulciuri'],
   [/\b(canned-foods|tinned-foods)\b/, 'conserve'],
+  // Lowest priority: only rows no rule above claimed. Unscored kinds (alcohol, supplements) stay necunoscut.
+  [/\b(plant-based-milk-alternatives|milk-substitutes|soy-based-drinks|almond-based-drinks|nut-based-drinks|oat-based-drinks|legume-based-drinks)\b/, 'bauturi-vegetale'],
+  [/\b(coffees|teas|herbal-teas|black-teas|green-teas|instant-coffees|coffee-capsules|instant-beverages)\b/, 'cafea-ceai'],
+  [/\b(sauces|condiments|ketchup|mayonnaises|mustards|dips|spices|herbs-and-spices|pickles)\b/, 'sosuri-condimente'],
+  [/\b(pastas|pastas-and-dumplings|noodles|instant-noodles)\b/, 'paste-fainoase'],
+  [/\b(seafood|fishes|fishes-and-their-products|fish-fillets|fatty-fishes|fish-preparations)\b/, 'peste-fructe-de-mare'],
+  [/\b(nuts|nuts-and-their-products|seeds|peanuts)\b/, 'nuci-seminte'],
+  [/\b(meals|soups|pizzas|pasta-dishes|pizzas-pies-and-quiches|prepared-vegetables)\b/, 'mancare-preparata'],
+  [/\b(vegetables|fruits|legumes|legumes-and-their-products|tomatoes-and-their-products|dried-fruits|olives|fruits-and-vegetables-based-foods|fruit-and-vegetable-preserves)\b/, 'fructe-legume'],
 ];
 
 const amount = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
