@@ -16,16 +16,25 @@ const TARGET = `source=like.Open%20Food%20Facts*&status=eq.unverified&added_by_d
 type Patch = Partial<Record<(typeof NUTRIENTS)[number], number>>;
 
 /** The nutrient columns to set for one export line, or null when it is not a target code or OFF has none. */
-export function patchFor(line: string, codes: ReadonlySet<string>): { code: string; patch: Patch } | null {
+export function patchFor(
+  line: string,
+  codes: ReadonlySet<string>,
+): { code: string; patch: Patch } | null {
   // Cheap filter before parsing ~4M lines: some quoted code on the line must be a target.
   if (![...line.matchAll(/"code":"(\d{8,14})"/g)].some((m) => codes.has(m[1]))) return null;
   let raw: unknown;
-  try { raw = JSON.parse(line); } catch { return null; }
+  try {
+    raw = JSON.parse(line);
+  } catch {
+    return null;
+  }
   const off = OffProduct.safeParse(raw);
   const code = off.success ? off.data.code?.trim() : null;
   if (!off.success || !code || !codes.has(code)) return null;
   const n = offNutrients(off.data);
-  const patch = Object.fromEntries(NUTRIENTS.flatMap((c) => (n[c] === null ? [] : [[c, n[c]]]))) as Patch;
+  const patch = Object.fromEntries(
+    NUTRIENTS.flatMap((c) => (n[c] === null ? [] : [[c, n[c]]])),
+  ) as Patch;
   return Object.keys(patch).length ? { code, patch } : null;
 }
 
@@ -33,7 +42,10 @@ function service() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
-  return { url, headers: { apikey: key, ...(key.startsWith('sb_') ? {} : { authorization: `Bearer ${key}` }) } };
+  return {
+    url,
+    headers: { apikey: key, ...(key.startsWith('sb_') ? {} : { authorization: `Bearer ${key}` }) },
+  };
 }
 
 async function emptyCodes(): Promise<Set<string>> {
@@ -64,7 +76,10 @@ async function save(code: string, patch: Patch) {
 export async function backfill(file: string, write: boolean) {
   const codes = await emptyCodes();
   console.log(`${codes.size} OFF rows have no nutrients`);
-  const lines = createInterface({ input: createReadStream(file).pipe(createGunzip()), crlfDelay: Infinity });
+  const lines = createInterface({
+    input: createReadStream(file).pipe(createGunzip()),
+    crlfDelay: Infinity,
+  });
   let found = 0;
   let saved = 0;
   let pending: Promise<void>[] = [];
@@ -84,7 +99,9 @@ export async function backfill(file: string, write: boolean) {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  const { values } = parseArgs({ options: { file: { type: 'string' }, write: { type: 'boolean', default: false } } });
+  const { values } = parseArgs({
+    options: { file: { type: 'string' }, write: { type: 'boolean', default: false } },
+  });
   if (!values.file) throw new Error('--file <openfoodfacts-products.jsonl.gz> is required');
   const write = values.write ?? false;
   if (!write) console.log('Dry run: nothing is written. Add --write to save.');
