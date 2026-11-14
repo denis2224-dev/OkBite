@@ -290,3 +290,12 @@ it('labels each score reason with its tone next to an icon', async () => {
   for (const reason of foundYogurt.score.reasons) expect(screen.getAllByTestId(`reason-tone-${reason.tone}`).length).toBeGreaterThan(0);
   expect(screen.getAllByText(tones[foundYogurt.score.reasons[0]!.tone]).length).toBeGreaterThan(0);
 });
+it.each([
+  ['Open Food Facts import', 'Open Food Facts (ODbL)', () => ro.result.offNote, () => ro.result.unverifiedNote],
+  ['shopper photos', 'Fotografiile utilizatorului', () => ro.result.unverifiedNote, () => ro.result.offNote],
+])('explains the unverified badge for %s', async (_, source, shown, hidden) => {
+  await render(<ResultView product={{ ...foundYogurt.product, source, status: 'unverified' }} score={foundYogurt.score} />);
+  const badge = screen.getByTestId('unverified-badge');
+  expect(within(badge).getByText(shown())).toBeTruthy();
+  expect(screen.queryByText(hidden())).toBeNull();
+});

@@ -30,4 +30,5 @@ it('keeps partial-data lines to one short sentence without describing the method
   expect([roStrings.result.transcribedLabel, en.result.transcribedLabel]).toEqual(['Ingrediente', 'Ingredients']);
   expect([roStrings.result.explainedWithSource, en.result.explainedWithSource]).toEqual(['Explicate', 'Explained']);
   expect([roStrings.result.unverifiedNote, en.result.unverifiedNote]).toEqual(['Adăugat de un utilizator; încă neverificat.', 'Added by a shopper; not yet checked.']);
+  expect([roStrings.result.offNote, en.result.offNote]).toEqual(['Date din Open Food Facts; neverificate de echipă.', 'Data from Open Food Facts; not checked by our team.']);
 });
