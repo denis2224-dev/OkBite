@@ -9,7 +9,7 @@ export default function ProductPage() {
   const { data, error, loading, storageError, cached, retry } = useProduct(id, saved === '1');
   return <Screen title={ro.result.title} back>
     {loading && <Body accessibilityLiveRegion="polite">{ro.app.loading}</Body>}
-    {error && <><Body accessibilityLiveRegion="polite">{error.message}</Body><Button onPress={retry}>{ro.app.retry}</Button><Button variant="secondary" onPress={() => router.push('/history')}>{ro.offline.history}</Button></>}
+    {error && <><Body accessibilityLiveRegion="polite">{error.message}</Body>{error.code === 'not_found' ? <Button onPress={() => router.push('/scan')}>{ro.scan.title}</Button> : <Button onPress={retry}>{ro.app.retry}</Button>}<Button variant="secondary" onPress={() => router.push('/history')}>{ro.offline.history}</Button></>}
     {storageError && <Body accessibilityLiveRegion="polite">{ro.history.storageError}</Body>}
     {cached && <Body>{ro.offline.cached}</Body>}
     {data && <ResultView product={data.product} score={data.score} />}

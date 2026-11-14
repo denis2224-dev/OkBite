@@ -26,6 +26,13 @@ it('does not resurrect a server-hidden or missing product from the cache', async
   await waitFor(() => expect(result.current.error?.code).toBe('not_found'));
   expect(getFromHistory).not.toHaveBeenCalled();
 });
+it('treats an invalid product id as not found without reading saved history', async () => {
+  jest.mocked(api.lookup).mockRejectedValue(new ApiError('bad_request'));
+  const { result } = await renderHook(() => useProduct('does-not-exist'));
+  await waitFor(() => expect(result.current.error?.code).toBe('not_found'));
+  expect(result.current.error?.message).toBe('Produsul nu a fost găsit.');
+  expect(getFromHistory).not.toHaveBeenCalled();
+});
 it('prevents a slow old request replacing the newly selected product', async () => {
   let resolveOld!: (value: typeof foundYogurt) => void;
   jest.mocked(api.lookup).mockImplementationOnce(() => new Promise(resolve => { resolveOld = resolve; }))

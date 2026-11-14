@@ -19,7 +19,10 @@ export function useProduct(id: string, cachedOnly = false) {
           if (active) setState({ id, data: cached, cached: true, loading: false });
           return;
         }
-        const result = await api.lookup({ id });
+        const result = await api.lookup({ id }).catch(error => {
+          if (error instanceof ApiError && error.code === 'bad_request') throw new ApiError('not_found');
+          throw error;
+        });
         if (result.status !== 'found') throw new ApiError('not_found');
         let storageError = false;
         try { await saveToHistory(result); } catch { storageError = true; }
