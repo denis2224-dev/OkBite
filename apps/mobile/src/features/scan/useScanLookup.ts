@@ -5,6 +5,8 @@ import { api } from '../../lib/api';
 import { enqueue } from '../offline/queue';
 import { addProductRoute, identifyCodeRoute, isGuidedAddEnabled, productRoute } from '../identify/routes';
 import { useScreenActivity } from '../capture/useScreenActivity';
+import { rememberLookup } from '../product/freshLookup';
+import { preloadProductPage } from './preloadProductPage';
 
 export type ScanState =
   | { status: 'idle' }
@@ -35,11 +37,13 @@ export function useScanLookup(onCameraAccept?: () => void) {
       }
       lastCode.current = code;
       setState({ status: 'working' });
+      preloadProductPage();
       try {
         const res = await api.lookup({ code });
         enqueuedCode.current = null;
         if (!activity.isCurrent(token)) return;
         setState(IDLE);
+        if (res.status === 'found') rememberLookup(res);
         router.replace(
           res.status === 'found'
             ? productRoute(res.product.id)
