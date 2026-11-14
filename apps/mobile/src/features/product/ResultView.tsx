@@ -15,7 +15,7 @@ import { ResultTopBar } from './ResultTopBar';
 import { PortionSheet } from './PortionSheet';
 import { PartialNutritionCard } from './PartialNutritionCard';
 import { PortionTable } from './PortionTable';
-import { SourceCard } from './SourceCard';
+import { SourceCard, isOffProduct } from './SourceCard';
 import { ReportSheet } from './ReportSheet';
 import { ExplainedIngredient } from './ExplainedIngredient';
 import { shareProduct } from '../share/shareProduct';
@@ -58,7 +58,7 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
     {canShowScore ? <ScoreCard product={product} score={shownScore} /> : <><Heading>{product.name}</Heading><Body>{[product.brand, product.quantity].filter(Boolean).join(', ')}</Body></>}
     {product.status === 'unverified' && <View testID="unverified-badge" style={{ gap: 4 }}>
       <Badge tone="unverified">{ro.result.unverified}</Badge>
-      <Body style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>{ro.result.unverifiedNote}</Body>
+      <Body style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>{isOffProduct(product) ? ro.result.offNote : ro.result.unverifiedNote}</Body>
     </View>}
     {canShowScore ? <WhyScore score={shownScore} sugar={product.nutrients.sugar} /> : <PartialNutritionCard product={product} />}
     <Card>

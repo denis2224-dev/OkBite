@@ -50,7 +50,8 @@ it('confirms before clearing the real history store, then handles a failed delet
 });
 it('uses the shared browser prompt only after a press and reports prompt failure', async () => {
   await render(<SettingsScreen />, { wrapper: InstallPromptProvider });
-  expect(screen.getByRole('button', { name: ro.settings.install })).toBeDisabled();
+  await fireEvent.press(screen.getByRole('button', { name: ro.settings.install }));
+  expect(screen.getByText(ro.pwa.install.menuHint)).toBeTruthy();
   const prompt = jest.fn(async () => { throw new Error('blocked'); });
   await act(() => { browser.dispatchEvent(Object.assign(new Event('beforeinstallprompt', { cancelable: true }), { prompt, userChoice: Promise.resolve({ outcome: 'dismissed' }) })); });
   expect(prompt).not.toHaveBeenCalled();

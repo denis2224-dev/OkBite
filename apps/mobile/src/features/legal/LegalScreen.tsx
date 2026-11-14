@@ -13,7 +13,6 @@ export function LegalScreen({ kind, children }: PropsWithChildren<{ kind: LegalK
   return (
     <Screen title={text.title} back>
       <View style={styles.page}>
-        <Body style={[styles.notice, { color: colors.muted }]}>{ro.legal.draft}</Body>
         <Heading>{text.lead}</Heading>
         <Body style={[styles.notice, { color: colors.muted }]}>{ro.legal.updated}</Body>
         {text.sections.map(section => (
@@ -23,7 +22,6 @@ export function LegalScreen({ kind, children }: PropsWithChildren<{ kind: LegalK
           </View>
         ))}
         {kind === 'method' ? <Body style={styles.body}>{ro.score.disclaimer}</Body> : null}
-        {kind === 'privacy' ? <Body style={styles.body}>{ro.legal.contactPending}</Body> : null}
         {kind === 'about' ? <>
           <Button variant="secondary" onPress={() => router.push('/method')}>{ro.nav.method}</Button>
           <Button variant="secondary" onPress={() => router.push('/privacy')}>{ro.nav.privacy}</Button>
