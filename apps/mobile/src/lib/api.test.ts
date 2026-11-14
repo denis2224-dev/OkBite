@@ -1,4 +1,4 @@
-import { api, ApiError } from './api';
+import { api } from './api';
 import { foundYogurt, validAdd } from '../test/fixtures';
 jest.mock('./device', () => ({getDeviceId: async () => '0b6f3c1e-2d4a-4c8e-9f10-1a2b3c4d5e6f'}));
 const fetchMock = jest.fn();

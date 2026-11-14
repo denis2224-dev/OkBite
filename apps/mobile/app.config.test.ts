@@ -23,7 +23,7 @@ it('builds a complete production config', () => {
   expect(load(prod)).toMatchObject({ extra: { supabaseUrl: 'https://prod.supabase.co' } });
 });
 it('disables the generated sitemap route', () => {
-  expect(load(prod).plugins).toContainEqual(['expo-router', { sitemap: false }]);
+  expect(load(prod)).toMatchObject({ plugins: expect.arrayContaining([['expo-router', { sitemap: false }]]) });
 });
 it.each([
   ['EXPO_PUBLIC_SUPABASE_URL', undefined],
