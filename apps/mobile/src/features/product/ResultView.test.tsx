@@ -48,6 +48,11 @@ it.each([['with', foundYogurt.product.nutrients], ['without', { ...foundYogurt.p
   expect(screen.getByText(`${foundYogurt.product.brand}, ${foundYogurt.product.quantity}`)).toBeTruthy();
   expect(screen.queryByText(`${foundYogurt.product.brand} · ${foundYogurt.product.quantity}`)).toBeNull();
 });
+it('shows the yogurt fixture as 86 din 100, Excelent, and reads that score once', async () => {
+  await render(<ResultView {...foundYogurt} />);
+  expect(screen.getByTestId('product-score')).toHaveTextContent('86 din 100 · Excelent');
+  expect(screen.queryByLabelText('86 din 100 · Excelent')).toBeNull(); // the tile does not repeat it
+});
 it('shows the score disclaimer exactly once', async () => {
   await render(<ResultView {...foundYogurt} />);
   expect(screen.getAllByText(ro.score.disclaimer)).toHaveLength(1);
@@ -78,7 +83,7 @@ it('preserves a supplied water score when label nutrients are absent', async () 
   const water = { ...foundYogurt.score, score: 100, letter: 'A' as const, grade: 'good' as const };
   await render(<ResultView product={product} score={water} />);
   expect(displayScore(product, water).score).toBe(100);
-  expect(screen.getByLabelText(productLine(product, water))).toBeTruthy();
+  expect(screen.getByText(productLine(product, water))).toBeTruthy();
 });
 it('withholds a fat-category score when total fat is missing', async () => {
   const product = { ...foundYogurt.product, category: { ...foundYogurt.product.category, scoreKind: 'fat' as const }, nutrients: { ...foundYogurt.product.nutrients, fat: null } };
@@ -155,7 +160,7 @@ it('re-scores Open Food Facts Coca-Cola Zero as a beverage (53/100) and analyzes
   };
   await render(<ResultView product={offCola} score={wrongGeneralScore} />);
   expect(displayScore(offCola, wrongGeneralScore).score).toBe(53);
-  expect(screen.getByLabelText(productLine(offCola, wrongGeneralScore))).toBeTruthy();
+  expect(screen.getByText(productLine(offCola, wrongGeneralScore))).toBeTruthy();
   expect(screen.getByText('Conține îndulcitori')).toBeTruthy();
   expect(screen.getAllByText('aspartam')).toHaveLength(2); // additives list and explained ingredients
   expect(screen.getByText('Îndulcitor intens fără calorii (E951)')).toBeTruthy();
@@ -168,9 +173,8 @@ it('re-scores Open Food Facts Coca-Cola Zero as a beverage (53/100) and analyzes
 
 it.each(['A', 'B', 'C', 'D', 'E'] as const)('shows the supplied Nutri-Score letter %s in the tile, on the bar and with the disclaimer under it', async letter => {
   await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter }} />);
-  expect(screen.getByText(letter)).toBeTruthy();
+  expect(screen.getByText(letter, { includeHiddenElements: true })).toBeTruthy(); // drawn in the tile; the A-E bar announces it
   expect(screen.getByText(productLine(foundYogurt.product, { ...foundYogurt.score, letter }))).toBeTruthy();
-  expect(screen.getByLabelText(productLine(foundYogurt.product, { ...foundYogurt.score, letter }))).toBeTruthy();
   expect(screen.getByLabelText(`Nutri-Score: ${letter}`)).toBeTruthy();
   const order = inOrder();
   expect(order.indexOf(`Nutri-Score: ${letter}`)).toBeLessThan(order.indexOf(ro.score.disclaimer));
@@ -184,7 +188,7 @@ it('does not present a stale letter when the nutrition score is unavailable', as
 it('leaves an absent Nutri-Score letter unavailable without inventing one', async () => {
   await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter: null }} />);
   expect(screen.queryByLabelText(/Nutri-Score:/)).toBeNull();
-  expect(screen.getByLabelText(productLine(foundYogurt.product, { ...foundYogurt.score, letter: null }))).toBeTruthy();
+  expect(screen.getByText(productLine(foundYogurt.product, { ...foundYogurt.score, letter: null }))).toBeTruthy();
 });
 it('orders the profile alert, score, reasons, allergens, ingredients, portion, source and the original label', async () => {
   mockProfile = { ...mockProfile, allergens: ['Lapte'] };

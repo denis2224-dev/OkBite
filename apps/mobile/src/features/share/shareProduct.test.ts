@@ -10,6 +10,7 @@ it('shares the authoritative score and public product link', async () => {
   const native = jest.spyOn(Share, 'share').mockResolvedValue({ action: Share.sharedAction, activityType: undefined });
   const text = productShareText(product, score);
   expect(text).toBe(`${product.name} (${product.brand}): ${productScoreFor(product, score).score} din 100 pe OkBite\nhttps://okbite.md/product/${product.id}`);
+  expect(text).toContain('86 din 100'); // same number as the result
   await expect(shareProduct(product, score)).resolves.toBe('shared');
   expect(native).toHaveBeenCalledWith({ message: text });
 });

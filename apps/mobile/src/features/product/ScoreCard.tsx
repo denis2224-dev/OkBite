@@ -9,7 +9,7 @@ import { NutriScoreScale } from './NutriScoreScale';
 
 /** Letter tile, product name and tier, then the A–E bar with the disclaimer directly under it.
  * Compare's picker passes no product: it shows its own name line. */
-export function ScoreCard({ product, score }: { product?: Product; score: ScoreResult }) {
+export function ScoreCard({ product, score, identity = true }: { product?: Product; score: ScoreResult; identity?: boolean }) {
   const { colors } = useTheme();
   // With a product, the 0-100 number is the product score (nutrition, additives, processing) with its tier,
   // and the tile carries only the Nutri-Score letter, so each number appears once.
@@ -18,18 +18,19 @@ export function ScoreCard({ product, score }: { product?: Product; score: ScoreR
   const tone = score.letter ? letterTones[score.letter]
     : shown ? { fg: colors[shown.grade], bg: colors[`${shown.grade}Bg`] } : null;
   const productLine = shown && scored?.tier ? `${ro.history.score(shown.value)} · ${ro.tiers[scored.tier]}` : null;
-  // The A-E bar below already announces the letter, so the tile announces the product score.
-  const tileLabel = !shown ? '' : productLine ?? ro.score.ringLabel(shown.value, shown.grade);
-  const tileSub = score.letter ? (scored ? ro.tiers.nutriScore : `${shown?.value} ${ro.score.outOf}`) : ro.score.outOf;
+  const tileSub = score.letter ? (scored ? ro.tiers.nutriScore : ro.history.score(shown?.value ?? 0)) : ro.score.outOf;
+  // With a product line the tile is decoration: the line reads the score and the A-E bar reads the letter.
+  const tileA11y = productLine ? { accessible: false, accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' as const }
+    : { accessible: true, accessibilityRole: 'image' as const, accessibilityLabel: shown ? ro.score.ringLabel(shown.value, shown.grade) : '' };
   return <View style={{ gap: 12 }}>
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 16 }}>
-      {shown && tone && <View accessible accessibilityRole="image" accessibilityLabel={tileLabel}
+      {shown && tone && <View {...tileA11y}
         style={{ minWidth: 72, minHeight: 72, padding: 8, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: tone.bg }}>
         <Body style={{ fontFamily: fonts.heading, fontSize: 34, lineHeight: 40, color: tone.fg }}>{score.letter ?? shown.value}</Body>
         <Body style={{ fontFamily: fonts.bold, fontSize: 12, lineHeight: 16, color: tone.fg, textAlign: 'center' }}>{tileSub}</Body>
       </View>}
       <View style={{ flex: 1, minWidth: 160, gap: 2 }}>
-        {product && <>
+        {product && identity && <>
           <Heading numberOfLines={2} style={{ fontSize: 22, lineHeight: 28 }}>{product.name}</Heading>
           <Body style={{ color: colors.muted }}>{[product.brand, product.quantity].filter(Boolean).join(', ')}</Body>
         </>}

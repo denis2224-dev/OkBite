@@ -26,7 +26,7 @@ export function ProductPicker({ entries, selected, category, excluded, slot, onS
     </Pressable>
     {selected && <Body>{selected.product.brand} · {selected.product.quantity}</Body>}
     {selected?.product.status === 'unverified' && <Badge tone="unverified">{ro.result.unverified}</Badge>}
-    {selected && <ScoreCard score={missing.length ? { score: null, letter: null, grade: 'unavailable', reasons: [], missing } : selected.score} />}
+    {selected && <ScoreCard product={selected.product} identity={false} score={missing.length ? { score: null, letter: null, grade: 'unavailable', reasons: [], missing } : selected.score} />}
     {selected && <>
       <Body>{ro.result.allergens}</Body>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{selected.product.allergens.map(name => <AllergenChip key={name} name={name} />)}</View>
