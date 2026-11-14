@@ -34,7 +34,7 @@ const config: ExpoConfig = {
     },
   },
   plugins: [
-    'expo-router',
+    ['expo-router', { sitemap: false }],
     'expo-dev-client',
     [
       'expo-camera',
