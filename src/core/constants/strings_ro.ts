@@ -213,8 +213,9 @@ export const ro = {
     title: "Scanează codul de bare",
     manual: "Introdu codul manual",
     manualLabel: "Cod de bare",
-    manualPlaceholder: "ex. 4840001000017",
+    manualPlaceholder: "ex. 4840001000014",
     manualInvalid: "Codul trebuie să aibă 8 sau 13 cifre.",
+    manualChecksum: "Codul nu pare valid. Verifică cifrele.",
     submit: "Caută",
     webManualOnly:
       "În acest browser introdu codul de mână sau fotografiază produsul.",

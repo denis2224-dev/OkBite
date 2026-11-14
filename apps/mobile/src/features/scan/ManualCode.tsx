@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
-import { normalizeCode } from '@okbite/shared';
+import { normalizeCode, codeValidationError } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { fonts, radii, spacing, type Palette } from '../../theme/tokens';
@@ -21,7 +21,10 @@ export function ManualCode({ open, onToggle, onSubmit, disabled, onDark }: Props
   const handleSubmit = () => {
     if (disabled) return;
     const code = normalizeCode(value);
-    if (!code) return setError(value.trim() ? ro.scan.manualInvalid : ro.scan.manualEmpty);
+    if (!code) {
+      if (!value.trim()) return setError(ro.scan.manualEmpty);
+      return setError(codeValidationError(value) === 'checksum' ? ro.scan.manualChecksum : ro.scan.manualInvalid);
+    }
     setError(null);
     onSubmit(code);
   };
