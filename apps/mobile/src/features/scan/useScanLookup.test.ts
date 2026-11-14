@@ -8,7 +8,7 @@ import AddScreen from '../../../app/add/index';
 import { loadUnknownDraft } from '../add/unknownDraft';
 import { GUIDED_ADD_ENABLED, setGuidedAddEnabled } from '../identify/routes';
 import { useScanLookup } from './useScanLookup';
-import { freshLookup as takeFreshLookup } from '../product/freshLookup';
+import { freshLookup as takeFreshLookup, forgetLookup } from '../product/freshLookup';
 import { CODE, PRODUCT_ID, lookupFound, lookupNotFound } from '../capture/__fixtures__/responses';
 
 const mockReplace = jest.fn();
@@ -55,6 +55,19 @@ describe('useScanLookup', () => {
     const { result } = await renderHook(() => useScanLookup());
     await act(async () => { await result.current.onManualCode(CODE); });
     expect(takeFreshLookup(PRODUCT_ID)).toEqual(lookupFound);
+  });
+
+  it('hands over a fresh result on every scan of the same product', async () => {
+    lookup.mockResolvedValue(lookupFound);
+    const { result } = await renderHook(() => useScanLookup());
+    for (let scan = 1; scan <= 2; scan++) {
+      await act(async () => { await result.current.onManualCode(CODE); });
+      expect(takeFreshLookup(PRODUCT_ID)).toEqual(lookupFound);
+      forgetLookup(PRODUCT_ID); // the product page used it
+      expect(takeFreshLookup(PRODUCT_ID)).toBeUndefined();
+    }
+    expect(lookup).toHaveBeenCalledTimes(2);
+    expect(lookup).toHaveBeenNthCalledWith(2, { code: CODE });
   });
 
   it('sends an unknown code to identify as local state with no photoPath', async () => {
