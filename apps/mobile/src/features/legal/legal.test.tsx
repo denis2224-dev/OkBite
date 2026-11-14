@@ -11,11 +11,11 @@ beforeEach(() => jest.clearAllMocks());
 it.each([
   [PrivacyPage, ro.nav.privacy],
   [TermsPage, ro.nav.terms], [MethodPage, ro.nav.method],
-])('renders an information page with revision and draft status', async (Page, title) => {
+])('renders an information page with its revision date and no draft notice', async (Page, title) => {
   await render(<Page />);
   expect(screen.getByRole('header', { name: title })).toBeTruthy();
   expect(screen.getByText(/Ultima actualizare/)).toBeTruthy();
-  expect(screen.getByText(ro.legal.draft)).toBeTruthy();
+  expect(screen.queryByText(/under review|în curs de verificare|înainte de publicare|before publication/i)).toBeNull();
 });
 it('shows the About screen content and score limits', async () => {
   await render(<AboutPage />);
@@ -37,23 +37,19 @@ it('keeps the About entry to the authenticated administration route', async () =
 it('explains unavailable scores without implying demo scores are real', async () => {
   await render(<MethodPage />);
   expect(screen.getByText(ro.score.disclaimer)).toBeTruthy();
-  expect(screen.getByText(/Motorul de calcul este integrat/)).toBeTruthy();
-  expect(screen.getByText(/verificarea umană.*rămâne în curs/)).toBeTruthy();
+  expect(screen.queryByText(/rămâne în curs/)).toBeNull();
   expect(screen.getByText(/ilustrative/)).toBeTruthy();
 });
-it('discloses local queues, public contribution photos and incomplete provider setup', async () => {
+it('discloses local queues, public contribution photos and the AI provider without draft placeholders', async () => {
   await render(<PrivacyPage />);
   expect(screen.getByText(/identificator aleatoriu/)).toBeTruthy();
   expect(screen.getByText(/Ștergerea istoricului nu șterge/)).toBeTruthy();
   expect(screen.getByText(/publice/)).toBeTruthy();
   expect(screen.getByText(/TokenHarbor.*DeepSeek/)).toBeTruthy();
   expect(screen.queryByText(/funcții nu sunt încă integrate/)).toBeNull();
-  expect(screen.getByText(ro.legal.contactPending)).toBeTruthy();
+  expect(screen.queryByText(/proiect de politică|înainte de lansare|trebuie confirmate/)).toBeNull();
 });
-it('formats legal pages with the draft notice as a single line above the lead and sections as headings', async () => {
+it('formats legal pages with sections as headings', async () => {
   await render(<PrivacyPage />);
-  const texts = screen.getAllByText(/./).map(n => n.props.children as string);
-  expect(texts.indexOf(ro.legal.draft)).toBeLessThan(texts.indexOf(ro.legal.privacyLead));
-  expect(screen.getAllByText(ro.legal.draft)).toHaveLength(1);
   for (const section of ro.legal.privacySections) expect(screen.getByRole('header', { name: section.title })).toBeTruthy();
 });

@@ -40,7 +40,10 @@ export function SettingsScreen({ currentLanguage = 'ro', setLanguage, resetOnboa
     finally { clearPending.current = false; setClearing(false); }
   }
   async function requestInstall() {
+    if (isStandalone) { setInstallMessage(ro.pwa.install.installed); return; }
     if (isIos) { setInstallMessage(ro.pwa.install.iosHint); return; }
+    // No beforeinstallprompt (Firefox, desktop Safari, or already used): point to the browser menu.
+    if (!canInstall) { setInstallMessage(ro.pwa.install.menuHint); return; }
     if (installPending.current) return;
     installPending.current = true; setInstalling(true); setInstallMessage('');
     try { if (await install() === null) setInstallMessage(ro.pwa.install.failed); }
@@ -65,7 +68,7 @@ export function SettingsScreen({ currentLanguage = 'ro', setLanguage, resetOnboa
       </Card>
       <Card>
         <Heading style={styles.section}>{ro.settings.app}</Heading>
-        <HomePressable label={ro.settings.install} disabled={isStandalone || (!canInstall && !isIos) || installing} accessibilityState={{ disabled: isStandalone || (!canInstall && !isIos) || installing }} onPress={() => void requestInstall()} style={rowStyle}><Body style={styles.label}>{ro.settings.install}</Body><Icon name="arrow" color={colors.muted} /></HomePressable>
+        <HomePressable label={ro.settings.install} disabled={installing} accessibilityState={{ disabled: installing }} onPress={() => void requestInstall()} style={rowStyle}><Body style={styles.label}>{ro.settings.install}</Body><Icon name="arrow" color={colors.muted} /></HomePressable>
         {installMessage ? <Body accessibilityLiveRegion="polite">{installMessage}</Body> : null}
         {resetOnboarding ? <HomePressable label={ro.settings.resetOnboarding} onPress={resetOnboarding} style={rowStyle}><Body style={styles.label}>{ro.settings.resetOnboarding}</Body><Icon name="arrow" color={colors.muted} /></HomePressable> : null}
         <HomePressable label={ro.settings.clearHistory} onPress={() => { setMessage(''); setConfirming(true); }} style={rowStyle}><Body style={[styles.label, { color: colors.low }]}>{ro.settings.clearHistory}</Body><Icon name="trash" color={colors.low} /></HomePressable>
