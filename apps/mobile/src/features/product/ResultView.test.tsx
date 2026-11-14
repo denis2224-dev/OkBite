@@ -8,7 +8,9 @@ import { api, ApiError } from '../../lib/api';
 import { router } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { light } from '../../theme/tokens';
-import type { Profile } from '@okbite/shared';
+import type { Product, Profile, ScoreResult } from '@okbite/shared';
+import { displayScore } from './displayScore';
+import { productScoreFor } from './productScoreFor';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), back: jest.fn(), replace: jest.fn(), canGoBack: () => true } }));
 let mockProfile: Profile = { goals: [], allergens: [], avoid: [], onboarded: true };
@@ -16,6 +18,11 @@ jest.mock('../profile/useProfile', () => ({ useProfile: () => ({ profile: mockPr
 beforeEach(() => { mockProfile = { goals: [], allergens: [], avoid: [], onboarded: true }; });
 // Text and accessibility labels in render order.
 const inOrder = () => JSON.stringify(screen.toJSON());
+// The 0-100 product score line (and the tile's label) the result shows for this product.
+const productLine = (product: Product, score: ScoreResult) => {
+  const s = productScoreFor(product, score);
+  return `${ro.history.score(s.score!)} · ${ro.tiers[s.tier!]}`;
+};
 
 jest.mock('../../lib/api', () => ({ ...jest.requireActual('../../lib/api'), api: { report: jest.fn() } }));
 it('shows allergens, unverified provenance and the disclaimer', async () => {
@@ -68,8 +75,10 @@ it('retains a failed report for retry and closes only after success', async () =
 
 it('preserves a supplied water score when label nutrients are absent', async () => {
   const product = { ...foundYogurt.product, category: { ...foundYogurt.product.category, scoreKind: 'water' as const }, nutrients: { ...foundYogurt.product.nutrients, kcal: null, salt: null, sugar: null, sat: null } };
-  await render(<ResultView product={product} score={{ ...foundYogurt.score, score: 100, letter: 'A', grade: 'good' }} />);
-  expect(screen.getByLabelText(ro.score.ringLabel(100, 'good'))).toBeTruthy();
+  const water = { ...foundYogurt.score, score: 100, letter: 'A' as const, grade: 'good' as const };
+  await render(<ResultView product={product} score={water} />);
+  expect(displayScore(product, water).score).toBe(100);
+  expect(screen.getByLabelText(productLine(product, water))).toBeTruthy();
 });
 it('withholds a fat-category score when total fat is missing', async () => {
   const product = { ...foundYogurt.product, category: { ...foundYogurt.product.category, scoreKind: 'fat' as const }, nutrients: { ...foundYogurt.product.nutrients, fat: null } };
@@ -116,7 +125,8 @@ it('displays matched ingredient roles and risk explanations inline on the produc
     ],
   };
   await render(<ResultView product={colaProduct} score={{ ...foundYogurt.score, score: 53, letter: 'C', grade: 'medium' }} />);
-  expect(screen.getByText('aspartam')).toBeTruthy();
+  // Once in the additives list, once in the explained ingredients.
+  expect(screen.getAllByText('aspartam')).toHaveLength(2);
   expect(screen.getByText('Îndulcitor intens fără calorii (E951)')).toBeTruthy();
   expect(screen.getByText(/sursă de fenilalanină/)).toBeTruthy();
   expect(screen.getByText('Colorant sintetic (E150d)')).toBeTruthy();
@@ -144,12 +154,13 @@ it('re-scores Open Food Facts Coca-Cola Zero as a beverage (53/100) and analyzes
     missing: [],
   };
   await render(<ResultView product={offCola} score={wrongGeneralScore} />);
-  expect(screen.getByLabelText(ro.score.ringLabel(53, 'medium'))).toBeTruthy();
+  expect(displayScore(offCola, wrongGeneralScore).score).toBe(53);
+  expect(screen.getByLabelText(productLine(offCola, wrongGeneralScore))).toBeTruthy();
   expect(screen.getByText('Conține îndulcitori')).toBeTruthy();
-  expect(screen.getByText('aspartam')).toBeTruthy();
+  expect(screen.getAllByText('aspartam')).toHaveLength(2); // additives list and explained ingredients
   expect(screen.getByText('Îndulcitor intens fără calorii (E951)')).toBeTruthy();
   // The name already says "acidifiant", so the role line is left out.
-  expect(screen.getByText('acidifiant: acid fosforic (E338)')).toBeTruthy();
+  expect(screen.getAllByText('acidifiant: acid fosforic (E338)')).toHaveLength(2); // additives list and explained ingredients
   expect(screen.queryByText('Acidifiant (E338)')).toBeNull();
 });
 
@@ -158,8 +169,8 @@ it('re-scores Open Food Facts Coca-Cola Zero as a beverage (53/100) and analyzes
 it.each(['A', 'B', 'C', 'D', 'E'] as const)('shows the supplied Nutri-Score letter %s in the tile, on the bar and with the disclaimer under it', async letter => {
   await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter }} />);
   expect(screen.getByText(letter)).toBeTruthy();
-  expect(screen.getByText(`${foundYogurt.score.score} ${ro.score.outOf}`)).toBeTruthy();
-  expect(screen.getByLabelText(ro.score.ringLabel(foundYogurt.score.score!, foundYogurt.score.grade))).toBeTruthy();
+  expect(screen.getByText(productLine(foundYogurt.product, { ...foundYogurt.score, letter }))).toBeTruthy();
+  expect(screen.getByLabelText(productLine(foundYogurt.product, { ...foundYogurt.score, letter }))).toBeTruthy();
   expect(screen.getByLabelText(`Nutri-Score: ${letter}`)).toBeTruthy();
   const order = inOrder();
   expect(order.indexOf(`Nutri-Score: ${letter}`)).toBeLessThan(order.indexOf(ro.score.disclaimer));
@@ -173,13 +184,13 @@ it('does not present a stale letter when the nutrition score is unavailable', as
 it('leaves an absent Nutri-Score letter unavailable without inventing one', async () => {
   await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter: null }} />);
   expect(screen.queryByLabelText(/Nutri-Score:/)).toBeNull();
-  expect(screen.getByLabelText(ro.score.ringLabel(foundYogurt.score.score!, foundYogurt.score.grade))).toBeTruthy();
+  expect(screen.getByLabelText(productLine(foundYogurt.product, { ...foundYogurt.score, letter: null }))).toBeTruthy();
 });
 it('orders the profile alert, score, reasons, allergens, ingredients, portion, source and the original label', async () => {
   mockProfile = { ...mockProfile, allergens: ['Lapte'] };
   await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter: 'B' }} />);
   const order = inOrder();
-  const markers = [ro.result.profileAlertSub, ro.score.ringLabel(foundYogurt.score.score!, foundYogurt.score.grade), ro.result.whyLetter('B'),
+  const markers = [ro.result.profileAlertSub, productLine(foundYogurt.product, foundYogurt.score), ro.result.whyLetter('B'),
     ro.result.allergens, ro.result.transcribedLabel, ro.result.portionNote, ro.result.source, ro.result.original].map(text => order.indexOf(text));
   expect(markers.every(index => index >= 0)).toBe(true);
   expect([...markers].sort((a, b) => a - b)).toEqual(markers);
@@ -250,7 +261,7 @@ it('puts collapse, share and report in a top row of 44 pt icon buttons', async (
     expect(style.minHeight).toBeGreaterThanOrEqual(44);
   }
   const order = inOrder();
-  expect(order.indexOf(ro.result.report)).toBeLessThan(order.indexOf(ro.score.ringLabel(foundYogurt.score.score!, foundYogurt.score.grade)));
+  expect(order.indexOf(ro.result.report)).toBeLessThan(order.indexOf(productLine(foundYogurt.product, foundYogurt.score)));
   await fireEvent.press(screen.getByRole('button', { name: ro.result.closeSheet }));
   expect(router.back).toHaveBeenCalled();
   await fireEvent.press(screen.getByRole('button', { name: ro.result.report }));

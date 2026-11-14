@@ -10,6 +10,9 @@ import { isPreview } from '../../lib/preview';
 import { displayScore } from './displayScore';
 import { ScoreCard } from './ScoreCard';
 import { WhyScore } from './WhyScore';
+import { ScoreDeductions } from './ScoreDeductions';
+import { ProcessingCard } from './ProcessingCard';
+import { AdditivesCard } from './AdditivesCard';
 import { ProfileAllergenAlert } from './ProfileAllergenAlert';
 import { ResultTopBar } from './ResultTopBar';
 import { PortionSheet } from './PortionSheet';
@@ -61,6 +64,9 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
       <Body style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>{isOffProduct(product) ? ro.result.offNote : ro.result.unverifiedNote}</Body>
     </View>}
     {canShowScore ? <WhyScore score={shownScore} sugar={product.nutrients.sugar} /> : <PartialNutritionCard product={product} />}
+    {canShowScore && <ScoreDeductions product={product} score={score} />}
+    <ProcessingCard product={product} />
+    <AdditivesCard product={product} />
     <Card>
       <Heading style={{ fontSize: 18 }}>{ro.result.allergens}</Heading>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>

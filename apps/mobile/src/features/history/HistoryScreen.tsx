@@ -7,12 +7,11 @@ import { router, useFocusEffect } from 'expo-router';
 import { Body, Button, Card, Heading } from '../../ui';
 import { ro } from '../../copy/ro';
 import { roDate } from '../product/SourceCard';
-import { displayScore } from '../product/displayScore';
 import { clearHistory, listHistory, removeFromHistory, restoreToHistory, type HistoryEntry } from './store';
 import { subscribeQueue } from '../offline/queue';
 import { TabPageHeader } from '../../shared/TabPageHeader';
 import { useToast } from '../../ui/Toast';
-import { historyTier } from './tierLabel';
+import { productScoreFor, tierGrade } from '../product/productScoreFor';
 import { showStorageWarning } from '../../lib/storagePersistence';
 import { useStorageNoticeDismissal } from '../../lib/storageNotice';
 
@@ -124,9 +123,9 @@ export function HistoryScreen() {
         {visible.length > 0 && <View accessibilityRole="list" accessibilityLabel={ro.history.title} style={styles.list}>
           {visible.map(entry => {
             const {product,score:storedScore,savedAt}=entry;
-            const score=displayScore(product,storedScore);
-            const tier = score.score === null ? null : historyTier(score.score);
-            const grade = tier === null ? 'neutral' : tier === 'excellent' || tier === 'good' ? 'good' : tier === 'fair' ? 'medium' : 'low';
+            const { score: value, tier } = productScoreFor(product, storedScore);
+            const score = { score: value };
+            const grade = tierGrade(tier);
             const verification = product.status === 'verified' && product.verifiedAt
               ? `${ro.result.checked}: ${roDate(product.verifiedAt)}` : ro.result.unverified;
             const scoreLabel = score.score === null ? ro.result.scoreUnavailable : `${ro.history.score(score.score)} · ${tier ? ro.tiers[tier] : ''}`;
