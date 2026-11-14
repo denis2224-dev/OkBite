@@ -3,22 +3,27 @@ import { createReadStream } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { parseArgs } from 'node:util';
 import { createGunzip } from 'node:zlib';
-import { OffProduct, offNutrients } from '../packages/shared/src/off/mapOffProduct';
+import { OffProduct, inferCategorySlug, offNutrients } from '../packages/shared/src/off/mapOffProduct';
 
 /**
  * Fills nutrients of OFF-imported products saved with none, from OFF's JSONL export.
  * Rows imported before the mapper read OFF's schema-1004 `nutrition.aggregated_set` got every nutrient null.
  * Only unverified, non-shopper rows whose nutrients are all still null are touched, and only nutrient columns.
+ * With --categories it instead re-infers category_slug of such rows in 'necunoscut' (no score) or
+ * 'unt-si-smantana' (ice cream used to land there) from OFF's categories, using the importer's rules.
  */
 const NUTRIENTS = ['kcal', 'fat', 'sat', 'sugar', 'salt', 'protein', 'fiber'] as const;
 const EMPTY = NUTRIENTS.map((c) => `${c}=is.null`).join('&');
-const TARGET = `source=like.Open%20Food%20Facts*&status=eq.unverified&added_by_device=is.null&${EMPTY}`;
-type Patch = Partial<Record<(typeof NUTRIENTS)[number], number>>;
+const OFF_ROWS = 'source=like.Open%20Food%20Facts*&status=eq.unverified&added_by_device=is.null';
+const TARGETS = { nutrients: `${OFF_ROWS}&${EMPTY}`, categories: `${OFF_ROWS}&category_slug=in.(necunoscut,unt-si-smantana)` };
+export type Mode = keyof typeof TARGETS;
+type Patch = Partial<Record<(typeof NUTRIENTS)[number], number>> | { category_slug: string };
 
-/** The nutrient columns to set for one export line, or null when it is not a target code or OFF has none. */
+/** The columns to set for one export line, or null when it is not a target code or OFF has nothing new. */
 export function patchFor(
   line: string,
   codes: ReadonlySet<string>,
+  mode: Mode = 'nutrients',
 ): { code: string; patch: Patch } | null {
   // Cheap filter before parsing ~4M lines: some quoted code on the line must be a target.
   if (![...line.matchAll(/"code":"(\d{8,14})"/g)].some((m) => codes.has(m[1]))) return null;
@@ -31,6 +36,12 @@ export function patchFor(
   const off = OffProduct.safeParse(raw);
   const code = off.success ? off.data.code?.trim() : null;
   if (!off.success || !code || !codes.has(code)) return null;
+  if (mode === 'categories') {
+    const unit = off.data.nutrition_data_per === '100ml' || off.data.product_quantity_unit === 'ml' ? 'ml' : 'g';
+    const slug = inferCategorySlug(off.data, off.data.product_name ?? '', off.data.ingredients_text_ro ?? '', unit);
+    // unt-si-smantana rows are re-checked because en:ice-creams used to match its creams rule.
+    return slug === 'necunoscut' || slug === 'unt-si-smantana' ? null : { code, patch: { category_slug: slug } };
+  }
   const n = offNutrients(off.data);
   const patch = Object.fromEntries(
     NUTRIENTS.flatMap((c) => (n[c] === null ? [] : [[c, n[c]]])),
@@ -48,11 +59,11 @@ function service() {
   };
 }
 
-async function emptyCodes(): Promise<Set<string>> {
+async function targetCodes(mode: Mode): Promise<Set<string>> {
   const { url, headers } = service();
   const codes = new Set<string>();
   for (let from = 0; ; from += 1000) {
-    const res = await fetch(`${url}/rest/v1/products?select=code&${TARGET}&order=code`, {
+    const res = await fetch(`${url}/rest/v1/products?select=code&${TARGETS[mode]}&order=code`, {
       headers: { ...headers, range: `${from}-${from + 999}` },
     });
     if (!res.ok) throw new Error(`products: HTTP ${res.status} ${await res.text()}`);
@@ -62,10 +73,10 @@ async function emptyCodes(): Promise<Set<string>> {
   }
 }
 
-async function save(code: string, patch: Patch) {
+async function save(code: string, patch: Patch, mode: Mode) {
   const { url, headers } = service();
   // The same filter again: a row a shopper or moderator changed meanwhile is left alone.
-  const res = await fetch(`${url}/rest/v1/products?code=eq.${code}&${TARGET}`, {
+  const res = await fetch(`${url}/rest/v1/products?code=eq.${code}&${TARGETS[mode]}`, {
     method: 'PATCH',
     headers: { ...headers, 'content-type': 'application/json', prefer: 'return=minimal' },
     body: JSON.stringify(patch),
@@ -73,9 +84,9 @@ async function save(code: string, patch: Patch) {
   if (!res.ok) throw new Error(`${code}: HTTP ${res.status} ${await res.text()}`);
 }
 
-export async function backfill(file: string, write: boolean) {
-  const codes = await emptyCodes();
-  console.log(`${codes.size} OFF rows have no nutrients`);
+export async function backfill(file: string, write: boolean, mode: Mode = 'nutrients') {
+  const codes = await targetCodes(mode);
+  console.log(`${codes.size} OFF rows have no ${mode === 'nutrients' ? 'nutrients' : 'category'}`);
   const lines = createInterface({
     input: createReadStream(file).pipe(createGunzip()),
     crlfDelay: Infinity,
@@ -84,11 +95,11 @@ export async function backfill(file: string, write: boolean) {
   let saved = 0;
   let pending: Promise<void>[] = [];
   for await (const line of lines) {
-    const hit = patchFor(line, codes);
+    const hit = patchFor(line, codes, mode);
     if (!hit) continue;
     codes.delete(hit.code); // the export can list a code twice; patch once
     found++;
-    if (write) pending.push(save(hit.code, hit.patch).then(() => void saved++));
+    if (write) pending.push(save(hit.code, hit.patch, mode).then(() => void saved++));
     if (pending.length === 10) {
       await Promise.all(pending);
       pending = [];
@@ -100,17 +111,21 @@ export async function backfill(file: string, write: boolean) {
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const { values } = parseArgs({
-    options: { file: { type: 'string' }, write: { type: 'boolean', default: false } },
+    options: { file: { type: 'string' }, write: { type: 'boolean', default: false },
+      categories: { type: 'boolean', default: false },
+    },
   });
   if (!values.file) throw new Error('--file <openfoodfacts-products.jsonl.gz> is required');
   const write = values.write ?? false;
   if (!write) console.log('Dry run: nothing is written. Add --write to save.');
-  backfill(values.file, write).then(
+  const mode: Mode = values.categories ? 'categories' : 'nutrients';
+  const what = mode === 'nutrients' ? 'nutrients' : 'a category';
+  backfill(values.file, write, mode).then(
     ({ found, saved, rest }) =>
       console.log(
         write
-          ? `${saved} of ${found} rows got nutrients; ${rest} have none in the export either`
-          : `${found} rows would get nutrients; ${rest} have none in the export either`,
+          ? `${saved} of ${found} rows got ${what}; ${rest} have none from the export`
+          : `${found} rows would get ${what}; ${rest} have none from the export`,
       ),
     (e: Error) => {
       console.error(e.message);
