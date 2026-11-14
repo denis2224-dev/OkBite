@@ -30,12 +30,22 @@ describe('ManualCode', () => {
     expect(screen.queryByText('Cifrele de sub codul de bare: 8 sau 13.')).toBeNull();
   });
 
-  it.each([['bad checksum', '4840001000017'], ['too short', '12345'], ['letters', 'abc']])('shows ro.scan.manualInvalid and does not submit: %s', async (_name, text) => {
+  it.each([['too short', '12345'], ['letters', 'abc']])('shows ro.scan.manualInvalid and does not submit: %s', async (_name, text) => {
     const onSubmit = jest.fn();
     await render(<Harness onSubmit={onSubmit} />);
     await typeAndSearch(text);
     expect(screen.getByText('Codul are 8 sau 13 cifre.')).toBeTruthy();
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it.each(['4840022010013', '5449000000997', '96385075'])('shows the checksum message without submitting %s', async (text) => {
+    const onSubmit = jest.fn();
+    await render(<Harness onSubmit={onSubmit} />);
+    await typeAndSearch(text);
+    expect(screen.getByRole('alert').props.children).toBe('Codul nu pare valid. Verifică cifrele.');
+    expect(onSubmit).not.toHaveBeenCalled();
+    await fireEvent.changeText(screen.getByLabelText(ro.scan.manualTitle), '96385074');
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('asks for the digits when the field is empty', async () => {
