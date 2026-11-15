@@ -14,6 +14,7 @@ import { api, ApiError } from '../../lib/api';
 import { foundYogurt } from '../../test/fixtures';
 import * as queueLocks from './queueLock';
 import * as queueDb from '../history/db';
+import { getIdentifyDraft } from '../add/draftStore';
 
 jest.mock('expo-sqlite', () => {
   const sqlite = new mockDatabaseSync(':memory:');
@@ -309,16 +310,17 @@ it('resumes an unresolved photo item when it has candidates and routes to identi
   };
   jest.mocked(api.identify).mockResolvedValue(candidatesResponse);
   const res = await resumeQueuedItem(item);
-  expect(res).toEqual({
-    kind: 'identify',
-    pathname: '/identify',
-    params: { source: 'photo', payload: JSON.stringify(candidatesResponse), queueId: item.id },
-  });
+  expect(res).toMatchObject({ kind: 'identify', pathname: '/identify', params: { source: 'photo', identifyDraftId: expect.any(String), queueId: item.id } });
+  if (res.kind !== 'identify') throw new Error('Expected identify route');
+  expect('payload' in res.params).toBe(false);
+  expect(getIdentifyDraft(res.params.identifyDraftId!)).toEqual(candidatesResponse);
   expect(await listNeedsReview()).toHaveLength(1);
   expect(await mockFs.readFile(item.payload, 'utf8')).toBe('photo content');
   const reopened = await resumeQueuedItem(item);
   if (reopened.kind !== 'identify') throw new Error('Expected a persisted review');
-  expect(JSON.parse(reopened.params.payload!)).toEqual(candidatesResponse);
+  expect(reopened.params).toMatchObject({ source: 'photo', identifyDraftId: expect.any(String), queueId: item.id });
+  expect('payload' in reopened.params).toBe(false);
+  expect(getIdentifyDraft(reopened.params.identifyDraftId!)).toEqual(candidatesResponse);
   expect(api.identify).toHaveBeenCalledTimes(1);
   await resolveQueued(item.id);
   expect(await listQueued()).toEqual([]);

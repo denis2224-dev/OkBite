@@ -34,7 +34,6 @@ export function NotFound({
           </Body>
         </View>
         <Card>
-          <Heading style={styles.nextTitle}>{ro.identify.nextTitle}</Heading>
           {steps.map((step, index) => (
             <View key={step} style={styles.stepRow}>
               <View style={[styles.badge, { backgroundColor: colors.goodBg }]}>
@@ -66,7 +65,6 @@ const styles = StyleSheet.create({
   intro: { alignItems: 'center', gap: spacing.md },
   icon: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
   centered: { textAlign: 'center' },
-  nextTitle: { fontSize: 18, lineHeight: 24 },
   stepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
   badge: {
     minWidth: 32,

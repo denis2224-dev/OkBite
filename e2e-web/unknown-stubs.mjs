@@ -35,7 +35,9 @@ export async function unknownStub(req, res, url, example, categories) {
   const product = example.product;
   const empty = Object.fromEntries(Object.keys(product.nutrients).map(key => [key, null]));
   const partialUnbranded = session.scenario === 'partial-unbranded';
-  if (name === 'identify') json(res, { status: 'not_found',
+  if (name === 'identify') json(res, { status: session.scenario === 'candidates' ? 'candidates' : 'not_found',
+    ...(session.scenario === 'candidates' ? { candidates: [{ id: product.id, name: product.name, brand: product.brand,
+      quantity: product.quantity, imageUrl: null, similarity: 0.52 }] } : {}),
     read: { name: product.name, brand: partialUnbranded ? null : product.brand, quantity: product.quantity, code: null }, photoPath: `${id}/front.jpg` });
   if (name === 'read-label') {
     const absent = input.nutrition === 'none' || input.nutrition === 'skipped';

@@ -5,8 +5,9 @@ import { render, fireEvent, screen, act } from '@testing-library/react-native';
 import { IdentifyResponse } from '@okbite/shared';
 import * as FileSystem from 'expo-file-system/legacy';
 import { ro } from '../../copy/ro';
-import { loadUnknownDraft } from '../add/unknownDraft';
+import { clearUnknownDraft, loadUnknownDraft } from '../add/unknownDraft';
 import { resolveQueued } from '../offline/queue';
+import { getIdentifyDraft, setIdentifyDraft } from '../add/draftStore';
 import AddScreen from '../../../app/add/index';
 import IdentifyScreen from '../../../app/identify';
 import {
@@ -106,9 +107,108 @@ describe('IdentifyScreen and B3 flow', () => {
     const first = await render(<IdentifyScreen />);
     expect(resolveQueued).not.toHaveBeenCalled();
     await first.unmount();
+    mockParams.value = { ...identifyPhotoRoute(response).params, queueId: 'queued-id' };
     await render(<IdentifyScreen />);
     await fireEvent.press(screen.getByRole('button', { name: ro.identify.confirmYes }));
     expect(resolveQueued).toHaveBeenCalledWith('queued-id');
+  });
+  it.each([false, true])('clears a confirmed draft while protecting newer shared photos: %s', async sharesPhoto => {
+    jest.mocked(loadUnknownDraft).mockResolvedValueOnce({ version: 1, id: 'confirmed-draft',
+      initial: { ...ORIGINAL_READ, photoPath: PHOTO_PATH }, stage: 'ingredients', nutritionMode: null,
+      photos: { front: 'kept-front', ingredients: null, nutrition: null }, label: null, readStatus: 'idle' });
+    jest.mocked(loadUnknownDraft).mockResolvedValueOnce({ version: 1, id: 'newer-draft',
+      initial: { ...ORIGINAL_READ, photoPath: PHOTO_PATH }, stage: 'ingredients', nutritionMode: null,
+      photos: { front: sharesPhoto ? 'kept-front' : 'new-front', ingredients: null, nutrition: null }, label: null, readStatus: 'idle' });
+    const response = { status: 'candidates' as const, read: ORIGINAL_READ, photoPath: PHOTO_PATH, candidates: [CAND_1] };
+    setIdentifyDraft('confirmed-draft', response);
+    mockParams.value = identifyPhotoRoute(response, undefined, 'confirmed-draft').params;
+    await render(<IdentifyScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.identify.confirmYes }));
+    expect(clearUnknownDraft).toHaveBeenCalledWith('confirmed-draft');
+    if (sharesPhoto) expect(FileSystem.deleteAsync).not.toHaveBeenCalled();
+    else expect(FileSystem.deleteAsync).toHaveBeenCalledWith('kept-front', { idempotent: true });
+    expect(mockReplace).toHaveBeenCalledWith(`/product/${CAND_1.id}`);
+  });
+  it('keeps unremoved photo IDs across a failed confirmation cleanup and retries deletion', async () => {
+    const draft = { version: 1, id: 'cleanup-retry',
+      initial: { ...ORIGINAL_READ, photoPath: PHOTO_PATH }, stage: 'ingredients', nutritionMode: null,
+      photos: { front: 'retry-front', ingredients: null, nutrition: null }, label: null, readStatus: 'idle' } as const;
+    jest.mocked(loadUnknownDraft).mockResolvedValueOnce(draft).mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+    jest.mocked(FileSystem.deleteAsync).mockRejectedValueOnce(new Error('disk busy')).mockResolvedValue();
+    const response = { status: 'candidates' as const, read: ORIGINAL_READ, photoPath: PHOTO_PATH, candidates: [CAND_1] };
+    setIdentifyDraft(draft.id, response);
+    mockParams.value = identifyPhotoRoute(response, undefined, draft.id).params;
+
+    await render(<IdentifyScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.identify.confirmYes }));
+
+    expect(screen.getByText(ro.review.savedPendingCleanup)).toBeTruthy();
+    expect(mockReplace).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.finishSave }));
+
+    expect(FileSystem.deleteAsync).toHaveBeenCalledTimes(2);
+    expect(mockReplace).toHaveBeenCalledWith(`/product/${CAND_1.id}`);
+  });
+  it('keeps the cleanup snapshot when reading the newer draft fails after clearing', async () => {
+    const draft = { version: 1, id: 'cleanup-read-retry',
+      initial: { ...ORIGINAL_READ, photoPath: PHOTO_PATH }, stage: 'ingredients', nutritionMode: null,
+      photos: { front: 'read-retry-front', ingredients: null, nutrition: null }, label: null, readStatus: 'idle' } as const;
+    jest.mocked(loadUnknownDraft).mockResolvedValueOnce(draft).mockRejectedValueOnce(new Error('storage busy'))
+      .mockResolvedValueOnce(null);
+    const response = { status: 'candidates' as const, read: ORIGINAL_READ, photoPath: PHOTO_PATH, candidates: [CAND_1] };
+    setIdentifyDraft(draft.id, response);
+    mockParams.value = identifyPhotoRoute(response, undefined, draft.id).params;
+
+    await render(<IdentifyScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.identify.confirmYes }));
+
+    expect(screen.getByText(ro.review.savedPendingCleanup)).toBeTruthy();
+    expect(mockReplace).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.finishSave }));
+
+    expect(loadUnknownDraft).toHaveBeenCalledTimes(3);
+    expect(FileSystem.deleteAsync).toHaveBeenCalledWith('read-retry-front', { idempotent: true });
+    expect(mockReplace).toHaveBeenCalledWith(`/product/${CAND_1.id}`);
+  });
+  it('does not delete a photo that a newer draft claims before cleanup retry', async () => {
+    const draft = { version: 1, id: 'cleanup-reused',
+      initial: { ...ORIGINAL_READ, photoPath: PHOTO_PATH }, stage: 'ingredients', nutritionMode: null,
+      photos: { front: 'old-front', ingredients: 'shared-photo', nutrition: null }, label: null, readStatus: 'idle' } as const;
+    const newer = { ...draft, id: 'newer-draft', photos: { front: 'new-front', ingredients: null, nutrition: null } };
+    const newerUsingShared = { ...newer, photos: { ...newer.photos, ingredients: 'shared-photo' } };
+    jest.mocked(loadUnknownDraft).mockResolvedValueOnce(draft).mockResolvedValueOnce(newer);
+    jest.mocked(FileSystem.deleteAsync).mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('disk busy'));
+    const response = { status: 'candidates' as const, read: ORIGINAL_READ, photoPath: PHOTO_PATH, candidates: [CAND_1] };
+    setIdentifyDraft(draft.id, response);
+    mockParams.value = identifyPhotoRoute(response, undefined, draft.id).params;
+
+    await render(<IdentifyScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.identify.confirmYes }));
+    expect(screen.getByText(ro.review.savedPendingCleanup)).toBeTruthy();
+    jest.mocked(loadUnknownDraft).mockResolvedValueOnce(newerUsingShared);
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.finishSave }));
+
+    expect(FileSystem.deleteAsync).toHaveBeenCalledTimes(2);
+    expect(FileSystem.deleteAsync).toHaveBeenNthCalledWith(1, 'old-front', { idempotent: true });
+    expect(FileSystem.deleteAsync).toHaveBeenNthCalledWith(2, 'shared-photo', { idempotent: true });
+    expect(mockReplace).toHaveBeenCalledWith(`/product/${CAND_1.id}`);
+  });
+  it('leaves queue-owned photos intact while clearing a confirmed draft', async () => {
+    const draft = { version: 1, id: 'queued-draft',
+      initial: { ...ORIGINAL_READ, photoPath: PHOTO_PATH, queueId: 'queued-photo' }, stage: 'ingredients', nutritionMode: null,
+      photos: { front: 'queue-photo', ingredients: null, nutrition: null }, label: null, readStatus: 'idle' } as const;
+    jest.mocked(loadUnknownDraft).mockResolvedValueOnce(draft);
+    jest.mocked(resolveQueued).mockResolvedValue();
+    const response = { status: 'candidates' as const, read: ORIGINAL_READ, photoPath: PHOTO_PATH, candidates: [CAND_1] };
+    setIdentifyDraft(draft.id, response);
+    mockParams.value = { ...identifyPhotoRoute(response, undefined, draft.id).params, queueId: 'queued-photo' };
+
+    await render(<IdentifyScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.identify.confirmYes }));
+
+    expect(resolveQueued).toHaveBeenCalledWith('queued-photo');
+    expect(FileSystem.deleteAsync).not.toHaveBeenCalled();
+    expect(mockReplace).toHaveBeenCalledWith(`/product/${CAND_1.id}`);
   });
   it('retains the chosen product and retries local acknowledgement when storage fails', async () => {
     const response = IdentifyResponse.parse({ status: 'candidates', photoPath: PHOTO_PATH, read: ORIGINAL_READ, candidates: [CAND_1] });
@@ -138,7 +238,7 @@ describe('IdentifyScreen and B3 flow', () => {
 
     expect(screen.getByText(ro.identify.confirmTitle)).toBeTruthy();
     expect(screen.getByText(CAND_1.name)).toBeTruthy();
-    expect(screen.getByText(`${CAND_1.brand} · ${CAND_1.quantity}`)).toBeTruthy();
+    expect(screen.getByText(`${CAND_1.brand}, ${CAND_1.quantity}`)).toBeTruthy();
     expect(screen.getByText(ro.identify.confirmHint)).toBeTruthy();
     expect(screen.getByLabelText(CAND_1.name)).toBeTruthy();
 
@@ -234,8 +334,8 @@ describe('IdentifyScreen and B3 flow', () => {
 
     expect(screen.getByText(ro.identify.notFoundTitle)).toBeTruthy();
     expect(screen.getByText(ro.identify.notFoundText)).toBeTruthy();
-    expect(screen.getByText(ro.identify.nextTitle)).toBeTruthy();
-    for (const step of ro.identify.nextSteps) {
+    for (const [index, step] of ro.identify.nextSteps.entries()) {
+      expect(screen.getByText(String(index + 1))).toBeTruthy();
       expect(screen.getByText(step)).toBeTruthy();
     }
 
@@ -301,6 +401,42 @@ describe('IdentifyScreen and B3 flow', () => {
 
     await fireEvent.press(screen.getByRole('button', { name: ro.capture.title }));
     expect(mockReplace).toHaveBeenCalledWith('/capture');
+  });
+
+  it('returns to the saved guided add draft when an identify draft is missing after reload', async () => {
+    setGuidedAddEnabled(true);
+    mockParams.value = { source: 'photo', unknownDraftId: 'reloaded-draft' };
+
+    await render(<IdentifyScreen />);
+
+    expect(mockReplace).toHaveBeenCalledWith({
+      pathname: '/add',
+      params: { unknownDraftId: 'reloaded-draft', retake: 'front' },
+    });
+  });
+
+  it.each([
+    ['generic identify', { source: 'photo', identifyDraftId: 'missing-generic' }, '/capture'],
+    ['queued identify', { source: 'photo', identifyDraftId: 'missing-queued', queueId: 'queued-photo' }, '/offline'],
+  ])('restarts %s at its safe entry when the response draft is missing', async (_label, params, route) => {
+    mockParams.value = params;
+
+    await render(<IdentifyScreen />);
+
+    expect(mockReplace).toHaveBeenCalledWith(route);
+  });
+
+  it('clears the cached identify response when the screen blurs or unmounts', async () => {
+    const id = 'clear-on-blur';
+    const response = { status: 'candidates' as const, read: ORIGINAL_READ, photoPath: PHOTO_PATH, candidates: [CAND_1] };
+    setIdentifyDraft(id, response);
+    mockParams.value = { ...identifyPhotoRoute(response).params, identifyDraftId: id };
+
+    const view = await render(<IdentifyScreen />);
+    expect(getIdentifyDraft(id)).toEqual(response);
+    await view.unmount();
+
+    expect(getIdentifyDraft(id)).toBeUndefined();
   });
 
   it.each(['unmount', 'reject'])('does not override the next destination after %s during confirmation', async mode => {
@@ -427,11 +563,8 @@ describe('IdentifyScreen and B3 flow', () => {
     mockParams.value = notFoundParams;
     await render(<AddScreen />);
     await act(async () => {});
-    await fireEvent.changeText(await screen.findByLabelText(ro.review.name), ORIGINAL_READ.name!);
-    await fireEvent.changeText(screen.getByLabelText(ro.review.quantity), ORIGINAL_READ.quantity!);
-    await fireEvent.press(screen.getByRole('button', { name: ro.add.next }));
     expect(screen.getByText(ro.add.ingredientsTitle)).toBeTruthy();
-    expect(screen.getByText(ro.add.stepOf(1, 3))).toBeTruthy();
+    expect(screen.getByText(ro.add.stepOf(2, 4))).toBeTruthy();
   });
 
   it('shows an error StatusPanel instead of a dead button when openAdd fails, and recovers on retry', async () => {
@@ -442,7 +575,8 @@ describe('IdentifyScreen and B3 flow', () => {
       read: ORIGINAL_READ,
     });
     if (notFound.status === 'found') throw new Error('unexpected');
-    mockParams.value = identifyPhotoRoute(notFound, 'file:///doc/okbite-queue/front-uuid-1.jpg').params;
+    setIdentifyDraft('retry-draft', notFound);
+    mockParams.value = identifyPhotoRoute(notFound, 'file:///doc/okbite-queue/front-uuid-1.jpg', 'retry-draft').params;
     mockReplace
       .mockImplementationOnce(() => {
         throw new Error('navigation failed');

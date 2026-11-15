@@ -27,9 +27,10 @@ export const SYNONYMS: Record<Allergen, RegExp> = {
   // cocos" are plant products
   Lapte:
     /\b(lapte(?! de (cocos|migdale|ovaz|orez))|lactoza|zer|cazein\w*|casein\w*|smantan\w*|fris(h)?ca|branz\w*|iaurt\w*|chefir|unt(?! de (cacao|arahide|shea)))\b/,
-  // pct. 8: migdale, alune, nuci, caju, pecan, nuci braziliene, fistic, macadamia
+  // pct. 8: migdale, alune, nuci, caju, pecan, nuci braziliene, fistic, macadamia, and the legal
+  // group name itself, "fructe cu coajă (lemnoasă)", which labels print as "urme de fructe cu coajă lemnoasă"
   'Fructe cu coajă lemnoasă':
-    /\b(migdal\w*|alun(a|e|ele|elor)(?! de pamant)|nuc(a|i|ile|ilor)(?! de cocos)|caju|pecan|fistic|macadamia)\b/,
+    /\b(migdal\w*|alun(a|e|ele|elor)(?! de pamant)|nuc(a|i|ile|ilor)(?! de cocos)|caju|pecan|fistic|macadamia|fructe\s+cu\s+coaja(\s+lemnoasa)?)\b/,
   // pct. 9
   Țelină: /\bt(s)?elin\w*/,
   // pct. 10
@@ -63,7 +64,8 @@ export const MULTILINGUAL_SYNONYMS: Record<Allergen, RegExp> = {
   Arahide: word(/peanuts?|arasid(?:y|u)?|burske\s+orisky|арахис(?:а|ом)?/),
   Soia: word(/soy(?:a|beans?)?|soj(?:a|i|e|ove|ovych)|соя|сои|сою|соев(?:ый|ая|ое|ые)/),
   Lapte: word(/(?<!coconut |almond |soy |soya |oat |rice )milk|whey|lactose|(?<!kokosove |mandlove |sojove |ovesne |ryzove )mlek(?:o|a|em)|laktoz(?:a|y)|(?<!кокосовое |кокосового |миндальное |миндального |соевое |соевого |овсяное |овсяного |рисовое |рисового )молок(?:о|а|ом)|лактоз(?:а|ы|у)/),
-  'Fructe cu coajă lemnoasă': word(/nuts?|almonds?|hazelnuts?|walnuts?|cashews?|pecans?|pistachios?|orech(?:y|u)|mandl(?:e|i)|pistaci(?:e|i)|(?<!кокосовые |кокосовых )орех(?:и|ов)|миндал(?:ь|я)|кешью|фисташ(?:ки|ек)/),
+  // The group name of Reg. 1169/2011 Annex II pct. 8 in IT, FR, ES and DE (matching runs on accent-stripped text).
+  'Fructe cu coajă lemnoasă': word(/nuts?|almonds?|hazelnuts?|walnuts?|cashews?|pecans?|pistachios?|frutta\s+a\s+guscio|fruits?\s+a\s+coque|frutos\s+de\s+cascara|schalenfruchten?|orech(?:y|u)|mandl(?:e|i)|pistaci(?:e|i)|(?<!кокосовые |кокосовых )орех(?:и|ов)|миндал(?:ь|я)|кешью|фисташ(?:ки|ек)/),
   Țelină: word(/celery|celer(?:u|em)?|сельдер(?:ей|ея)/),
   Muștar: word(/mustard|horcic(?:e|i)|горчиц(?:а|ы|у)/),
   Susan: word(/sesame|sezam(?:u|ove|ovych)?|кунжут(?:а|ом)?/),

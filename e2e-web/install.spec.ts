@@ -1,6 +1,20 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { ro } from '../apps/mobile/src/copy/ro';
 import { light } from '../apps/mobile/src/theme/tokens';
+
+const ids = JSON.parse(readFileSync('apps/mobile/src/test/preview-data.json', 'utf8')).slice(0, 2).map((entry: { product: { id: string } }) => entry.product.id);
+const DAY = 24 * 60 * 60 * 1000;
+// The invitation waits until two different product results have been opened.
+async function openTwoResults(page: Page) {
+  for (const id of ids) {
+    await page.goto(`/product/${id}`);
+    await expect(page.getByRole('button', { name: ro.result.compare, exact: true })).toBeVisible();
+  }
+  await page.goto('/');
+  await expect(page.getByRole('tab', { name: ro.nav.scan, exact: true })).toBeVisible();
+}
+const installButton = (page: Page) => page.getByRole('button', { name: ro.pwa.install.action, exact: true });
 
 test('manifest shortcut opens the root Scan tab and matches the existing shell theme', async ({ request }) => {
   const manifest = await (await request.get('/manifest.webmanifest')).json();
@@ -8,12 +22,20 @@ test('manifest shortcut opens the root Scan tab and matches the existing shell t
     shortcuts: [{ name: 'Scanează', short_name: 'Scanează', url: '/' }] });
 });
 
-test('iPhone guidance opens explicitly, stays reachable in landscape, and persists dismissal', async ({ page }) => {
+test('iPhone guidance waits for two results, opens from a bottom banner, stays reachable in landscape, and persists dismissal', async ({ page }) => {
   await page.addInitScript(() => Object.defineProperty(navigator, 'platform', { value: 'iPhone' }));
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
+  await expect(page.getByRole('tab', { name: ro.nav.scan, exact: true })).toBeVisible();
+  await expect(page.getByText(ro.pwa.install.title, { exact: true })).toHaveCount(0);
+  await expect(installButton(page)).toHaveCount(0);
+  await openTwoResults(page);
   await expect(page.getByText(ro.pwa.install.iosHint)).toHaveCount(0);
-  await page.getByRole('button', { name: ro.pwa.install.title, exact: true }).click();
+  const banner = await installButton(page).boundingBox();
+  const nav = await page.getByRole('tablist').boundingBox();
+  expect(banner && nav && banner.y > page.viewportSize()!.height / 2 && banner.y + banner.height <= nav.y).toBe(true);
+  await page.screenshot({ path: test.info().outputPath('install-banner.png') });
+  await installButton(page).click();
   await expect(page.getByRole('dialog', { name: ro.pwa.install.title })).toBeVisible();
   await expect(page.getByText(ro.pwa.install.iosHint)).toBeVisible();
   await page.screenshot({ path: test.info().outputPath('install-ios.png') });
@@ -30,24 +52,38 @@ test('iPhone guidance opens explicitly, stays reachable in landscape, and persis
   await page.screenshot({ path: test.info().outputPath('install-ios-landscape-200.png') });
   await page.keyboard.press('Escape');
   await expect(page.getByText(ro.pwa.install.iosHint)).toHaveCount(0);
-  expect(await page.evaluate(() => localStorage.getItem('okbite.install.dismissed.v1'))).toBe('1');
+  const dismissedAt = Number(await page.evaluate(() => localStorage.getItem('okbite.install.dismissedAt.v1')));
+  expect(Math.abs(Date.now() - dismissedAt)).toBeLessThan(5 * 60 * 1000);
   await page.reload();
-  await expect(page.getByRole('button', { name: ro.pwa.install.title, exact: true })).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: ro.nav.scan, exact: true })).toBeVisible();
+  await expect(installButton(page)).toHaveCount(0);
+});
+
+test('a dismissed invitation stays hidden for 30 days, then returns', async ({ page }) => {
+  await page.addInitScript(() => Object.defineProperty(navigator, 'platform', { value: 'iPhone' }));
+  await openTwoResults(page);
+  await expect(installButton(page)).toBeVisible();
+  await page.evaluate(at => localStorage.setItem('okbite.install.dismissedAt.v1', String(at)), Date.now() - 29 * DAY);
+  await page.reload();
+  await expect(page.getByRole('tab', { name: ro.nav.scan, exact: true })).toBeVisible();
+  await expect(installButton(page)).toHaveCount(0);
+  await page.evaluate(at => localStorage.setItem('okbite.install.dismissedAt.v1', String(at)), Date.now() - 31 * DAY);
+  await page.reload();
+  await expect(installButton(page)).toBeVisible();
 });
 
 test('Android invitation installs directly and exposes browser rejection', async ({ page }) => {
   await page.addInitScript(() => Object.defineProperty(navigator, 'platform', { value: 'Linux' }));
-  await page.goto('/');
-  await expect(page.getByRole('tab', { name: ro.nav.scan, exact: true })).toBeVisible();
+  await openTwoResults(page);
   await page.evaluate(() => {
     window.dispatchEvent(Object.assign(new Event('beforeinstallprompt', { cancelable: true }), {
       prompt: async () => { throw new Error('Browser refused installation'); },
       userChoice: Promise.resolve({ outcome: 'dismissed' }),
     }));
   });
-  await page.getByRole('button', { name: ro.pwa.install.title, exact: true }).click();
+  await installButton(page).click();
   await expect(page.getByText(ro.pwa.install.failed)).toBeVisible();
-  await expect(page.getByRole('button', { name: ro.pwa.install.title, exact: true })).toHaveCount(0);
+  await expect(installButton(page)).toHaveCount(0);
   await page.getByRole('button', { name: ro.app.close, exact: true }).click();
   await expect(page.getByText(ro.pwa.install.failed)).toHaveCount(0);
 });

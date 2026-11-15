@@ -7,18 +7,18 @@ import { Product } from "../../../src/data/models/contract";
 import { previewEntries } from "../../../src/data/mock/mock_products";
 beforeEach(() => demoActions.reset());
 it("recognizes only the three specified demo scan codes", () => {
-  for (const code of ["4840001000017", "4840001000024", "4840001000055"])
+  for (const code of ["4840001000014", "4840001000021", "4840001000052"])
     expect(resolveDemoCode(code).screen).toBe("confirm");
-  for (const code of ["4840001000031", "4840001000048", "12345678"])
+  for (const code of ["4840001000038", "4840001000045", "12345678"])
     expect(resolveDemoCode(code).screen).toBe("notFound");
 });
 it("requires an actual history entry for offline opening", () => {
   demoActions.setFlag("offline", true);
-  expect(resolveDemoCode("4840001000017").screen).toBe("result");
+  expect(resolveDemoCode("4840001000014").screen).toBe("result");
   demoActions.removeHistory(previewEntries[0]!.product.id);
-  expect(resolveDemoCode("4840001000017").screen).toBe("offline");
+  expect(resolveDemoCode("4840001000014").screen).toBe("offline");
   expect(resolveDemoCode("12345678").screen).toBe("offline");
-  expect(resolveDemoCode("4840001000017", true).screen).toBe("confirm");
+  expect(resolveDemoCode("4840001000014", true).screen).toBe("confirm");
 });
 it("seeds four source entries and deduplicates repeated confirmation", () => {
   expect(getDemoState().history.map((e) => e.product.brand)).toEqual([

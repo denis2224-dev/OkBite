@@ -31,7 +31,7 @@ export function ConfirmMatch({
           />
         ) : null}
         <Text style={styles.name}>{candidate.name}</Text>
-        <Text style={styles.meta}>{`${candidate.brand} · ${candidate.quantity}`}</Text>
+        <Text style={styles.meta}>{`${candidate.brand}, ${candidate.quantity}`}</Text>
       </View>
       <Text style={styles.hint}>{ro.identify.confirmHint}</Text>
       <View style={styles.actions}>

@@ -55,6 +55,17 @@ it('moves forward and back through the onboarding steps', async () => {
   expect(screen.getByText(ro.onboarding.step(1))).toBeTruthy();
 });
 
+it('shows the saved-locally note only on the last step, above the finish button', async () => {
+  const screen = await render(<OnboardingScreen />);
+  await screen.findByText(ro.profile.health);
+  expect(screen.queryByText(ro.onboarding.savedLocally)).toBeNull();
+  await fireEvent.press(screen.getByRole('button', { name: ro.onboarding.continue }));
+  expect(screen.queryByText(ro.onboarding.savedLocally)).toBeNull();
+  await fireEvent.press(screen.getByRole('button', { name: ro.onboarding.continue }));
+  expect(screen.getByText(ro.onboarding.savedLocally)).toBeTruthy();
+  expect(screen.getByRole('button', { name: ro.onboarding.done })).toBeTruthy();
+});
+
 it('saves choices from all three steps before opening Scan', async () => {
   const screen = await render(<OnboardingScreen />);
   await fireEvent.press(await screen.findByText(ro.profile.health));

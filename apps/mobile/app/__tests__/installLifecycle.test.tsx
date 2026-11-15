@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import Layout from '../_layout';
 import Home from '../(tabs)/index';
 import { ro } from '../../src/copy/ro';
+import { noteResultOpened, resetInstallStateForTests } from '../../src/lib/installPrompt';
 
 jest.mock('../../src/lib/installPrompt', () => jest.requireActual('../../src/lib/installPrompt.web'));
 jest.mock('../../src/features/offline/useQueueFlush', () => ({ useQueueFlush: () => {} }));
@@ -13,6 +14,8 @@ beforeEach(() => {
   browser = new EventTarget();
   Object.defineProperty(globalThis, 'window', { configurable: true, value: browser });
   Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { platform: 'Linux', maxTouchPoints: 0 } });
+  resetInstallStateForTests();
+  noteResultOpened('first'); noteResultOpened('second');
 });
 afterEach(() => {
   jest.useRealTimers();
@@ -38,22 +41,22 @@ it('captures an install offer on a cold non-Home route, including during startup
   await act(() => { jest.advanceTimersByTime(2500); router.replace('/'); });
   expect(screen).toHavePathname('/');
   expect(saved.prompt).not.toHaveBeenCalled();
-  await fireEvent.press(screen.getByRole('button', { name: ro.pwa.install.title }));
+  await fireEvent.press(screen.getByRole('button', { name: ro.pwa.install.action }));
   expect(saved.prompt).toHaveBeenCalledTimes(1);
-  expect(screen.queryByRole('button', { name: ro.pwa.install.title })).toBeNull();
+  expect(screen.queryByRole('button', { name: ro.pwa.install.action })).toBeNull();
 });
 it('retains an unused offer when Home unmounts and installs once after returning', async () => {
   await renderRouter({ _layout: Layout, index: Home, history: History });
   await act(() => { jest.advanceTimersByTime(2500); });
   let saved!: ReturnType<typeof offer>;
   await act(() => { saved = offer(); });
-  expect(screen.getByRole('button', { name: ro.pwa.install.title })).toBeTruthy();
+  expect(screen.getByRole('button', { name: ro.pwa.install.action })).toBeTruthy();
   await act(() => { router.replace('/history'); });
   expect(screen.queryByRole('button', { name: ro.home.photoButton })).toBeNull();
   await act(() => { router.replace('/'); });
-  await fireEvent.press(screen.getByRole('button', { name: ro.pwa.install.title }));
+  await fireEvent.press(screen.getByRole('button', { name: ro.pwa.install.action }));
   expect(saved.prompt).toHaveBeenCalledTimes(1);
   await act(() => { router.replace('/history'); });
   await act(() => { router.replace('/'); });
-  expect(screen.queryByRole('button', { name: ro.pwa.install.title })).toBeNull();
+  expect(screen.queryByRole('button', { name: ro.pwa.install.action })).toBeNull();
 });

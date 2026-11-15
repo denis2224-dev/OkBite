@@ -29,6 +29,8 @@ export const OffProduct = z.object({
   traces_tags: z.array(z.string()).nullish(),
   nova_group: z.unknown(), // anything but an integer 1..4 maps to processing null
   additives_tags: z.array(z.string()).nullish(),
+  // OFF schema 1004+ (the 2026 JSONL export) keeps nutrients here and leaves `nutriments` empty.
+  nutrition: z.object({ aggregated_set: z.unknown() }).passthrough().nullish(),
 });
 export type OffProduct = z.infer<typeof OffProduct>;
 
@@ -60,6 +62,8 @@ const OFF_CATEGORY_RULES: [RegExp, string][] = [
   [/\b(yogurts|fermented-milk-products|kefir)\b/, 'iaurt'],
   [/\b(milks|flavored-milks)\b/, 'lapte'],
   [/\b(cheeses)\b/, 'branza'],
+  // Before butters/creams: creams also matches en:ice-creams.
+  [/\b(ice-creams|sorbets)\b/, 'inghetata'],
   [/\b(butters|creams|sour-creams)\b/, 'unt-si-smantana'],
   [/\b(biscuits|cookies|wafers)\b/, 'biscuiti'],
   [/\b(chocolates|candies|confectioneries|sweet-snacks)\b/, 'ciocolata-si-dulciuri'],
@@ -69,14 +73,58 @@ const OFF_CATEGORY_RULES: [RegExp, string][] = [
   [/\b(meats|prepared-meats|sausages|hams|salamis)\b/, 'mezeluri'],
   [/\b(vegetable-oils|sunflower-oils|olive-oils|fats)\b/, 'ulei'],
   [/\b(salty-snacks|chips|crisps|crackers)\b/, 'snacks-sarate'],
-  [/\b(ice-creams|sorbets)\b/, 'inghetata'],
+  // After ice cream so frozen desserts keep their category; Nutella is en:hazelnut-spreads.
+  [/\b(sweet-spreads|hazelnut-spreads|chocolate-spreads|jams|honeys|desserts|puddings)\b/, 'ciocolata-si-dulciuri'],
   [/\b(canned-foods|tinned-foods)\b/, 'conserve'],
+  // Lowest priority: only rows no rule above claimed. Unscored kinds (alcohol, supplements) stay necunoscut.
+  [/\b(plant-based-milk-alternatives|milk-substitutes|soy-based-drinks|almond-based-drinks|nut-based-drinks|oat-based-drinks|legume-based-drinks)\b/, 'bauturi-vegetale'],
+  [/\b(coffees|teas|herbal-teas|black-teas|green-teas|instant-coffees|coffee-capsules|instant-beverages)\b/, 'cafea-ceai'],
+  [/\b(sauces|condiments|ketchup|mayonnaises|mustards|dips|spices|herbs-and-spices|pickles)\b/, 'sosuri-condimente'],
+  [/\b(pastas|pastas-and-dumplings|noodles|instant-noodles)\b/, 'paste-fainoase'],
+  [/\b(seafood|fishes|fishes-and-their-products|fish-fillets|fatty-fishes|fish-preparations)\b/, 'peste-fructe-de-mare'],
+  [/\b(nuts|nuts-and-their-products|seeds|peanuts)\b/, 'nuci-seminte'],
+  [/\b(meals|soups|pizzas|pasta-dishes|pizzas-pies-and-quiches|prepared-vegetables)\b/, 'mancare-preparata'],
+  [/\b(vegetables|fruits|legumes|legumes-and-their-products|tomatoes-and-their-products|dried-fruits|olives|fruits-and-vegetables-based-foods|fruit-and-vegetable-preserves)\b/, 'fructe-legume'],
 ];
 
 const amount = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
 const kcalFromKj = (kj: number | null) => (kj === null ? null : Math.round((kj / 4.184) * 10) / 10);
 const text = (...values: (string | null | undefined)[]) =>
   values.map((v) => v?.trim()).find((v) => v) ?? '';
+const AggregatedSet = z.object({
+  preparation: z.string().nullish(),
+  nutrients: z.record(
+    z.object({ value: z.unknown(), source: z.string().nullish(), source_per: z.string().nullish() }).passthrough(),
+  ),
+});
+
+/** Per-100 g/ml value of one nutrient: the legacy `<key>_100g` field, else OFF's new aggregated set. */
+function per100(off: OffProduct, key: string): number | null {
+  const legacy = amount(off.nutriments?.[`${key}_100g`]);
+  if (legacy !== null) return legacy;
+  const agg = AggregatedSet.safeParse(off.nutrition?.aggregated_set);
+  if (!agg.success || (agg.data.preparation && agg.data.preparation !== 'as_sold')) return null;
+  const n = agg.data.nutrients[key];
+  // Estimates are computed by OFF from the ingredients list, not declared on the label.
+  if (!n || n.source === 'estimate' || !['100g', '100ml'].includes(n.source_per ?? '')) return null;
+  return amount(n.value);
+}
+
+/** Per-100 g/ml nutrients of an OFF product (null where OFF has no declared per-100 value). */
+export function offNutrients(off: OffProduct) {
+  return {
+    // Many labels declare kJ only; 1 kcal = 4.184 kJ (Reg. (UE) nr. 1169/2011, Anexa XIV). Unitless energy stays null.
+    kcal: per100(off, 'energy-kcal') ?? kcalFromKj(per100(off, 'energy-kj')),
+    fat: per100(off, 'fat'),
+    sat: per100(off, 'saturated-fat'),
+    sugar: per100(off, 'sugars'),
+    salt: per100(off, 'salt'),
+    protein: per100(off, 'proteins'),
+    fiber: per100(off, 'fiber'),
+    fruitVegPct: null, // OFF only has an estimate from the ingredients list, not a declared value
+  };
+}
+
 const eKey = (s: string) => s.replace(/^[a-z]{2}:/, '').replace(/[\s-]/g, '').toLowerCase();
 
 export function inferCategorySlug(
@@ -99,11 +147,17 @@ export function inferCategorySlug(
 /**
  * Maps one OFF product to an unverified OkBite product, or null when it has no name, fails the barcode
  * checksum, or lacks what the contract requires (a brand, ingredients text of 3+ characters).
- * Only Romanian ingredients text is taken: the allergen matcher reads Romanian, so English or Russian
- * text would show "no allergens" for a product that has them. Nutrients come only from OFF's per-100 g/ml
- * fields; a product with per-serving values only still maps, with those nutrients null (score unavailable).
+ * Only Romanian ingredients text is taken by default: the allergen matcher reads Romanian, so English or
+ * Russian text would show "no allergens" for a product that has them. With `anyLanguage` (the live lookup
+ * fallback), other-language text is taken only when OFF itself lists the product's allergens, so the
+ * allergens shown never depend on the matcher reading a foreign language. Nutrients come only from OFF's
+ * per-100 g/ml values; a product with per-serving values only still maps, with those nutrients null.
  */
-export function mapOffProduct(raw: unknown, ingredients: readonly AdditiveKey[] = []) {
+export function mapOffProduct(
+  raw: unknown,
+  ingredients: readonly AdditiveKey[] = [],
+  { anyLanguage = false }: { anyLanguage?: boolean } = {},
+) {
   const parsed = OffProduct.safeParse(raw);
   if (!parsed.success) return null;
   const off = parsed.data;
@@ -112,9 +166,12 @@ export function mapOffProduct(raw: unknown, ingredients: readonly AdditiveKey[] 
   const brand = text(off.brands?.split(',')[0]).slice(0, 80);
   // The contract allows '' for a shopper's unreadable brand; imports still need a real one.
   if (!code || !name || !brand) return null;
-  const n = off.nutriments ?? {};
   const unit = off.nutrition_data_per === '100ml' || off.product_quantity_unit === 'ml' ? 'ml' : 'g';
-  const ingredientsText = text(off.ingredients_text_ro, off.lang === 'ro' ? off.ingredients_text : undefined);
+  const foreignOk = anyLanguage && (off.allergens_tags ?? []).some((id) => id in OFF_ALLERGENS);
+  const ingredientsText = text(
+    off.ingredients_text_ro,
+    off.lang === 'ro' || foreignOk ? off.ingredients_text : undefined,
+  );
   const product = AddProductRequest.safeParse({
     code,
     name: name.slice(0, 120),
@@ -123,17 +180,7 @@ export function mapOffProduct(raw: unknown, ingredients: readonly AdditiveKey[] 
     unit,
     categorySlug: inferCategorySlug(off, name, ingredientsText, unit),
     ingredientsText,
-    nutrients: {
-      // Many labels declare kJ only; 1 kcal = 4.184 kJ (Reg. (UE) nr. 1169/2011, Anexa XIV). Unitless energy stays null.
-      kcal: amount(n['energy-kcal_100g']) ?? kcalFromKj(amount(n['energy-kj_100g'])),
-      fat: amount(n.fat_100g),
-      sat: amount(n['saturated-fat_100g']),
-      sugar: amount(n.sugars_100g),
-      salt: amount(n.salt_100g),
-      protein: amount(n.proteins_100g),
-      fiber: amount(n.fiber_100g),
-      fruitVegPct: null, // OFF only has an estimate from the ingredients list, not a declared value
-    },
+    nutrients: offNutrients(off),
     photoPath: null,
     ingredientsPhotoPath: '',
     nutritionPhotoPath: null,

@@ -1,4 +1,4 @@
-import { api, ApiError } from './api';
+import { api } from './api';
 import { foundYogurt, validAdd } from '../test/fixtures';
 jest.mock('./device', () => ({getDeviceId: async () => '0b6f3c1e-2d4a-4c8e-9f10-1a2b3c4d5e6f'}));
 const fetchMock = jest.fn();
@@ -8,7 +8,7 @@ it('sends the device id and parses a valid product', async () => { fetchMock.moc
 it('rejects a response that breaks the contract', async () => { fetchMock.mockResolvedValueOnce(response({status:'found'})); await expect(api.lookup({code:'4840001000014'})).rejects.toMatchObject({code:'invalid_response'}); });
 it('maps network errors to offline', async () => { fetchMock.mockRejectedValueOnce(new TypeError('Network request failed')); await expect(api.identify('aGVsbG8=')).rejects.toMatchObject({code:'offline'}); });
 it('preserves structured service errors', async () => { fetchMock.mockResolvedValueOnce(response({error:'rate_limited',message:'x'},429)); await expect(api.addProduct(validAdd)).rejects.toMatchObject({code:'rate_limited'}); });
-it('validates requests before sending them', async () => { await expect(api.lookup({code:'12'})).rejects.toBeInstanceOf(ApiError); expect(fetchMock).not.toHaveBeenCalled(); });
+it('keeps invalid form and lookup requests as bad_request without sending them', async () => { await expect(api.addProduct({...validAdd,name:''})).rejects.toMatchObject({code:'bad_request'}); await expect(api.lookup({code:'12'})).rejects.toMatchObject({code:'bad_request'}); expect(fetchMock).not.toHaveBeenCalled(); });
 const hang = (_url:unknown,options:RequestInit) => new Promise((_resolve,reject) => options.signal!.addEventListener('abort',()=>reject(new Error('Aborted'))));
 it('times out an unresponsive request', async () => { jest.useFakeTimers(); fetchMock.mockImplementation(hang); const result=expect(api.lookup({code:'4840001000014'})).rejects.toMatchObject({code:'offline'}); await jest.advanceTimersByTimeAsync(20001); await result; jest.useRealTimers(); });
 it('waits for the server AI deadline before giving up on photo analysis', async () => { jest.useFakeTimers(); fetchMock.mockImplementation(hang); let settled=false; const result=api.identify('aGVsbG8=').finally(()=>{settled=true;}); result.catch(()=>{}); await jest.advanceTimersByTimeAsync(40001); expect(settled).toBe(false); await jest.advanceTimersByTimeAsync(15000); await expect(result).rejects.toMatchObject({code:'offline'}); jest.useRealTimers(); });

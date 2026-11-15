@@ -93,7 +93,7 @@ describe('useCaptureFlow', () => {
     identifyOutcome.mockResolvedValue(completed(identifyNotFound));
     await capture();
     expect(identifyOutcome).toHaveBeenCalledWith(Buffer.from('jpeg-bytes').toString('base64'));
-    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/identify', params: { source: 'photo', payload: JSON.stringify(identifyNotFound) } });
+    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/identify', params: { source: 'photo', identifyDraftId: 'front-capture-uuid' } });
   });
 
   it('treats an unreadable barcode as "ask identify", never as product not found', async () => {
@@ -106,7 +106,7 @@ describe('useCaptureFlow', () => {
   it('sends candidates to the identify screen with the full response', async () => {
     identifyOutcome.mockResolvedValue(completed(identifyCandidates));
     await capture();
-    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/identify', params: { source: 'photo', payload: JSON.stringify(identifyCandidates) } });
+    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/identify', params: { source: 'photo', identifyDraftId: 'front-capture-uuid' } });
   });
 
   it('survives a detector failure and carries on to identify', async () => {
@@ -289,7 +289,7 @@ describe('useCaptureFlow', () => {
       pathname: '/identify',
       params: {
         source: 'photo',
-        payload: JSON.stringify(identifyNotFound),
+        identifyDraftId: 'front-capture-uuid',
         frontPhotoId: 'file:///doc/okbite-queue/front-capture-uuid.jpg',
       },
     });

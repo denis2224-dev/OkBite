@@ -29,7 +29,6 @@ export default function Ingredients() {
         {!!product.mayContain.length && <><Body>{ro.result.mayContain}</Body><View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {product.mayContain.map(name => <AllergenChip key={name} name={name} />)}</View></>}
         <Body>{ro.result.missingAllergenNote}</Body>
-        <Body>{ro.result.allergyNote}</Body>
       </Card>
       <Card><Body style={{fontWeight:'700'}}>{ro.result.transcribedLabel}</Body><Body selectable>{product.ingredientsText}</Body></Card>
       {groups.map(group => {

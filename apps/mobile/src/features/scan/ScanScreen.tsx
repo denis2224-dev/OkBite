@@ -12,23 +12,24 @@ import { StatusPanel, errorMessage } from '../capture/StatusPanel';
 import { ScanReticle } from './ScanReticle';
 import { ManualCode } from './ManualCode';
 import { useScanLookup } from './useScanLookup';
+import { ResultSheet } from '../product/ResultSheet';
 
 const tapOnDetection = () => { void notificationAsync(NotificationFeedbackType.Success).catch(() => undefined); };
 
-/** `embedded`: inside Scan home, which draws its own header and opens manual entry from a keyboard button. */
-export type ScanScreenProps = { embedded?: boolean; torch?: boolean; manual?: boolean };
+/** `embedded`: inside Scan home, which draws its own header on the dark camera panel. */
+export type ScanScreenProps = { embedded?: boolean; torch?: boolean };
 
-export default function ScanScreen({ embedded = false, torch = false, manual = false }: ScanScreenProps = {}) {
+export default function ScanScreen({ embedded = false, torch = false }: ScanScreenProps = {}) {
   const focused = useIsFocused();
   const router = useRouter();
   const { colors } = useTheme();
   const styles = createStyles(colors);
   const { permission, requestPermission, settingsAction, message } = useCameraAccess();
   const [mountFailed, setMountFailed] = useState(false);
+  const [retried, setRetried] = useState(false); // Settings are offered only once a retry has failed.
+  const [manualOpen, setManualOpen] = useState(false);
   const { state, onCameraCode, onManualCode, retry, dismiss } = useScanLookup(tapOnDetection);
   const working = state.status === 'working';
-  const cameraBlocked = !!permission && permission.status !== 'undetermined' && (!permission.granted || mountFailed);
-  const showManual = !embedded || manual || cameraBlocked;
 
   let preview: React.ReactNode;
   if (!permission || permission.status === 'undetermined') {
@@ -37,7 +38,8 @@ export default function ScanScreen({ embedded = false, torch = false, manual = f
     preview = (
       <StatusPanel
         message={message ?? ro.scan.deniedText}
-        actions={[...(settingsAction ? [settingsAction] : []), { label: ro.capture.retry, onPress: () => { void requestPermission(); } }]}
+        actions={[{ label: ro.errors.retry, onPress: () => { void requestPermission().then(() => setRetried(true)); } },
+          ...(retried && settingsAction ? [settingsAction] : [])]}
       />
     );
   } else if (mountFailed) {
@@ -60,7 +62,7 @@ export default function ScanScreen({ embedded = false, torch = false, manual = f
 
   const body = (
     <>
-      {focused ? <View style={embedded ? styles.embeddedPreview : styles.preview}>{preview}</View> : null}
+      {focused && state.status !== 'found' ? <View style={embedded ? styles.embeddedPreview : styles.preview}>{preview}</View> : null}
       {working ? <View style={styles.status}><ActivityIndicator color={embedded ? colors.cameraInk : colors.primary} /><Text style={[styles.working, embedded && { color: colors.cameraInk }]}>{ro.capture.working}</Text></View> : null}
       {state.status === 'error' || state.status === 'offline' ? (
         <StatusPanel
@@ -72,7 +74,9 @@ export default function ScanScreen({ embedded = false, torch = false, manual = f
           ]}
         />
       ) : null}
-      {showManual ? <ManualCode onSubmit={(code) => { void onManualCode(code); }} disabled={working} autoFocus={embedded && manual} /> : null}
+      <ManualCode open={manualOpen} onToggle={() => setManualOpen(open => !open)} onDark={embedded}
+        onSubmit={(code) => { void onManualCode(code); }} disabled={working} />
+      {state.status === 'found' && <ResultSheet product={state.product} score={state.score} onClose={dismiss} />}
     </>
   );
   if (embedded) return <View style={styles.embedded}>{body}</View>;

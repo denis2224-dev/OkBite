@@ -14,8 +14,10 @@ export type SettingsScreenProps = {
   currentLanguage?: 'ro' | 'en';
   setLanguage?: (language: 'ro' | 'en') => void;
   resetOnboarding?: () => void;
+  /** Shown as an alert at the top of the content, inside the safe area. */
+  alert?: string;
 };
-export function SettingsScreen({ currentLanguage = 'ro', setLanguage, resetOnboarding }: SettingsScreenProps = {}) {
+export function SettingsScreen({ currentLanguage = 'ro', setLanguage, resetOnboarding, alert }: SettingsScreenProps = {}) {
   const { colors } = useTheme();
   const { canInstall, isIos, isStandalone, install } = useInstallPrompt();
   const [confirming, setConfirming] = useState(false);
@@ -38,7 +40,10 @@ export function SettingsScreen({ currentLanguage = 'ro', setLanguage, resetOnboa
     finally { clearPending.current = false; setClearing(false); }
   }
   async function requestInstall() {
+    if (isStandalone) { setInstallMessage(ro.pwa.install.installed); return; }
     if (isIos) { setInstallMessage(ro.pwa.install.iosHint); return; }
+    // No beforeinstallprompt (Firefox, desktop Safari, or already used): point to the browser menu.
+    if (!canInstall) { setInstallMessage(ro.pwa.install.menuHint); return; }
     if (installPending.current) return;
     installPending.current = true; setInstalling(true); setInstallMessage('');
     try { if (await install() === null) setInstallMessage(ro.pwa.install.failed); }
@@ -53,24 +58,27 @@ export function SettingsScreen({ currentLanguage = 'ro', setLanguage, resetOnboa
   const rowStyle = [styles.row, { borderColor: colors.divider }];
   return <>
     <Screen title={ro.settings.title}>
+      {alert ? <Body accessibilityRole="alert" style={{ color: colors.low }}>{alert}</Body> : null}
       <Card>
-        <Heading style={[styles.section, styles.sectionLabel, { color: colors.primary }]}>{ro.settings.language}</Heading>
+        <Heading style={styles.section}>{ro.settings.language}</Heading>
         <View style={styles.choices}>
           {(['ro', 'en'] as const).map(language => <HomePressable key={language} label={ro.settings[language === 'ro' ? 'romanian' : 'english']} disabled={!setLanguage} aria-pressed={currentLanguage === language} accessibilityState={{ disabled: !setLanguage, selected: currentLanguage === language }} onPress={() => chooseLanguage(language)} style={[styles.choice, { backgroundColor: currentLanguage === language ? colors.primary : colors.surface, opacity: setLanguage ? 1 : 0.55 }]}><Body style={{ color: currentLanguage === language ? colors.onPrimary : colors.ink }}>{ro.settings[language === 'ro' ? 'romanian' : 'english']}</Body></HomePressable>)}
         </View>
         {(!setLanguage || languageError) && <Body accessibilityLiveRegion="polite" style={{ color: colors.muted }}>{ro.settings.pending}</Body>}
       </Card>
       <Card>
-        <HomePressable label={ro.settings.install} disabled={isStandalone || (!canInstall && !isIos) || installing} accessibilityState={{ disabled: isStandalone || (!canInstall && !isIos) || installing }} onPress={() => void requestInstall()} style={rowStyle}><Body style={styles.label}>{ro.settings.install}</Body><Icon name="arrow" color={colors.muted} /></HomePressable>
+        <Heading style={styles.section}>{ro.settings.app}</Heading>
+        <HomePressable label={ro.settings.install} disabled={installing} accessibilityState={{ disabled: installing }} onPress={() => void requestInstall()} style={rowStyle}><Body style={styles.label}>{ro.settings.install}</Body><Icon name="arrow" color={colors.muted} /></HomePressable>
         {installMessage ? <Body accessibilityLiveRegion="polite">{installMessage}</Body> : null}
+        {resetOnboarding ? <HomePressable label={ro.settings.resetOnboarding} onPress={resetOnboarding} style={rowStyle}><Body style={styles.label}>{ro.settings.resetOnboarding}</Body><Icon name="arrow" color={colors.muted} /></HomePressable> : null}
         <HomePressable label={ro.settings.clearHistory} onPress={() => { setMessage(''); setConfirming(true); }} style={rowStyle}><Body style={[styles.label, { color: colors.low }]}>{ro.settings.clearHistory}</Body><Icon name="trash" color={colors.low} /></HomePressable>
         {message ? <Body accessibilityLiveRegion="polite">{message}</Body> : null}
-        {resetOnboarding ? <HomePressable label={ro.settings.resetOnboarding} onPress={resetOnboarding} style={rowStyle}><Body style={styles.label}>{ro.settings.resetOnboarding}</Body><Icon name="arrow" color={colors.muted} /></HomePressable> : null}
       </Card>
       <Card>
+        <Heading style={styles.section}>{ro.settings.info}</Heading>
         {(['method', 'privacy', 'terms'] as const).map(kind => <HomePressable key={kind} label={ro.settings[kind]} onPress={() => router.push(`/${kind}`)} style={rowStyle}><Body style={styles.label}>{ro.settings[kind]}</Body><Icon name="arrow" color={colors.muted} /></HomePressable>)}
+        <Body style={{ color: colors.muted }}>{ro.settings.version} {Constants.expoConfig?.version ?? ro.app.unavailable}</Body>
       </Card>
-      <Body style={{ color: colors.muted, textAlign: 'center' }}>{ro.settings.version} {Constants.expoConfig?.version ?? ro.app.unavailable}</Body>
     </Screen>
     <Modal accessibilityLabel={ro.settings.clearHistoryTitle} visible={confirming} transparent animationType="none" onRequestClose={cancelClear}>
       <ScreenSafeArea edges={['top', 'bottom', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.scrim }}>
@@ -88,7 +96,6 @@ export function SettingsScreen({ currentLanguage = 'ro', setLanguage, resetOnboa
 }
 const styles = StyleSheet.create({
   section: { fontSize: 19, lineHeight: 27 },
-  sectionLabel: { fontSize: 13, lineHeight: 20, letterSpacing: 0.8, textTransform: 'uppercase' },
   choices: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   choice: { minHeight: 48, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, justifyContent: 'center' },
   row: { minHeight: 56, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: StyleSheet.hairlineWidth },
