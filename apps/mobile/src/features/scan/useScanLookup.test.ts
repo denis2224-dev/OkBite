@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { render, renderHook, act, screen, fireEvent } from '@testing-library/react-native';
+import { render, renderHook, act, screen } from '@testing-library/react-native';
 import { AppState } from 'react-native';
 import { api } from '../../lib/api';
 import { ro } from '../../copy/ro';
