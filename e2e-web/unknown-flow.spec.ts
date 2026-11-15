@@ -32,16 +32,10 @@ async function photo(page: Page) {
   await page.getByRole('button', { name: ro.add.gallery, exact: true }).click();
   await (await chooser).setFiles('apps/mobile/public/icon-192.png');
 }
-async function fillIdentity(page: Page) {
-  await page.getByRole('textbox', { name: ro.review.name, exact: true }).fill(example.product.name);
-  await page.getByRole('textbox', { name: ro.review.quantity, exact: true }).fill(example.product.quantity);
-  await page.getByRole('button', { name: ro.add.next, exact: true }).click();
-}
 async function begin(page: Page) {
   await page.goto(`/identify?source=code&code=${example.product.code}`);
   await page.waitForFunction(() => !!navigator.serviceWorker.controller);
   await page.getByRole('button', { name: ro.identify.addButton, exact: true }).click();
-  await fillIdentity(page);
   await expect(page.getByRole('heading', { name: ro.add.frontTitle, exact: true })).toBeVisible();
   await expect(page.getByText(ro.add.nutritionQuestion, { exact: true })).toHaveCount(0);
   await photo(page);
@@ -97,7 +91,6 @@ test('readable separate table retains label values and shows a score', async ({ 
 test('direct add uses variant 1 and saves an unbranded partial table without optional warnings', async ({ page, session }) => {
   await session.configure('partial-unbranded');
   await page.goto('/add');
-  await fillIdentity(page);
   await expect(page.getByRole('heading', { name: ro.add.frontTitle, exact: true })).toBeVisible();
   await expect(page.getByText(ro.add.nutritionQuestion, { exact: true })).toHaveCount(0);
   await photo(page);
@@ -142,23 +135,25 @@ test('direct guided barcode add starts at the front photo and keeps read identit
   expect((await session.state()).calls.filter(call => call.name === 'identify')).toHaveLength(1);
 });
 
-test('guided front identification keeps candidate data out of the URL and restarts at front after reload', async ({ page }) => {
-  const candidate = { id: example.product.id, name: example.product.name, brand: example.product.brand,
-    quantity: example.product.quantity, imageUrl: null, similarity: 0.52 };
-  await page.route('**/functions/v1/identify', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
-    status: 'candidates', candidates: [candidate], read: { name: example.product.name, brand: example.product.brand, quantity: example.product.quantity, code: null },
-    photoPath: 'uploads/private/front.jpg',
-  }) }));
+test('guided front identification keeps candidate data out of the URL and restarts at front after reload', async ({ page, session }) => {
+  await session.configure('candidates');
   await page.goto('/add?flow=guided');
   await expect(page.getByText(ro.add.stepOf(1, 4), { exact: true })).toBeVisible();
   await photo(page);
   await expect(page.getByRole('heading', { name: ro.identify.pickTitle, exact: true })).toBeVisible();
-  await expect(page.getByText(candidate.name, { exact: true })).toBeVisible();
+  await expect(page.getByText(example.product.name, { exact: true })).toBeVisible();
   const route = new URL(page.url());
   expect([...route.searchParams.keys()].sort()).toEqual(['frontPhotoId', 'source', 'unknownDraftId']);
   expect(route.searchParams.get('source')).toBe('photo');
   expect(page.url()).not.toMatch(/payload|candidates|uploads%2Fprivate|front\.jpg/);
 
+  await page.getByRole('button', { name: ro.identify.noneOfThem, exact: true }).click();
+  await expect(page.getByRole('heading', { name: ro.add.ingredientsTitle, exact: true })).toBeVisible();
+  await expect(page.getByText(ro.add.stepOf(2, 4), { exact: true })).toBeVisible();
+  await page.goto(`/add?unknownDraftId=${route.searchParams.get('unknownDraftId')}&retake=front`);
+  await expect(page.getByRole('heading', { name: ro.add.frontTitle, exact: true })).toBeVisible();
+  await photo(page);
+  await expect(page.getByRole('heading', { name: ro.identify.pickTitle, exact: true })).toBeVisible();
   await page.reload();
   await expect(page).toHaveURL(/\/add\?/);
   await expect(page.getByRole('heading', { name: ro.add.frontTitle, exact: true })).toBeVisible();
@@ -169,7 +164,6 @@ test('discarding a different product draft starts a usable front-photo step', as
   await begin(page); await review(page, ro.add.nutritionNone);
   await page.goto('/add?code=96385074');
   await page.getByRole('button', { name: ro.add.discardDraft, exact: true }).click();
-  await fillIdentity(page);
   await expect(page.getByRole('heading', { name: ro.add.frontTitle, exact: true })).toBeVisible();
   await photo(page);
   await expect(page.getByRole('heading', { name: ro.add.ingredientsTitle, exact: true })).toBeVisible();

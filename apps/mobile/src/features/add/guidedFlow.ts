@@ -72,9 +72,9 @@ export function createGuidedFlow(initial: GuidedFlowInitial, deps: GuidedFlowDep
       name: identityConfirmed ? name : read.name ?? name,
       quantity: identityConfirmed ? quantity : read.quantity ?? quantity, code: state.scannedCode ?? read.code,
       photoPath: response.photoPath, frontPhotoId: state.photos.front! };
-    const returnToReview = Boolean(state.label && identityConfirmed);
+    const returnToReview = Boolean(state.label);
     set({ initial: nextInitial, initialFrontRead: { brand: nextInitial.brand, name: nextInitial.name, quantity: nextInitial.quantity, code: nextInitial.code }, remotePhotoPath: response.photoPath,
-      stage: returnToReview || (response.status === 'not_found' && state.label) ? 'review' : response.status === 'found' ? 'interrupted' : 'ingredients' });
+      stage: returnToReview ? 'review' : response.status === 'found' ? 'interrupted' : 'ingredients' });
     await persist();
     if (!active()) return;
     if (returnToReview) await review();

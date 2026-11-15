@@ -95,19 +95,15 @@ describe('useScanLookup', () => {
     await render(React.createElement(AddScreen));
     await act(async () => {});
 
-    await fireEvent.changeText(await screen.findByLabelText(ro.review.name), 'Denumire confirmată');
-    await fireEvent.changeText(screen.getByLabelText(ro.review.quantity), '375 g');
-    await fireEvent.press(screen.getByRole('button', { name: ro.add.next }));
+    expect(screen.queryAllByRole('textbox')).toHaveLength(0);
     expect(screen.getByText(ro.add.frontTitle)).toBeTruthy();
     expect(screen.getByText(ro.add.stepOf(1, 4))).toBeTruthy();
   });
 
-  it('asks for manual identity on a direct /add visit before the guided front-photo step', async () => {
+  it('starts a direct /add visit at the guided front-photo step', async () => {
     await render(React.createElement(AddScreen));
     await act(async () => {});
-    await fireEvent.changeText(await screen.findByLabelText(ro.review.name), 'Denumire confirmată');
-    await fireEvent.changeText(screen.getByLabelText(ro.review.quantity), '375 g');
-    await fireEvent.press(screen.getByRole('button', { name: ro.add.next }));
+    expect(screen.queryAllByRole('textbox')).toHaveLength(0);
     expect(screen.getByText(ro.add.frontTitle)).toBeTruthy();
   });
 

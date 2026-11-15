@@ -202,6 +202,17 @@ test('retaking front photo after label read preserves existing label and returns
   expect(deps.readLabel).toHaveBeenCalledTimes(1);
 });
 
+test('retaking a front photo returns to review even when OCR offers candidates', async () => {
+  const { flow, deps } = setup();
+  await flow.capturePhoto('ingredients');
+  await flow.chooseNutrition('none');
+  deps.identify.mockResolvedValueOnce({ status: 'candidates', candidates: [{ id: '00000000-0000-4000-8000-000000000001', name: 'read name', brand: 'read brand', quantity: '', imageUrl: null, similarity: 0.5 }], read: { brand: null, name: null, quantity: null, code: null }, photoPath: 'uploads/retaken-front' });
+  flow.retake('front');
+  await flow.capturePhoto('new-front');
+  expect(flow.getState().stage).toBe('review');
+  expect(deps.onIdentify).not.toHaveBeenCalled();
+});
+
 test('retaking ingredients photo after label read re-reads with existing nutritionMode and returns to review', async () => {
   const { flow, deps } = setup();
   await flow.capturePhoto('ingredients');

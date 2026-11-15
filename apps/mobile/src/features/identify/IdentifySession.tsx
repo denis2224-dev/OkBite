@@ -9,16 +9,17 @@ import { CandidateList } from './CandidateList';
 import { ConfirmMatch } from './ConfirmMatch';
 import { NotFound } from './NotFound';
 import { addProductRoute, isGuidedAddEnabled, parseIdentifyParams, productRoute } from './routes';
-import { keepPhoto } from '../offline/photos';
+import { keepPhoto, removePhoto } from '../offline/photos';
 import { resolveQueued } from '../offline/queue';
 import type { FrontRead } from '@okbite/shared';
 import { clearIdentifyDraft } from '../add/draftStore';
+import { clearUnknownDraft, loadUnknownDraft } from '../add/unknownDraft';
 
 export function IdentifySession({ rawParams }: { rawParams: Record<string, string | string[] | undefined> }) {
   const { colors } = useTheme();
   const router = useRouter();
   const activity = useScreenActivity();
-  const state = parseIdentifyParams(rawParams);
+  const [state] = useState(() => parseIdentifyParams(rawParams));
   const queueId = typeof rawParams.queueId === 'string' ? rawParams.queueId : undefined;
   const frontPhotoId = typeof rawParams.frontPhotoId === 'string' ? rawParams.frontPhotoId : undefined;
   const unknownDraftId = typeof rawParams.unknownDraftId === 'string' ? rawParams.unknownDraftId : undefined;
@@ -31,8 +32,8 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
   const [addFailed, setAddFailed] = useState(false);
   const leave = activity.leave;
   const navigate = (href: Parameters<typeof router.replace>[0]) => {
-    if (unknownDraftId) clearIdentifyDraft(unknownDraftId);
     router.replace(href);
+    if (unknownDraftId) clearIdentifyDraft(unknownDraftId);
     activity.leave();
   };
   useEffect(() => {
@@ -79,6 +80,17 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
     const token = activity.start();
     try {
       if (queueId) await resolveQueued(queueId);
+      if (unknownDraftId) {
+        const draft = await loadUnknownDraft();
+        await clearUnknownDraft(unknownDraftId);
+        if (draft?.id === unknownDraftId && !draft.initial.queueId) {
+          const newer = await loadUnknownDraft();
+          const protectedIds = new Set(Object.values(newer?.photos ?? {}));
+          for (const id of new Set(Object.values(draft.photos))) {
+            if (id && !protectedIds.has(id)) await removePhoto(id).catch(() => {});
+          }
+        }
+      }
       if (activity.isCurrent(token)) navigate(productRoute(selected.current));
     } catch { if (activity.isCurrent(token)) setCleanupPending(true); }
     finally { finishing.current = false; }
