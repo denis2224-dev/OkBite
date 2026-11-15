@@ -10,7 +10,6 @@ import { Body } from '../../ui/Typography';
 import { StatusPanel, errorMessage } from '../capture/StatusPanel';
 import { addProductRoute, parseAddParams } from '../identify/routes';
 import { GuidedAddProgress } from './GuidedAddProgress';
-import { GuidedIdentityForm } from './GuidedIdentityForm';
 import { GuidedNutritionQuestion } from './GuidedNutritionQuestion';
 import { GuidedPhotoCapture } from './GuidedPhotoCapture';
 import { useGuidedAddSession } from './useGuidedAddSession';
@@ -76,12 +75,6 @@ export function GuidedAddScreen() {
     </Screen>;
   }
 
-  if (state.stage === 'identity') {
-    return <Screen title={ro.identify.addButton}>
-      <GuidedIdentityForm onConfirm={controller.confirmIdentity} />
-    </Screen>;
-  }
-
   if (state.stage === 'label_failed') {
     return <Screen title={ro.review.title}>
       <StatusPanel message={ro.add.processingFailed} actions={[
@@ -116,8 +109,8 @@ export function GuidedAddScreen() {
         ? ro.add.nutritionHint
         : ro.add.ingredientsHint;
 
-  const totalSteps = parsed.photoPath ? 3 : 4;
-  const ingredientsStep = totalSteps - 2;
+  const totalSteps = 4;
+  const ingredientsStep = 2;
   const readingLabel = isWorking && state.remotePhotoPath && state.photos.ingredients && state.nutritionMode;
   const stepNumber =
     isFront

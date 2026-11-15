@@ -157,7 +157,7 @@ test('per-photo retake navigates to /add with retake kind while keeping draft ed
   await fireEvent.changeText(screen.getByLabelText(ro.review.name), 'Kefir Nou');
   expect(saveUnknownDraftIfCurrent).toHaveBeenCalledWith(
     expect.objectContaining({
-      initial: expect.objectContaining({ name: 'Kefir Nou' }),
+      initial: expect.objectContaining({ name: 'Kefir Nou', identityConfirmed: true }),
     }),
   );
 
@@ -166,6 +166,15 @@ test('per-photo retake navigates to /add with retake kind while keeping draft ed
     pathname: '/add',
     params: { unknownDraftId: 'draft-1', retake: 'nutrition' },
   });
+});
+
+test('editing label text leaves photo-derived identity available for a front retake', async () => {
+  await render(<UnknownReviewScreen />);
+  await act(async () => {});
+  await fireEvent.press(screen.getByRole('button', { name: ro.review.ingredients }));
+  await fireEvent.changeText(screen.getByLabelText(ro.review.ingredients), 'lapte, sare');
+  const saved = jest.mocked(saveUnknownDraftIfCurrent).mock.calls.at(-1)![0];
+  expect(saved.initial.identityConfirmed).toBeUndefined();
 });
 
 test('manual fallback persists edited identity before retaking ingredients', async () => {
@@ -179,7 +188,7 @@ test('manual fallback persists edited identity before retaking ingredients', asy
   await fireEvent.changeText(screen.getByLabelText(ro.review.brand), '');
   await fireEvent.press(screen.getByRole('button', { name: ro.review.retakePhotos }));
   expect(saveUnknownDraftIfCurrent).toHaveBeenLastCalledWith(expect.objectContaining({
-    initial: expect.objectContaining({ name: 'Denumire corectată', brand: null }),
+    initial: expect.objectContaining({ name: 'Denumire corectată', brand: null, identityConfirmed: true }),
   }));
   expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add', params: { unknownDraftId: 'draft-1', retake: 'ingredients' } });
 });

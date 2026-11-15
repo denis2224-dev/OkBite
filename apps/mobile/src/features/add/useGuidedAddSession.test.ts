@@ -1,11 +1,14 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { useGuidedAddSession } from './useGuidedAddSession';
-import { clearUnknownDraft, loadUnknownDraft, saveUnknownDraft } from './unknownDraft';
+import { clearUnknownDraft, loadUnknownDraft, saveUnknownDraft, saveUnknownDraftIfCurrent } from './unknownDraft';
+import { completeUnknownDraft } from './completeUnknownDraft';
 import { requestUnknownFlow } from './unknownFlowTransport';
 import { api } from '../../lib/api';
 import type { AnalysisOutcome } from '../../lib/analysisOutcome';
 import { NUTRIENT_KEYS } from '@okbite/shared';
 import { removePhoto } from '../offline/photos';
+import { getIdentifyDraft } from './draftStore';
+import { PRODUCT_ID, identifyFound, identifyNotFound } from '../capture/__fixtures__/responses';
 
 const completed = <T,>(result: T): AnalysisOutcome<T> => ({ status: 'completed', result });
 const pendingOutcome = <T,>(completion: Promise<T>): AnalysisOutcome<T> => ({ status: 'pending', retryAllowed: false, completion });
@@ -25,11 +28,7 @@ jest.mock('../capture/compressPhoto', () => ({ compressPhoto: async (uri: string
 jest.mock('../offline/photos', () => ({ keepPhoto: async (uri: string) => 'kept-' + uri, openPhoto: async (id: string) => ({ uri: id, release() {} }), removePhoto: jest.fn() }));
 const initial = { code: '4840001000014', name: 'Test product', brand: null, quantity: null, photoPath: 'device/front.jpg' };
 const label = { ingredientsText: 'ingredient test', unit: null, nutrients: Object.fromEntries(NUTRIENT_KEYS.map(key => [key, null])), unclear: [], ingredientsPhotoPath: 'device/ingredients.jpg', nutritionPhotoPath: null, reasons: Object.fromEntries([...NUTRIENT_KEYS, 'ingredientsText'].map(key => [key, key === 'ingredientsText' ? 'read' : 'not_printed'])) };
-type Controller = NonNullable<ReturnType<typeof useGuidedAddSession>['controller']>;
-async function confirmIdentity(controller: Controller) {
-  await act(async () => { await controller.confirmIdentity('Test product', '375 g'); });
-}
-beforeEach(() => { jest.clearAllMocks(); mockDelayFocus = false; mockFocus = undefined; jest.mocked(loadUnknownDraft).mockResolvedValue(null); jest.mocked(requestUnknownFlow).mockResolvedValue(label); });
+beforeEach(() => { jest.clearAllMocks(); mockDelayFocus = false; mockFocus = undefined; jest.mocked(loadUnknownDraft).mockResolvedValue(null); jest.mocked(requestUnknownFlow).mockResolvedValue(label); jest.mocked(completeUnknownDraft).mockResolvedValue(undefined); jest.mocked(api.identifyOutcome).mockReset(); });
 
 test.each(['before', 'after'])('opens confirmation when first focus arrives %s draft restoration', async ordering => {
   mockDelayFocus = true;
@@ -38,7 +37,6 @@ test.each(['before', 'after'])('opens confirmation when first focus arrives %s d
   const { result } = await renderHook(() => useGuidedAddSession(initial));
   if (ordering === 'before') await act(async () => { mockFocus!(); finish(null); });
   else { await act(async () => { finish(null); }); await act(async () => { mockFocus!(); }); }
-  await confirmIdentity(result.current.controller!);
   await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
   await act(async () => { await result.current.controller!.chooseNutrition('none'); });
   expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'draft-id' } });
@@ -49,7 +47,6 @@ test('does not navigate when a read finishes after blur and refocus', async () =
   const { result } = await renderHook(() => useGuidedAddSession(initial));
   let blur: void | (() => void);
   await act(async () => { blur = mockFocus!(); });
-  await confirmIdentity(result.current.controller!);
   await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
   let finish!: (value: typeof label) => void;
   jest.mocked(requestUnknownFlow).mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
@@ -62,7 +59,6 @@ test('does not navigate when a read finishes after blur and refocus', async () =
 test('asks after ingredients and reads only after an explicit answer', async () => {
   const { result } = await renderHook(() => useGuidedAddSession(initial));
   await act(async () => {});
-  await confirmIdentity(result.current.controller!);
   expect(result.current.state?.stage).toBe('ingredients');
   await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
   expect(result.current.state?.stage).toBe('nutrition_question');
@@ -99,7 +95,6 @@ test('discarding a saved draft restarts a usable session for the incoming produc
   await act(async () => {});
   await act(async () => { await result.current.discardDraft(); });
   expect(result.current.state?.initial).toMatchObject(initial);
-  await confirmIdentity(result.current.controller!);
   await act(async () => { await result.current.controller!.capturePhoto('new-ingredients'); });
   expect(result.current.state?.stage).toBe('nutrition_question');
   expect(result.current.restoredFromDraft).toBe(false);
@@ -111,7 +106,6 @@ test('a failed draft deletion keeps the flow usable and reports the storage erro
   await act(async () => {});
   await act(async () => { await result.current.discardDraft(); });
   expect(result.current.discardError).toBe(true);
-  await confirmIdentity(result.current.controller!);
   await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
   expect(result.current.state?.stage).toBe('nutrition_question');
 });
@@ -120,7 +114,6 @@ test('suppresses navigation when a read finishes after unmount', async () => {
   jest.mocked(requestUnknownFlow).mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
   const { result, unmount } = await renderHook(() => useGuidedAddSession(initial));
   await act(async () => {});
-  await confirmIdentity(result.current.controller!);
   await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
   let reading!: Promise<void>;
   await act(async () => { reading = result.current.controller!.chooseNutrition('skipped'); });
@@ -148,17 +141,15 @@ test('sends front photo for barcode-only entry and shows identify candidates whi
   });
   const { result } = await renderHook(() => useGuidedAddSession({ ...initial, photoPath: null }));
   await act(async () => {});
-  await confirmIdentity(result.current.controller!);
   expect(result.current.state?.stage).toBe('front');
   await act(async () => { await result.current.controller!.capturePhoto('front-shot'); });
   expect(api.identifyOutcome).toHaveBeenCalledTimes(1);
   expect(mockReplace).toHaveBeenCalledWith(expect.objectContaining({
     pathname: '/identify',
-    params: expect.objectContaining({
-      source: 'photo',
-      payload: expect.stringContaining('4840001000014'),
-    }),
+    params: { source: 'photo', frontPhotoId: 'kept-front-shot', unknownDraftId: 'draft-id' },
   }));
+  expect(getIdentifyDraft('draft-id')).toMatchObject({ read: { code: '4840001000014' } });
+  expect(getIdentifyDraft('another-draft')).toBeUndefined();
 });
 
 test('waits on front identify completion after >55 s, blocks duplicate calls, and advances on late resolution', async () => {
@@ -166,7 +157,6 @@ test('waits on front identify completion after >55 s, blocks duplicate calls, an
   jest.mocked(api.identifyOutcome).mockResolvedValueOnce(pendingOutcome(new Promise(resolve => { finish = resolve; })) as never);
   const { result } = await renderHook(() => useGuidedAddSession({ ...initial, photoPath: null }));
   await act(async () => {});
-  await confirmIdentity(result.current.controller!);
   let running!: Promise<void>;
   await act(async () => { running = result.current.controller!.capturePhoto('front-shot'); });
   expect(result.current.frontPending).toBe('waiting');
@@ -191,7 +181,6 @@ test('surfaces pending retry state and allows explicit retry when late front ide
     .mockResolvedValueOnce(completed({ status: 'not_found', read: { brand: null, name: null, quantity: null, code: null }, photoPath: 'device/front.jpg' }) as never);
   const { result } = await renderHook(() => useGuidedAddSession({ ...initial, photoPath: null }));
   await act(async () => {});
-  await confirmIdentity(result.current.controller!);
   let running!: Promise<void>;
   await act(async () => { running = result.current.controller!.capturePhoto('front-shot'); });
   expect(result.current.frontPending).toBe('waiting');
@@ -212,7 +201,6 @@ test('suppresses front identify navigation when unmounted while pending', async 
   jest.mocked(api.identifyOutcome).mockResolvedValueOnce(pendingOutcome(new Promise(resolve => { finish = resolve; })) as never);
   const { result, unmount } = await renderHook(() => useGuidedAddSession({ ...initial, photoPath: null }));
   await act(async () => {});
-  await confirmIdentity(result.current.controller!);
   let running!: Promise<void>;
   await act(async () => { running = result.current.controller!.capturePhoto('front-shot'); });
   expect(result.current.frontPending).toBe('waiting');
@@ -222,4 +210,210 @@ test('suppresses front identify navigation when unmounted while pending', async 
     await running;
   });
   expect(mockReplace).not.toHaveBeenCalled();
+});
+
+test('completes draft and navigates when pending front identify resolves found while focused', async () => {
+  mockDelayFocus = true;
+  let finish!: (res: unknown) => void;
+  jest.mocked(api.identifyOutcome).mockResolvedValueOnce(pendingOutcome(new Promise(resolve => { finish = resolve; })) as never);
+  const { result } = await renderHook(() => useGuidedAddSession({ ...initial, photoPath: null }));
+  await act(async () => { mockFocus!(); });
+  let running!: Promise<void>;
+  await act(async () => { running = result.current.controller!.capturePhoto('front-shot'); });
+  expect(result.current.frontPending).toBe('waiting');
+  expect(api.identifyOutcome).toHaveBeenCalledTimes(1);
+  await act(async () => { finish(identifyFound); await running; });
+  expect(completeUnknownDraft).toHaveBeenCalledTimes(1);
+  expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+});
+
+test('does not persist ingredients draft or navigate when pending front not_found arrives after blur without unmount', async () => {
+  mockDelayFocus = true;
+  let finish!: (res: unknown) => void;
+  jest.mocked(api.identifyOutcome).mockResolvedValueOnce(pendingOutcome(new Promise(resolve => { finish = resolve; })) as never);
+  const { result } = await renderHook(() => useGuidedAddSession({ ...initial, photoPath: null }));
+  let blur: void | (() => void);
+  await act(async () => { blur = mockFocus!(); });
+  let running!: Promise<void>;
+  await act(async () => { running = result.current.controller!.capturePhoto('front-shot'); });
+  expect(result.current.frontPending).toBe('waiting');
+  expect(api.identifyOutcome).toHaveBeenCalledTimes(1);
+  expect(saveUnknownDraft).toHaveBeenLastCalledWith(expect.objectContaining({
+    stage: 'reading',
+    readStatus: 'pending',
+    photos: expect.objectContaining({ front: 'kept-front-shot' }),
+  }));
+  jest.mocked(saveUnknownDraft).mockClear();
+  jest.mocked(saveUnknownDraftIfCurrent).mockClear();
+  jest.mocked(completeUnknownDraft).mockClear();
+  jest.mocked(clearUnknownDraft).mockClear();
+  jest.mocked(removePhoto).mockClear();
+  mockReplace.mockClear();
+
+  await act(async () => { blur!(); });
+  await act(async () => { finish(identifyNotFound); await running; });
+
+  expect(mockReplace).not.toHaveBeenCalled();
+  expect(saveUnknownDraft).not.toHaveBeenCalled();
+  expect(saveUnknownDraftIfCurrent).not.toHaveBeenCalled();
+  expect(completeUnknownDraft).not.toHaveBeenCalled();
+  expect(clearUnknownDraft).not.toHaveBeenCalled();
+  expect(removePhoto).not.toHaveBeenCalled();
+  expect(result.current.frontPending).toBe('none');
+  expect(result.current.state?.stage).not.toBe('ingredients');
+  expect(result.current.state?.stage).not.toBe('error');
+  expect(result.current.state?.photos.front).toBe('kept-front-shot');
+});
+
+test('does not complete draft, clear photos, or navigate when pending front found arrives after blur without unmount', async () => {
+  mockDelayFocus = true;
+  let finish!: (res: unknown) => void;
+  jest.mocked(api.identifyOutcome).mockResolvedValueOnce(pendingOutcome(new Promise(resolve => { finish = resolve; })) as never);
+  const { result } = await renderHook(() => useGuidedAddSession({ ...initial, photoPath: null }));
+  let blur: void | (() => void);
+  await act(async () => { blur = mockFocus!(); });
+  let running!: Promise<void>;
+  await act(async () => { running = result.current.controller!.capturePhoto('front-shot'); });
+  expect(result.current.frontPending).toBe('waiting');
+  expect(api.identifyOutcome).toHaveBeenCalledTimes(1);
+  jest.mocked(saveUnknownDraft).mockClear();
+  jest.mocked(saveUnknownDraftIfCurrent).mockClear();
+  jest.mocked(completeUnknownDraft).mockClear();
+  jest.mocked(clearUnknownDraft).mockClear();
+  jest.mocked(removePhoto).mockClear();
+  mockReplace.mockClear();
+
+  await act(async () => { blur!(); });
+  await act(async () => { finish(identifyFound); await running; });
+
+  expect(completeUnknownDraft).not.toHaveBeenCalled();
+  expect(mockReplace).not.toHaveBeenCalled();
+  expect(saveUnknownDraft).not.toHaveBeenCalled();
+  expect(saveUnknownDraftIfCurrent).not.toHaveBeenCalled();
+  expect(clearUnknownDraft).not.toHaveBeenCalled();
+  expect(removePhoto).not.toHaveBeenCalled();
+  expect(result.current.frontPending).toBe('none');
+  expect(result.current.state?.stage).not.toBe('ingredients');
+  expect(result.current.state?.photos.front).toBe('kept-front-shot');
+});
+
+test('ignores stale front completion after blur followed by refocus and allows manual retry', async () => {
+  mockDelayFocus = true;
+  let finish!: (res: unknown) => void;
+  jest.mocked(api.identifyOutcome)
+    .mockResolvedValueOnce(pendingOutcome(new Promise(resolve => { finish = resolve; })) as never)
+    .mockResolvedValueOnce(completed(identifyNotFound) as never);
+  const { result } = await renderHook(() => useGuidedAddSession({ ...initial, photoPath: null }));
+  let blur: void | (() => void);
+  await act(async () => { blur = mockFocus!(); });
+  let running!: Promise<void>;
+  await act(async () => { running = result.current.controller!.capturePhoto('front-shot'); });
+  expect(result.current.frontPending).toBe('waiting');
+  expect(api.identifyOutcome).toHaveBeenCalledTimes(1);
+  jest.mocked(saveUnknownDraft).mockClear();
+
+  await act(async () => { blur!(); mockFocus!(); });
+  await act(async () => { finish(identifyFound); await running; });
+
+  expect(completeUnknownDraft).not.toHaveBeenCalled();
+  expect(mockReplace).not.toHaveBeenCalled();
+  expect(saveUnknownDraft).not.toHaveBeenCalled();
+  expect(clearUnknownDraft).not.toHaveBeenCalled();
+  expect(removePhoto).not.toHaveBeenCalled();
+  expect(result.current.frontPending).toBe('none');
+  expect(result.current.state?.stage).not.toBe('ingredients');
+
+  await act(async () => { await result.current.controller!.retry(); });
+  expect(api.identifyOutcome).toHaveBeenCalledTimes(2);
+  expect(result.current.state?.stage).toBe('ingredients');
+});
+
+test('ignores late front rejection after blur without stale error state or draft mutation and recovers on refocus', async () => {
+  mockDelayFocus = true;
+  let rejectLate!: (err: unknown) => void;
+  jest.mocked(api.identifyOutcome)
+    .mockResolvedValueOnce(pendingOutcome(new Promise((_r, reject) => { rejectLate = reject; })) as never)
+    .mockResolvedValueOnce(completed(identifyNotFound) as never);
+  const { result } = await renderHook(() => useGuidedAddSession({ ...initial, photoPath: null }));
+  let blur: void | (() => void);
+  await act(async () => { blur = mockFocus!(); });
+  let running!: Promise<void>;
+  await act(async () => { running = result.current.controller!.capturePhoto('front-shot'); });
+  expect(result.current.frontPending).toBe('waiting');
+  expect(api.identifyOutcome).toHaveBeenCalledTimes(1);
+  jest.mocked(saveUnknownDraft).mockClear();
+
+  await act(async () => { blur!(); });
+  await act(async () => {
+    rejectLate(Object.assign(new Error('upstream'), { code: 'upstream_failed' }));
+    await running;
+  });
+
+  expect(mockReplace).not.toHaveBeenCalled();
+  expect(saveUnknownDraft).not.toHaveBeenCalled();
+  expect(result.current.frontPending).toBe('none');
+  expect(result.current.state?.stage).not.toBe('error');
+  expect(result.current.state?.photos.front).toBe('kept-front-shot');
+
+  await act(async () => { mockFocus!(); });
+  await act(async () => { await result.current.controller!.retry(); });
+  expect(api.identifyOutcome).toHaveBeenCalledTimes(2);
+  expect(result.current.state?.stage).toBe('ingredients');
+});
+
+test.each([
+  ['found', identifyFound],
+  ['not_found', identifyNotFound],
+] as const)('stale front %s completion cannot overwrite or clear a newer draft', async (_kind, outcomeResult) => {
+  let finish!: (res: unknown) => void;
+  jest.mocked(api.identifyOutcome).mockResolvedValueOnce(pendingOutcome(new Promise(resolve => { finish = resolve; })) as never);
+  const { result } = await renderHook(() => useGuidedAddSession({ ...initial, photoPath: null }));
+  await act(async () => {});
+  let running!: Promise<void>;
+  await act(async () => { running = result.current.controller!.capturePhoto('front-shot'); });
+  expect(result.current.frontPending).toBe('waiting');
+  jest.mocked(saveUnknownDraft).mockClear();
+  jest.mocked(loadUnknownDraft).mockResolvedValue({
+    version: 1,
+    id: 'newer-draft',
+    initial,
+    stage: 'ingredients',
+    nutritionMode: null,
+    photos: { front: 'newer-front', ingredients: null, nutrition: null },
+    label: null,
+    readStatus: 'idle',
+  });
+
+  await act(async () => { finish(outcomeResult); await running; });
+
+  expect(completeUnknownDraft).not.toHaveBeenCalled();
+  expect(saveUnknownDraft).not.toHaveBeenCalled();
+  expect(saveUnknownDraftIfCurrent).not.toHaveBeenCalled();
+  expect(clearUnknownDraft).not.toHaveBeenCalled();
+  expect(removePhoto).not.toHaveBeenCalled();
+  expect(mockReplace).not.toHaveBeenCalled();
+});
+
+test('discarding the draft prevents a pending front found result from writing or deleting the new draft', async () => {
+  let finish!: (res: unknown) => void;
+  jest.mocked(api.identifyOutcome).mockResolvedValueOnce(pendingOutcome(new Promise(resolve => { finish = resolve; })) as never);
+  const { result } = await renderHook(() => useGuidedAddSession({ ...initial, photoPath: null }));
+  await act(async () => {});
+  let running!: Promise<void>;
+  await act(async () => { running = result.current.controller!.capturePhoto('front-shot'); });
+  expect(result.current.frontPending).toBe('waiting');
+  await act(async () => { await result.current.discardDraft(); });
+  jest.mocked(saveUnknownDraft).mockClear();
+  jest.mocked(clearUnknownDraft).mockClear();
+  jest.mocked(removePhoto).mockClear();
+  mockReplace.mockClear();
+
+  await act(async () => { finish(identifyFound); await running; });
+
+  expect(completeUnknownDraft).not.toHaveBeenCalled();
+  expect(saveUnknownDraft).not.toHaveBeenCalled();
+  expect(clearUnknownDraft).not.toHaveBeenCalled();
+  expect(removePhoto).not.toHaveBeenCalled();
+  expect(mockReplace).not.toHaveBeenCalled();
+  expect(result.current.state?.stage).toBe('front');
 });

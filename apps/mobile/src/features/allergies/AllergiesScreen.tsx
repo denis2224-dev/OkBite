@@ -1,6 +1,7 @@
 import { View } from 'react-native';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
+import { TabPageHeader } from '../../shared/TabPageHeader';
 import { Screen } from '../../ui/Screen';
 import { Body, Heading } from '../../ui/Typography';
 import { ProfileSaveError } from '../profile/ProfileSaveError';
@@ -14,12 +15,14 @@ export function AllergiesScreen() {
   const { profile, toggle, disabled, errorMessage, retry } = useProfileEditor();
   return (
     <Screen back={false}>
-      <View style={{ gap: 8 }}>
-        <Heading style={{ fontSize: 30, lineHeight: 36 }}>{ro.allergies.title}</Heading>
-        <Body style={{ color: colors.muted }}>{`${ro.allergies.lead} ${ro.profile.savedLocally}.`}</Body>
+      <View style={{ marginHorizontal: -16, marginTop: -12 }}>
+        <TabPageHeader title={ro.allergies.title} subtitle={ro.allergies.lead} />
       </View>
       <ProfileSaveError message={errorMessage} retry={retry} />
-      <AllergenChips selected={profile.allergens} disabled={disabled} onToggle={(a) => toggle('allergens', a)} />
+      <View style={{ gap: 8 }}>
+        <Heading style={{ fontSize: 18, lineHeight: 24 }}>{ro.allergies.allergensLabel}</Heading>
+        <AllergenChips selected={profile.allergens} disabled={disabled} onToggle={(a) => toggle('allergens', a)} />
+      </View>
       <View style={{ gap: 8 }}>
         <Heading style={{ fontSize: 18, lineHeight: 24 }}>{ro.allergies.avoidTitle}</Heading>
         <AvoidSwitches selected={profile.avoid} disabled={disabled} onToggle={(k) => toggle('avoid', k)} />

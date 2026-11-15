@@ -29,12 +29,12 @@ export function ScannerScreen({
   const { colors } = useTheme(),
     d = ro.app.design;
   const samples = [
-    ["Iaurt natural", "4840001000017"],
-    ["Iaurt cu căpșuni", "4840001000024"],
-    ["Iaurt grecesc", "4840001000031"],
-    ["Biscuiți ovăz", "4840001000048"],
-    ["Suc de mere", "4840001000055"],
-    [d.unknown, "4841234567890"],
+    ["Iaurt natural", "4840001000014"],
+    ["Iaurt cu căpșuni", "4840001000021"],
+    ["Iaurt grecesc", "4840001000038"],
+    ["Biscuiți ovăz", "4840001000045"],
+    ["Suc de mere", "4840001000052"],
+    [d.unknown, "4841234567893"],
   ];
   return (
     <>
@@ -162,7 +162,7 @@ export function ScannerScreen({
                   letterSpacing={3}
                   fill="#1C2420"
                 >
-                  {"4840001000024"}
+                  {"4840001000021"}
                 </SvgText>
               </Svg>
             </View>

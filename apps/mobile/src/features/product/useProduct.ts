@@ -2,15 +2,27 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Product, ScoreResult } from '@okbite/shared';
 import { api, ApiError } from '../../lib/api';
 import { saveToHistory, getFromHistory } from '../history/store';
+import { forgetLookup, freshLookup } from './freshLookup';
 
 type State = { id: string; data?: { product: Product; score: ScoreResult }; error?: ApiError; loading: boolean; storageError?: boolean; cached?: boolean };
 export function useProduct(id: string, cachedOnly = false) {
   const [attempt, setAttempt] = useState(0);
   const retry = useCallback(() => setAttempt(value => value + 1), []);
-  const [state, setState] = useState<State>({ id, loading: true });
+  const [state, setState] = useState<State>(() => {
+    const fresh = cachedOnly ? undefined : freshLookup(id);
+    return fresh ? { id, data: fresh, loading: false } : { id, loading: true };
+  });
   useEffect(() => {
     let active = true;
     async function load() {
+      const fresh = cachedOnly ? undefined : freshLookup(id);
+      if (fresh) {
+        forgetLookup(id);
+        let storageError = false;
+        try { await saveToHistory(fresh); } catch { storageError = true; }
+        if (active) setState({ id, data: fresh, loading: false, storageError });
+        return;
+      }
       if (active) setState({ id, loading: true });
       try {
         if (cachedOnly) {
@@ -19,7 +31,10 @@ export function useProduct(id: string, cachedOnly = false) {
           if (active) setState({ id, data: cached, cached: true, loading: false });
           return;
         }
-        const result = await api.lookup({ id });
+        const result = await api.lookup({ id }).catch(error => {
+          if (error instanceof ApiError && error.code === 'bad_request') throw new ApiError('not_found');
+          throw error;
+        });
         if (result.status !== 'found') throw new ApiError('not_found');
         let storageError = false;
         try { await saveToHistory(result); } catch { storageError = true; }

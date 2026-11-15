@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { useIsFocused, useRouter } from 'expo-router';
 import { Body, Button, Heading } from '../../ui';
@@ -10,11 +10,21 @@ import { ManualCode } from './ManualCode';
 import { useScanLookup } from './useScanLookup';
 import { useWebLiveScan } from './useWebLiveScan';
 import { ScanReticle } from './ScanReticle';
+import { ResultSheet } from '../product/ResultSheet';
 import { cameraMessage } from '../capture/cameraSupport.web';
 import type { ScanScreenProps } from './ScanScreen';
 
+const iosPattern = /iPhone|iPad|iPod/;
+/** Browser-specific steps to re-allow the camera, shown once a retry has failed. */
+function deniedHelp(): string {
+  const nav = typeof navigator === 'undefined' ? undefined : navigator as Partial<Navigator>;
+  const ua = nav?.userAgent ?? '', platform = nav?.platform ?? '';
+  if (iosPattern.test(platform) || iosPattern.test(ua) || (platform === 'MacIntel' && (nav?.maxTouchPoints ?? 0) > 1)) return ro.pwa.camera.iosDenied;
+  return /Android/i.test(ua) ? ro.pwa.camera.androidDenied : ro.pwa.camera.browserDenied;
+}
+
 /** The browser has no torch control here, so `torch` is ignored. */
-export default function ScanScreenWeb({ embedded = false, manual = false }: ScanScreenProps = {}) {
+export default function ScanScreenWeb({ embedded = false }: ScanScreenProps = {}) {
   const focused = useIsFocused();
   const { colors } = useTheme();
   const styles = createStyles(colors);
@@ -23,25 +33,25 @@ export default function ScanScreenWeb({ embedded = false, manual = false }: Scan
   const { status: liveStatus, videoRef, retry: retryLive } = useWebLiveScan((code) => {
     void onCameraCode(code);
   });
+  const [retried, setRetried] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
   const working = state.status === 'working';
+  const denied = liveStatus === 'denied';
   const cameraOn = liveStatus === 'starting' || liveStatus === 'live';
-  const showManual = !embedded || manual || !cameraOn;
 
   const body = (
     <>
-      {focused && cameraOn ? (
+      {focused && state.status !== 'found' && cameraOn ? (
         <View testID="scan-preview" style={embedded ? styles.embeddedPreview : styles.preview}>
           <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           {liveStatus === 'live' ? <ScanReticle /> : <ActivityIndicator style={StyleSheet.absoluteFill} color={colors.cameraInk} />}
         </View>
       ) : null}
-      {focused && !cameraOn ? (
+      {focused && state.status !== 'found' && !cameraOn ? (
         <StatusPanel
-          message={liveStatus === 'unsupported' ? ro.scan.webManualOnly : cameraMessage(liveStatus)}
-          actions={[
-            ...(['unavailable', 'denied', 'busy'].includes(liveStatus) ? [{ label: ro.errors.retry, onPress: retryLive }] : []),
-            { label: ro.capture.title, onPress: () => router.push('/capture') },
-          ]}
+          title={denied && retried ? ro.scan.deniedText : undefined}
+          message={liveStatus === 'unsupported' ? ro.scan.webManualOnly : !denied ? cameraMessage(liveStatus) : retried ? deniedHelp() : ro.scan.deniedText}
+          actions={['unavailable', 'denied', 'busy'].includes(liveStatus) ? [{ label: ro.errors.retry, onPress: () => { setRetried(true); retryLive(); } }] : []}
         />
       ) : null}
       {working ? <View style={styles.status}><ActivityIndicator /><Body style={embedded ? { color: colors.cameraInk } : undefined}>{ro.capture.working}</Body></View> : null}
@@ -55,7 +65,9 @@ export default function ScanScreenWeb({ embedded = false, manual = false }: Scan
           ]}
         />
       ) : null}
-      {showManual ? <ManualCode onSubmit={(code) => { void onManualCode(code); }} disabled={working} autoFocus={embedded && manual} /> : null}
+      <ManualCode open={manualOpen} onToggle={() => setManualOpen(open => !open)} onDark={embedded}
+        onSubmit={(code) => { void onManualCode(code); }} disabled={working} />
+      {state.status === 'found' && <ResultSheet product={state.product} score={state.score} onClose={dismiss} />}
     </>
   );
   if (embedded) return <View style={styles.embedded}>{body}</View>;
@@ -63,9 +75,7 @@ export default function ScanScreenWeb({ embedded = false, manual = false }: Scan
     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Heading style={styles.title}>{ro.scan.title}</Heading>
       {body}
-      {cameraOn ? (
-        <Button variant="secondary" onPress={() => router.push('/capture')}>{ro.scan.photoLabel}</Button>
-      ) : null}
+      <Button variant="secondary" onPress={() => router.push('/capture')}>{ro.scan.photoLabel}</Button>
     </ScrollView>
   );
 }

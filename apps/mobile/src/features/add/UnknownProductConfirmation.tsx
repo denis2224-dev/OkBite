@@ -7,6 +7,7 @@ import { ro } from '../../copy/ro';
 import { Screen } from '../../ui/Screen';
 import { AllergenChip } from '../../ui/AllergenChip';
 import { ActionButton } from '../capture/StatusPanel';
+import { GuidedAddProgress } from './GuidedAddProgress';
 import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { CategoryPicker } from './CategoryPicker';
 import { parseAmount, unitForNutrient } from './parseAmount';
@@ -66,6 +67,7 @@ export function UnknownProductConfirmation({ initial, label, photos, categories,
     <UnknownConfirmationField label={title} value={value[key]} disabled={pending} multiline={key === 'ingredientsText'}
       onChange={text => change({ ...value, [key]: text })} />;
   return <Screen title={ro.add.confirmTitle} back={false}>
+    <GuidedAddProgress step={4} total={4} />
     <Text style={{ color: colors.muted, fontSize: 16 }}>{ro.add.tapToEdit}</Text>
     <View style={[card, { flexDirection: 'row', flexWrap: 'wrap' }]}>
       {(['front', 'ingredients', 'nutrition'] as const).map(kind => <UnknownConfirmationPhoto key={kind}

@@ -10,6 +10,7 @@ import { enqueue } from '../offline/queue';
 import { CODE, identifyFound, lookupFound } from './__fixtures__/responses';
 
 const mockRouter = { replace: jest.fn() };
+const foundLookup = lookupFound as Extract<typeof lookupFound, { status: 'found' }>;
 let mockLeave: (() => void) | undefined;
 let mockEnter: (() => void) | undefined;
 jest.mock('expo-router', () => ({
@@ -112,7 +113,8 @@ it('allows camera scanning again after an offline response while away', async ()
   expect(view.result.current.state.status).toBe('idle');
   await act(async () => { await view.result.current.onCameraCode(CODE); });
   expect(api.lookup).toHaveBeenCalledTimes(2);
-  expect(mockRouter.replace).toHaveBeenCalledTimes(1);
+  expect(view.result.current.state).toEqual({ status: 'found', product: foundLookup.product, score: foundLookup.score });
+  expect(mockRouter.replace).not.toHaveBeenCalled();
 });
 
 it.each(['photo', 'code'] as const)('still queues offline %s work after leaving, without navigation', async kind => {

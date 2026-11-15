@@ -1,7 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { LookupResponse } from '../_shared/contract.ts';
 import { offFallback, type OffRow, type OffStore } from '../_lib/off.ts';
-import { mapOffProduct } from '../_lib/offMapper.ts';
 import { createHandler } from './index.ts';
 
 const code = '4840001000014';
@@ -71,8 +70,7 @@ Deno.test('OFF hit is saved as unverified and returned found with processing', a
   assert.deepEqual(body.product.processing, { level: 1, source: 'off' });
   const row = t.products.get(code)!;
   assert.equal(row.status, 'unverified');
-  assert.equal(row.source, 'Open Food Facts');
-  assert.equal(row.added_by_device, null);
+  assert.equal(row.source, 'Open Food Facts (ODbL)');
   assert.equal(row.category_slug, 'necunoscut');
   assert.deepEqual(row.allergens, ['Lapte']);
   assert.equal(t.urls.length, 1);
@@ -147,25 +145,68 @@ Deno.test('two parallel lookups for the same unknown code create one product', a
   assert.equal(t.products.size, 1);
 });
 
-Deno.test('mapper keeps missing nutrients null and nova outside 1..4 null', () => {
-  const row = mapOffProduct({
+Deno.test('not_found code with English-only ingredients is saved when OFF lists allergens', async () => {
+  // Nutella 3017620422003 on 14 Nov 2026: OFF had no Romanian ingredients, so lookup said not_found.
+  const english = {
     ...offProduct,
-    nova_group: 5,
-    nutriments: { fat_100g: -1, salt_100g: 'x' },
-  })!;
-  assert.equal(row.kcal, null);
-  assert.equal(row.fat, null);
-  assert.equal(row.salt, null);
-  assert.equal(row.nova_group, null);
-  assert.equal(row.nova_source, null);
-  assert.equal(mapOffProduct({ ...offProduct, nova_group: 2.5 })!.nova_group, null);
-  assert.equal(mapOffProduct({ ...offProduct, nova_group: 4 })!.nova_source, 'off');
+    lang: 'en',
+    ingredients_text: 'sugar, palm oil, hazelnuts 13%, skimmed milk powder',
+    allergens_tags: ['en:milk', 'en:nuts'],
+  };
+  const t = await setup(async () => ok(english));
+  assert.equal((await (await t.handler(req())).json()).status, 'found');
+  assert.deepEqual(t.products.get(code)!.allergens, ['Lapte', 'Fructe cu coajă lemnoasă']);
+
+  const untagged = await setup(async () => ok({ ...english, allergens_tags: [] }));
+  assert.deepEqual(await (await untagged.handler(req())).json(), { status: 'not_found' });
+  assert.ok(untagged.misses.has(code));
 });
 
-Deno.test('mapper rejects missing name, brand or Romanian ingredients', () => {
-  assert.equal(mapOffProduct({ ...offProduct, product_name: '' }), null);
-  assert.equal(mapOffProduct({ ...offProduct, brands: undefined }), null);
-  assert.equal(mapOffProduct({ ...offProduct, lang: 'en' }), null);
-  assert.equal(mapOffProduct(null), null);
-  assert.equal(mapOffProduct({ ...offProduct, product_name_ro: 'Iaurt RO' })!.name, 'Iaurt RO');
+Deno.test('OFF drink saves per-100 ml nutrients, from legacy or schema-1004 fields', async () => {
+  const drink = { ...offProduct, product_quantity_unit: 'ml', nutrition_data_per: '100ml' };
+  for (const product of [
+    { ...drink, nutriments: { 'energy-kj_100g': 180, sugars_100g: 10.6, salt_100g: 0 } },
+    {
+      ...drink,
+      nutriments: {},
+      nutrition: {
+        aggregated_set: {
+          preparation: 'as_sold',
+          nutrients: {
+            'energy-kj': { source_per: '100ml', source: 'packaging', value: 180 },
+            sugars: { source_per: '100ml', source: 'packaging', value: 10.6 },
+            salt: { source_per: '100ml', source: 'packaging', value: 0 },
+          },
+        },
+      },
+    },
+  ]) {
+    const t = await setup(async () => ok(product));
+    assert.equal((await (await t.handler(req())).json()).status, 'found');
+    const row = t.products.get(code)!;
+    assert.equal(row.unit, 'ml');
+    assert.equal(row.portion_label, '100 ml');
+    assert.deepEqual([row.kcal, row.sugar, row.salt], [43, 10.6, 0]);
+  }
+});
+
+Deno.test('saved OFF row keeps missing nutrients null and nova outside 1..4 null', async () => {
+  const save = async (product: object) => {
+    const t = await setup(async () => ok({ ...offProduct, ...product }));
+    await t.handler(req());
+    return t.products.get(code)!;
+  };
+  const row = await save({ nova_group: 5, nutriments: { fat_100g: -1, salt_100g: 'x' } });
+  assert.deepEqual([row.kcal, row.fat, row.salt, row.nova_group, row.nova_source], [null, null, null, null, null]);
+  assert.equal((await save({ nova_group: 2.5 })).nova_group, null);
+  assert.equal((await save({ nova_group: 4 })).nova_source, 'off');
+  assert.equal((await save({ product_name_ro: 'Iaurt RO' })).name, 'Iaurt RO');
+});
+
+Deno.test('OFF product without name or brand stays not_found', async () => {
+  for (const product of [{ ...offProduct, product_name: '' }, { ...offProduct, brands: undefined }, null]) {
+    const t = await setup(async () => ok(product));
+    assert.deepEqual(await (await t.handler(req())).json(), { status: 'not_found' });
+    assert.equal(t.products.size, 0);
+  }
 });

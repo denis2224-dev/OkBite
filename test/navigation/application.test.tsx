@@ -144,9 +144,12 @@ it('validates manual entry and completes scan, details, comparison and back navi
   await fireEvent.changeText(screen.getByLabelText(ro.scan.manualLabel), 'ab12 345');
   await press(ro.scan.submit);
   expect(
-    screen.getAllByText('Codul trebuie să aibă 8 sau 13 cifre. Ai introdus 5.').length,
+    screen.getAllByText(ro.scan.manualInvalid).length,
   ).toBeGreaterThan(0);
-  await fireEvent.changeText(screen.getByLabelText(ro.scan.manualLabel), '484a0001000024');
+  await fireEvent.changeText(screen.getByLabelText(ro.scan.manualLabel), '4840022010013');
+  await press(ro.scan.submit);
+  expect(screen.getAllByText(ro.scan.manualChecksum).length).toBeGreaterThan(0);
+  await fireEvent.changeText(screen.getByLabelText(ro.scan.manualLabel), '4840001000021');
   await press(ro.scan.submit);
   await header(ro.identify.confirm);
   await press(ro.identify.yes);

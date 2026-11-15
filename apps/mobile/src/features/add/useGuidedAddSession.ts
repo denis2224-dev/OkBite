@@ -10,8 +10,9 @@ import { completeUnknownDraft } from './completeUnknownDraft';
 import { draftToGuided, guidedToDraft } from './guidedDraftAdapter';
 import { createGuidedFlow, type GuidedFlowInitial, type GuidedFlowState, type GuidedPhotoKind } from './guidedFlow';
 import { clearUnknownDraft, loadUnknownDraft, saveUnknownDraft } from './unknownDraft';
-import { GuidedReadLabelRequest, GuidedReadLabelResponse } from './unknownFlowContract';
+import { GuidedReadLabelRequest, GuidedReadLabelResponse, type NutritionMode } from './unknownFlowContract';
 import { requestUnknownFlow } from './unknownFlowTransport';
+import { clearIdentifyDraft } from './draftStore';
 
 export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: GuidedPhotoKind) {
   const router = useRouter();
@@ -44,12 +45,6 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
         if (!active) return;
         setFrontPending('none');
         let token = runtimeRef.current.activity.start();
-        const runFocused = async (action: () => Promise<void>) => {
-          if (flow.getState().stage === 'working') return;
-          setFrontPending('none');
-          token = runtimeRef.current.activity.start();
-          await action();
-        };
         const nextDraftId = stored?.id ?? randomUUID();
         draftIdRef.current = nextDraftId;
         setDraftId(nextDraftId);
@@ -60,68 +55,118 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
           : (incoming.code && incoming.code !== stored.initial.code) ||
             (incoming.photoPath && incoming.photoPath !== stored.initial.photoPath)));
         setDraftConflict(conflict);
-        const flow = createGuidedFlow(
-          initialRef.current,
-          {
-            preparePhoto: compressPhoto,
-            keepPhoto,
-            openPhoto,
-            async identify(base64) {
-              const outcome = await api.identifyOutcome(base64);
-              if (outcome && typeof outcome === 'object' && 'status' in outcome && outcome.status === 'pending' && 'completion' in outcome) {
-                const current = () => active && runtimeRef.current.activity.isCurrent(token);
-                if (current()) setFrontPending('waiting');
+        const isSessionActive = () => active && draftIdRef.current === nextDraftId;
+        const hasNewerDraft = async () => {
+          const currentDraft = await loadUnknownDraft().catch(() => null);
+          return Boolean(currentDraft && currentDraft.id !== nextDraftId);
+        };
+        let flowCancelledByBlur = false;
+        let flowInstance!: ReturnType<typeof createGuidedFlow>;
+        const bindFlow = (restoredState?: GuidedFlowState) => {
+          unsubscribe?.();
+          const nextFlow = createGuidedFlow(
+            initialRef.current,
+            {
+              preparePhoto: compressPhoto,
+              keepPhoto,
+              openPhoto,
+              async identify(base64) {
+                const requestToken = token;
+                const isCurrentRequest = () => isSessionActive() && runtimeRef.current.activity.isCurrent(requestToken);
+                const abandonIfStale = async () => {
+                  if (isCurrentRequest() && !(await hasNewerDraft())) return false;
+                  if (isSessionActive()) {
+                    flowCancelledByBlur = true;
+                    setFrontPending('none');
+                  }
+                  nextFlow.cancel();
+                  return true;
+                };
+                if (await abandonIfStale()) return null;
+                let pending = false;
                 try {
-                  const result = await outcome.completion;
-                  if (current()) setFrontPending('none');
+                  const outcome = await api.identifyOutcome(base64);
+                  pending = Boolean(outcome && typeof outcome === 'object' && 'status' in outcome && outcome.status === 'pending' && 'completion' in outcome);
+                  if (pending && isCurrentRequest()) setFrontPending('waiting');
+                  const result = pending
+                    ? await (outcome as { completion: Promise<unknown> }).completion
+                    : (outcome && typeof outcome === 'object' && 'result' in outcome ? outcome.result : outcome);
+                  if (await abandonIfStale()) return null;
+                  if (pending) setFrontPending('none');
                   return result;
                 } catch (err) {
-                  if (current()) setFrontPending('retry');
+                  if (await abandonIfStale()) return null;
+                  if (pending) setFrontPending('retry');
                   throw err;
                 }
-              }
-              return outcome && typeof outcome === 'object' && 'result' in outcome ? outcome.result : outcome;
+              },
+              readLabel: req => requestUnknownFlow('read-label', GuidedReadLabelRequest, GuidedReadLabelResponse, req),
+              persist: async snapshot => {
+                if (!isSessionActive() || !runtimeRef.current.activity.isCurrent(token) || await hasNewerDraft()) return;
+                await saveUnknownDraft(guidedToDraft(snapshot, nextDraftId));
+              },
+              onIdentify(response, scannedCode, frontPhotoId) {
+                if (!isSessionActive() || !runtimeRef.current.activity.isCurrent(token) || response.status === 'found') return;
+                const payload = scannedCode ? { ...response, read: { ...response.read, code: scannedCode } } : response;
+                const route = identifyPhotoRoute(payload, frontPhotoId, nextDraftId);
+                runtimeRef.current.router.replace(route);
+              },
+              onFound(found) {
+                const requestToken = token;
+                if (!isSessionActive() || !runtimeRef.current.activity.isCurrent(requestToken)) return;
+                void hasNewerDraft()
+                  .then(stale => {
+                    if (stale || !isSessionActive() || !runtimeRef.current.activity.isCurrent(requestToken)) return;
+                    return completeUnknownDraft(guidedToDraft(nextFlow.getState(), nextDraftId), found)
+                      .then(() => {
+                        if (isSessionActive() && runtimeRef.current.activity.isCurrent(requestToken)) {
+                          runtimeRef.current.router.replace(productRoute(found.product.id));
+                        }
+                      });
+                  })
+                  .catch(() => {});
+              },
+              onReview(_snapshot, manual) {
+                if (isSessionActive() && runtimeRef.current.activity.isCurrent(token)) {
+                  runtimeRef.current.router.replace({ pathname: '/add/review', params: { unknownDraftId: nextDraftId, ...(manual ? { manual: '1' } : {}) } });
+                }
+              },
             },
-            readLabel: req => requestUnknownFlow('read-label', GuidedReadLabelRequest, GuidedReadLabelResponse, req),
-            persist: async snapshot => {
-              if (active) await saveUnknownDraft(guidedToDraft(snapshot, draftIdRef.current));
-            },
-            onIdentify(response, scannedCode, frontPhotoId) {
-              if (!active || !runtimeRef.current.activity.isCurrent(token) || response.status === 'found') return;
-              const payload = scannedCode ? { ...response, read: { ...response.read, code: scannedCode } } : response;
-              const route = identifyPhotoRoute(payload);
-              runtimeRef.current.router.replace({ ...route, params: { ...route.params, frontPhotoId, unknownDraftId: draftIdRef.current } });
-            },
-            onFound(found) {
-              void completeUnknownDraft(guidedToDraft(flow.getState(), draftIdRef.current), found)
-                .then(() => {
-                  if (active && runtimeRef.current.activity.isCurrent(token)) {
-                    runtimeRef.current.router.replace(productRoute(found.product.id));
-                  }
-                })
-                .catch(() => {});
-            },
-            onReview(_snapshot, manual) {
-              if (active && runtimeRef.current.activity.isCurrent(token)) {
-                runtimeRef.current.router.replace({ pathname: '/add/review', params: { unknownDraftId: draftIdRef.current, ...(manual ? { manual: '1' } : {}) } });
-              }
-            },
-          },
-          stored ? draftToGuided(stored) : undefined,
-        );
-        activeFlow = flow;
-        unsubscribe = flow.subscribe(next => {
-          if (!active) return;
-          setState(next);
-          if (next.stage !== 'working' && next.stage !== 'error') setFrontPending('none');
-        });
+            restoredState,
+          );
+          flowInstance = nextFlow;
+          activeFlow = nextFlow;
+          unsubscribe = nextFlow.subscribe(next => {
+            if (!active || activeFlow !== nextFlow) return;
+            setState(next);
+            if (next.stage !== 'working' && next.stage !== 'error') setFrontPending('none');
+          });
+          return nextFlow;
+        };
+        const flow = bindFlow(stored ? draftToGuided(stored) : undefined);
+        const ensureActiveFlow = () => {
+          if (!flowCancelledByBlur || !isSessionActive()) return flowInstance;
+          flowCancelledByBlur = false;
+          return bindFlow({ ...flowInstance.getState(), error: undefined });
+        };
+        const runFocused = async (action: (target: ReturnType<typeof createGuidedFlow>) => Promise<void>) => {
+          const target = ensureActiveFlow();
+          if (target.getState().stage === 'working') return;
+          setFrontPending('none');
+          token = runtimeRef.current.activity.start();
+          await action(target);
+        };
         if (retakeRef.current && !conflict) flow.retake(retakeRef.current);
-        setController({ ...flow,
-          capturePhoto: uri => runFocused(() => flow.capturePhoto(uri)),
-          chooseNutrition: mode => runFocused(() => flow.chooseNutrition(mode)),
-          continueIngredientsOnly: () => runFocused(flow.continueIngredientsOnly),
-          enterLabelManually: () => runFocused(flow.enterLabelManually),
-          retry: () => runFocused(flow.retry),
+        setController({
+          getState: () => flowInstance.getState(),
+          subscribe: listener => flowInstance.subscribe(listener),
+          capturePhoto: uri => runFocused(target => target.capturePhoto(uri)),
+          chooseNutrition: (mode: NutritionMode) => runFocused(target => target.chooseNutrition(mode)),
+          continueIngredientsOnly: () => runFocused(target => target.continueIngredientsOnly()),
+          enterLabelManually: () => runFocused(target => target.enterLabelManually()),
+          retake: kind => ensureActiveFlow().retake(kind),
+          retry: () => runFocused(target => target.retry()),
+          cancel: () => flowInstance.cancel(),
         });
         setState(flow.getState());
       })
@@ -144,6 +189,7 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
     const photos = state?.photos;
     try { await clearUnknownDraft(currentId); }
     catch { setDiscardError(true); return; }
+    clearIdentifyDraft(currentId);
     controller?.cancel();
     if (photos && !initialRef.current.queueId) {
       for (const id of new Set(Object.values(photos))) {

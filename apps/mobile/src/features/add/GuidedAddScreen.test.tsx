@@ -79,7 +79,6 @@ test('shows unreadable nutrition recovery with Retake and Continue with ingredie
     unclear: ['kcal'],
   });
   await render(<GuidedAddScreen />);
-  await fillIdentity();
 
   expect(screen.getByText(ro.add.ingredientsTitle)).toBeTruthy();
   await act(async () => {
@@ -109,17 +108,25 @@ test('shows unreadable nutrition recovery with Retake and Continue with ingredie
 });
 
 test('starts at front photo step when barcode entry has no front photoPath', async () => {
-  mockParams.value = { code: '4840001000014' };
+  mockParams.value = { code: '2000000000008', flow: 'guided' };
   await render(<GuidedAddScreen />);
-  await fillIdentity();
 
   expect(screen.getByText(ro.add.frontTitle)).toBeTruthy();
   expect(screen.getByText(ro.add.frontHint)).toBeTruthy();
+  expect(screen.queryAllByRole('textbox')).toHaveLength(0);
   expect(screen.getByText(ro.add.stepOf(1, 4))).toBeTruthy();
-  expect(ro.add.stepOf(1, 3)).toBe('Pasul 1 din 3');
+  expect(ro.add.stepOf(1, 4)).toBe('Pasul 1 din 4');
   expect(ro.add.stepOf(2, 4)).toBe('Pasul 2 din 4');
 });
 
+test('keeps the same four-step progress after receiving the front photo path', async () => {
+  mockParams.value = { code: '4840001000014', photoPath: 'uploads/front.jpg', flow: 'guided' };
+  await render(<GuidedAddScreen />);
+  await act(async () => {});
+
+  expect(screen.getByText(ro.add.ingredientsTitle)).toBeTruthy();
+  expect(screen.getByText(ro.add.stepOf(2, 4))).toBeTruthy();
+});
 test('keeps manual entry fallback ("Scriu eu textul") reachable from a failed or interrupted guided read', async () => {
   jest.mocked(loadUnknownDraft).mockResolvedValueOnce({
     version: 1,
@@ -184,21 +191,11 @@ test('offers a return to confirmation for a completed draft without replaying a 
   expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'ready-draft' } });
 });
 
-test.each([null, 'device/front.jpg'])('requires both identity fields before showing capture (existing front: %s)', async photoPath => {
-  mockParams.value = { name: 'OCR guess', quantity: '99 g', ...(photoPath ? { photoPath } : {}) };
+test('guided barcode entry does not ask for name or quantity before front photo', async () => {
+  mockParams.value = { code: '2000000000008', flow: 'guided' };
   await render(<GuidedAddScreen />);
-  const name = await screen.findByLabelText(ro.review.name);
-  expect(name).toHaveProp('value', '');
-  expect(screen.queryByRole('button', { name: ro.capture.shutter })).toBeNull();
-  expect(screen.getByRole('button', { name: ro.add.next })).toBeDisabled();
-  await fireEvent.changeText(name, '  Denumire introdusă  ');
-  expect(screen.getByRole('button', { name: ro.add.next })).toBeDisabled();
-  await fireEvent.changeText(screen.getByLabelText(ro.review.quantity), ' 375 g ');
-  await fireEvent.press(screen.getByRole('button', { name: ro.add.next }));
-  expect(saveUnknownDraft).toHaveBeenLastCalledWith(expect.objectContaining({
-    initial: expect.objectContaining({ name: 'Denumire introdusă', quantity: '375 g', identityConfirmed: true }),
-    stage: photoPath ? 'ingredients' : 'front',
-  }));
+  expect(screen.getByText(ro.add.frontTitle)).toBeTruthy();
+  expect(screen.queryAllByRole('textbox')).toHaveLength(0);
   expect(screen.getByRole('button', { name: ro.capture.shutter })).toBeTruthy();
 });
 
@@ -208,7 +205,6 @@ test('provider failure preserves durable photos and allows manual review without
     ...baseLabel, ingredientsText: null, unit: null, reasons: failureReasons, unclear: [...NUTRIENT_KEYS, 'ingredientsText'],
   });
   await render(<GuidedAddScreen />);
-  await fillIdentity();
   await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
   await fireEvent.press(screen.getByRole('button', { name: ro.add.nutritionSame }));
   expect(await screen.findByText(ro.add.processingFailed)).toBeTruthy();
@@ -220,14 +216,12 @@ test('provider failure preserves durable photos and allows manual review without
     stage: 'review', photos: expect.objectContaining({ ingredients: 'kept:captured-photo' }),
   }));
 });
-
 test('shows >55 s pending message on front photo without retry, then advances to ingredients on late resolve', async () => {
-  mockParams.value = { code: '4840001000014' };
+  mockParams.value = { code: '4840001000014', flow: 'guided' };
   let finish!: (res: unknown) => void;
   jest.mocked(api.identifyOutcome).mockResolvedValueOnce(pendingOutcome(new Promise(resolve => { finish = resolve; })) as never);
 
   await render(<GuidedAddScreen />);
-  await fillIdentity();
   await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
 
   expect(await screen.findByText(ro.pwa.analysis.title)).toBeTruthy();
@@ -241,14 +235,13 @@ test('shows >55 s pending message on front photo without retry, then advances to
 });
 
 test('shows retry guidance and explicit retry after a pending front identify rejects', async () => {
-  mockParams.value = { code: '4840001000014' };
+  mockParams.value = { code: '4840001000014', flow: 'guided' };
   let rejectLate!: (err: unknown) => void;
   jest.mocked(api.identifyOutcome)
     .mockResolvedValueOnce(pendingOutcome(new Promise((_r, reject) => { rejectLate = reject; })) as never)
     .mockResolvedValueOnce(completed({ status: 'not_found', read: { brand: null, name: null, quantity: null, code: null }, photoPath: 'device/front.jpg' }) as never);
 
   await render(<GuidedAddScreen />);
-  await fillIdentity();
   await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
   expect(await screen.findByText(ro.pwa.analysis.title)).toBeTruthy();
 
@@ -259,9 +252,3 @@ test('shows retry guidance and explicit retry after a pending front identify rej
   await fireEvent.press(screen.getByRole('button', { name: ro.add.retryRead }));
   expect(screen.getByText(ro.add.ingredientsTitle)).toBeTruthy();
 });
-
-async function fillIdentity() {
-  await fireEvent.changeText(await screen.findByLabelText(ro.review.name), 'Pâine');
-  await fireEvent.changeText(screen.getByLabelText(ro.review.quantity), '375 g');
-  await fireEvent.press(screen.getByRole('button', { name: ro.add.next }));
-}

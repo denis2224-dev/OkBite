@@ -93,4 +93,28 @@ describe('detectAllergens', () => {
   ])('classifies declared allergens and traces in %s', (label, allergens, mayContain) => {
     expect(detectAllergens(label)).toEqual({ allergens, mayContain });
   });
+
+  // The legal group name of Annex II pct. 8, which labels use instead of naming each nut.
+  it.each([
+    ['Poate conține urme de fructe cu coajă lemnoasă.', [], ['Fructe cu coajă lemnoasă']],
+    ['Produsul poate conține urme de alte fructe cu coajă lemnoasă. Pentru o conservare corectă', [], ['Fructe cu coajă lemnoasă']],
+    ['Ingrediente: făină, fructe cu coajă lemnoasă (migdale).', ['Fructe cu coajă lemnoasă'], []],
+    // Only Romanian, English, Czech and Russian trace markers are known, so these count as ingredients.
+    ['Ingredienti: farina, frutta a guscio.', ['Fructe cu coajă lemnoasă'], []],
+    ['Ingrédients : farine, fruits à coque.', ['Fructe cu coajă lemnoasă'], []],
+    ['Ingredientes: harina, frutos de cáscara.', ['Fructe cu coajă lemnoasă'], []],
+    ['Zutaten: Mehl, Schalenfrüchte.', ['Fructe cu coajă lemnoasă'], []],
+    ['Zutaten: Mehl, Spuren von Schalenfrüchten.', ['Fructe cu coajă lemnoasă'], []],
+    ['Ingrediente: fructe cu coajă.', ['Fructe cu coajă lemnoasă'], []],
+  ])('finds the tree-nut group name in %s', (label, allergens, mayContain) => {
+    expect(detectAllergens(label)).toEqual({ allergens, mayContain });
+  });
+
+  it.each([
+    'Ingrediente: nucă de cocos, fructe de pădure.',
+    'Ingrediente: fructe uscate, coajă de portocală.',
+    'Ingrediente: fructe fără coajă.',
+  ])('does not flag tree nuts in %s', (label) => {
+    expect(detectAllergens(label)).toEqual({ allergens: [], mayContain: [] });
+  });
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { render, renderHook, act, screen, fireEvent } from '@testing-library/react-native';
+import { render, renderHook, act, screen } from '@testing-library/react-native';
 import { AppState } from 'react-native';
 import { api } from '../../lib/api';
 import { ro } from '../../copy/ro';
@@ -8,6 +8,7 @@ import AddScreen from '../../../app/add/index';
 import { loadUnknownDraft } from '../add/unknownDraft';
 import { GUIDED_ADD_ENABLED, setGuidedAddEnabled } from '../identify/routes';
 import { useScanLookup } from './useScanLookup';
+import { freshLookup as takeFreshLookup, forgetLookup } from '../product/freshLookup';
 import { CODE, PRODUCT_ID, lookupFound, lookupNotFound } from '../capture/__fixtures__/responses';
 
 const mockReplace = jest.fn();
@@ -30,6 +31,7 @@ jest.mock('../add/unknownDraft', () => ({
 
 const lookup = api.lookup as unknown as jest.Mock<(...a: unknown[]) => Promise<unknown>>;
 const offline = Object.assign(new Error('offline'), { code: 'offline' });
+const foundLookup = lookupFound as Extract<typeof lookupFound, { status: 'found' }>;
 
 describe('useScanLookup', () => {
   beforeEach(() => {
@@ -41,12 +43,33 @@ describe('useScanLookup', () => {
     jest.spyOn(AppState, 'addEventListener').mockReturnValue({ remove: jest.fn() });
   });
 
-  it('opens the product for a code that exists', async () => {
+  it('keeps a found product in scan state for the result sheet', async () => {
     lookup.mockResolvedValue(lookupFound);
     const { result } = await renderHook(() => useScanLookup());
     await act(async () => { await result.current.onManualCode(CODE); });
     expect(lookup).toHaveBeenCalledWith({ code: CODE });
-    expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+    expect(result.current.state).toEqual({ status: 'found', product: foundLookup.product, score: foundLookup.score });
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('hands the found result to the product page so it does not look it up again', async () => {
+    lookup.mockResolvedValue(lookupFound);
+    const { result } = await renderHook(() => useScanLookup());
+    await act(async () => { await result.current.onManualCode(CODE); });
+    expect(takeFreshLookup(PRODUCT_ID)).toEqual(lookupFound);
+  });
+
+  it('hands over a fresh result on every scan of the same product', async () => {
+    lookup.mockResolvedValue(lookupFound);
+    const { result } = await renderHook(() => useScanLookup());
+    for (let scan = 1; scan <= 2; scan++) {
+      await act(async () => { await result.current.onManualCode(CODE); });
+      expect(takeFreshLookup(PRODUCT_ID)).toEqual(lookupFound);
+      forgetLookup(PRODUCT_ID); // the product page used it
+      expect(takeFreshLookup(PRODUCT_ID)).toBeUndefined();
+    }
+    expect(lookup).toHaveBeenCalledTimes(2);
+    expect(lookup).toHaveBeenNthCalledWith(2, { code: CODE });
   });
 
   it('sends an unknown code to identify as local state with no photoPath', async () => {
@@ -74,19 +97,15 @@ describe('useScanLookup', () => {
     await render(React.createElement(AddScreen));
     await act(async () => {});
 
-    await fireEvent.changeText(await screen.findByLabelText(ro.review.name), 'Denumire confirmată');
-    await fireEvent.changeText(screen.getByLabelText(ro.review.quantity), '375 g');
-    await fireEvent.press(screen.getByRole('button', { name: ro.add.next }));
+    expect(screen.queryAllByRole('textbox')).toHaveLength(0);
     expect(screen.getByText(ro.add.frontTitle)).toBeTruthy();
     expect(screen.getByText(ro.add.stepOf(1, 4))).toBeTruthy();
   });
 
-  it('asks for manual identity on a direct /add visit before the guided front-photo step', async () => {
+  it('starts a direct /add visit at the guided front-photo step', async () => {
     await render(React.createElement(AddScreen));
     await act(async () => {});
-    await fireEvent.changeText(await screen.findByLabelText(ro.review.name), 'Denumire confirmată');
-    await fireEvent.changeText(screen.getByLabelText(ro.review.quantity), '375 g');
-    await fireEvent.press(screen.getByRole('button', { name: ro.add.next }));
+    expect(screen.queryAllByRole('textbox')).toHaveLength(0);
     expect(screen.getByText(ro.add.frontTitle)).toBeTruthy();
   });
 
@@ -133,7 +152,7 @@ describe('useScanLookup', () => {
     expect(mockEnqueue).toHaveBeenCalledTimes(1);
     await act(async () => { await result.current.retry(); });
     expect(lookup).toHaveBeenCalledTimes(2);
-    expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+    expect(result.current.state).toEqual({ status: 'found', product: foundLookup.product, score: foundLookup.score });
   });
 
   it('resumes camera scanning after dismissing an error, and still accepts a manual code while failed', async () => {
@@ -152,7 +171,16 @@ describe('useScanLookup', () => {
     const { result } = await renderHook(() => useScanLookup());
     await act(async () => { await result.current.onCameraCode(CODE); });
     await act(async () => { await result.current.onManualCode(CODE); });
-    expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+    expect(result.current.state).toEqual({ status: 'found', product: foundLookup.product, score: foundLookup.score });
+  });
+  it('resumes after dismissing a result without immediately re-looking up the same camera code', async () => {
+    lookup.mockResolvedValue(lookupFound);
+    const { result } = await renderHook(() => useScanLookup());
+    await act(async () => { await result.current.onCameraCode(CODE); });
+    await act(async () => { result.current.dismiss(); });
+    await act(async () => { await result.current.onCameraCode(CODE); });
+    expect(result.current.state).toEqual({ status: 'idle' });
+    expect(lookup).toHaveBeenCalledTimes(1);
   });
   it('retries a failed durable write, then avoids duplicate queued codes on later retries', async () => {
     lookup.mockRejectedValue(offline);
@@ -170,6 +198,6 @@ describe('useScanLookup', () => {
     await act(async () => { await result.current.onManualCode(CODE); });
     expect(result.current.state).toEqual({ status: 'error', code: undefined });
     await act(async () => { await result.current.retry(); });
-    expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+    expect(result.current.state).toEqual({ status: 'found', product: foundLookup.product, score: foundLookup.score });
   });
 });

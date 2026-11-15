@@ -24,7 +24,7 @@ test.describe('N9 five-tab redesign acceptance', () => {
     });
   }
 
-  for (const [row, heading] of [['Setări', 'Setări'], ['Despre', 'Despre']]) {
+  for (const [row, heading] of [['Setări', 'Setări'], ['Despre', 'Despre OkBite']]) {
     test(`Profil → ${row} row opens ${heading} with no tab selected`, async ({ page }) => {
       await page.goto('/');
       await page.getByRole('tab', { name: 'Profil', exact: true }).click();

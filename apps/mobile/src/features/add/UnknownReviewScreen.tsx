@@ -74,6 +74,8 @@ export function UnknownReviewScreen() {
       ...draft,
       initial: {
         ...draft.initial,
+        ...(proposal.name !== (draft.initial.name ?? '') || proposal.quantity !== (draft.initial.quantity ?? '')
+          ? { identityConfirmed: true as const } : {}),
         name: proposal.name || null,
         brand: proposal.brand || null,
         quantity: proposal.quantity || null,
@@ -109,7 +111,7 @@ export function UnknownReviewScreen() {
 
   const handleManualRetake = async (identity: AddInitialValues) => {
     const token = activity.start();
-    const updated = { ...draft, initial: { ...draft.initial, ...identity } };
+    const updated: UnknownDraftSnapshot = { ...draft, initial: { ...draft.initial, ...identity, identityConfirmed: true } };
     if (!await saveUnknownDraftIfCurrent(updated)) throw new Error('stale_draft');
     if (!activity.isCurrent(token)) return;
     setDraft(updated);

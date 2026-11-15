@@ -5,10 +5,10 @@ import { useTheme } from '../../theme/useTheme';
 import { fonts } from '../../theme/tokens';
 import { ScanIcon, type ScanIconName } from './ScanIcon';
 
-type Props = { torch: boolean; onTorch?: () => void; manual: boolean; onManual: () => void };
+type Props = { torch: boolean; onTorch?: () => void };
 
-/** okBite wordmark with the flash and manual-entry buttons; `onTorch` is omitted where flash is unsupported. */
-export function ScanHeader({ torch, onTorch, manual, onManual }: Props) {
+/** okBite wordmark with the flash button; `onTorch` is omitted where flash is unsupported. Manual entry lives under the scanner. */
+export function ScanHeader({ torch, onTorch }: Props) {
   const { colors } = useTheme();
   const brand = ro.home.design.brand;
   const button = (icon: ScanIconName, label: string, on: boolean, onPress: () => void, state: object) =>
@@ -22,7 +22,6 @@ export function ScanHeader({ torch, onTorch, manual, onManual }: Props) {
     </Text>
     <View style={styles.actions}>
       {onTorch ? button('flash', torch ? ro.scan.flashOff : ro.scan.flashOn, torch, onTorch, {}) : null}
-      {button('keyboard', ro.scan.manual, manual, onManual, { expanded: manual })}
     </View>
   </View>;
 }
