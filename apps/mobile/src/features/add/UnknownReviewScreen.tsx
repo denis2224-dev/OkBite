@@ -74,7 +74,8 @@ export function UnknownReviewScreen() {
       ...draft,
       initial: {
         ...draft.initial,
-        identityConfirmed: true,
+        ...(proposal.name !== (draft.initial.name ?? '') || proposal.quantity !== (draft.initial.quantity ?? '')
+          ? { identityConfirmed: true as const } : {}),
         name: proposal.name || null,
         brand: proposal.brand || null,
         quantity: proposal.quantity || null,

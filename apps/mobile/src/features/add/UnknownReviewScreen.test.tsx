@@ -168,6 +168,15 @@ test('per-photo retake navigates to /add with retake kind while keeping draft ed
   });
 });
 
+test('editing label text leaves photo-derived identity available for a front retake', async () => {
+  await render(<UnknownReviewScreen />);
+  await act(async () => {});
+  await fireEvent.press(screen.getByRole('button', { name: ro.review.ingredients }));
+  await fireEvent.changeText(screen.getByLabelText(ro.review.ingredients), 'lapte, sare');
+  const saved = jest.mocked(saveUnknownDraftIfCurrent).mock.calls.at(-1)![0];
+  expect(saved.initial.identityConfirmed).toBeUndefined();
+});
+
 test('manual fallback persists edited identity before retaking ingredients', async () => {
   jest.mocked(loadUnknownDraft).mockResolvedValueOnce({ ...storedDraft,
     label: { ...storedDraft.label!, ingredientsText: null, unclear: ['ingredientsText'],
