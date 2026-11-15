@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { StatusPanel } from '../capture/StatusPanel';
@@ -23,25 +23,35 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
   const queueId = typeof rawParams.queueId === 'string' ? rawParams.queueId : undefined;
   const frontPhotoId = typeof rawParams.frontPhotoId === 'string' ? rawParams.frontPhotoId : undefined;
   const unknownDraftId = typeof rawParams.unknownDraftId === 'string' ? rawParams.unknownDraftId : undefined;
-  const restartMissingDraft = state.kind === 'invalid' && rawParams.source === 'photo' && Boolean(unknownDraftId?.trim());
+  const identifyDraftId = typeof rawParams.identifyDraftId === 'string' ? rawParams.identifyDraftId : unknownDraftId;
+  const restartMissingDraft = state.kind === 'invalid' && rawParams.source === 'photo' && Boolean(identifyDraftId?.trim());
   const selected = useRef<string | null>(null);
   const finishing = useRef(false);
   const adding = useRef(false);
   const pendingAdd = useRef<{ read: FrontRead; photoPath: string | null } | null>(null);
   const [cleanupPending, setCleanupPending] = useState(false);
   const [addFailed, setAddFailed] = useState(false);
+  const cleanupSnapshot = useRef<{ id: string; photos: Set<string>; queueOwned: boolean } | null>(null);
+  const queueResolved = useRef(false);
   const leave = activity.leave;
+  useFocusEffect(useCallback(() => () => {
+    if (identifyDraftId) clearIdentifyDraft(identifyDraftId);
+  }, [identifyDraftId]));
   const navigate = (href: Parameters<typeof router.replace>[0]) => {
     router.replace(href);
-    if (unknownDraftId) clearIdentifyDraft(unknownDraftId);
+    if (identifyDraftId) clearIdentifyDraft(identifyDraftId);
     activity.leave();
   };
   useEffect(() => {
-    if (restartMissingDraft && unknownDraftId) {
-      router.replace({ pathname: '/add', params: { unknownDraftId, retake: 'front' } });
+    if (restartMissingDraft && identifyDraftId) {
+      const destination = unknownDraftId
+        ? { pathname: '/add' as const, params: { unknownDraftId, retake: 'front' } }
+        : queueId ? '/offline' as const : '/capture' as const;
+      router.replace(destination);
+      clearIdentifyDraft(identifyDraftId);
       leave();
     }
-  }, [leave, restartMissingDraft, router, unknownDraftId]);
+  }, [identifyDraftId, leave, queueId, restartMissingDraft, router, unknownDraftId]);
   const openAdd = async (read: FrontRead, photoPath: string | null) => {
     const guided = isGuidedAddEnabled();
     if (!guided && !frontPhotoId && !unknownDraftId) {
@@ -79,19 +89,38 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
     finishing.current = true;
     const token = activity.start();
     try {
-      if (queueId) await resolveQueued(queueId);
+      if (queueId && !queueResolved.current) {
+        await resolveQueued(queueId);
+        queueResolved.current = true;
+      }
       if (unknownDraftId) {
-        const draft = await loadUnknownDraft();
+        if (cleanupSnapshot.current?.id !== unknownDraftId) {
+          const draft = await loadUnknownDraft();
+          if (draft?.id === unknownDraftId) cleanupSnapshot.current = {
+            id: draft.id,
+            photos: new Set(Object.values(draft.photos).filter((id): id is string => Boolean(id))),
+            queueOwned: Boolean(draft.initial.queueId || queueId),
+          };
+        }
         await clearUnknownDraft(unknownDraftId);
-        if (draft?.id === unknownDraftId && !draft.initial.queueId) {
+        const cleanup = cleanupSnapshot.current;
+        if (cleanup?.id === unknownDraftId && !cleanup.queueOwned) {
           const newer = await loadUnknownDraft();
           const protectedIds = new Set(Object.values(newer?.photos ?? {}));
-          for (const id of new Set(Object.values(draft.photos))) {
-            if (id && !protectedIds.has(id)) await removePhoto(id).catch(() => {});
+          for (const id of cleanup.photos) {
+            if (protectedIds.has(id)) cleanup.photos.delete(id);
+            else {
+              await removePhoto(id);
+              cleanup.photos.delete(id);
+            }
           }
         }
+        cleanupSnapshot.current = null;
       }
-      if (activity.isCurrent(token)) navigate(productRoute(selected.current));
+      if (activity.isCurrent(token)) {
+        setCleanupPending(false);
+        navigate(productRoute(selected.current));
+      }
     } catch { if (activity.isCurrent(token)) setCleanupPending(true); }
     finally { finishing.current = false; }
   };
