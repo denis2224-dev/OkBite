@@ -32,16 +32,10 @@ async function photo(page: Page) {
   await page.getByRole('button', { name: ro.add.gallery, exact: true }).click();
   await (await chooser).setFiles('apps/mobile/public/icon-192.png');
 }
-async function fillIdentity(page: Page) {
-  await page.getByRole('textbox', { name: ro.review.name, exact: true }).fill(example.product.name);
-  await page.getByRole('textbox', { name: ro.review.quantity, exact: true }).fill(example.product.quantity);
-  await page.getByRole('button', { name: ro.add.next, exact: true }).click();
-}
 async function begin(page: Page) {
   await page.goto(`/identify?source=code&code=${example.product.code}`);
   await page.waitForFunction(() => !!navigator.serviceWorker.controller);
   await page.getByRole('button', { name: ro.identify.addButton, exact: true }).click();
-  await fillIdentity(page);
   await expect(page.getByRole('heading', { name: ro.add.frontTitle, exact: true })).toBeVisible();
   await expect(page.getByText(ro.add.nutritionQuestion, { exact: true })).toHaveCount(0);
   await photo(page);
@@ -97,7 +91,6 @@ test('readable separate table retains label values and shows a score', async ({ 
 test('direct add uses variant 1 and saves an unbranded partial table without optional warnings', async ({ page, session }) => {
   await session.configure('partial-unbranded');
   await page.goto('/add');
-  await fillIdentity(page);
   await expect(page.getByRole('heading', { name: ro.add.frontTitle, exact: true })).toBeVisible();
   await expect(page.getByText(ro.add.nutritionQuestion, { exact: true })).toHaveCount(0);
   await photo(page);
@@ -121,11 +114,70 @@ test('direct add uses variant 1 and saves an unbranded partial table without opt
   expect(add.body).not.toHaveProperty('categorySlug');
 });
 
+test('direct guided barcode add starts at the front photo and keeps read identity through review', async ({ page, session }) => {
+  await page.goto('/add?code=2000000000008&flow=guided');
+  await expect(page.getByRole('heading', { name: ro.add.frontTitle, exact: true })).toBeVisible();
+  await expect(page.getByText(ro.add.stepOf(1, 4), { exact: true })).toBeVisible();
+  await expect(page.getByRole('textbox')).toHaveCount(0);
+  await photo(page);
+  await expect(page.getByRole('heading', { name: ro.add.ingredientsTitle, exact: true })).toBeVisible();
+  await expect(page.getByText(ro.add.stepOf(2, 4), { exact: true })).toBeVisible();
+  await photo(page);
+  await page.getByRole('button', { name: ro.add.nutritionYes, exact: true }).click();
+  await expect(page.getByRole('heading', { name: ro.add.nutritionTitle, exact: true })).toBeVisible();
+  await expect(page.getByText(ro.add.stepOf(3, 4), { exact: true })).toBeVisible();
+  await photo(page);
+  await expect(page.getByRole('heading', { name: ro.add.confirmTitle, exact: true })).toBeVisible();
+  await expect(page.getByText(ro.add.stepOf(4, 4), { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: ro.review.name, exact: true })).toContainText(example.product.name);
+  await expect(page.getByRole('button', { name: ro.review.brand, exact: true })).toContainText(example.product.brand);
+  await expect(page.getByRole('button', { name: ro.review.quantity, exact: true })).toContainText(example.product.quantity);
+  expect((await session.state()).calls.filter(call => call.name === 'identify')).toHaveLength(1);
+});
+
+test('guided front identification keeps candidate data out of the URL and restarts at front after reload', async ({ page, session }) => {
+  await session.configure('candidates');
+  await page.goto('/add?flow=guided');
+  await expect(page.getByText(ro.add.stepOf(1, 4), { exact: true })).toBeVisible();
+  await photo(page);
+  await expect(page.getByRole('heading', { name: ro.identify.pickTitle, exact: true })).toBeVisible();
+  await expect(page.getByText(example.product.name, { exact: true })).toBeVisible();
+  const route = new URL(page.url());
+  expect([...route.searchParams.keys()].sort()).toEqual(['frontPhotoId', 'source', 'unknownDraftId']);
+  expect(route.searchParams.get('source')).toBe('photo');
+  expect(page.url()).not.toMatch(/payload|candidates|uploads%2Fprivate|front\.jpg/);
+
+  await page.getByRole('button', { name: ro.identify.noneOfThem, exact: true }).click();
+  await expect(page.getByRole('heading', { name: ro.add.ingredientsTitle, exact: true })).toBeVisible();
+  await expect(page.getByText(ro.add.stepOf(2, 4), { exact: true })).toBeVisible();
+  await page.goto(`/add?unknownDraftId=${route.searchParams.get('unknownDraftId')}&retake=front`);
+  await expect(page.getByRole('heading', { name: ro.add.frontTitle, exact: true })).toBeVisible();
+  await photo(page);
+  await expect(page.getByRole('heading', { name: ro.identify.pickTitle, exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page).toHaveURL(/\/add\?/);
+  await expect(page.getByRole('heading', { name: ro.add.frontTitle, exact: true })).toBeVisible();
+  await expect(page.getByText(ro.add.stepOf(1, 4), { exact: true })).toBeVisible();
+});
+
+test('capture identification keeps its response out of the URL and recovers after reload', async ({ page, session }) => {
+  await session.configure('candidates');
+  await page.goto('/capture');
+  await photo(page);
+  await expect(page.getByRole('heading', { name: ro.identify.pickTitle, exact: true })).toBeVisible();
+  const url = new URL(page.url());
+  expect(url.searchParams.get('identifyDraftId')).toBeTruthy();
+  expect([...url.searchParams.keys()].every(key => ['source', 'frontPhotoId', 'identifyDraftId'].includes(key))).toBe(true);
+  expect(url.searchParams.has('payload')).toBe(false);
+  await page.reload();
+  await expect(page).toHaveURL(/\/capture$/);
+  await expect(page.getByRole('button', { name: ro.capture.gallery, exact: true })).toBeVisible();
+});
+
 test('discarding a different product draft starts a usable front-photo step', async ({ page, session }) => {
   await begin(page); await review(page, ro.add.nutritionNone);
   await page.goto('/add?code=96385074');
   await page.getByRole('button', { name: ro.add.discardDraft, exact: true }).click();
-  await fillIdentity(page);
   await expect(page.getByRole('heading', { name: ro.add.frontTitle, exact: true })).toBeVisible();
   await photo(page);
   await expect(page.getByRole('heading', { name: ro.add.ingredientsTitle, exact: true })).toBeVisible();

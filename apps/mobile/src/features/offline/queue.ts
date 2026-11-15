@@ -7,6 +7,7 @@ import { keepPhoto, readPhoto, removePhoto, openPhoto } from './photos';
 import { MissingPhotoError } from './photo_errors';
 import { notifyQueue } from './events';
 import { withQueueLock } from './queueLock';
+import { identifyPhotoRoute, type IdentifyPayload } from '../identify/routes';
 export { subscribeQueue } from './events';
 
 export type QueueResult = { item: Pick<QueuedItem, 'id' | 'kind' | 'payload'>; result: LookupResponse | IdentifyResponse };
@@ -198,7 +199,7 @@ export async function resumeQueuedItem(input: Pick<QueuedItem, 'id' | 'kind' | '
   if (existing?.outcome) {
     return { kind: 'identify', pathname: '/identify', params: existing.kind === 'code'
       ? { source: 'code', code: existing.payload, queueId: existing.id }
-      : { source: 'photo', payload: JSON.stringify(existing.outcome), queueId: existing.id } };
+      : identifyPhotoRoute(existing.outcome as IdentifyPayload, undefined, undefined, existing.id).params };
   }
   if (running) await running;
   return withQueueLock(async (): Promise<ResumeResult> => {
@@ -229,7 +230,7 @@ export async function resumeQueuedItem(input: Pick<QueuedItem, 'id' | 'kind' | '
     // Opening review is not a decision: retain the result/photo through app restart.
     return { kind: 'identify', pathname: '/identify', params: item.kind === 'code'
       ? { source: 'code', code: item.payload, queueId: item.id }
-      : { source: 'photo', payload: JSON.stringify(result), queueId: item.id } };
+      : identifyPhotoRoute(result as IdentifyPayload, undefined, undefined, item.id).params };
   });
 }
 export async function listUnresolvedQueued(): Promise<QueuedItem[]> { return listQueued(); }

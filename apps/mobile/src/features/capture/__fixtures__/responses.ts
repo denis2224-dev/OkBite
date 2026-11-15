@@ -19,9 +19,9 @@ const read = { brand: 'Zorel', name: 'Iaurt cu căpșuni', quantity: '400 g', co
 
 export const lookupFound: LookupResponse = { status: 'found', product, score };
 export const lookupNotFound: LookupResponse = { status: 'not_found' };
-export const identifyFound: IdentifyResponse = { status: 'found', product, score, photoPath: 'uploads/dev/a.jpg' };
-export const identifyCandidates: IdentifyResponse = {
+export const identifyFound: Extract<IdentifyResponse, { status: 'found' }> = { status: 'found', product, score, photoPath: 'uploads/dev/a.jpg' };
+export const identifyCandidates: Extract<IdentifyResponse, { status: 'candidates' }> = {
   status: 'candidates', photoPath: 'uploads/dev/a.jpg', read,
   candidates: [{ id: PRODUCT_ID, name: product.name, brand: 'Zorel', quantity: '400 g', imageUrl: null, similarity: 0.71 }],
 };
-export const identifyNotFound: IdentifyResponse = { status: 'not_found', photoPath: 'uploads/dev/a.jpg', read };
+export const identifyNotFound: Extract<IdentifyResponse, { status: 'not_found' }> = { status: 'not_found', photoPath: 'uploads/dev/a.jpg', read };

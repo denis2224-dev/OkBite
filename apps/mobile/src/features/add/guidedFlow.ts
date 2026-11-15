@@ -1,19 +1,17 @@
-import { AddProductRequest, IdentifyRequest, IdentifyResponse } from '@okbite/shared';
+import { IdentifyRequest, IdentifyResponse } from '@okbite/shared';
 import { NutritionMode, type GuidedReadLabelResponse } from './unknownFlowContract';
 import { hasUnreadableNutrition, ingredientsOnly, prepareGuidedPhoto, readGuidedLabel, validateBody } from './guidedReading';
 import type { GuidedFlowDependencies, GuidedFlowInitial, GuidedFlowState, GuidedPhotoKind } from './guidedFlowTypes';
 export type { GuidedFlowState, GuidedFlowDependencies, GuidedFlowInitial, GuidedPhotoKind } from './guidedFlowTypes';
 
-const identityFields = AddProductRequest.pick({ name: true, quantity: true });
-
 export function createGuidedFlow(initial: GuidedFlowInitial, deps: GuidedFlowDependencies, restored?: GuidedFlowState) {
   let state: GuidedFlowState = {
-    stage: 'identity', initial: { ...initial },
+    stage: initial.photoPath ? 'ingredients' : 'front', initial: { ...initial },
     initialFrontRead: { brand: initial.brand, name: initial.name, quantity: initial.quantity, code: initial.code },
     scannedCode: initial.code, remotePhotoPath: initial.photoPath,
     photos: { front: initial.frontPhotoId ?? null, ingredients: null, nutrition: null }, nutritionMode: null, label: null,
   };
-  if (restored) state = { ...restored, stage: restored.stage === 'working' ? 'interrupted' : restored.stage };
+  if (restored) state = { ...restored, stage: restored.stage === 'identity' ? (restored.remotePhotoPath ? 'ingredients' : 'front') : restored.stage === 'working' ? 'interrupted' : restored.stage };
   const listeners = new Set<(snapshot: GuidedFlowState) => void>();
   let busy = false;
   let cancelled = false;
@@ -35,22 +33,6 @@ export function createGuidedFlow(initial: GuidedFlowInitial, deps: GuidedFlowDep
         const candidate = error as { code?: string; message?: string };
         set({ stage: 'error', error: candidate.code ?? candidate.message ?? 'failed' });
       }
-    } finally { busy = false; }
-  }
-  async function confirmIdentity(name: string, quantity: string) {
-    if (busy || cancelled || state.stage !== 'identity') return;
-    const identity = identityFields.safeParse({ name: name.trim(), quantity: quantity.trim() });
-    if (!identity.success || !identity.data.quantity) return;
-    const next: GuidedFlowState = {
-      ...state,
-      stage: state.remotePhotoPath ? 'ingredients' : 'front',
-      initial: { ...state.initial, ...identity.data, identityConfirmed: true },
-      initialFrontRead: { ...state.initialFrontRead, ...identity.data },
-    };
-    busy = true;
-    try {
-      await deps.persist?.(next);
-      if (active()) set(next);
     } finally { busy = false; }
   }
   async function review(manual = false) {
@@ -90,9 +72,9 @@ export function createGuidedFlow(initial: GuidedFlowInitial, deps: GuidedFlowDep
       name: identityConfirmed ? name : read.name ?? name,
       quantity: identityConfirmed ? quantity : read.quantity ?? quantity, code: state.scannedCode ?? read.code,
       photoPath: response.photoPath, frontPhotoId: state.photos.front! };
-    const returnToReview = Boolean(state.label && identityConfirmed);
+    const returnToReview = Boolean(state.label);
     set({ initial: nextInitial, initialFrontRead: { brand: nextInitial.brand, name: nextInitial.name, quantity: nextInitial.quantity, code: nextInitial.code }, remotePhotoPath: response.photoPath,
-      stage: returnToReview || (response.status === 'not_found' && state.label) ? 'review' : response.status === 'not_found' ? 'ingredients' : 'interrupted' });
+      stage: returnToReview ? 'review' : response.status === 'found' ? 'interrupted' : 'ingredients' });
     await persist();
     if (!active()) return;
     if (returnToReview) await review();
@@ -125,7 +107,6 @@ export function createGuidedFlow(initial: GuidedFlowInitial, deps: GuidedFlowDep
   return {
     getState: () => state,
     subscribe(listener: (snapshot: GuidedFlowState) => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
-    confirmIdentity,
     capturePhoto,
     async enterLabelManually() {
       if (busy || cancelled || state.stage !== 'label_failed' || !state.label) return;
