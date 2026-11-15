@@ -211,4 +211,3 @@ test('provider failure preserves durable photos and allows manual review without
     stage: 'review', photos: expect.objectContaining({ ingredients: 'kept:captured-photo' }),
   }));
 });
-
