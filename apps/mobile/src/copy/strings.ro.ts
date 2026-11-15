@@ -89,6 +89,7 @@ insufficientData:'Date insuficiente',title:'Analiza produsului',allergens:'Alerg
   analysis: {
    title: 'Rezultatul nu este încă confirmat',
    unknown: 'Durează prea mult. Rezultatul nu e încă confirmat.',
+   retry: 'O nouă încercare poate porni o nouă procesare. Reîncearcă doar când ești pregătit.',
   },
  },
 } as const;
