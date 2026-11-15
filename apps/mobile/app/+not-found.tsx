@@ -6,7 +6,7 @@ export default function NotFoundScreen() {
   return (
     <Screen title={ro.app.routeNotFound.title} back={false}>
       <Body>{ro.app.routeNotFound.description}</Body>
-      <Button onPress={() => router.replace('/')}>{ro.app.routeNotFound.scanButton}</Button>
+      <Button onPress={() => router.replace('/scan')}>{ro.app.routeNotFound.scanButton}</Button>
     </Screen>
   );
 }

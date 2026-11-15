@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import { roStrings } from '../apps/mobile/src/copy/strings.ro';
+import { en } from '../apps/mobile/src/copy/strings.en';
 
 const notFound = {
   ro: {
@@ -42,7 +44,7 @@ for (const language of ['ro', 'en'] as const) {
     await expect(page.getByRole('heading', { name: copy.title, exact: true })).toBeVisible();
     await expect(page.getByText(copy.description, { exact: true })).toBeVisible();
     await page.getByRole('button', { name: copy.scan, exact: true }).click();
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/scan$/);
   });
 }
 
@@ -54,11 +56,25 @@ test('/_sitemap does not enumerate application routes or admin', async ({ page }
   await expect(page.getByText(/\badmin\b/i)).toHaveCount(0);
 });
 
-test('unknown product shows not-found actions instead of a bad-request message', async ({ page }) => {
+for (const language of ['ro', 'en'] as const) {
+  test(`${language}: unknown product shows not-found actions instead of a bad-request message`, async ({ page }) => {
+    await ready(page, language);
+    const copy = language === 'ro' ? roStrings : en;
+    await page.goto('/product/does-not-exist');
+    await expect(page.getByText(copy.errors.not_found, { exact: true })).toBeVisible();
+    await expect(page.getByText(copy.errors.bad_request, { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: copy.scan.title, exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: copy.offline.history, exact: true })).toBeVisible();
+  });
+}
+
+test('a missing cached-only product offers recovery without a backend lookup', async ({ page }) => {
   await ready(page);
-  await page.goto('/product/does-not-exist');
-  await expect(page.getByText('Produsul nu a fost găsit.', { exact: true })).toBeVisible();
-  await expect(page.getByText('Verifică datele introduse.', { exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Scanează codul de bare', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Deschide istoricul', exact: true })).toBeVisible();
+  let lookups = 0;
+  page.on('request', request => { if (request.url().includes('/functions/v1/lookup')) lookups++; });
+  await page.goto('/product/00000000-0000-4000-8000-000000000002?cached=1');
+  await expect(page.getByText(roStrings.errors.not_found, { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: roStrings.scan.title, exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: roStrings.offline.history, exact: true })).toBeVisible();
+  expect(lookups).toBe(0);
 });

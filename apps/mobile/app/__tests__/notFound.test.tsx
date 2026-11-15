@@ -12,5 +12,5 @@ it('shows the localized recovery action and returns to Scan', async () => {
   expect(ui.getByText(ro.app.routeNotFound.title)).toBeTruthy();
   expect(ui.getByText(ro.app.routeNotFound.description)).toBeTruthy();
   await fireEvent.press(ui.getByRole('button', { name: ro.app.routeNotFound.scanButton }));
-  expect(router.replace).toHaveBeenCalledWith('/');
+  expect(router.replace).toHaveBeenCalledWith('/scan');
 });
