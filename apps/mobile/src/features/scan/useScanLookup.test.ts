@@ -31,6 +31,7 @@ jest.mock('../add/unknownDraft', () => ({
 
 const lookup = api.lookup as unknown as jest.Mock<(...a: unknown[]) => Promise<unknown>>;
 const offline = Object.assign(new Error('offline'), { code: 'offline' });
+const foundLookup = lookupFound as Extract<typeof lookupFound, { status: 'found' }>;
 
 describe('useScanLookup', () => {
   beforeEach(() => {
@@ -42,12 +43,13 @@ describe('useScanLookup', () => {
     jest.spyOn(AppState, 'addEventListener').mockReturnValue({ remove: jest.fn() });
   });
 
-  it('opens the product for a code that exists', async () => {
+  it('keeps a found product in scan state for the result sheet', async () => {
     lookup.mockResolvedValue(lookupFound);
     const { result } = await renderHook(() => useScanLookup());
     await act(async () => { await result.current.onManualCode(CODE); });
     expect(lookup).toHaveBeenCalledWith({ code: CODE });
-    expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+    expect(result.current.state).toEqual({ status: 'found', product: foundLookup.product, score: foundLookup.score });
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 
   it('hands the found result to the product page so it does not look it up again', async () => {
@@ -154,7 +156,7 @@ describe('useScanLookup', () => {
     expect(mockEnqueue).toHaveBeenCalledTimes(1);
     await act(async () => { await result.current.retry(); });
     expect(lookup).toHaveBeenCalledTimes(2);
-    expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+    expect(result.current.state).toEqual({ status: 'found', product: foundLookup.product, score: foundLookup.score });
   });
 
   it('resumes camera scanning after dismissing an error, and still accepts a manual code while failed', async () => {
@@ -173,7 +175,16 @@ describe('useScanLookup', () => {
     const { result } = await renderHook(() => useScanLookup());
     await act(async () => { await result.current.onCameraCode(CODE); });
     await act(async () => { await result.current.onManualCode(CODE); });
-    expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+    expect(result.current.state).toEqual({ status: 'found', product: foundLookup.product, score: foundLookup.score });
+  });
+  it('resumes after dismissing a result without immediately re-looking up the same camera code', async () => {
+    lookup.mockResolvedValue(lookupFound);
+    const { result } = await renderHook(() => useScanLookup());
+    await act(async () => { await result.current.onCameraCode(CODE); });
+    await act(async () => { result.current.dismiss(); });
+    await act(async () => { await result.current.onCameraCode(CODE); });
+    expect(result.current.state).toEqual({ status: 'idle' });
+    expect(lookup).toHaveBeenCalledTimes(1);
   });
   it('retries a failed durable write, then avoids duplicate queued codes on later retries', async () => {
     lookup.mockRejectedValue(offline);
@@ -191,6 +202,6 @@ describe('useScanLookup', () => {
     await act(async () => { await result.current.onManualCode(CODE); });
     expect(result.current.state).toEqual({ status: 'error', code: undefined });
     await act(async () => { await result.current.retry(); });
-    expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+    expect(result.current.state).toEqual({ status: 'found', product: foundLookup.product, score: foundLookup.score });
   });
 });

@@ -1,9 +1,9 @@
 import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { normalizeCode } from '@okbite/shared';
+import { normalizeCode, type Product, type ScoreResult } from '@okbite/shared';
 import { api } from '../../lib/api';
 import { enqueue } from '../offline/queue';
-import { addProductRoute, identifyCodeRoute, isGuidedAddEnabled, productRoute } from '../identify/routes';
+import { addProductRoute, identifyCodeRoute, isGuidedAddEnabled } from '../identify/routes';
 import { useScreenActivity } from '../capture/useScreenActivity';
 import { rememberLookup } from '../product/freshLookup';
 import { preloadProductPage } from './preloadProductPage';
@@ -11,6 +11,7 @@ import { preloadProductPage } from './preloadProductPage';
 export type ScanState =
   | { status: 'idle' }
   | { status: 'working' }
+  | { status: 'found'; product: Product; score: ScoreResult }
   | { status: 'offline' }
   | { status: 'error'; code?: string };
 
@@ -22,6 +23,7 @@ export function useScanLookup(onCameraAccept?: () => void) {
   const [state, setState] = useState<ScanState>(IDLE);
   const busy = useRef(false);
   const failed = useRef(false);
+  const dismissedCode = useRef<string | null>(null);
   const lastCode = useRef<string | null>(null);
   const enqueuedCode = useRef<string | null>(null);
   // Only the screen that started a lookup, still focused, may act on its answer.
@@ -42,19 +44,21 @@ export function useScanLookup(onCameraAccept?: () => void) {
         const res = await api.lookup({ code });
         enqueuedCode.current = null;
         if (!activity.isCurrent(token)) return;
-        setState(IDLE);
-        if (res.status === 'found') rememberLookup(res);
-        router.replace(
-          res.status === 'found'
-            ? productRoute(res.product.id)
-            : isGuidedAddEnabled()
+        if (res.status === 'found') {
+          rememberLookup(res);
+          setState({ status: 'found', product: res.product, score: res.score });
+        } else {
+          setState(IDLE);
+          router.replace(
+            isGuidedAddEnabled()
               ? addProductRoute({
                   read: { brand: null, name: null, quantity: null, code },
                   photoPath: null,
                   flow: 'guided',
                 })
               : identifyCodeRoute(code),
-        );
+          );
+        }
       } catch (err) {
         // Latch only a failure the screen shows; a stale one would silently block the camera on return.
         if (activity.isCurrent(token)) failed.current = true;
@@ -81,7 +85,8 @@ export function useScanLookup(onCameraAccept?: () => void) {
   const onCameraCode = useCallback(
     (raw: string) => {
       const code = normalizeCode(raw);
-      if (!code || busy.current || failed.current) return;
+      if (!code || busy.current || failed.current || code === dismissedCode.current) return;
+      dismissedCode.current = null;
       onCameraAccept?.();
       return lookup(code);
     },
@@ -102,9 +107,10 @@ export function useScanLookup(onCameraAccept?: () => void) {
 
   const dismiss = useCallback(() => {
     if (busy.current) return;
+    if (state.status === 'found') dismissedCode.current = lastCode.current;
     failed.current = false;
     setState(IDLE);
-  }, []);
+  }, [state.status]);
 
   return { state, onCameraCode, onManualCode, retry, dismiss };
 }
