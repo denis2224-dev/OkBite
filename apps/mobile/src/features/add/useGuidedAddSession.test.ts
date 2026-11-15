@@ -5,6 +5,7 @@ import { requestUnknownFlow } from './unknownFlowTransport';
 import { api } from '../../lib/api';
 import { NUTRIENT_KEYS } from '@okbite/shared';
 import { removePhoto } from '../offline/photos';
+import { getIdentifyDraft } from './draftStore';
 const mockReplace = jest.fn();
 let mockDelayFocus = false;
 let mockFocus: (() => void | (() => void)) | undefined;
@@ -150,9 +151,8 @@ test('sends front photo for barcode-only entry and shows identify candidates whi
   expect(api.identifyOutcome).toHaveBeenCalledTimes(1);
   expect(mockReplace).toHaveBeenCalledWith(expect.objectContaining({
     pathname: '/identify',
-    params: expect.objectContaining({
-      source: 'photo',
-      payload: expect.stringContaining('4840001000014'),
-    }),
+    params: { source: 'photo', frontPhotoId: 'kept-front-shot', unknownDraftId: 'draft-id' },
   }));
+  expect(getIdentifyDraft('draft-id')).toMatchObject({ read: { code: '4840001000014' } });
+  expect(getIdentifyDraft('another-draft')).toBeUndefined();
 });

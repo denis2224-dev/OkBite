@@ -4,10 +4,11 @@ import {
   type Candidate,
   type FrontRead,
 } from '@okbite/shared';
+import { getIdentifyDraft } from '../add/draftStore';
 
 /**
  * Navigation contract between capture/scan (B2), identify (B3) and add (B7).
- * - `source: 'photo'` carries a real IdentifyResponse (never `found`) as JSON in `payload`.
+ * - `source: 'photo'` carries a real IdentifyResponse (never `found`) as JSON, or an in-memory draft ID.
  * - `source: 'code'` means a barcode lookup returned not_found: there is no photo and no photoPath.
  */
 export type IdentifyPayload = Exclude<IdentifyResponse, { status: 'found' }>;
@@ -53,14 +54,19 @@ const CONFIDENT_SIMILARITY = 0.6;
 
 export const productRoute = (id: string) => `/product/${id}` as const;
 
-export const identifyPhotoRoute = (response: IdentifyPayload, frontPhotoId?: string) => {
+export const identifyPhotoRoute = (
+  response: IdentifyPayload,
+  frontPhotoId?: string,
+  unknownDraftId?: string,
+) => {
   const cleanFrontPhotoId = cleanParam(frontPhotoId);
+  const cleanUnknownDraftId = cleanParam(unknownDraftId);
   return {
     pathname: '/identify' as const,
     params: {
       source: 'photo' as const,
-      payload: JSON.stringify(response),
       ...(cleanFrontPhotoId ? { frontPhotoId: cleanFrontPhotoId } : {}),
+      ...(cleanUnknownDraftId ? { unknownDraftId: cleanUnknownDraftId } : { payload: JSON.stringify(response) }),
     },
   };
 };
@@ -152,10 +158,13 @@ export function parseIdentifyParams(
     };
   }
   if (source === 'photo') {
+    const unknownDraftId = cleanParam(raw.unknownDraftId);
     const payload = cleanParam(raw.payload);
-    if (!payload) return { kind: 'invalid' };
     try {
-      const parsed = IdentifyResponse.safeParse(JSON.parse(payload));
+      const rawResponse = unknownDraftId && !payload
+        ? getIdentifyDraft(unknownDraftId)
+        : payload ? JSON.parse(payload) : null;
+      const parsed = IdentifyResponse.safeParse(rawResponse);
       if (!parsed.success || parsed.data.status === 'found') return { kind: 'invalid' };
       const data = parsed.data;
       const photoPath = cleanParam(data.photoPath);

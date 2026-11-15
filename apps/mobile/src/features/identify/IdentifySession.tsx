@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ro } from '../../copy/ro';
@@ -12,6 +12,7 @@ import { addProductRoute, isGuidedAddEnabled, parseIdentifyParams, productRoute 
 import { keepPhoto } from '../offline/photos';
 import { resolveQueued } from '../offline/queue';
 import type { FrontRead } from '@okbite/shared';
+import { clearIdentifyDraft } from '../add/draftStore';
 
 export function IdentifySession({ rawParams }: { rawParams: Record<string, string | string[] | undefined> }) {
   const { colors } = useTheme();
@@ -21,13 +22,25 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
   const queueId = typeof rawParams.queueId === 'string' ? rawParams.queueId : undefined;
   const frontPhotoId = typeof rawParams.frontPhotoId === 'string' ? rawParams.frontPhotoId : undefined;
   const unknownDraftId = typeof rawParams.unknownDraftId === 'string' ? rawParams.unknownDraftId : undefined;
+  const restartMissingDraft = state.kind === 'invalid' && rawParams.source === 'photo' && Boolean(unknownDraftId?.trim());
   const selected = useRef<string | null>(null);
   const finishing = useRef(false);
   const adding = useRef(false);
   const pendingAdd = useRef<{ read: FrontRead; photoPath: string | null } | null>(null);
   const [cleanupPending, setCleanupPending] = useState(false);
   const [addFailed, setAddFailed] = useState(false);
-  const navigate = (href: Parameters<typeof router.replace>[0]) => { router.replace(href); activity.leave(); };
+  const leave = activity.leave;
+  const navigate = (href: Parameters<typeof router.replace>[0]) => {
+    if (unknownDraftId) clearIdentifyDraft(unknownDraftId);
+    router.replace(href);
+    activity.leave();
+  };
+  useEffect(() => {
+    if (restartMissingDraft && unknownDraftId) {
+      router.replace({ pathname: '/add', params: { unknownDraftId, retake: 'front' } });
+      leave();
+    }
+  }, [leave, restartMissingDraft, router, unknownDraftId]);
   const openAdd = async (read: FrontRead, photoPath: string | null) => {
     const guided = isGuidedAddEnabled();
     if (!guided && !frontPhotoId && !unknownDraftId) {

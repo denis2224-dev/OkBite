@@ -303,6 +303,18 @@ describe('IdentifyScreen and B3 flow', () => {
     expect(mockReplace).toHaveBeenCalledWith('/capture');
   });
 
+  it('returns to the saved guided add draft when an identify draft is missing after reload', async () => {
+    setGuidedAddEnabled(true);
+    mockParams.value = { source: 'photo', unknownDraftId: 'reloaded-draft' };
+
+    await render(<IdentifyScreen />);
+
+    expect(mockReplace).toHaveBeenCalledWith({
+      pathname: '/add',
+      params: { unknownDraftId: 'reloaded-draft', retake: 'front' },
+    });
+  });
+
   it.each(['unmount', 'reject'])('does not override the next destination after %s during confirmation', async mode => {
     mockParams.value = { source: 'photo', queueId: 'pending-confirmation', payload: JSON.stringify({ status: 'candidates', candidates: [CAND_1], read: ORIGINAL_READ, photoPath: PHOTO_PATH }) };
     let finish!: () => void;

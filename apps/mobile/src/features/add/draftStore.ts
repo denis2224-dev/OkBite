@@ -6,7 +6,7 @@ import {
   type Category as CategoryType,
   type ReadLabelResponse as ReadLabelResponseType,
 } from '@okbite/shared';
-import type { AddInitialValues } from '../identify/routes';
+import type { AddInitialValues, IdentifyPayload } from '../identify/routes';
 
 export interface AddReviewDraft {
   initial: AddInitialValues;
@@ -31,6 +31,7 @@ function parseUniqueCategories(entries: readonly unknown[]): readonly CategoryTy
 }
 
 let currentDraft: AddReviewDraft | null = null;
+const identifyDrafts = new Map<string, IdentifyPayload>();
 const draftKeys = new WeakMap<AddReviewDraft, number>();
 let nextDraftKey = 0;
 let availableCategories: readonly CategoryType[] = [];
@@ -73,6 +74,18 @@ export function setAddReviewDraftResult(
 
 export function clearAddReviewDraft(): void {
   currentDraft = null;
+}
+
+export function setIdentifyDraft(id: string, draft: IdentifyPayload): void {
+  identifyDrafts.set(id, draft);
+}
+
+export function getIdentifyDraft(id: string): IdentifyPayload | undefined {
+  return identifyDrafts.get(id);
+}
+
+export function clearIdentifyDraft(id: string): void {
+  identifyDrafts.delete(id);
 }
 
 export function setAvailableCategories(categories: readonly unknown[]): void {

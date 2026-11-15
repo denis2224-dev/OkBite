@@ -12,6 +12,7 @@ import { createGuidedFlow, type GuidedFlowInitial, type GuidedFlowState, type Gu
 import { clearUnknownDraft, loadUnknownDraft, saveUnknownDraft } from './unknownDraft';
 import { GuidedReadLabelRequest, GuidedReadLabelResponse } from './unknownFlowContract';
 import { requestUnknownFlow } from './unknownFlowTransport';
+import { clearIdentifyDraft, setIdentifyDraft } from './draftStore';
 
 export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: GuidedPhotoKind) {
   const router = useRouter();
@@ -77,8 +78,9 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
             onIdentify(response, scannedCode, frontPhotoId) {
               if (!active || !runtimeRef.current.activity.isCurrent(token) || response.status === 'found') return;
               const payload = scannedCode ? { ...response, read: { ...response.read, code: scannedCode } } : response;
-              const route = identifyPhotoRoute(payload);
-              runtimeRef.current.router.replace({ ...route, params: { ...route.params, frontPhotoId, unknownDraftId: draftIdRef.current } });
+              setIdentifyDraft(draftIdRef.current, payload);
+              const route = identifyPhotoRoute(payload, frontPhotoId, draftIdRef.current);
+              runtimeRef.current.router.replace(route);
             },
             onFound(found) {
               void completeUnknownDraft(guidedToDraft(flow.getState(), draftIdRef.current), found)
@@ -130,6 +132,7 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
     const photos = state?.photos;
     try { await clearUnknownDraft(currentId); }
     catch { setDiscardError(true); return; }
+    clearIdentifyDraft(currentId);
     controller?.cancel();
     if (photos && !initialRef.current.queueId) {
       for (const id of new Set(Object.values(photos))) {
