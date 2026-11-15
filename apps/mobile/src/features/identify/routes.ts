@@ -4,11 +4,12 @@ import {
   type Candidate,
   type FrontRead,
 } from '@okbite/shared';
-import { getIdentifyDraft } from '../add/draftStore';
+import { randomUUID } from 'expo-crypto';
+import { getIdentifyDraft, setIdentifyDraft } from '../add/draftStore';
 
 /**
  * Navigation contract between capture/scan (B2), identify (B3) and add (B7).
- * - `source: 'photo'` carries a real IdentifyResponse (never `found`) as JSON, or an in-memory draft ID.
+ * - `source: 'photo'` carries a cached result ID, with legacy JSON payload support when parsing.
  * - `source: 'code'` means a barcode lookup returned not_found: there is no photo and no photoPath.
  */
 export type IdentifyPayload = Exclude<IdentifyResponse, { status: 'found' }>;
@@ -58,15 +59,19 @@ export const identifyPhotoRoute = (
   response: IdentifyPayload,
   frontPhotoId?: string,
   unknownDraftId?: string,
+  queueId?: string,
 ) => {
   const cleanFrontPhotoId = cleanParam(frontPhotoId);
   const cleanUnknownDraftId = cleanParam(unknownDraftId);
+  const identifyDraftId = cleanUnknownDraftId ?? randomUUID();
+  setIdentifyDraft(identifyDraftId, response);
   return {
     pathname: '/identify' as const,
     params: {
       source: 'photo' as const,
       ...(cleanFrontPhotoId ? { frontPhotoId: cleanFrontPhotoId } : {}),
-      ...(cleanUnknownDraftId ? { unknownDraftId: cleanUnknownDraftId } : { payload: JSON.stringify(response) }),
+      ...(cleanUnknownDraftId ? { unknownDraftId: cleanUnknownDraftId } : { identifyDraftId }),
+      ...(queueId ? { queueId } : {}),
     },
   };
 };
@@ -159,10 +164,12 @@ export function parseIdentifyParams(
   }
   if (source === 'photo') {
     const unknownDraftId = cleanParam(raw.unknownDraftId);
+    const identifyDraftId = cleanParam(raw.identifyDraftId);
     const payload = cleanParam(raw.payload);
     try {
-      const rawResponse = unknownDraftId && !payload
-        ? getIdentifyDraft(unknownDraftId)
+      const draftId = unknownDraftId ?? identifyDraftId;
+      const rawResponse = draftId && !payload
+        ? getIdentifyDraft(draftId)
         : payload ? JSON.parse(payload) : null;
       const parsed = IdentifyResponse.safeParse(rawResponse);
       if (!parsed.success || parsed.data.status === 'found') return { kind: 'invalid' };

@@ -2,6 +2,8 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react-
 import { OfflineScreen } from './OfflineScreen';
 import { flushQueue, subscribeQueueResults, listQueue, retryQueued, resumeQueuedItem, type QueueResult } from './queue';
 import { identifyCandidates, identifyFound, identifyNotFound, PRODUCT_ID } from '../capture/__fixtures__/responses';
+import type { IdentifyResponse } from '@okbite/shared';
+import { identifyPhotoRoute } from '../identify/routes';
 import { ro } from '../../copy/ro';
 
 const mockReplace = jest.fn();
@@ -24,10 +26,14 @@ jest.mock('expo-router', () => ({
     }, [cb]);
   },
 }));
+jest.mock('expo-crypto', () => ({ randomUUID: () => 'offline-identify-id' }));
 jest.mock('./queue', () => ({ flushQueue: jest.fn(), subscribeQueueResults: jest.fn(), listQueue: jest.fn(), retryQueued: jest.fn(), resumeQueuedItem: jest.fn(), completeQueued: jest.fn(), subscribeQueue: () => jest.fn() }));
 jest.mock('../history/db', () => ({ listQueued: jest.fn(async () => []) }));
 jest.mock('../../ui/Screen', () => ({ Screen: ({ children }: { children: React.ReactNode }) => children }));
 let receive: ((event: QueueResult) => boolean) | undefined;
+function photoResume(response: Exclude<IdentifyResponse, { status: 'found' }>, queueId: string) {
+  return { kind: 'identify' as const, ...identifyPhotoRoute(response, undefined, undefined, queueId) };
+}
 beforeEach(() => {
   jest.clearAllMocks();
   receive = undefined;
@@ -47,14 +53,13 @@ it('shows a completion action without exposing its internal receipt ID as a barc
 it.each([identifyFound, identifyCandidates, identifyNotFound])('opens the selected $status destination without redirecting on queue entry', async (response) => {
   const item = { id: 'queued', kind: 'photo' as const, payload: 'saved.jpg', createdAt: '2026-11-05T10:00:00Z', status: 'needs_review' as const, outcome: identifyCandidates };
   jest.mocked(listQueue).mockResolvedValue([item as never]);
-  jest.mocked(resumeQueuedItem).mockResolvedValue(response.status === 'found' ? { kind: 'found', productId: PRODUCT_ID }
-    : { kind: 'identify', pathname: '/identify', params: { source: 'photo', payload: JSON.stringify(response), queueId: item.id } });
+  const route = response.status === 'found' ? null : photoResume(response, item.id);
+  jest.mocked(resumeQueuedItem).mockResolvedValue(response.status === 'found' ? { kind: 'found', productId: PRODUCT_ID } : route!);
   await render(<OfflineScreen />);
   expect(mockReplace).not.toHaveBeenCalled();
   expect(flushQueue).not.toHaveBeenCalled();
   await fireEvent.press(await screen.findByRole('button', { name: ro.app.open }));
-  const target = response.status === 'found' ? `/product/${PRODUCT_ID}`
-    : { pathname: '/identify', params: { source: 'photo', payload: JSON.stringify(response), queueId: 'queued' } };
+  const target = response.status === 'found' ? `/product/${PRODUCT_ID}` : { pathname: route!.pathname, params: route!.params };
   expect(mockReplace).toHaveBeenCalledWith(target);
   expect(mockReplace).toHaveBeenCalledTimes(1);
 });
@@ -81,7 +86,7 @@ it('does not override navigation if the shopper leaves for History before Open f
   jest.mocked(listQueue).mockResolvedValue([item as never]);
   let finishResume!: () => void;
   jest.mocked(resumeQueuedItem).mockReturnValue(new Promise(resolve => {
-    finishResume = () => resolve({ kind: 'identify', pathname: '/identify', params: { source: 'photo', payload: JSON.stringify(identifyCandidates), queueId: item.id } });
+    finishResume = () => resolve(photoResume(identifyCandidates, item.id));
   }));
 
   const view = await render(<OfflineScreen />);
@@ -104,7 +109,7 @@ it('does not override navigation if the shopper presses History before Open fini
   jest.mocked(listQueue).mockResolvedValue([item as never]);
   let finishResume!: () => void;
   jest.mocked(resumeQueuedItem).mockReturnValue(new Promise(resolve => {
-    finishResume = () => resolve({ kind: 'identify', pathname: '/identify', params: { source: 'photo', payload: JSON.stringify(identifyCandidates), queueId: item.id } });
+    finishResume = () => resolve(photoResume(identifyCandidates, item.id));
   }));
 
   const view = await render(<OfflineScreen />);
@@ -131,10 +136,10 @@ it('ignores old Open action after leaving for History, and opens review when sho
 
   jest.mocked(resumeQueuedItem)
     .mockImplementationOnce(() => new Promise(resolve => {
-      finishOldResume = () => resolve({ kind: 'identify', pathname: '/identify', params: { source: 'photo', payload: JSON.stringify(identifyCandidates), queueId: item.id } });
+      finishOldResume = () => resolve(photoResume(identifyCandidates, item.id));
     }))
     .mockImplementationOnce(() => new Promise(resolve => {
-      finishNewResume = () => resolve({ kind: 'identify', pathname: '/identify', params: { source: 'photo', payload: JSON.stringify(identifyCandidates), queueId: item.id } });
+      finishNewResume = () => resolve(photoResume(identifyCandidates, item.id));
     }));
 
   const view = await render(<OfflineScreen />);
@@ -170,9 +175,6 @@ it('ignores old Open action after leaving for History, and opens review when sho
   });
 
   // Acțiunea nouă deschide review-ul!
-  expect(mockReplace).toHaveBeenCalledWith({
-    pathname: '/identify',
-    params: { source: 'photo', payload: JSON.stringify(identifyCandidates), queueId: item.id },
-  });
+  expect(mockReplace).toHaveBeenCalledWith(expect.objectContaining({ pathname: '/identify', params: expect.objectContaining({ source: 'photo', identifyDraftId: expect.any(String), queueId: item.id }) }));
   expect(mockReplace).toHaveBeenCalledTimes(1);
 });
