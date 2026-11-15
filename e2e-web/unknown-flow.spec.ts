@@ -121,6 +121,46 @@ test('direct add uses variant 1 and saves an unbranded partial table without opt
   expect(add.body).not.toHaveProperty('categorySlug');
 });
 
+test('direct guided barcode add starts at the front photo and keeps read identity through review', async ({ page, session }) => {
+  await page.goto('/add?code=2000000000008&flow=guided');
+  await expect(page.getByRole('heading', { name: ro.add.frontTitle, exact: true })).toBeVisible();
+  await expect(page.getByText(ro.add.stepOf(1, 4), { exact: true })).toBeVisible();
+  await expect(page.getByRole('textbox')).toHaveCount(0);
+  await photo(page);
+  await expect(page.getByRole('heading', { name: ro.add.ingredientsTitle, exact: true })).toBeVisible();
+  await expect(page.getByText(ro.add.stepOf(2, 4), { exact: true })).toBeVisible();
+  await photo(page);
+  await page.getByRole('button', { name: ro.add.nutritionNone, exact: true }).click();
+  await expect(page.getByRole('heading', { name: ro.add.confirmTitle, exact: true })).toBeVisible();
+  await expect(page.getByLabel(ro.review.name)).toHaveValue(example.product.name);
+  await expect(page.getByLabel(ro.review.brand)).toHaveValue(example.product.brand);
+  await expect(page.getByLabel(ro.review.quantity)).toHaveValue(example.product.quantity);
+  expect((await session.state()).calls.filter(call => call.name === 'identify')).toHaveLength(1);
+});
+
+test('guided front identification keeps candidate data out of the URL and restarts at front after reload', async ({ page }) => {
+  const candidate = { id: '0b6f3c1e-2d4a-4c8e-9f10-1a2b3c4d5e6f', name: 'Iaurt cu căpșuni 2%', brand: 'Zorel',
+    quantity: '400 g', imageUrl: null, similarity: 0.71 };
+  await page.route('**/functions/v1/identify', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+    status: 'candidates', candidates: [candidate], read: { name: 'Iaurt căpșuni', brand: 'Zorel', quantity: '400 g', code: null },
+    photoPath: 'uploads/private/front.jpg',
+  }) }));
+  await page.goto('/add?flow=guided');
+  await expect(page.getByText(ro.add.stepOf(1, 4), { exact: true })).toBeVisible();
+  await photo(page);
+  await expect(page.getByRole('heading', { name: ro.identify.pickTitle, exact: true })).toBeVisible();
+  await expect(page.getByText(candidate.name, { exact: true })).toBeVisible();
+  const route = new URL(page.url());
+  expect([...route.searchParams.keys()].sort()).toEqual(['frontPhotoId', 'source', 'unknownDraftId']);
+  expect(route.searchParams.get('source')).toBe('photo');
+  expect(page.url()).not.toMatch(/payload|candidates|uploads%2Fprivate|front\.jpg/);
+
+  await page.reload();
+  await expect(page).toHaveURL(/\/add\?/);
+  await expect(page.getByRole('heading', { name: ro.add.frontTitle, exact: true })).toBeVisible();
+  await expect(page.getByText(ro.add.stepOf(1, 4), { exact: true })).toBeVisible();
+});
+
 test('discarding a different product draft starts a usable front-photo step', async ({ page, session }) => {
   await begin(page); await review(page, ro.add.nutritionNone);
   await page.goto('/add?code=96385074');
