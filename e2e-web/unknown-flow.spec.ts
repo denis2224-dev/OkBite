@@ -160,6 +160,20 @@ test('guided front identification keeps candidate data out of the URL and restar
   await expect(page.getByText(ro.add.stepOf(1, 4), { exact: true })).toBeVisible();
 });
 
+test('capture identification keeps its response out of the URL and recovers after reload', async ({ page, session }) => {
+  await session.configure('candidates');
+  await page.goto('/capture');
+  await photo(page);
+  await expect(page.getByRole('heading', { name: ro.identify.pickTitle, exact: true })).toBeVisible();
+  const url = new URL(page.url());
+  expect(url.searchParams.get('identifyDraftId')).toBeTruthy();
+  expect([...url.searchParams.keys()].every(key => ['source', 'frontPhotoId', 'identifyDraftId'].includes(key))).toBe(true);
+  expect(url.searchParams.has('payload')).toBe(false);
+  await page.reload();
+  await expect(page).toHaveURL(/\/capture$/);
+  await expect(page.getByRole('button', { name: ro.capture.gallery, exact: true })).toBeVisible();
+});
+
 test('discarding a different product draft starts a usable front-photo step', async ({ page, session }) => {
   await begin(page); await review(page, ro.add.nutritionNone);
   await page.goto('/add?code=96385074');

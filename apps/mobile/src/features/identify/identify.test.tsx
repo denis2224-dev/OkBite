@@ -107,6 +107,7 @@ describe('IdentifyScreen and B3 flow', () => {
     const first = await render(<IdentifyScreen />);
     expect(resolveQueued).not.toHaveBeenCalled();
     await first.unmount();
+    mockParams.value = { ...identifyPhotoRoute(response).params, queueId: 'queued-id' };
     await render(<IdentifyScreen />);
     await fireEvent.press(screen.getByRole('button', { name: ro.identify.confirmYes }));
     expect(resolveQueued).toHaveBeenCalledWith('queued-id');
