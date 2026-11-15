@@ -61,9 +61,11 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
           return Boolean(currentDraft && currentDraft.id !== nextDraftId);
         };
         let flowCancelledByBlur = false;
+        let abandonedFrontIdentify = false;
         let flowInstance!: ReturnType<typeof createGuidedFlow>;
         const bindFlow = (restoredState?: GuidedFlowState) => {
           unsubscribe?.();
+          let abandoned = false;
           const nextFlow = createGuidedFlow(
             initialRef.current,
             {
@@ -75,8 +77,10 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
                 const isCurrentRequest = () => isSessionActive() && runtimeRef.current.activity.isCurrent(requestToken);
                 const abandonIfStale = async () => {
                   if (isCurrentRequest() && !(await hasNewerDraft())) return false;
+                  abandoned = true;
                   if (isSessionActive()) {
                     flowCancelledByBlur = true;
+                    abandonedFrontIdentify = true;
                     setFrontPending('none');
                   }
                   nextFlow.cancel();
@@ -102,7 +106,7 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
               },
               readLabel: req => requestUnknownFlow('read-label', GuidedReadLabelRequest, GuidedReadLabelResponse, req),
               persist: async snapshot => {
-                if (!isSessionActive() || !runtimeRef.current.activity.isCurrent(token) || await hasNewerDraft()) return;
+                if (!isSessionActive() || abandoned || await hasNewerDraft()) return;
                 await saveUnknownDraft(guidedToDraft(snapshot, nextDraftId));
               },
               onIdentify(response, scannedCode, frontPhotoId) {
@@ -146,8 +150,15 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
         const flow = bindFlow(stored ? draftToGuided(stored) : undefined);
         const ensureActiveFlow = () => {
           if (!flowCancelledByBlur || !isSessionActive()) return flowInstance;
+          const clearRemoteFront = abandonedFrontIdentify;
           flowCancelledByBlur = false;
-          return bindFlow({ ...flowInstance.getState(), error: undefined });
+          abandonedFrontIdentify = false;
+          const snapshot = flowInstance.getState();
+          return bindFlow({
+            ...snapshot,
+            remotePhotoPath: clearRemoteFront ? null : snapshot.remotePhotoPath,
+            error: undefined,
+          });
         };
         const runFocused = async (action: (target: ReturnType<typeof createGuidedFlow>) => Promise<void>) => {
           const target = ensureActiveFlow();

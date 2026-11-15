@@ -417,3 +417,68 @@ test('discarding the draft prevents a pending front found result from writing or
   expect(mockReplace).not.toHaveBeenCalled();
   expect(result.current.state?.stage).toBe('front');
 });
+
+test('persists completed label read across blur and refocus without navigating', async () => {
+  mockDelayFocus = true;
+  const { result } = await renderHook(() => useGuidedAddSession(initial));
+  let blur: void | (() => void);
+  await act(async () => { blur = mockFocus!(); });
+  await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
+  let finishRead!: (value: typeof label) => void;
+  jest.mocked(requestUnknownFlow).mockReturnValueOnce(new Promise(resolve => { finishRead = resolve; }));
+  let reading!: Promise<void>;
+  await act(async () => { reading = result.current.controller!.chooseNutrition('none'); });
+  jest.mocked(saveUnknownDraft).mockClear();
+  mockReplace.mockClear();
+
+  await act(async () => {
+    blur!();
+    mockFocus!();
+    finishRead(label);
+    await reading;
+  });
+
+  expect(mockReplace).not.toHaveBeenCalled();
+  expect(result.current.state?.stage).toBe('review');
+  expect(saveUnknownDraft).toHaveBeenLastCalledWith(expect.objectContaining({
+    stage: 'review',
+    readStatus: 'complete',
+    label: expect.objectContaining({ ingredientsText: 'ingredient test' }),
+  }));
+});
+
+test('retries front identification rather than readLabel after front retake blurs while pending', async () => {
+  jest.mocked(loadUnknownDraft).mockResolvedValueOnce({
+    version: 1,
+    id: 'review-draft',
+    initial: { ...initial, photoPath: 'old/front.jpg' },
+    stage: 'review',
+    nutritionMode: 'none',
+    photos: { front: 'old-front', ingredients: 'kept-ingredients', nutrition: null },
+    label,
+    readStatus: 'complete',
+  });
+  mockDelayFocus = true;
+  let finish!: (res: unknown) => void;
+  jest.mocked(api.identifyOutcome)
+    .mockResolvedValueOnce(pendingOutcome(new Promise(resolve => { finish = resolve; })) as never)
+    .mockResolvedValueOnce(completed(identifyNotFound) as never);
+  const { result } = await renderHook(() => useGuidedAddSession(initial));
+  let blur: void | (() => void);
+  await act(async () => { blur = mockFocus!(); });
+  await act(async () => { result.current.controller!.retake('front'); });
+  let running!: Promise<void>;
+  await act(async () => { running = result.current.controller!.capturePhoto('new-front-shot'); });
+  expect(result.current.frontPending).toBe('waiting');
+  expect(api.identifyOutcome).toHaveBeenCalledTimes(1);
+  jest.mocked(requestUnknownFlow).mockClear();
+
+  await act(async () => { blur!(); });
+  await act(async () => { finish(identifyFound); await running; });
+  await act(async () => { mockFocus!(); });
+  await act(async () => { await result.current.controller!.retry(); });
+
+  expect(api.identifyOutcome).toHaveBeenCalledTimes(2);
+  expect(requestUnknownFlow).not.toHaveBeenCalled();
+  expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'review-draft' } });
+});
