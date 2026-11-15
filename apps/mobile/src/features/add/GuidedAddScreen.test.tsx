@@ -104,17 +104,25 @@ test('shows unreadable nutrition recovery with Retake and Continue with ingredie
 });
 
 test('starts at front photo step when barcode entry has no front photoPath', async () => {
-  mockParams.value = { code: '4840001000014' };
+  mockParams.value = { code: '2000000000008', flow: 'guided' };
   await render(<GuidedAddScreen />);
   await fillIdentity();
 
   expect(screen.getByText(ro.add.frontTitle)).toBeTruthy();
   expect(screen.getByText(ro.add.frontHint)).toBeTruthy();
   expect(screen.getByText(ro.add.stepOf(1, 4))).toBeTruthy();
-  expect(ro.add.stepOf(1, 3)).toBe('Pasul 1 din 3');
+  expect(ro.add.stepOf(1, 4)).toBe('Pasul 1 din 4');
   expect(ro.add.stepOf(2, 4)).toBe('Pasul 2 din 4');
 });
 
+test('keeps the same four-step progress after receiving the front photo path', async () => {
+  mockParams.value = { code: '4840001000014', photoPath: 'uploads/front.jpg', flow: 'guided' };
+  await render(<GuidedAddScreen />);
+  await act(async () => {});
+
+  expect(screen.getByText(ro.add.ingredientsTitle)).toBeTruthy();
+  expect(screen.getByText(ro.add.stepOf(2, 4))).toBeTruthy();
+});
 test('keeps manual entry fallback ("Scriu eu textul") reachable from a failed or interrupted guided read', async () => {
   jest.mocked(loadUnknownDraft).mockResolvedValueOnce({
     version: 1,

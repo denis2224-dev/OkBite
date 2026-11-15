@@ -18,6 +18,7 @@ beforeEach(() => { mockOpen.mockReset(); mockOpen.mockImplementation(async id =>
 it('confirms ingredients without keyboard, category or brand; the unit is one tap, never guessed', async () => {
   const input = props({ label: { ...label, unit: null }, onChange: jest.fn() });
   await render(<UnknownProductConfirmation {...input} />);
+  expect(screen.getByText(ro.add.stepOf(4, 4))).toBeTruthy();
   expect(screen.queryAllByRole('textbox')).toHaveLength(0);
   expect(screen.queryByRole('button', { name: /^Categorie:/ })).toBeNull();
   expect(screen.getByText(ro.add.unitQuestion)).toBeTruthy();
