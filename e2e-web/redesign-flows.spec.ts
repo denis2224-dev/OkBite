@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-import { LookupResponse } from '../packages/shared/src/contract';
+import { LookupResponse, type Ingredient } from '../packages/shared/src/contract';
 import { productScore } from '../packages/shared/src/score';
 import { ro } from '../apps/mobile/src/copy/ro';
 import { en } from '../apps/mobile/src/copy/strings.en';
@@ -15,8 +15,11 @@ const found = fixtures as Found[];
 const yogurt = found[0]!;
 const gluten = found.find((entry) => entry.product.allergens.includes('Gluten'))!;
 const unavailable = found.find((entry) => entry.score.score === null)!;
-if (!yogurt || !gluten || !unavailable)
+const additiveEntry = found.find((entry) => entry.product.ingredients.some((ingredient: Ingredient) => ingredient.group === 'add'));
+const additive = additiveEntry?.product.ingredients.find((ingredient: Ingredient) => ingredient.group === 'add');
+if (!yogurt || !gluten || !unavailable || !additiveEntry || !additive)
   throw new Error('Expected yogurt, gluten and unavailable preview fixtures');
+const additiveScan = { ...additiveEntry, product: { ...additiveEntry.product, code: yogurt.product.code } };
 
 const firstLaunch = { cookies: [], origins: [] };
 const stub = (page: Page, entry: Found) =>
@@ -60,14 +63,19 @@ test.describe('returning user', () => {
   test.use({ serviceWorkers: 'block' });
 
   test('c · manual barcode opens result tier and Why', async ({ page }) => {
-    await stub(page, yogurt);
+    let lookups = 0;
+    await page.route('**/functions/v1/lookup*', route => { lookups++; return route.fulfill({ json: yogurt }); });
     await page.goto('/');
     await page.getByRole('button', { name: ro.scan.manual, exact: true }).click();
     await page
       .getByRole('textbox', { name: ro.scan.manualTitle, exact: true })
       .fill(yogurt.product.code!);
     await page.getByRole('button', { name: ro.scan.search, exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`/product/${yogurt.product.id}`));
+    const resultSheet = page.getByRole('dialog', { name: yogurt.product.name, exact: true });
+    await expect(resultSheet).toBeVisible();
+    await expect.poll(() => page.evaluate(() => document.activeElement?.closest('[role="dialog"]')?.getAttribute('aria-label'))).toBe(yogurt.product.name);
+    await expect(page).not.toHaveURL(new RegExp(`/product/${yogurt.product.id}`));
+    expect(lookups).toBe(1);
     await expect(page.getByTestId('product-score')).toHaveText(
       `${ro.history.score(yogurtScore.score!)} · ${ro.tiers[yogurtScore.tier!]}`,
     );
@@ -76,6 +84,22 @@ test.describe('returning user', () => {
     await expect(page.getByTestId('deduction-row')).toHaveCount(0);
     await page.getByRole('button', { name: ro.tiers.why, exact: true }).click();
     expect(await page.getByTestId('deduction-row').count()).toBeGreaterThan(0);
+    await page.getByRole('button', { name: ro.result.report, exact: true }).click();
+    await expect(page.getByRole('textbox', { name: ro.result.reportLabel, exact: true })).toBeVisible();
+    await page.getByRole('button', { name: ro.app.cancel, exact: true }).click();
+    await page.keyboard.press('Escape');
+    await expect(resultSheet).toHaveCount(0);
+  });
+
+  test('c · additive details open above a scanned result sheet', async ({ page }) => {
+    await stub(page, additiveScan);
+    await page.goto('/');
+    await page.getByRole('button', { name: ro.scan.manual, exact: true }).click();
+    await page.getByRole('textbox', { name: ro.scan.manualTitle, exact: true }).fill(yogurt.product.code!);
+    await page.getByRole('button', { name: ro.scan.search, exact: true }).click();
+    await expect(page.getByRole('dialog', { name: additiveEntry.product.name, exact: true })).toBeVisible();
+    await page.getByRole('button', { name: additive.name, exact: false }).click();
+    await expect(page.getByRole('heading', { name: additive.name, exact: true })).toBeVisible();
   });
 
   test('d · processing and missing nutrition stay unknown', async ({ page }) => {

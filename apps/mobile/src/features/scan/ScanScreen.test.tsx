@@ -6,7 +6,7 @@ import { notificationAsync } from 'expo-haptics';
 import { api } from '../../lib/api';
 import { ro } from '../../copy/ro';
 import ScanScreen from './ScanScreen';
-import { CODE, PRODUCT_ID, lookupFound, lookupNotFound } from '../capture/__fixtures__/responses';
+import { CODE, lookupFound, lookupNotFound } from '../capture/__fixtures__/responses';
 
 const mockReplace = jest.fn();
 const mockPush = jest.fn();
@@ -115,7 +115,7 @@ describe('ScanScreen', () => {
     await act(async () => { finish(lookupFound); });
     expect(lookup).toHaveBeenCalledTimes(1);
     expect(notificationAsync).toHaveBeenCalledTimes(1);
-    expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+    expect(screen.getByTestId('result-sheet')).toBeTruthy();
   });
 
   it('ignores a detection that is not a valid barcode', async () => {

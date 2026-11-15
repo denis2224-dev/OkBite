@@ -12,6 +12,7 @@ import { StatusPanel, errorMessage } from '../capture/StatusPanel';
 import { ScanReticle } from './ScanReticle';
 import { ManualCode } from './ManualCode';
 import { useScanLookup } from './useScanLookup';
+import { ResultSheet } from '../product/ResultSheet';
 
 const tapOnDetection = () => { void notificationAsync(NotificationFeedbackType.Success).catch(() => undefined); };
 
@@ -61,7 +62,7 @@ export default function ScanScreen({ embedded = false, torch = false }: ScanScre
 
   const body = (
     <>
-      {focused ? <View style={embedded ? styles.embeddedPreview : styles.preview}>{preview}</View> : null}
+      {focused && state.status !== 'found' ? <View style={embedded ? styles.embeddedPreview : styles.preview}>{preview}</View> : null}
       {working ? <View style={styles.status}><ActivityIndicator color={embedded ? colors.cameraInk : colors.primary} /><Text style={[styles.working, embedded && { color: colors.cameraInk }]}>{ro.capture.working}</Text></View> : null}
       {state.status === 'error' || state.status === 'offline' ? (
         <StatusPanel
@@ -75,6 +76,7 @@ export default function ScanScreen({ embedded = false, torch = false }: ScanScre
       ) : null}
       <ManualCode open={manualOpen} onToggle={() => setManualOpen(open => !open)} onDark={embedded}
         onSubmit={(code) => { void onManualCode(code); }} disabled={working} />
+      {state.status === 'found' && <ResultSheet product={state.product} score={state.score} onClose={dismiss} />}
     </>
   );
   if (embedded) return <View style={styles.embedded}>{body}</View>;

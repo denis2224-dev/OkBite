@@ -10,6 +10,7 @@ import { ManualCode } from './ManualCode';
 import { useScanLookup } from './useScanLookup';
 import { useWebLiveScan } from './useWebLiveScan';
 import { ScanReticle } from './ScanReticle';
+import { ResultSheet } from '../product/ResultSheet';
 import { cameraMessage } from '../capture/cameraSupport.web';
 import type { ScanScreenProps } from './ScanScreen';
 
@@ -40,13 +41,13 @@ export default function ScanScreenWeb({ embedded = false }: ScanScreenProps = {}
 
   const body = (
     <>
-      {focused && cameraOn ? (
+      {focused && state.status !== 'found' && cameraOn ? (
         <View testID="scan-preview" style={embedded ? styles.embeddedPreview : styles.preview}>
           <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           {liveStatus === 'live' ? <ScanReticle /> : <ActivityIndicator style={StyleSheet.absoluteFill} color={colors.cameraInk} />}
         </View>
       ) : null}
-      {focused && !cameraOn ? (
+      {focused && state.status !== 'found' && !cameraOn ? (
         <StatusPanel
           title={denied && retried ? ro.scan.deniedText : undefined}
           message={liveStatus === 'unsupported' ? ro.scan.webManualOnly : !denied ? cameraMessage(liveStatus) : retried ? deniedHelp() : ro.scan.deniedText}
@@ -66,6 +67,7 @@ export default function ScanScreenWeb({ embedded = false }: ScanScreenProps = {}
       ) : null}
       <ManualCode open={manualOpen} onToggle={() => setManualOpen(open => !open)} onDark={embedded}
         onSubmit={(code) => { void onManualCode(code); }} disabled={working} />
+      {state.status === 'found' && <ResultSheet product={state.product} score={state.score} onClose={dismiss} />}
     </>
   );
   if (embedded) return <View style={styles.embedded}>{body}</View>;
