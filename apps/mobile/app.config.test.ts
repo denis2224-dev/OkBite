@@ -22,6 +22,9 @@ const load = (env: Record<string, string | undefined>) => {
 it('builds a complete production config', () => {
   expect(load(prod)).toMatchObject({ extra: { supabaseUrl: 'https://prod.supabase.co' } });
 });
+it('disables the generated sitemap route', () => {
+  expect(load(prod)).toMatchObject({ plugins: expect.arrayContaining([['expo-router', { sitemap: false }]]) });
+});
 it('runs in light mode only, whatever the phone setting', () => {
   expect(load(prod)).toMatchObject({ userInterfaceStyle: 'light' });
 });
