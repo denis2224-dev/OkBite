@@ -5,7 +5,7 @@ import { completeUnknownDraft } from './completeUnknownDraft';
 import { requestUnknownFlow } from './unknownFlowTransport';
 import { api } from '../../lib/api';
 import type { AnalysisOutcome } from '../../lib/analysisOutcome';
-import { NUTRIENT_KEYS } from '@okbite/shared';
+import { NUTRIENT_KEYS, ReadLabelResponse } from '@okbite/shared';
 import { removePhoto } from '../offline/photos';
 import { getIdentifyDraft } from './draftStore';
 import { PRODUCT_ID, identifyFound, identifyNotFound } from '../capture/__fixtures__/responses';
@@ -455,7 +455,7 @@ test('retries front identification rather than readLabel after front retake blur
     stage: 'review',
     nutritionMode: 'none',
     photos: { front: 'old-front', ingredients: 'kept-ingredients', nutrition: null },
-    label,
+    label: ReadLabelResponse.parse(label),
     readStatus: 'complete',
   });
   mockDelayFocus = true;
@@ -481,4 +481,39 @@ test('retries front identification rather than readLabel after front retake blur
   expect(api.identifyOutcome).toHaveBeenCalledTimes(2);
   expect(requestUnknownFlow).not.toHaveBeenCalled();
   expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'review-draft' } });
+});
+
+test('abandons stale front identification when blur happens while awaiting post-completion draft lookup', async () => {
+  mockDelayFocus = true;
+  let finish!: (res: unknown) => void;
+  jest.mocked(api.identifyOutcome).mockResolvedValueOnce(pendingOutcome(new Promise(resolve => { finish = resolve; })) as never);
+  const { result } = await renderHook(() => useGuidedAddSession({ ...initial, photoPath: null }));
+  let blur: void | (() => void);
+  await act(async () => { blur = mockFocus!(); });
+
+  let running!: Promise<void>;
+  await act(async () => { running = result.current.controller!.capturePhoto('front-shot'); });
+  expect(result.current.frontPending).toBe('waiting');
+  expect(api.identifyOutcome).toHaveBeenCalledTimes(1);
+  jest.mocked(saveUnknownDraft).mockClear();
+  mockReplace.mockClear();
+
+  let resolvePostLookup!: (value: null) => void;
+  jest.mocked(loadUnknownDraft).mockReturnValueOnce(new Promise(resolve => { resolvePostLookup = resolve; }));
+
+  await act(async () => {
+    finish(identifyNotFound);
+    await Promise.resolve();
+  });
+  await act(async () => { blur!(); });
+  await act(async () => {
+    resolvePostLookup(null);
+    await running;
+  });
+
+  expect(result.current.frontPending).toBe('none');
+  expect(result.current.state?.stage).not.toBe('ingredients');
+  expect(result.current.state?.stage).not.toBe('error');
+  expect(saveUnknownDraft).not.toHaveBeenCalled();
+  expect(mockReplace).not.toHaveBeenCalled();
 });

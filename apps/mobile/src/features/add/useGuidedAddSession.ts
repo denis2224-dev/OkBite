@@ -76,7 +76,7 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
                 const requestToken = token;
                 const isCurrentRequest = () => isSessionActive() && runtimeRef.current.activity.isCurrent(requestToken);
                 const abandonIfStale = async () => {
-                  if (isCurrentRequest() && !(await hasNewerDraft())) return false;
+                  if (isCurrentRequest() && !(await hasNewerDraft()) && isCurrentRequest()) return false;
                   abandoned = true;
                   if (isSessionActive()) {
                     flowCancelledByBlur = true;
@@ -106,7 +106,7 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
               },
               readLabel: req => requestUnknownFlow('read-label', GuidedReadLabelRequest, GuidedReadLabelResponse, req),
               persist: async snapshot => {
-                if (!isSessionActive() || abandoned || await hasNewerDraft()) return;
+                if (!isSessionActive() || abandoned || await hasNewerDraft() || !isSessionActive() || abandoned) return;
                 await saveUnknownDraft(guidedToDraft(snapshot, nextDraftId));
               },
               onIdentify(response, scannedCode, frontPhotoId) {
