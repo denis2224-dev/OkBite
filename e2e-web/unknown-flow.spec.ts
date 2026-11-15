@@ -130,19 +130,23 @@ test('direct guided barcode add starts at the front photo and keeps read identit
   await expect(page.getByRole('heading', { name: ro.add.ingredientsTitle, exact: true })).toBeVisible();
   await expect(page.getByText(ro.add.stepOf(2, 4), { exact: true })).toBeVisible();
   await photo(page);
-  await page.getByRole('button', { name: ro.add.nutritionNone, exact: true }).click();
+  await page.getByRole('button', { name: ro.add.nutritionYes, exact: true }).click();
+  await expect(page.getByRole('heading', { name: ro.add.nutritionTitle, exact: true })).toBeVisible();
+  await expect(page.getByText(ro.add.stepOf(3, 4), { exact: true })).toBeVisible();
+  await photo(page);
   await expect(page.getByRole('heading', { name: ro.add.confirmTitle, exact: true })).toBeVisible();
-  await expect(page.getByLabel(ro.review.name)).toHaveValue(example.product.name);
-  await expect(page.getByLabel(ro.review.brand)).toHaveValue(example.product.brand);
-  await expect(page.getByLabel(ro.review.quantity)).toHaveValue(example.product.quantity);
+  await expect(page.getByText(ro.add.stepOf(4, 4), { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: ro.review.name, exact: true })).toContainText(example.product.name);
+  await expect(page.getByRole('button', { name: ro.review.brand, exact: true })).toContainText(example.product.brand);
+  await expect(page.getByRole('button', { name: ro.review.quantity, exact: true })).toContainText(example.product.quantity);
   expect((await session.state()).calls.filter(call => call.name === 'identify')).toHaveLength(1);
 });
 
 test('guided front identification keeps candidate data out of the URL and restarts at front after reload', async ({ page }) => {
-  const candidate = { id: '0b6f3c1e-2d4a-4c8e-9f10-1a2b3c4d5e6f', name: 'Iaurt cu căpșuni 2%', brand: 'Zorel',
-    quantity: '400 g', imageUrl: null, similarity: 0.71 };
+  const candidate = { id: example.product.id, name: example.product.name, brand: example.product.brand,
+    quantity: example.product.quantity, imageUrl: null, similarity: 0.52 };
   await page.route('**/functions/v1/identify', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
-    status: 'candidates', candidates: [candidate], read: { name: 'Iaurt căpșuni', brand: 'Zorel', quantity: '400 g', code: null },
+    status: 'candidates', candidates: [candidate], read: { name: example.product.name, brand: example.product.brand, quantity: example.product.quantity, code: null },
     photoPath: 'uploads/private/front.jpg',
   }) }));
   await page.goto('/add?flow=guided');
