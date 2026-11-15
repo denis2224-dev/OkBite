@@ -10,7 +10,12 @@ import { detectAllergens } from '../packages/shared/src/allergens/index';
  * Verified rows (checked by a person) are not touched.
  */
 const TARGET = 'status=eq.unverified';
-type Row = { code: string; ingredients_text: string; allergens: Allergen[]; may_contain: Allergen[] };
+type Row = {
+  code: string;
+  ingredients_text: string;
+  allergens: Allergen[];
+  may_contain: Allergen[];
+};
 export type Patch = { allergens: Allergen[]; may_contain: Allergen[] };
 
 const order = (set: Set<Allergen>) => ALLERGENS.filter((a) => set.has(a));
@@ -21,25 +26,37 @@ export function allergenPatch(row: Row): Patch | null {
   const contains = new Set([...row.allergens, ...found.allergens]);
   const traces = new Set([...row.may_contain, ...found.mayContain].filter((a) => !contains.has(a)));
   const next = { allergens: order(contains), may_contain: order(traces) };
-  const same = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
-  const had = { allergens: order(new Set(row.allergens)), may_contain: order(new Set(row.may_contain)) };
-  return same(next.allergens, had.allergens) && same(next.may_contain, had.may_contain) ? null : next;
+  const same = (a: readonly string[], b: readonly string[]) =>
+    a.length === b.length && a.every((x, i) => x === b[i]);
+  const had = {
+    allergens: order(new Set(row.allergens)),
+    may_contain: order(new Set(row.may_contain)),
+  };
+  return same(next.allergens, had.allergens) && same(next.may_contain, had.may_contain)
+    ? null
+    : next;
 }
 
 function service() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
-  return { url, headers: { apikey: key, ...(key.startsWith('sb_') ? {} : { authorization: `Bearer ${key}` }) } };
+  return {
+    url,
+    headers: { apikey: key, ...(key.startsWith('sb_') ? {} : { authorization: `Bearer ${key}` }) },
+  };
 }
 
 async function rows(): Promise<Row[]> {
   const { url, headers } = service();
   const all: Row[] = [];
   for (let from = 0; ; from += 1000) {
-    const res = await fetch(`${url}/rest/v1/products?select=code,ingredients_text,allergens,may_contain&${TARGET}&order=code`, {
-      headers: { ...headers, range: `${from}-${from + 999}` },
-    });
+    const res = await fetch(
+      `${url}/rest/v1/products?select=code,ingredients_text,allergens,may_contain&${TARGET}&order=code`,
+      {
+        headers: { ...headers, range: `${from}-${from + 999}` },
+      },
+    );
     if (!res.ok) throw new Error(`products: HTTP ${res.status} ${await res.text()}`);
     const page = (await res.json()) as Row[];
     all.push(...page);
@@ -67,9 +84,14 @@ export async function backfill(write: boolean, list = false) {
     const patch = allergenPatch(row);
     if (!patch) continue;
     changed++;
-    const fresh = [...patch.allergens, ...patch.may_contain].filter((a) => !row.allergens.includes(a) && !row.may_contain.includes(a));
+    const fresh = [...patch.allergens, ...patch.may_contain].filter(
+      (a) => !row.allergens.includes(a) && !row.may_contain.includes(a),
+    );
     for (const a of fresh) added[a] = (added[a] ?? 0) + 1;
-    if (list && fresh.length) console.log(`${row.code} +${fresh.join(', +')} | ${row.ingredients_text.slice(0, 140).replace(/\s+/g, ' ')}`);
+    if (list && fresh.length)
+      console.log(
+        `${row.code} +${fresh.join(', +')} | ${row.ingredients_text.slice(0, 140).replace(/\s+/g, ' ')}`,
+      );
     if (write) {
       await save(row.code, patch);
       saved++;
@@ -85,7 +107,11 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     ({ scanned, changed, saved, added }) =>
       console.log(
         `${scanned} unverified rows scanned; ${write ? `${saved} of ${changed} updated` : `${changed} would be updated`}; ` +
-          `new warnings: ${Object.entries(added).map(([a, n]) => `${a} ${n}`).join(', ') || 'none'}`,
+          `new warnings: ${
+            Object.entries(added)
+              .map(([a, n]) => `${a} ${n}`)
+              .join(', ') || 'none'
+          }`,
       ),
     (e: Error) => {
       console.error(e.message);
