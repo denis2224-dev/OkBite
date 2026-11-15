@@ -69,14 +69,20 @@ test('code entry starts at front, retains scanned code and hands candidates back
   const { deps } = setup();
   deps.identify.mockResolvedValue({ status: 'candidates', candidates: [{ id: '00000000-0000-4000-8000-000000000001', name: 'read name', brand: 'read brand', quantity: '', imageUrl: null, similarity: 0.5 }], read: { brand: null, name: null, quantity: null, code: null }, photoPath: 'uploads/newfront' });
   const flow = createGuidedFlow({ ...initial, code: '4840001000014', photoPath: null }, deps);
-  await flow.confirmIdentity('Denumire confirmată', '375 g');
   expect(flow.getState().stage).toBe('front');
   await flow.capturePhoto('front');
   expect(flow.getState().initial.code).toBe('4840001000014');
   expect(flow.getState().photos.front).toBe('id:front');
-  expect(flow.getState().stage).toBe('interrupted');
+  expect(flow.getState().stage).toBe('ingredients');
   expect(deps.onIdentify).toHaveBeenCalledWith(expect.objectContaining({ status: 'candidates' }), '4840001000014', 'id:front');
   expect(deps.readLabel).not.toHaveBeenCalled();
+});
+
+test('restores a legacy identity-stage draft to its next photo step', () => {
+  const { deps } = setup();
+  const flow = createGuidedFlow({ ...initial, photoPath: null }, deps);
+  const restored = createGuidedFlow({ ...initial, photoPath: null }, deps, { ...flow.getState(), stage: 'identity' });
+  expect(restored.getState().stage).toBe('front');
 });
 
 test('double tap cannot submit twice and cancellation suppresses late navigation', async () => {
@@ -117,7 +123,6 @@ test('a cancelled front request cannot identify or navigate after compression', 
   const { deps } = setup();
   deps.preparePhoto.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
   const flow = createGuidedFlow({ ...initial, photoPath: null }, deps);
-  await flow.confirmIdentity('Denumire confirmată', '375 g');
   const request = flow.capturePhoto('front'); flow.cancel();
   finish({ uri: 'front', base64: 'jpeg', bytes: 20 }); await request;
   expect(deps.identify).not.toHaveBeenCalled();
@@ -169,11 +174,10 @@ test('restoring a pending read makes no automatic API call; explicit retry submi
 
 test('not-found front reading becomes the initial read without losing barcode metadata', async () => {
   const { deps } = setup();
-  deps.identify.mockResolvedValue({ status: 'not_found', read: { brand: 'read brand', name: null, quantity: null, code: null }, photoPath: 'uploads/newfront' });
+  deps.identify.mockResolvedValue({ status: 'not_found', read: { brand: 'read brand', name: 'Front OCR name', quantity: '250 g', code: null }, photoPath: 'uploads/newfront' });
   const flow = createGuidedFlow({ ...initial, code: '4840001000014', photoPath: null }, deps);
-  await flow.confirmIdentity('Denumire confirmată', '375 g');
   await flow.capturePhoto('front');
-  expect(flow.getState()).toMatchObject({ stage: 'ingredients', initialFrontRead: { brand: 'read brand', code: '4840001000014' }, remotePhotoPath: 'uploads/newfront' });
+  expect(flow.getState()).toMatchObject({ stage: 'ingredients', initial: { name: 'Front OCR name', quantity: '250 g' }, initialFrontRead: { brand: 'read brand', name: 'Front OCR name', quantity: '250 g', code: '4840001000014' }, remotePhotoPath: 'uploads/newfront' });
 });
 
 test('retaking front photo after label read preserves existing label and returns directly to review', async () => {
@@ -217,11 +221,8 @@ test('retaking ingredients photo after label read re-reads with existing nutriti
 
 test('restored confirmed identity survives a front-photo OCR and a later retake', async () => {
   const { deps } = setup();
-  const entry = { ...initial, photoPath: null };
+  const entry = { ...initial, photoPath: null, name: 'Bona Vita Musli Crunchy cu fructe 30%', quantity: '375 g', identityConfirmed: true as const };
   const flow = createGuidedFlow(entry, deps);
-  await flow.capturePhoto('blocked');
-  expect(deps.preparePhoto).not.toHaveBeenCalled();
-  await flow.confirmIdentity('Bona Vita Musli Crunchy cu fructe 30%', '375 g');
   const resumed = createGuidedFlow(entry, deps, draftToGuided(guidedToDraft(flow.getState(), 'draft')));
   deps.identify.mockResolvedValue({
     status: 'not_found', read: { name: 'OCR name', quantity: '99 g', brand: null, code: null }, photoPath: 'uploads/front',
