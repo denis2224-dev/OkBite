@@ -32,7 +32,7 @@ test('expands source-backed test content and opens only a web source', async () 
   expect(screen.getByText(ro.result.explainedWithSource)).toBeTruthy();
   expect(screen.getByText(ro.result.transcribedLabel)).toBeTruthy();
   expect(screen.getByText(mockProduct.ingredientsText)).toBeTruthy();
-  expect(screen.getByText(ro.result.missingAllergenNote)).toBeTruthy();
+  expect(screen.getAllByText(ro.result.missingAllergenNote)).toHaveLength(1);
   await fireEvent.press(screen.getByRole('button', { name: ro.ingredients.source }));
   expect(open).toHaveBeenCalledWith('https://example.invalid/source');
   open.mockRestore();

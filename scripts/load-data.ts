@@ -1,5 +1,5 @@
 import { pathToFileURL } from 'node:url';
-import { CategoryEntry, IngredientEntry } from '../packages/shared/src/index';
+import { CategoryEntry, Ingredient, IngredientEntry } from '../packages/shared/src/index';
 import { checkData, checkReadiness, readData, type DataFiles } from './check-data';
 
 /**
@@ -45,9 +45,11 @@ export async function loadData(data: DataFiles = readData(), options: { release?
   if (errors.length) throw new Error(`data:check found ${errors.length} errors, nothing loaded:\n${errors.join('\n')}`);
   const categories = CategoryEntry.array().parse(data.categories)
     .map(({ slug, name, scoreKind }) => ({ slug, name, score_kind: scoreKind }));
-  const ingredients = IngredientEntry.array().parse(data.ingredients).map((i) => ({
+  const ingredients = IngredientEntry.extend({ risk: Ingredient.shape.risk, riskSource: Ingredient.shape.riskSource }) // IngredientEntry has no risk yet
+    .array().parse(data.ingredients).map((i) => ({
     slug: i.slug, name: i.name, aliases: i.aliases, grp: i.group, role: i.role,
     explanation: i.explanation, source: i.source, allergen: i.allergen,
+    risk: i.risk ?? null, risk_source: i.riskSource ?? null,
   }));
   return {
     categories: await upsert('categories', categories, 'slug'),

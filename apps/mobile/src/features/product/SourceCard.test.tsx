@@ -13,3 +13,12 @@ it('preserves the unverified text when no verification date is known', async () 
   expect(screen.getByText(ro.result.unverified)).toBeTruthy();
   expect(screen.queryByText(new RegExp(ro.result.checked))).toBeNull();
 });
+it.each([
+  ['Open Food Facts import', 'Open Food Facts (ODbL)', () => ro.result.imported],
+  ['shopper photos', 'Fotografiile utilizatorului', () => ro.result.added],
+])('labels the added date for %s', async (_, source, label) => {
+  await render(<SourceCard product={{ ...foundYogurt.product, source, addedAt: '2026-11-12', status: 'unverified', verifiedAt: null }} />);
+  expect(screen.getByText(`${label()}: 12.11.2026`)).toBeTruthy();
+  const other = label() === ro.result.added ? ro.result.imported : ro.result.added;
+  expect(screen.queryByText(new RegExp(`^${other}`))).toBeNull();
+});

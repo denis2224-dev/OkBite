@@ -1,6 +1,5 @@
-// N10 owns ProfileScreen and the onboarding store; do not create a second store here.
-import { Body, Screen } from '../../src/ui';
-import { ro } from '../../src/copy/ro';
+import { ProfileLinks } from '../../src/features/profile/ProfileLinks';
+import { ProfileScreen } from '../../src/features/profile/ProfileScreen';
 export default function ProfileTab() {
- return <Screen title={ro.nav.profile} back={false}><Body>{ro.profile.pending}</Body></Screen>;
+ return <ProfileScreen><ProfileLinks /></ProfileScreen>;
 }

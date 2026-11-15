@@ -76,6 +76,7 @@ jest.mock('expo-file-system/legacy', () => ({
   deleteAsync: jest.fn(async () => {}),
 }));
 jest.mock('../add/unknownDraft', () => ({
+  ...jest.requireActual<typeof import('../add/unknownDraftRepository')>('../add/unknownDraftRepository'),
   loadUnknownDraft: jest.fn(async () => null),
   saveUnknownDraft: jest.fn(async () => {}),
   clearUnknownDraft: jest.fn(async () => {}),
@@ -137,7 +138,7 @@ describe('IdentifyScreen and B3 flow', () => {
 
     expect(screen.getByText(ro.identify.confirmTitle)).toBeTruthy();
     expect(screen.getByText(CAND_1.name)).toBeTruthy();
-    expect(screen.getByText(`${CAND_1.brand} · ${CAND_1.quantity}`)).toBeTruthy();
+    expect(screen.getByText(`${CAND_1.brand}, ${CAND_1.quantity}`)).toBeTruthy();
     expect(screen.getByText(ro.identify.confirmHint)).toBeTruthy();
     expect(screen.getByLabelText(CAND_1.name)).toBeTruthy();
 
@@ -233,8 +234,8 @@ describe('IdentifyScreen and B3 flow', () => {
 
     expect(screen.getByText(ro.identify.notFoundTitle)).toBeTruthy();
     expect(screen.getByText(ro.identify.notFoundText)).toBeTruthy();
-    expect(screen.getByText(ro.identify.nextTitle)).toBeTruthy();
-    for (const step of ro.identify.nextSteps) {
+    for (const [index, step] of ro.identify.nextSteps.entries()) {
+      expect(screen.getByText(String(index + 1))).toBeTruthy();
       expect(screen.getByText(step)).toBeTruthy();
     }
 
@@ -426,6 +427,9 @@ describe('IdentifyScreen and B3 flow', () => {
     mockParams.value = notFoundParams;
     await render(<AddScreen />);
     await act(async () => {});
+    await fireEvent.changeText(await screen.findByLabelText(ro.review.name), ORIGINAL_READ.name!);
+    await fireEvent.changeText(screen.getByLabelText(ro.review.quantity), ORIGINAL_READ.quantity!);
+    await fireEvent.press(screen.getByRole('button', { name: ro.add.next }));
     expect(screen.getByText(ro.add.ingredientsTitle)).toBeTruthy();
     expect(screen.getByText(ro.add.stepOf(1, 3))).toBeTruthy();
   });

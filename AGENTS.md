@@ -31,7 +31,7 @@ OkBite is a Romanian- and English-language mobile app for iPhone and Android (Ex
 - TypeScript strict; named exports; one component per file; files under ~200 lines.
 - UI text is Romanian and English via `apps/mobile/src/copy/ro.ts`, selected by the language module; catalogues live in `strings.ro.ts` and `strings.en.ts`. Use comma-below Romanian diacritics (ș, ț). Ingredient knowledge-base explanations stay Romanian for this release.
 - The same app runs on iOS, Android and the web (Expo web at okbite.md). Put platform differences in `*.web.ts(x)` files with the same exports as the native file; no scattered `Platform.OS` checks.
-- Every pressable has `accessibilityRole` and an `accessibilityLabel` from the selected-language copy; screens work in dark mode and at 200% font size.
+- Every pressable has `accessibilityRole` and an `accessibilityLabel` from the selected-language copy; screens work at 200% font size. The app is light mode only (no dark theme, no theme choice); do not add dark-mode styles.
 - No payment or subscription code: pricing is not decided.
 - Validate every API request and response with the Zod schemas from `@okbite/shared`.
 - Numbers shown to users use a decimal comma (`13,2 g`); stored values are per 100 g or 100 ml.

@@ -130,12 +130,12 @@ export function DemoStatesSheet({ visible, onClose }: { visible: boolean; onClos
             >
               {d.shortcuts}
             </Body>
-            <Button variant="secondary" onPress={() => shortcut('4841234567890')}>
+            <Button variant="secondary" onPress={() => shortcut('4841234567893')}>
               {d.notFoundTitle}
             </Button>
             <Button
               variant="secondary"
-              onPress={() => shortcut('4840001000055', true)}
+              onPress={() => shortcut('4840001000052', true)}
             >{`${ro.result.insufficient} (suc de mere)`}</Button>
             <Button
               variant="secondary"

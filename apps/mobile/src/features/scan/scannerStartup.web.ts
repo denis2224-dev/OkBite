@@ -4,12 +4,12 @@ import {
   purgeZXingModule,
 } from 'barcode-detector/ponyfill';
 
-export const SCANNER_FORMATS = ['ean_13', 'ean_8', 'upc_a'] as const;
+export const SCANNER_FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e'] as const;
 export const ZXING_READER_WASM_PATH = '/zxing_reader.wasm';
 
 const IDLE_FALLBACK_MS = 800;
 
-export type BarcodeHit = { rawValue?: string };
+export type BarcodeHit = { rawValue?: string; format?: string };
 export type BarcodeDetectorInstance = {
   detect: (source: HTMLCanvasElement) => Promise<BarcodeHit[]>;
 };
@@ -32,10 +32,9 @@ export async function createNativeBarcodeDetector(): Promise<BarcodeDetectorInst
   try {
     const supported =
       typeof Ctor.getSupportedFormats === 'function' ? await Ctor.getSupportedFormats() : null;
-    const formats = supported
-      ? SCANNER_FORMATS.filter((format) => supported.includes(format))
-      : [...SCANNER_FORMATS];
-    return formats.length > 0 ? new Ctor({ formats }) : null;
+    // Select WASM when the native implementation can't read every supported retail format.
+    if (supported && !SCANNER_FORMATS.every((format) => supported.includes(format))) return null;
+    return new Ctor({ formats: [...SCANNER_FORMATS] });
   } catch {
     return null;
   }

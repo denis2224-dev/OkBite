@@ -1,5 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { SettingsScreen } from './SettingsScreen';
 import { ThemeProvider } from '../../theme/useTheme';
@@ -16,14 +15,12 @@ beforeEach(() => {
   Object.defineProperty(globalThis, 'window', { configurable: true, value: browser });
   Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { platform: 'Linux', maxTouchPoints: 0 } });
 });
-it('keeps missing language/reset integrations explicit and persists the chosen theme', async () => {
+it('keeps missing language/reset integrations explicit and offers no theme choice', async () => {
   await render(<SettingsScreen />, { wrapper: ThemeProvider });
   expect(screen.getByRole('button', { name: ro.settings.english })).toBeDisabled();
   expect(screen.getByText(ro.settings.pending)).toBeTruthy();
   expect(screen.queryByText(ro.settings.resetOnboarding)).toBeNull();
-  await fireEvent.press(screen.getByRole('button', { name: ro.settings.dark }));
-  expect(screen.getByRole('button', { name: ro.settings.dark }).props.accessibilityState.selected).toBe(true);
-  await waitFor(() => expect(AsyncStorage.setItem).toHaveBeenCalledWith('okbite.appearance', 'dark'));
+  for (const label of ['După telefon', 'Luminos', 'Întunecat', 'Aspect']) expect(screen.queryByText(label)).toBeNull();
 });
 it('passes language choices to N17 and opens existing legal destinations', async () => {
   const setLanguage = jest.fn();
@@ -53,7 +50,8 @@ it('confirms before clearing the real history store, then handles a failed delet
 });
 it('uses the shared browser prompt only after a press and reports prompt failure', async () => {
   await render(<SettingsScreen />, { wrapper: InstallPromptProvider });
-  expect(screen.getByRole('button', { name: ro.settings.install })).toBeDisabled();
+  await fireEvent.press(screen.getByRole('button', { name: ro.settings.install }));
+  expect(screen.getByText(ro.pwa.install.menuHint)).toBeTruthy();
   const prompt = jest.fn(async () => { throw new Error('blocked'); });
   await act(() => { browser.dispatchEvent(Object.assign(new Event('beforeinstallprompt', { cancelable: true }), { prompt, userChoice: Promise.resolve({ outcome: 'dismissed' }) })); });
   expect(prompt).not.toHaveBeenCalled();
@@ -80,4 +78,13 @@ it('prevents duplicate deletion or cancellation while storage is busy', async ()
   expect(screen.getByText(ro.settings.clearHistoryTitle)).toBeTruthy();
   await act(() => { finish(); });
   expect(screen.getByText(ro.history.cleared)).toBeTruthy();
+});
+it('orders the groups Language, App (clear history last), Info with sentence-case headings', async () => {
+  await render(<SettingsScreen setLanguage={jest.fn()} resetOnboarding={jest.fn()} />);
+  const headings = screen.getAllByRole('header').map(h => h.props.children);
+  expect(headings).toEqual([ro.settings.title, ro.settings.language, ro.settings.app, ro.settings.info]);
+  expect(ro.settings.language).toBe('Limbă');
+  const names = screen.getAllByRole('button').map(b => b.props.accessibilityLabel).filter(n => n !== 'Înapoi');
+  expect(names).toEqual([ro.settings.romanian, ro.settings.english, ro.settings.install, ro.settings.resetOnboarding, ro.settings.clearHistory, ro.settings.method, ro.settings.privacy, ro.settings.terms]);
+  expect(screen.getByText(ro.settings.version, { exact: false })).toBeTruthy();
 });

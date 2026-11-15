@@ -319,7 +319,7 @@ export function WorkflowPreview({
           setCode={setCode}
           setError={setError}
           findCode={() => scan()}
-          onExample={() => scan("4840001000024")}
+          onExample={() => scan("4840001000021")}
           onScanCode={(value) => scan(value)}
           camDenied={demo.camDenied}
           onAllow={() => {
@@ -359,7 +359,7 @@ export function WorkflowPreview({
             <Body style={{ textAlign: "center", color: colors.muted }}>
               Codul{" "}
               <Body style={{ fontWeight: "800" }}>
-                {code || "4841234567890"}
+                {code || "4841234567893"}
               </Body>{" "}
               nu există în baza de date. Îl poți adăuga tu, în aproximativ un
               minut.

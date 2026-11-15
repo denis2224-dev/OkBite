@@ -11,8 +11,9 @@ export const UnknownDraftSnapshotSchema = z.object({
     queueId: z.string().min(1).optional(),
     frontPhotoId: photoReference.optional(),
     categorySlug: z.string().min(1).optional(),
+    identityConfirmed: z.literal(true).optional(),
   }),
-  stage: z.enum(['front', 'ingredients', 'nutrition_question', 'nutrition', 'reading', 'review']),
+  stage: z.enum(['identity', 'label_failed', 'front', 'ingredients', 'nutrition_question', 'nutrition', 'reading', 'review']),
   nutritionMode: z.enum(['separate', 'same_photo', 'none', 'skipped']).nullable(),
   photos: z.object({
     front: photoReference.nullable(),

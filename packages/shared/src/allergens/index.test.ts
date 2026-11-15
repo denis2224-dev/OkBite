@@ -60,4 +60,37 @@ describe('detectAllergens', () => {
   ])('detectAllergens(%s)', (text, allergens, may) =>
     expect(detectAllergens(text)).toEqual({ allergens, mayContain: may }),
   );
+
+  it.each<[string, string[], string[]]>([
+    ['Ingredients: WHEAT flour. May contain MILK and PEANUTS.', ['Gluten'], ['Arahide', 'Lapte']],
+    [
+      'Ingredients: wheat flour.\nMay contain:\nMILK, PEANUTS;\nSESAME.\nServing suggestion: serve with eggs.',
+      ['Gluten'], ['Arahide', 'Lapte', 'Susan'],
+    ],
+    [
+      'Состав: пшеничная мука. Может содержать следы молока, арахиса и кунжута.',
+      ['Gluten'], ['Arahide', 'Lapte', 'Susan'],
+    ],
+    ['Složení: pšeničná mouka. Může obsahovat stopy mléka a arašídů.', ['Gluten'], ['Arahide', 'Lapte']],
+    ['Ingredients: rice and MILK. May contain milk and eggs.', ['Lapte'], ['Ouă']],
+    ['May contain peanuts.\nIngredients: milk powder and wheat flour.', ['Gluten', 'Lapte'], ['Arahide']],
+    ['Milk-free. Ingredients: rice, coconut milk and cocoa butter. May contain peanuts.', [], ['Arahide']],
+    ['Состав: рис. Не содержит молока. Может содержать арахис.', [], ['Arahide']],
+    ['Složení: rýže. Bez mléka. Může obsahovat sezam.', [], ['Susan']],
+    ['Ingredients: wheat glucose syrup, dextrose from wheat, barley glucose syrup.', [], []],
+    ['Biscuit cu lapte. Ingredients:wheat flour. May contain:sesame.', ['Gluten'], ['Susan']],
+    ['Ingredients: sugar. Fără urme de lapte. May contain:peanuts.', [], ['Arahide']],
+    ['Ingredients: rice. No traces of milk. May contain sesame.', [], ['Susan']],
+    ['Ingredients: rice. Without traces of milk. May contain sesame.', [], ['Susan']],
+    ['Ingredients: coconut\nmilk, rice.', [], []],
+    ['Ingredients: coconut\nContains: milk.', ['Lapte'], []],
+    ['Ingredients: rice. May contain coconut. May contain milk.', [], ['Lapte']],
+    ['Ingredients:rice. May contain:milk and\npeanuts. Contains:egg.', ['Ouă'], ['Arahide', 'Lapte']],
+    [
+      'Ingrediente: fulgi de ovăz integral, făină de grâu, fructe conservate cu dioxid de sulf. Produsul poate conține urme de lapte și produse lactate, soia, arahide, nuci și semințe de susan.',
+      ['Gluten', 'Dioxid de sulf și sulfiți'], ['Arahide', 'Soia', 'Lapte', 'Fructe cu coajă lemnoasă', 'Susan'],
+    ],
+  ])('classifies declared allergens and traces in %s', (label, allergens, mayContain) => {
+    expect(detectAllergens(label)).toEqual({ allergens, mayContain });
+  });
 });

@@ -336,8 +336,37 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     expect(allergensBox.getByText('Gluten')).toBeTruthy();
     expect(allergensBox.getByText('Soia')).toBeTruthy();
     expect(allergensBox.queryByText('Lapte')).toBeNull();
-    expect(allergensBox.getByText('Ouă')).toBeTruthy();
-    expect(allergensBox.getByText('Susan')).toBeTruthy();
+    expect(allergensBox.getByLabelText(`${ro.result.mayContain} Ouă`)).toBeTruthy();
+    expect(allergensBox.getByLabelText(`${ro.result.mayContain} Susan`)).toBeTruthy();
+
+    await fireEvent.changeText(ingInput, 'Ingredients: WHEAT flour. May contain MILK and PEANUTS.');
+    expect(allergensBox.getByLabelText('Gluten')).toBeTruthy();
+    expect(allergensBox.getByLabelText(`${ro.result.mayContain} Lapte`)).toBeTruthy();
+    expect(allergensBox.getByLabelText(`${ro.result.mayContain} Arahide`)).toBeTruthy();
+    expect(allergensBox.queryByLabelText('Lapte')).toBeNull();
+    expect(allergensBox.queryByLabelText('Arahide')).toBeNull();
+  });
+
+  it('keeps an unread manual label unconfirmed rather than claiming no allergens detected', async () => {
+    await render(
+      <ReviewForm
+        label={ReadLabelResponse.parse({
+          ...BASE_LABEL,
+          ingredientsText: null,
+          unit: null,
+          nutrients: Object.fromEntries(NUTRIENT_KEYS.map((k) => [k, null])),
+          reasons: { ...Object.fromEntries([...NUTRIENT_KEYS, 'ingredientsText'].map((k) => [k, 'failed'])) },
+          unclear: ['ingredientsText'],
+        })}
+        initial={BASE_INITIAL}
+        categories={getAvailableCategories()}
+        onSubmit={jest.fn<() => void>()}
+      />,
+    );
+
+    const allergensBox = within(screen.getByTestId('detected-allergens'));
+    expect(allergensBox.getByText(ro.result.missingAllergenNote)).toBeTruthy();
+    expect(allergensBox.queryByText(ro.review.allergensNone)).toBeNull();
   });
 
   it('explains unavailable categories while allowing an unverified submission without one', async () => {

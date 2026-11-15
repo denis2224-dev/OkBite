@@ -226,3 +226,43 @@ Deno.test('parseLabel recognizes explicit absent rows while preserving zero and 
   assert.equal(read.reasons.sugar, 'unreadable');
   for (const key of ['protein', 'fiber', 'fruitVegPct'] as const) assert.equal(read.reasons[key], 'not_printed');
 });
+
+Deno.test('parseLabel keeps the printed energy basis and decimal values from the photographed table', () => {
+  const read = parseLabel(label({
+    unit: 'Per 100g',
+    kcal: '1851kJ/440kcal',
+    sugar: '31 g',
+    salt: '0.06 g',
+  }));
+  assert.equal(read.unit, 'g');
+  assert.equal(read.nutrients.kcal, 440);
+  assert.equal(read.nutrients.sugar, 31);
+  assert.equal(read.nutrients.salt, 0.06);
+});
+
+Deno.test('parseLabel accepts Cyrillic units only where they match the field and basis', () => {
+  const ingredientsText = 'Пшеничная мука. May contain MILK and PEANUTS.';
+  const read = parseLabel(label({
+    ingredientsText,
+    unit: 'на 100 г',
+    kcal: '1851 кДж / 440 ккал',
+    sugar: '31 г',
+    salt: '0,06 г',
+    fat: '15 мл',
+    fiber: '0 г',
+    fruitVegPct: '',
+  }));
+  assert.equal(read.ingredientsText, ingredientsText);
+  assert.equal(read.unit, 'g');
+  assert.equal(read.nutrients.kcal, 440);
+  assert.equal(read.nutrients.sugar, 31);
+  assert.equal(read.nutrients.salt, 0.06);
+  assert.equal(read.nutrients.fat, null);
+  assert.equal(read.reasons.fat, 'unreadable');
+  assert.equal(read.nutrients.fiber, 0);
+  assert.equal(read.reasons.fruitVegPct, 'not_printed');
+  assert.equal(parseLabel(label({ unit: 'на 100 мл' })).unit, 'ml');
+  assert.equal(parseLabel(label({ unit: 'на 200 г' })).unit, null);
+  assert.equal(parseLabel(label({ unit: 'per g' })).unit, null);
+  assert.equal(parseLabel(label({ kcal: '1851 кДж' })).nutrients.kcal, null);
+});

@@ -45,7 +45,7 @@ describe('scannerStartup (WASM preload and detector initialization)', () => {
 
   it('exposes the agreed same-origin WASM path and formats', () => {
     expect(ZXING_READER_WASM_PATH).toBe('/zxing_reader.wasm');
-    expect(SCANNER_FORMATS).toEqual(['ean_13', 'ean_8', 'upc_a']);
+    expect(SCANNER_FORMATS).toEqual(['ean_13', 'ean_8', 'upc_a', 'upc_e']);
   });
 
   it('passes the same-origin locateFile override to prepareZXingModule', async () => {
@@ -77,7 +77,7 @@ describe('scannerStartup (WASM preload and detector initialization)', () => {
   it('schedules idle preloading via requestIdleCallback and skips WASM when native is supported', async () => {
     g.BarcodeDetector = Object.assign(
       jest.fn(function () { return { detect: jest.fn() }; }),
-      { getSupportedFormats: jest.fn(async () => ['ean_13', 'ean_8', 'upc_a']) },
+      { getSupportedFormats: jest.fn(async () => ['ean_13', 'ean_8', 'upc_a', 'upc_e']) },
     );
     let idleCb: (() => void) | undefined;
     g.requestIdleCallback = jest.fn((cb: () => void) => {
@@ -120,15 +120,24 @@ describe('scannerStartup (WASM preload and detector initialization)', () => {
     expect(() => cancel()).not.toThrow();
   });
 
-  it('creates native detector when supported, filtering formats', async () => {
+  it('creates the native detector with only retail formats when they are all supported', async () => {
     const nativeDetect = jest.fn();
     g.BarcodeDetector = Object.assign(
       jest.fn(function (opts: unknown) { return { detect: nativeDetect, opts }; }),
-      { getSupportedFormats: jest.fn(async () => ['ean_13', 'qr_code']) },
+      { getSupportedFormats: jest.fn(async () => [...SCANNER_FORMATS, 'qr_code']) },
     );
     const detector = await createNativeBarcodeDetector();
     expect(detector).toBeTruthy();
-    expect(g.BarcodeDetector).toHaveBeenCalledWith({ formats: ['ean_13'] });
+    expect(g.BarcodeDetector).toHaveBeenCalledWith({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
+  });
+
+  it('leaves partial native support to the WASM detector', async () => {
+    const native = Object.assign(jest.fn(), {
+      getSupportedFormats: jest.fn(async () => ['ean_13', 'ean_8', 'upc_a']),
+    });
+    g.BarcodeDetector = native;
+    await expect(createNativeBarcodeDetector()).resolves.toBeNull();
+    expect(native).not.toHaveBeenCalled();
   });
 
   it('creates WASM ponyfill detector after preloading', async () => {
@@ -139,7 +148,7 @@ describe('scannerStartup (WASM preload and detector initialization)', () => {
     const detector = await createWasmBarcodeDetector();
     expect(detector).toBeTruthy();
     expect(ponyfillMock.prepareZXingModule).toHaveBeenCalledTimes(1);
-    expect(ponyfillMock.BarcodeDetector).toHaveBeenCalledWith({ formats: ['ean_13', 'ean_8', 'upc_a'] });
+    expect(ponyfillMock.BarcodeDetector).toHaveBeenCalledWith({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
   });
 });
 

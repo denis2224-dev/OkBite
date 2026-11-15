@@ -22,7 +22,25 @@ test('insecure camera access explains HTTPS and keeps gallery and manual entry r
   await expect(page.getByRole('button', { name: 'Deschide setările', exact: true })).toHaveCount(0);
   await page.goto(app + '/scan');
   await expect(page.getByText('Camera funcționează doar pe o conexiune securizată HTTPS.', { exact: true })).toBeVisible();
-  await expect(page.getByRole('textbox', { name: 'Introdu codul manual', exact: true })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Introdu codul manual', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Introdu codul', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: 'Introdu codul manual', exact: true })).toHaveAttribute('placeholder', '8 sau 13 cifre');
+  expect(errors).toEqual([]);
+});
+
+test('denied camera on Scan asks once, then shows this browser’s steps after the retry fails', async ({ page }) => {
+  const errors = errorsOn(page);
+  await page.addInitScript(() => Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: {
+    getUserMedia: async () => { throw new DOMException('Denied', 'NotAllowedError'); },
+  } }));
+  await page.goto(app + '/');
+  await expect(page.getByText('Permite accesul la cameră ca să scanezi.', { exact: true })).toBeVisible();
+  const steps = /iPhone/.test(await page.evaluate(() => navigator.userAgent))
+    ? 'Pe iPhone, permite accesul din Setări > Safari > Cameră, apoi reîncearcă.'
+    : 'În Chrome, apasă lacătul de lângă adresă > Permisiuni > Cameră, apoi reîncearcă.';
+  await expect(page.getByText(steps, { exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Încearcă din nou', exact: true }).click();
+  await expect(page.getByText(steps, { exact: true })).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -49,7 +67,7 @@ test('repeated capture and scan navigation preserves React hook ordering', async
     await page.getByRole('tab', { name: 'Istoric', exact: true }).click();
     await page.getByRole('tab', { name: 'Scanează', exact: true }).click();
     await expect(page).toHaveURL(app + '/');
-    await expect(page.getByRole('textbox', { name: 'Introdu codul manual', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Introdu codul', exact: true })).toBeVisible();
   }
   expect(errors).toEqual([]);
 });

@@ -1,12 +1,14 @@
-import { IdentifyRequest, IdentifyResponse } from '@okbite/shared';
+import { AddProductRequest, IdentifyRequest, IdentifyResponse } from '@okbite/shared';
 import { NutritionMode, type GuidedReadLabelResponse } from './unknownFlowContract';
 import { hasUnreadableNutrition, ingredientsOnly, prepareGuidedPhoto, readGuidedLabel, validateBody } from './guidedReading';
 import type { GuidedFlowDependencies, GuidedFlowInitial, GuidedFlowState, GuidedPhotoKind } from './guidedFlowTypes';
 export type { GuidedFlowState, GuidedFlowDependencies, GuidedFlowInitial, GuidedPhotoKind } from './guidedFlowTypes';
 
+const identityFields = AddProductRequest.pick({ name: true, quantity: true });
+
 export function createGuidedFlow(initial: GuidedFlowInitial, deps: GuidedFlowDependencies, restored?: GuidedFlowState) {
   let state: GuidedFlowState = {
-    stage: initial.photoPath ? 'ingredients' : 'front', initial: { ...initial },
+    stage: 'identity', initial: { ...initial },
     initialFrontRead: { brand: initial.brand, name: initial.name, quantity: initial.quantity, code: initial.code },
     scannedCode: initial.code, remotePhotoPath: initial.photoPath,
     photos: { front: initial.frontPhotoId ?? null, ingredients: null, nutrition: null }, nutritionMode: null, label: null,
@@ -35,16 +37,37 @@ export function createGuidedFlow(initial: GuidedFlowInitial, deps: GuidedFlowDep
       }
     } finally { busy = false; }
   }
-  async function review() {
+  async function confirmIdentity(name: string, quantity: string) {
+    if (busy || cancelled || state.stage !== 'identity') return;
+    const identity = identityFields.safeParse({ name: name.trim(), quantity: quantity.trim() });
+    if (!identity.success || !identity.data.quantity) return;
+    const next: GuidedFlowState = {
+      ...state,
+      stage: state.remotePhotoPath ? 'ingredients' : 'front',
+      initial: { ...state.initial, ...identity.data, identityConfirmed: true },
+      initialFrontRead: { ...state.initialFrontRead, ...identity.data },
+    };
+    busy = true;
+    try {
+      await deps.persist?.(next);
+      if (active()) set(next);
+    } finally { busy = false; }
+  }
+  async function review(manual = false) {
     set({ stage: 'review' });
     await persist();
-    if (active()) deps.onReview(state);
+    if (active()) deps.onReview(state, manual);
   }
   async function read() {
     await persist();
     if (!active()) return;
     const label = completedRead ?? await readGuidedLabel(state, deps, active);
     if (!label || !active()) return;
+    if (Object.values(label.reasons).includes('failed')) {
+      set({ label: state.label ?? label, stage: 'label_failed' });
+      await persist();
+      return;
+    }
     completedRead = label;
     set({ label });
     if (hasUnreadableNutrition(label) && state.nutritionMode !== 'none' && state.nutritionMode !== 'skipped') {
@@ -62,14 +85,18 @@ export function createGuidedFlow(initial: GuidedFlowInitial, deps: GuidedFlowDep
     if (!active()) return;
     const response = parsed.data;
     const read = response.status === 'found' ? state.initialFrontRead : response.read;
-    const nextInitial = { ...state.initial, brand: read.brand ?? state.initial.brand, name: read.name ?? state.initial.name,
-      quantity: read.quantity ?? state.initial.quantity, code: state.scannedCode ?? read.code,
+    const { name, quantity, identityConfirmed } = state.initial;
+    const nextInitial = { ...state.initial, brand: read.brand ?? state.initial.brand,
+      name: identityConfirmed ? name : read.name ?? name,
+      quantity: identityConfirmed ? quantity : read.quantity ?? quantity, code: state.scannedCode ?? read.code,
       photoPath: response.photoPath, frontPhotoId: state.photos.front! };
+    const returnToReview = Boolean(state.label && identityConfirmed);
     set({ initial: nextInitial, initialFrontRead: { brand: nextInitial.brand, name: nextInitial.name, quantity: nextInitial.quantity, code: nextInitial.code }, remotePhotoPath: response.photoPath,
-      stage: response.status === 'not_found' ? (state.label ? 'review' : 'ingredients') : 'interrupted' });
+      stage: returnToReview || (response.status === 'not_found' && state.label) ? 'review' : response.status === 'not_found' ? 'ingredients' : 'interrupted' });
     await persist();
     if (!active()) return;
-    if (response.status === 'found') deps.onFound({ status: 'found', product: response.product, score: response.score });
+    if (returnToReview) await review();
+    else if (response.status === 'found') deps.onFound({ status: 'found', product: response.product, score: response.score });
     else if (response.status === 'candidates') deps.onIdentify(response, state.scannedCode, state.photos.front!);
     else if (state.label) await review();
   }
@@ -98,7 +125,12 @@ export function createGuidedFlow(initial: GuidedFlowInitial, deps: GuidedFlowDep
   return {
     getState: () => state,
     subscribe(listener: (snapshot: GuidedFlowState) => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
+    confirmIdentity,
     capturePhoto,
+    async enterLabelManually() {
+      if (busy || cancelled || state.stage !== 'label_failed' || !state.label) return;
+      await run(() => review(true));
+    },
     async chooseNutrition(mode: NutritionMode) {
       if (state.stage !== 'nutrition_question' || busy || cancelled) return;
       const parsed = NutritionMode.safeParse(mode);
@@ -122,6 +154,7 @@ export function createGuidedFlow(initial: GuidedFlowInitial, deps: GuidedFlowDep
     },
     async retry() {
       if (cancelled || busy) return;
+      if (state.stage === 'label_failed') { await run(read); return; }
       if (state.stage === 'error' && lastAttempt) { await run(lastAttempt); return; }
       if (state.stage !== 'interrupted' && state.stage !== 'error') return;
       if (!state.remotePhotoPath && state.photos.front) {

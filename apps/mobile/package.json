@@ -7,7 +7,7 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "node ../../scripts/check-web-env.mjs && expo export -p web && workbox generateSW workbox-config.cjs",
+    "web": "node ../../scripts/check-web-env.mjs && expo export -p web && node scripts/copy-barcode-wasm.cjs && workbox generateSW workbox-config.cjs",
     "test": "jest --runInBand",
     "typecheck": "tsc --noEmit"
   },

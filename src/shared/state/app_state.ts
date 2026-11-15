@@ -110,7 +110,7 @@ export function resolveDemoCode(code: string, online = false) {
   const entry = previewEntries.find(
     (item) =>
       item.product.code === code &&
-      ['4840001000017', '4840001000024', '4840001000055'].includes(code),
+      ['4840001000014', '4840001000021', '4840001000052'].includes(code),
   );
   if (state.offline) {
     const cached = state.history.find((row) => row.product.code === code);

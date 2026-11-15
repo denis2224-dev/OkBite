@@ -1,10 +1,11 @@
 import React, { useRef, useState } from 'react';
 import { Text, View } from 'react-native';
-import { NUTRIENT_KEYS, Nutrients, type AddProductRequest, type Category, type ReadLabelResponse, type Unit } from '@okbite/shared';
+import { detectAllergens, NUTRIENT_KEYS, Nutrients, type AddProductRequest, type Category, type ReadLabelResponse, type Unit } from '@okbite/shared';
 import type { AddInitialValues } from '../identify/routes';
 import { useTheme } from '../../theme/useTheme';
 import { ro } from '../../copy/ro';
 import { Screen } from '../../ui/Screen';
+import { AllergenChip } from '../../ui/AllergenChip';
 import { ActionButton } from '../capture/StatusPanel';
 import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { CategoryPicker } from './CategoryPicker';
@@ -45,6 +46,7 @@ export function UnknownProductConfirmation({ initial, label, photos, categories,
   const nutritionUnreadable = unclear.some(key => key !== 'ingredientsText');
   const visibleNutrients = NUTRIENT_KEYS.filter(key => label.nutrients[key] !== null);
   const essentialMissing = !value.ingredientsText.trim();
+  const { allergens, mayContain } = detectAllergens(value.ingredientsText);
   const numericInvalid = Object.values(invalid).some(Boolean) ||
     (value.nutrients.sat !== null && value.nutrients.fat !== null && value.nutrients.sat > value.nutrients.fat);
   // U1 option A: unit is required on save, so ask g/ml with one tap instead of guessing it.
@@ -89,6 +91,19 @@ export function UnknownProductConfirmation({ initial, label, photos, categories,
       </> : null}
       {onManual && (essentialMissing || label.reasons?.ingredientsText === 'failed') ?
         <ActionButton label={ro.add.manualEntry} onPress={onManual} disabled={pending} /> : null}
+      {allergens.length > 0 && <>
+        <Text accessibilityRole="header" style={textStyle}>{ro.result.allergens}</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {allergens.map(name => <AllergenChip key={name} name={name} />)}
+        </View>
+      </>}
+      {mayContain.length > 0 && <>
+        <Text accessibilityRole="header" style={textStyle}>{ro.result.mayContain}</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {mayContain.map(name => <AllergenChip key={name} name={name} tone="trace" />)}
+        </View>
+      </>}
+      <Text style={textStyle}>{ro.result.missingAllergenNote}</Text>
     </View>
     <View style={card}>
       <Text accessibilityRole="header" style={textStyle}>{ro.review.nutritionTitle}</Text>

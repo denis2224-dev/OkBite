@@ -25,6 +25,9 @@ it('builds a complete production config', () => {
 it('disables the generated sitemap route', () => {
   expect(load(prod)).toMatchObject({ plugins: expect.arrayContaining([['expo-router', { sitemap: false }]]) });
 });
+it('runs in light mode only, whatever the phone setting', () => {
+  expect(load(prod)).toMatchObject({ userInterfaceStyle: 'light' });
+});
 it.each([
   ['EXPO_PUBLIC_SUPABASE_URL', undefined],
   ['EXPO_PUBLIC_SUPABASE_ANON_KEY', ''],

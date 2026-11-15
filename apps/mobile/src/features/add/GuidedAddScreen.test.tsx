@@ -74,7 +74,7 @@ test('shows unreadable nutrition recovery with Retake and Continue with ingredie
     unclear: ['kcal'],
   });
   await render(<GuidedAddScreen />);
-  await act(async () => {});
+  await fillIdentity();
 
   expect(screen.getByText(ro.add.ingredientsTitle)).toBeTruthy();
   await act(async () => {
@@ -106,7 +106,7 @@ test('shows unreadable nutrition recovery with Retake and Continue with ingredie
 test('starts at front photo step when barcode entry has no front photoPath', async () => {
   mockParams.value = { code: '4840001000014' };
   await render(<GuidedAddScreen />);
-  await act(async () => {});
+  await fillIdentity();
 
   expect(screen.getByText(ro.add.frontTitle)).toBeTruthy();
   expect(screen.getByText(ro.add.frontHint)).toBeTruthy();
@@ -178,3 +178,46 @@ test('offers a return to confirmation for a completed draft without replaying a 
   await fireEvent.press(screen.getByRole('button', { name: ro.add.confirmTitle }));
   expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'ready-draft' } });
 });
+
+test.each([null, 'device/front.jpg'])('requires both identity fields before showing capture (existing front: %s)', async photoPath => {
+  mockParams.value = { name: 'OCR guess', quantity: '99 g', ...(photoPath ? { photoPath } : {}) };
+  await render(<GuidedAddScreen />);
+  const name = await screen.findByLabelText(ro.review.name);
+  expect(name).toHaveProp('value', '');
+  expect(screen.queryByRole('button', { name: ro.capture.shutter })).toBeNull();
+  expect(screen.getByRole('button', { name: ro.add.next })).toBeDisabled();
+  await fireEvent.changeText(name, '  Denumire introdusă  ');
+  expect(screen.getByRole('button', { name: ro.add.next })).toBeDisabled();
+  await fireEvent.changeText(screen.getByLabelText(ro.review.quantity), ' 375 g ');
+  await fireEvent.press(screen.getByRole('button', { name: ro.add.next }));
+  expect(saveUnknownDraft).toHaveBeenLastCalledWith(expect.objectContaining({
+    initial: expect.objectContaining({ name: 'Denumire introdusă', quantity: '375 g', identityConfirmed: true }),
+    stage: photoPath ? 'ingredients' : 'front',
+  }));
+  expect(screen.getByRole('button', { name: ro.capture.shutter })).toBeTruthy();
+});
+
+test('provider failure preserves durable photos and allows manual review without a second read', async () => {
+  const failureReasons = Object.fromEntries([...NUTRIENT_KEYS, 'ingredientsText'].map(key => [key, 'failed']));
+  jest.mocked(requestUnknownFlow).mockResolvedValueOnce({
+    ...baseLabel, ingredientsText: null, unit: null, reasons: failureReasons, unclear: [...NUTRIENT_KEYS, 'ingredientsText'],
+  });
+  await render(<GuidedAddScreen />);
+  await fillIdentity();
+  await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
+  await fireEvent.press(screen.getByRole('button', { name: ro.add.nutritionSame }));
+  expect(await screen.findByText(ro.add.processingFailed)).toBeTruthy();
+  expect(screen.queryByText(ro.add.nutritionUnreadable)).toBeNull();
+  await fireEvent.press(screen.getByRole('button', { name: ro.add.manualEntry }));
+  expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'draft-id', manual: '1' } });
+  expect(requestUnknownFlow).toHaveBeenCalledTimes(1);
+  expect(saveUnknownDraft).toHaveBeenLastCalledWith(expect.objectContaining({
+    stage: 'review', photos: expect.objectContaining({ ingredients: 'kept:captured-photo' }),
+  }));
+});
+
+async function fillIdentity() {
+  await fireEvent.changeText(await screen.findByLabelText(ro.review.name), 'Pâine');
+  await fireEvent.changeText(screen.getByLabelText(ro.review.quantity), '375 g');
+  await fireEvent.press(screen.getByRole('button', { name: ro.add.next }));
+}

@@ -21,6 +21,13 @@ describe('shared ingredients and OFF category resolution', () => {
     ]);
   });
 
+  it('keeps allergen notices outside the ingredient list in a multilingual label', () => {
+    expect(matchIngredients(
+      'Ingredients: wheat flour, salt. May contain milk and peanuts. Contains: wheat.',
+      [],
+    )).toEqual([{ rawName: 'wheat flour', slug: null }, { rawName: 'salt', slug: null }]);
+  });
+
   it('populates product.ingredients from ingredientsText when DB links are empty', () => {
     const resolved = resolveProductIngredients({
       ingredients: [],

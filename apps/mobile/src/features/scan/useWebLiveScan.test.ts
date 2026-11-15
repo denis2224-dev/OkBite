@@ -22,15 +22,25 @@ function install(getUserMedia: unknown) {
 }
 const track = () => ({ stop: jest.fn() });
 function stream(tracks = [track(), track()]) { return { getTracks: () => tracks, tracks }; }
-function fakeVideo() { return { play: jest.fn(async () => undefined), srcObject: null as unknown } as unknown as HTMLVideoElement; }
-const tick = () => act(async () => { await jest.advanceTimersByTimeAsync(250); });
+function fakeVideo() { return { play: jest.fn(async () => undefined), srcObject: null as unknown, videoWidth: 1280, videoHeight: 720 } as unknown as HTMLVideoElement; }
+const tick = () => act(async () => { await jest.advanceTimersByTimeAsync(100); });
+const drawImage = jest.fn();
+const canvas = { width: 0, height: 0, getContext: () => ({ drawImage }) };
+const createElement = jest.fn(() => canvas);
+const savedDocument = g.document;
+beforeEach(() => {
+  g.document = { createElement };
+  createElement.mockClear();
+  drawImage.mockClear();
+});
+afterEach(() => { g.document = savedDocument; });
 
 describe('startLiveScan', () => {
   const saved = { BarcodeDetector: g.BarcodeDetector };
   beforeEach(() => { jest.useFakeTimers(); detect.mockClear(); nextHits = []; });
   afterEach(() => { jest.useRealTimers(); Object.assign(g, saved); });
 
-  it('streams the camera into the video and reports a valid barcode read from the video element', async () => {
+  it('streams the camera into the video and reads a barcode from a reused center-strip canvas', async () => {
     const s = stream();
     install(jest.fn(async () => s));
     const video = fakeVideo();
@@ -42,16 +52,18 @@ describe('startLiveScan', () => {
     await tick();
     expect(onCode).not.toHaveBeenCalled();
     await tick();
-    expect(detect).toHaveBeenCalledWith(video);
+    expect(detect).toHaveBeenCalledWith(canvas);
+    expect(createElement).toHaveBeenCalledTimes(1);
+    expect(drawImage).toHaveBeenCalledWith(video, 128, 234, 1024, 252, 0, 0, 1024, 252);
     expect(onCode).toHaveBeenCalledWith('0036000291452');
     stop?.();
   });
 
-  it('asks for the rear camera without audio', async () => {
+  it('asks for a 1280px rear camera without audio', async () => {
     const getUserMedia = jest.fn(async (_constraints: unknown) => stream());
     install(getUserMedia);
     (await startLiveScan(fakeVideo(), jest.fn()))?.();
-    expect(getUserMedia).toHaveBeenCalledWith({ video: { facingMode: 'environment' }, audio: false });
+    expect(getUserMedia).toHaveBeenCalledWith({ video: { facingMode: 'environment', width: { ideal: 1280 } }, audio: false });
   });
 
   it('stops every track, detaches the stream and stops reading when stopped', async () => {

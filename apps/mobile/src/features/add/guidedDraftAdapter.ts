@@ -1,4 +1,5 @@
 import type { GuidedFlowState } from './guidedFlowTypes';
+import { reconcileLabelReasons } from './labelWarnings';
 import { GuidedReadLabelResponse } from './unknownFlowContract';
 import { UnknownDraftSnapshotSchema, type UnknownDraftSnapshot } from './unknownDraft';
 
@@ -14,7 +15,7 @@ export function guidedToDraft(state: GuidedFlowState, id: string): UnknownDraftS
 }
 
 export function draftToGuided(snapshot: UnknownDraftSnapshot): GuidedFlowState {
-  const parsed = snapshot.label ? GuidedReadLabelResponse.safeParse(snapshot.label) : null;
+  const parsed = snapshot.label ? GuidedReadLabelResponse.safeParse(reconcileLabelReasons(snapshot.label)) : null;
   const interrupted = snapshot.readStatus === 'pending' || snapshot.readStatus === 'interrupted';
   const stage = interrupted ? 'interrupted' : snapshot.stage === 'reading' ? 'interrupted' : snapshot.stage;
   return {

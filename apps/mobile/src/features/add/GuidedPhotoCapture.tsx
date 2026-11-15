@@ -4,8 +4,10 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { useFocusEffect } from 'expo-router';
 import { ro } from '../../copy/ro';
+import { radii, spacing } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
-import { ActionButton, StatusPanel } from '../capture/StatusPanel';
+import { Button } from '../../ui/Button';
+import { StatusPanel } from '../capture/StatusPanel';
 
 export type GuidedPhotoCaptureProps = { onCapture: (uri: string) => Promise<void>; disabled?: boolean };
 export function GuidedPhotoCapture({ onCapture, disabled = false }: GuidedPhotoCaptureProps) {
@@ -29,18 +31,32 @@ export function GuidedPhotoCapture({ onCapture, disabled = false }: GuidedPhotoC
     catch { setFailed(true); }
     finally { setBusy(false); }
   };
-  return <View style={{ gap: 12 }}>
+  return <View style={styles.actions}>
     {permission?.granted && !failed && focused && active ? <>
-      <View style={{ height: 300, backgroundColor: colors.cameraBackground }}>
+      <View style={[styles.preview, { backgroundColor: colors.cameraBackground }]}>
         <CameraView ref={camera} style={StyleSheet.absoluteFill} facing="back" onCameraReady={() => setReady(true)} onMountError={() => setFailed(true)} />
+        {ready && <View pointerEvents="none" aria-hidden style={[styles.frame, { borderColor: colors.accent }]} />}
       </View>
-      <ActionButton label={ro.capture.shutter} disabled={!ready || disabled || busy} onPress={() => { void run(async () => (await camera.current?.takePictureAsync())?.uri ?? null); }} />
+      <Button icon="camera" disabled={!ready || disabled || busy} onPress={() => { void run(async () => (await camera.current?.takePictureAsync())?.uri ?? null); }}>
+        {ro.capture.shutter}
+      </Button>
     </> : <StatusPanel message={failed ? ro.pwa.camera.unavailable : ro.capture.deniedText} actions={[
       { label: ro.capture.retry, onPress: () => { setFailed(false); void request().catch(() => setFailed(true)); } },
     ]} />}
-    <ActionButton label={ro.add.gallery} disabled={disabled || busy} onPress={() => { void run(async () => {
+    <Button variant="secondary" disabled={disabled || busy} onPress={() => { void run(async () => {
       const result = await launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
       return result.canceled ? null : result.assets[0]?.uri ?? null;
-    }); }} />
+    }); }}>
+      {ro.add.gallery}
+    </Button>
   </View>;
 }
+
+const styles = StyleSheet.create({
+  actions: { gap: spacing.md },
+  preview: {
+    width: '100%', aspectRatio: 1.15, maxHeight: 340, borderRadius: radii.hero, overflow: 'hidden',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  frame: { width: '84%', height: '76%', borderWidth: 2, borderStyle: 'dashed', borderRadius: radii.small },
+});

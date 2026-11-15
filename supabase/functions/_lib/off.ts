@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { mapOffProduct, OFF_FIELDS } from './offMapper.ts';
+import { mapOffProduct, OFF_FIELDS, OFF_USER_AGENT, toRow } from '../_shared/off/mapOffProduct.ts';
 
-export type OffRow = NonNullable<ReturnType<typeof mapOffProduct>> & { code: string };
+export type OffRow = ReturnType<typeof toRow>;
 export interface OffStore {
   recentMiss(code: string): Promise<boolean>;
   rememberMiss(code: string): Promise<void>;
@@ -11,7 +11,6 @@ export interface OffStore {
 type Fetch = (url: string, init: RequestInit) => Promise<Response>;
 
 const DAY_MS = 86_400_000;
-const USER_AGENT = 'OkBite/1.0 (https://github.com/denis2224-dev/OkBite)';
 
 async function quietly<T>(work: () => Promise<T>, fallback: T): Promise<T> {
   try {
@@ -33,14 +32,15 @@ export async function offFallback(
     // One request, never retried: OFF rate-limits and the shopper is waiting.
     const res = await deps.fetch(
       `https://world.openfoodfacts.org/api/v2/product/${code}?fields=${OFF_FIELDS}`,
-      { headers: { 'User-Agent': USER_AGENT }, signal: AbortSignal.timeout(3000) },
+      { headers: { 'User-Agent': OFF_USER_AGENT }, signal: AbortSignal.timeout(3000) },
     );
     if (res.status === 404) result = 'miss';
     else if (res.status !== 200) result = 'error';
     else {
       const body = await res.json();
-      const row = body?.status === 1 ? mapOffProduct(body.product) : null;
-      result = row ? { ...row, code } : 'miss';
+      // The shopper is waiting, so a product without Romanian ingredients is kept when OFF lists its allergens.
+      const mapped = body?.status === 1 ? mapOffProduct({ ...body.product, code }, [], { anyLanguage: true }) : null;
+      result = mapped ? toRow(mapped) : 'miss';
     }
   } catch {
     result = 'error';

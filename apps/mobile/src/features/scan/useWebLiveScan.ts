@@ -1,15 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 import { createZxingReader } from '../capture/zxing.web';
-import { createDetector, firstValidCode } from '../capture/findBarcode.web';
+import { normalizeCode } from '@okbite/shared';
+import { expandUpce } from '../capture/expandUpce.web';
+import { createNativeBarcodeDetector, createWasmBarcodeDetector } from './scannerStartup.web';
 import { cameraAvailability, cameraFailure, type CameraIssue } from '../capture/cameraSupport.web';
 
-const SCAN_INTERVAL_MS = 250;
+const SCAN_INTERVAL_MS = 100;
+const JS_FALLBACK_INTERVAL_MS = 250;
+const CAPTURE_WIDTH = 1280;
+const CROP_WIDTH = 0.8;
+const CROP_HEIGHT = 0.35;
 
 export type LiveStatus = 'unsupported' | 'starting' | 'live' | CameraIssue;
 
 const mediaDevices = () => (typeof navigator === 'undefined' ? undefined : navigator.mediaDevices);
 
-// ZXing covers browsers without BarcodeDetector, so only camera access decides support.
+// WASM and JavaScript decoding support browsers without a native detector.
 export const isLiveScanSupported = () => !cameraAvailability();
 
 /**
@@ -18,9 +24,10 @@ export const isLiveScanSupported = () => !cameraAvailability();
  */
 export async function startLiveScan(video: HTMLVideoElement, onCode: (code: string) => void, signal?: AbortSignal): Promise<(() => void) | null> {
   if (cameraAvailability()) return null;
-  const detector = await createDetector();
   const media = mediaDevices();
   if (!media?.getUserMedia || signal?.aborted) return null;
+  const detector = (await createNativeBarcodeDetector()) ?? (signal?.aborted ? null : await createWasmBarcodeDetector());
+  if (signal?.aborted) return null;
   let reader: Awaited<ReturnType<typeof createZxingReader>> | null = null;
   try {
     if (!detector) reader = await createZxingReader();
@@ -31,17 +38,19 @@ export async function startLiveScan(video: HTMLVideoElement, onCode: (code: stri
 
   let stream: MediaStream;
   try {
-    stream = await media.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    stream = await media.getUserMedia({ video: { facingMode: 'environment', width: { ideal: CAPTURE_WIDTH } }, audio: false });
   } catch (error) {
     reader?.reset();
     throw error;
   }
+  let canvas: HTMLCanvasElement | undefined;
   let timer: ReturnType<typeof setInterval> | undefined = undefined;
   let stopped = false;
   const stop = () => {
     if (stopped) return;
     stopped = true;
     clearInterval(timer);
+    canvas = undefined;
     signal?.removeEventListener('abort', stop);
     reader?.reset();
     stream.getTracks().forEach((track) => track.stop());
@@ -51,6 +60,7 @@ export async function startLiveScan(video: HTMLVideoElement, onCode: (code: stri
   if (signal?.aborted) { stop(); return null; }
   try {
     video.srcObject = stream;
+    for (const track of stream.getVideoTracks?.() ?? []) enableContinuousFocus(track);
     await video.play();
   } catch (err) {
     stop();
@@ -62,17 +72,53 @@ export async function startLiveScan(video: HTMLVideoElement, onCode: (code: stri
     if (reading || stopped) return;
     reading = true;
     try {
-      const code = detector
-        ? await firstValidCode(detector, video)
-        : await reader!.readCode(video);
-      if (!stopped && code) onCode(code);
+      if (!detector) {
+        const code = await reader?.readCode(video);
+        if (!stopped && code) onCode(code);
+        return;
+      }
+      if (!video.videoWidth || !video.videoHeight) return;
+      canvas ??= document.createElement('canvas');
+      if (!drawCenterFrame(video, canvas)) return;
+      const hits = await detector.detect(canvas);
+      if (stopped) return;
+      for (const { format, rawValue = '' } of hits) {
+        const code = normalizeCode(format === 'upc_e' ? expandUpce(rawValue) : rawValue);
+        if (!code) continue;
+        onCode(code);
+        break;
+      }
     } catch {
       // A frame that cannot be read is skipped; the next one is tried.
     } finally {
       reading = false;
     }
-  }, SCAN_INTERVAL_MS);
+  }, detector ? SCAN_INTERVAL_MS : JS_FALLBACK_INTERVAL_MS);
   return stop;
+}
+
+function drawCenterFrame(video: HTMLVideoElement, canvas: HTMLCanvasElement) {
+  const width = Math.max(1, Math.round(video.videoWidth * CROP_WIDTH));
+  const height = Math.max(1, Math.round(video.videoHeight * CROP_HEIGHT));
+  const x = Math.round((video.videoWidth - width) / 2);
+  const y = Math.round((video.videoHeight - height) / 2);
+  if (canvas.width !== width) canvas.width = width;
+  if (canvas.height !== height) canvas.height = height;
+  const context = canvas.getContext('2d');
+  if (!context) return false;
+  context.drawImage(video, x, y, width, height, 0, 0, width, height);
+  return true;
+}
+
+function enableContinuousFocus(track: MediaStreamTrack) {
+  try {
+    const capabilities = track.getCapabilities?.() as (MediaTrackCapabilities & { focusMode?: string[] }) | undefined;
+    if (!capabilities?.focusMode?.includes('continuous')) return;
+    const constraints = { focusMode: 'continuous' } as MediaTrackConstraintSet;
+    void track.applyConstraints({ advanced: [constraints] }).catch(() => undefined);
+  } catch {
+    // Focus controls are optional across mobile browsers.
+  }
 }
 
 export function useWebLiveScan(onCode: (code: string) => void) {

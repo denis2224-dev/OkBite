@@ -19,7 +19,7 @@ const applyHeaders = (res, pathname) => {
   }
 };
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
-  '.png': 'image/png', '.ico': 'image/x-icon', '.ttf': 'font/ttf', '.woff': 'font/woff', '.webmanifest': 'application/manifest+json' };
+  '.wasm': 'application/wasm', '.png': 'image/png', '.ico': 'image/x-icon', '.ttf': 'font/ttf', '.woff': 'font/woff', '.webmanifest': 'application/manifest+json' };
 const serve = async (req, res) => {
   try {
     const url = new URL(req.url, 'http://127.0.0.1:18766');
