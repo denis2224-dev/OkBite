@@ -208,3 +208,17 @@ it('renders the title and subtitle through the shared tab page header', async ()
   expect(StyleSheet.flatten(title.props.style).fontSize).toBe(22);
   expect(screen.getByText(ro.history.design.note)).toBeTruthy();
 });
+
+it('sums up the saved products in a "Coșul tău" card above the list', async () => {
+  await render(<HistoryScreen />);
+  await screen.findByText(entry.product.name);
+  expect(screen.getByRole('header', { name: ro.history.basket.title })).toBeTruthy();
+  const { score, tier } = productScoreFor(entry.product, entry.score);
+  expect(screen.getByLabelText(`${ro.history.score(score!)} · ${ro.tiers[tier!]}`)).toBeTruthy();
+});
+it('leaves the basket card out when history is empty', async () => {
+  jest.mocked(listHistory).mockResolvedValue([]);
+  await render(<HistoryScreen />);
+  await waitFor(() => expect(screen.queryByText(ro.app.loading)).toBeNull());
+  expect(screen.queryByRole('header', { name: ro.history.basket.title })).toBeNull();
+});

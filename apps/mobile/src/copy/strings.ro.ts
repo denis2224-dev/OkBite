@@ -158,6 +158,9 @@ export const redesignRo = {
   search:'Caută după nume sau marcă', noMatches:'Niciun produs găsit.', remove:(name:string)=>`Șterge ${name} din istoric`,
   removed:'Produs șters din istoric.', undo:'Anulează ștergerea', removeError:'Nu am putut șterge produsul. Încearcă din nou.',
   scoreUnavailable:'Scor indisponibil', restoreError:'Nu am putut restabili produsul. Reîncearcă anularea ștergerii.',
+  basket: { title:'Coșul tău', average:(n:number)=>`Media pentru ${plural(n,'produs','produse')} cu scor`,
+   count:(n:number, tier:string)=>`${n} ${tier}`, unscored:(n:number)=>`${n} fără scor`, best:(name:string)=>`Cea mai bună alegere a ta: ${name}`,
+   mixLabel:(mix:Record<string,number>)=>`Excelent ${mix.excellent}, Bun ${mix.good}, Moderat ${mix.fair}, Slab ${mix.poor}, Foarte slab ${mix.bad}` },
  },
  allergens: {
   Gluten:'Gluten', Crustacee:'Crustacee', Ouă:'Ouă', Pește:'Pește', Arahide:'Arahide', Soia:'Soia', Lapte:'Lapte',

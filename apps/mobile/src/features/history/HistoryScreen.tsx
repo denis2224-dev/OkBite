@@ -13,6 +13,8 @@ import { TabPageHeader } from '../../shared/TabPageHeader';
 import { useToast } from '../../ui/Toast';
 import { productScoreFor, tierGrade } from '../product/productScoreFor';
 import { showStorageWarning } from '../../lib/storagePersistence';
+import { summarizeBasket } from './basket';
+import { BasketCard } from './BasketCard';
 import { useStorageNoticeDismissal } from '../../lib/storageNotice';
 
 export function HistoryScreen() {
@@ -56,6 +58,7 @@ export function HistoryScreen() {
     return () => { focused.current = false; generation.current++; stop(); };
   }, [load]));
 
+  const basket = useMemo(() => summarizeBasket(entries), [entries]);
   const visible = entries.filter(({ product }) => `${product.name} ${product.brand}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())).sort((a, b) => b.savedAt.localeCompare(a.savedAt));
 
   async function remove(entry: HistoryEntry) {
@@ -110,6 +113,7 @@ export function HistoryScreen() {
       <TabPageHeader title={copy.title} subtitle={copy.note} action={entries.length > 0 ? <HomePressable label={ro.history.clear} disabled={clearing} onPress={() => setConfirming(true)} style={styles.clear}><HomeIcon name="trash" size={18} color={t.colors.low}/><Text style={styles.clearText}>{ro.history.clear}</Text></HomePressable> : null} />
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        {!loading && !error && basket && <BasketCard basket={basket} />}
         {entries.length > 0 && <TextInput accessibilityLabel={ro.history.search} placeholder={ro.history.search} placeholderTextColor={t.colors.muted} value={query} onChangeText={setQuery} style={styles.search}/>}
         {showStorageWarning && !noticeDismissed && entries.length > 0 ? <View style={styles.notice}><Text style={styles.noticeText}>{copy.storageNotice}</Text><HomePressable label={copy.dismissNotice} onPress={dismissNotice} style={styles.noticeClose}><HomeIcon name="close" size={18} color={t.colors.muted}/></HomePressable></View> : null}
         {loading && <Body accessibilityLiveRegion="polite">{ro.app.loading}</Body>}
