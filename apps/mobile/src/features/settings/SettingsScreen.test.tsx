@@ -26,6 +26,8 @@ it('passes language choices to N17 and opens existing legal destinations', async
   const setLanguage = jest.fn();
   await render(<SettingsScreen currentLanguage="en" setLanguage={setLanguage} />);
   expect(screen.getByRole('button', { name: ro.settings.english }).props.accessibilityState.selected).toBe(true);
+  await fireEvent.press(screen.getByRole('button', { name: ro.settings.russian }));
+  expect(setLanguage).toHaveBeenCalledWith('ru');
   await fireEvent.press(screen.getByRole('button', { name: ro.settings.romanian }));
   expect(setLanguage).toHaveBeenCalledWith('ro');
   for (const [label, path] of [[ro.settings.method, '/method'], [ro.settings.privacy, '/privacy'], [ro.settings.terms, '/terms']]) {
@@ -85,6 +87,6 @@ it('orders the groups Language, App (clear history last), Info with sentence-cas
   expect(headings).toEqual([ro.settings.title, ro.settings.language, ro.settings.app, ro.settings.info]);
   expect(ro.settings.language).toBe('Limbă');
   const names = screen.getAllByRole('button').map(b => b.props.accessibilityLabel).filter(n => n !== 'Înapoi');
-  expect(names).toEqual([ro.settings.romanian, ro.settings.english, ro.settings.install, ro.settings.resetOnboarding, ro.settings.clearHistory, ro.settings.method, ro.settings.privacy, ro.settings.terms]);
+  expect(names).toEqual([ro.settings.romanian, ro.settings.russian, ro.settings.english, ro.settings.install, ro.settings.resetOnboarding, ro.settings.clearHistory, ro.settings.method, ro.settings.privacy, ro.settings.terms]);
   expect(screen.getByText(ro.settings.version, { exact: false })).toBeTruthy();
 });

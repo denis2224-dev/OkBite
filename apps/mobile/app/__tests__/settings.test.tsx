@@ -41,10 +41,13 @@ it('enables the implemented web language setter and restores the selected langua
  window.localStorage.setItem('okbite.lang', 'en');
  const ui = await render(<SettingsTab />);
  expect(ui.getByRole('button', {name:ro.settings.english}).props.accessibilityState.selected).toBe(true);
+ await fireEvent.press(ui.getByRole('button', {name:ro.settings.russian}));
+ expect(window.localStorage.getItem('okbite.lang')).toBe('ru');
+ expect(document.documentElement.lang).toBe('ru');
  await fireEvent.press(ui.getByRole('button', {name:ro.settings.romanian}));
  expect(window.localStorage.getItem('okbite.lang')).toBe('ro');
  expect(document.documentElement.lang).toBe('ro');
- expect(window.location.reload).toHaveBeenCalledTimes(1);
+ expect(window.location.reload).toHaveBeenCalledTimes(2);
 });
 
 it('keeps language selection disabled on native and legal destinations reachable', async () => {

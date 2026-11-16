@@ -18,43 +18,38 @@ afterEach(() => {
     else Reflect.deleteProperty(globalThis, key);
   }
 });
-test.each(['ro-MD', 'ru', 'fr', ''])('defaults to Romanian for browser language %s', language => {
+test.each(['ro-MD', 'ru', 'fr', 'en', 'en-GB', 'en-US', ''])('defaults to Romanian on first visit regardless of browser language %s', language => {
   Object.assign(navigator, { language });
   expect(getLanguage()).toBe('ro');
   expect(document.documentElement.lang).toBe('ro');
 });
-test.each(['en', 'en-GB', 'en-US'])('uses English for browser language %s', language => {
-  Object.assign(navigator, { language });
-  expect(getLanguage()).toBe('en');
-  expect(document.documentElement.lang).toBe('en');
-});
-test.each([['en', 'ro-MD'], ['ro', 'en-US']])('saved %s overrides browser %s', (saved, browser) => {
+test.each([['en', 'ro-MD'], ['ru', 'en-US'], ['ro', 'en-US']])('saved %s overrides browser %s', (saved, browser) => {
   storage.set('okbite.lang', saved); Object.assign(navigator, { language: browser });
   expect(getLanguage()).toBe(saved);
 });
-test('invalid saved data falls back to browser preference', () => {
+test('invalid saved data falls back to Romanian', () => {
   storage.set('okbite.lang', 'invalid'); Object.assign(navigator, { language: 'en-GB' });
-  expect(getLanguage()).toBe('en');
+  expect(getLanguage()).toBe('ro');
 });
-test('blocked localStorage still allows reading the browser preference', () => {
+test('blocked localStorage falls back to Romanian', () => {
   Object.defineProperty(window, 'localStorage', { get: () => { throw new Error('blocked'); } });
   Object.assign(navigator, { language: 'en-GB' });
-  expect(getLanguage()).toBe('en');
+  expect(getLanguage()).toBe('ro');
 });
 test('static export and native use Romanian without browser globals', () => {
   for (const key of Object.keys(originals)) Reflect.deleteProperty(globalThis, key);
   expect(getLanguage()).toBe('ro');
   expect(jest.requireActual<typeof import('./lang')>('./lang').getLanguage()).toBe('ro');
 });
-test('saves a choice before reloading and updates document language', () => {
-  reload.mockImplementation(() => expect(storage.get('okbite.lang')).toBe('en'));
-  setLanguage('en');
-  expect(getLanguage()).toBe('en');
-  expect(document.documentElement.lang).toBe('en');
+test.each(['en', 'ru'] as const)('saves %s before reloading and updates document language', language => {
+  reload.mockImplementation(() => expect(storage.get('okbite.lang')).toBe(language));
+  setLanguage(language);
+  expect(getLanguage()).toBe(language);
+  expect(document.documentElement.lang).toBe(language);
   expect(reload).toHaveBeenCalledTimes(1);
 });
 test('refuses an invalid choice without changing storage or reloading', () => {
-  expect(() => setLanguage('ru' as 'en')).toThrow();
+  expect(() => setLanguage('fr' as 'en')).toThrow();
   expect(storage.size).toBe(0); expect(reload).not.toHaveBeenCalled();
 });
 test('failed persistence never reloads into an unsaved language', () => {

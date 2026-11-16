@@ -44,6 +44,7 @@ test.describe('first launch', () => {
     await page.goto('/');
     await expect(page).toHaveURL(/\/onboarding$/);
     await page.getByRole('button', { name: ro.onboarding.continue, exact: true }).click();
+    await page.getByRole('button', { name: ro.onboarding.continue, exact: true }).click();
     await page.getByRole('checkbox', { name: ro.allergens.Gluten, exact: true }).click();
     await page.getByRole('button', { name: ro.onboarding.continue, exact: true }).click();
     await page.getByRole('button', { name: ro.onboarding.done, exact: true }).click();

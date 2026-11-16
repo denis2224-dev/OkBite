@@ -1,4 +1,4 @@
-export function plural(n: number, one: string, many: string, language: 'ro' | 'en' = 'ro'): string {
+export function plural(n: number, one: string, many: string, language: 'ro' | 'ru' | 'en' = 'ro'): string {
   return `${n}${language === 'ro' && n >= 20 && (n % 100 === 0 || n % 100 >= 20) ? ' de' : ''} ${n === 1 ? one : many}`;
 }
 const gradeNames: Record<string, string> = {good:'bună',medium:'medie',low:'scăzută',unavailable:'indisponibilă'};
@@ -125,12 +125,13 @@ export const redesignRo = {
   title:'Alergiile tale', lead:'Te avertizăm când un produs le conține.', allergensLabel:'Alergeni', avoidTitle:'Vreau să evit',
  },
  onboarding: {
+  languageTitle:'Alege limba',
   goalTitle:'Ce este important pentru tine?', allergensTitle:'Ce alergeni vrei să urmărești?', avoidTitle:'Ce vrei să eviți?',
   skip:'Omite', continue:'Continuă', done:'Gata, începem', flagNote:'Le semnalăm când scanezi un produs.',
-  savedLocally:'Preferințele sunt salvate doar pe acest telefon.', step:(n:number)=>`Pasul ${n} din 3`,
+  savedLocally:'Preferințele sunt salvate doar pe acest telefon.', step:(n:number)=>`Pasul ${n} din 4`,
  },
  settings: {
-  title:'Setări', language:'Limbă', romanian:'Română', english:'English',
+  title:'Setări', language:'Limbă', romanian:'Română', russian:'Русский', english:'English',
   install:'Instalează aplicația', clearHistory:'Șterge istoricul',
   clearHistoryTitle:'Ștergi tot istoricul?', clearHistoryBody:'Ștergem istoricul de pe acest telefon. Căutările în așteptare și contribuțiile publicate rămân.',
   clearHistoryConfirm:'Da, șterge istoricul', cancel:'Anulează', privacy:'Confidențialitate', terms:'Termeni de utilizare',

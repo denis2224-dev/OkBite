@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ALLERGENS, type Allergen, type AvoidKey, type Goal, type Profile } from '@okbite/shared';
+import { getLanguage, languageSelectable, setLanguage as persistLanguage, type Language } from '../../copy/lang';
 import { ro } from '../../copy/ro';
 import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { ScreenSafeArea as SafeAreaView } from '../../shared/ScreenSafeArea';
@@ -11,6 +12,7 @@ import { Body, Heading } from '../../ui/Typography';
 import { ToggleChip } from '../allergies/ToggleChip';
 import { useProfile } from '../profile/useProfile';
 
+const languages: readonly Language[] = ['ro', 'ru', 'en'];
 const fields = ['goals', 'allergens', 'avoid'] as const;
 const choices = {
   goals: ['health', 'allergies', 'family', 'weight', 'other'],
@@ -19,7 +21,13 @@ const choices = {
 } satisfies { [K in (typeof fields)[number]]: readonly Profile[K][number][] };
 
 type Field = (typeof fields)[number];
+type Step = 0 | 1 | 2 | 3;
 type ChoiceEdits = Partial<Record<Field, ReadonlyMap<string, boolean>>>;
+type OnboardingProps = {
+  onComplete?: () => void;
+  currentLanguage?: Language;
+  setLanguage?: (language: Language) => void;
+};
 
 function applyChoices<T extends string>(
   current: T[],
@@ -35,20 +43,26 @@ function applyChoices<T extends string>(
   return selected;
 }
 
-export function OnboardingScreen({ onComplete }: { onComplete?: () => void }) {
+export function OnboardingScreen({
+  onComplete,
+  currentLanguage = getLanguage(),
+  setLanguage = languageSelectable ? persistLanguage : undefined,
+}: OnboardingProps = {}) {
   const router = useRouter();
   const { colors } = useTheme();
   const { profile, setProfile, hydrated, error, retryHydration } = useProfile();
   const [edits, setEdits] = useState<ChoiceEdits>({});
-  const [step, setStep] = useState<0 | 1 | 2>(0);
+  const [step, setStep] = useState<Step>(0);
   const [pending, setPending] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [languageFailed, setLanguageFailed] = useState(false);
   const inFlight = useRef(false);
   const ready = hydrated;
-  const field = fields[step];
+  const field = step > 0 ? fields[step - 1] : null;
   const blocked = !ready || pending;
   const readFailed = !hydrated && (Boolean(error) || pending);
-  const title = [ro.onboarding.goalTitle, ro.onboarding.allergensTitle, ro.onboarding.avoidTitle][step];
+  const title = [ro.onboarding.languageTitle, ro.onboarding.goalTitle, ro.onboarding.allergensTitle, ro.onboarding.avoidTitle][step];
+  const languageNames: Record<Language, string> = { ro: ro.settings.romanian, ru: ro.settings.russian, en: ro.settings.english };
 
   const retry = async () => {
     if (inFlight.current) return;
@@ -86,8 +100,18 @@ export function OnboardingScreen({ onComplete }: { onComplete?: () => void }) {
     }
   };
 
+  const selectLanguage = (language: Language) => {
+    if (blocked || !setLanguage || language === currentLanguage) return;
+    try {
+      setLanguageFailed(false);
+      setLanguage(language);
+    } catch {
+      setLanguageFailed(true);
+    }
+  };
+
   const toggle = (choice: string) => {
-    if (!ready || inFlight.current) return;
+    if (!field || !ready || inFlight.current) return;
     setEdits((previous) => {
       const next = new Map(previous[field]);
       const selected: readonly string[] = profile[field];
@@ -102,7 +126,7 @@ export function OnboardingScreen({ onComplete }: { onComplete?: () => void }) {
         <View style={styles.header}>
           {step > 0 ? (
             <Pressable accessibilityRole="button" accessibilityLabel={ro.app.back}
-              disabled={blocked} onPress={() => setStep(step === 2 ? 1 : 0)} style={styles.headerAction}>
+              disabled={blocked} onPress={() => setStep((step - 1) as Step)} style={styles.headerAction}>
               <Body style={{ fontWeight: '700' }}>{ro.app.back}</Body>
             </Pressable>
           ) : <View style={{ minWidth: 44 }} />}
@@ -115,7 +139,7 @@ export function OnboardingScreen({ onComplete }: { onComplete?: () => void }) {
             <Body style={{ color: colors.muted, fontWeight: '700' }}>{ro.onboarding.skip}</Body>
           </Pressable>
         </View>
-        {(readFailed || saveFailed) && (
+        {(readFailed || saveFailed || languageFailed) && (
           <View style={[styles.error, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Body style={{ color: colors.low, fontWeight: '600' }}>{ro.errors.generic}</Body>
             {readFailed && <Button variant="secondary" disabled={pending} onPress={retry}>{ro.errors.retry}</Button>}
@@ -123,10 +147,20 @@ export function OnboardingScreen({ onComplete }: { onComplete?: () => void }) {
         )}
         <View style={styles.title}>
           <Heading style={{ fontSize: 24, lineHeight: 32 }}>{title}</Heading>
-          {step > 0 && <Body style={{ color: colors.muted }}>{ro.onboarding.flagNote}</Body>}
+          {step >= 2 && <Body style={{ color: colors.muted }}>{ro.onboarding.flagNote}</Body>}
         </View>
         <ScrollView contentContainerStyle={styles.choices}>
-          {ready && choices[field].map((choice) => {
+          {ready && !field && (
+            <>
+              {languages.map((language) => (
+                <ToggleChip key={language} role="button" text={languageNames[language]}
+                  selected={currentLanguage === language} disabled={blocked || !setLanguage}
+                  onPress={() => selectLanguage(language)} />
+              ))}
+              {!setLanguage && <Body style={{ color: colors.muted, width: '100%' }}>{ro.settings.pending}</Body>}
+            </>
+          )}
+          {ready && field && choices[field].map((choice) => {
             const selected = edits[field]?.get(choice) ?? (profile[field] as readonly string[]).includes(choice);
             const label = field === 'allergens' ? ro.allergens[choice as Allergen] : ro.profile[choice as Goal | AvoidKey];
             return (
@@ -135,15 +169,15 @@ export function OnboardingScreen({ onComplete }: { onComplete?: () => void }) {
           })}
         </ScrollView>
         <View style={{ paddingTop: 8, gap: 8 }}>
-          {step === 2 && (
+          {step === 3 && (
             <Body style={{ color: colors.muted, fontSize: 13, lineHeight: 19, textAlign: 'center' }}>
               {ro.onboarding.savedLocally}
             </Body>
           )}
-          {step === 2 ? (
+          {step === 3 ? (
             <Button disabled={blocked} onPress={finish}>{ro.onboarding.done}</Button>
           ) : (
-            <Button disabled={blocked} onPress={() => setStep(step === 0 ? 1 : 2)}>{ro.onboarding.continue}</Button>
+            <Button disabled={blocked} onPress={() => setStep((step + 1) as Step)}>{ro.onboarding.continue}</Button>
           )}
         </View>
       </View>

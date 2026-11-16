@@ -46,7 +46,8 @@ beforeEach(async () => {
 
 it('opens onboarding from fresh storage when landing on the tabs', async () => {
   await renderRouter(routes);
-  expect(await screen.findByText(ro.onboarding.goalTitle)).toBeTruthy();
+  expect(await screen.findByText(ro.settings.romanian)).toBeTruthy();
+  expect(screen.getByText(ro.onboarding.languageTitle)).toBeTruthy();
   expect(screen).toHavePathname('/onboarding');
 });
 
@@ -55,15 +56,16 @@ it('waits for the profile to load before deciding to redirect', async () => {
   jest.spyOn(store, 'loadProfile').mockReturnValue(new Promise(done => { resolve = done; }));
   await renderRouter(routes);
   expect(screen).toHavePathname('/');
-  expect(screen.queryByText(ro.onboarding.goalTitle)).toBeNull();
+  expect(screen.queryByText(ro.onboarding.languageTitle)).toBeNull();
   await act(async () => { resolve({ goals: [], allergens: [], avoid: [], onboarded: false }); });
-  expect(await screen.findByText(ro.onboarding.goalTitle)).toBeTruthy();
+  expect(await screen.findByText(ro.settings.romanian)).toBeTruthy();
 });
 
 it.each(['finish', 'skip'])('%s saves onboarding and opens Scan, including on the next launch', async action => {
   await renderRouter(routes, { initialUrl: '/onboarding' });
-  await screen.findByText(ro.profile.health);
+  await screen.findByText(ro.settings.romanian);
   if (action === 'finish') {
+    await fireEvent.press(screen.getByRole('button', { name: ro.onboarding.continue }));
     await fireEvent.press(screen.getByRole('button', { name: ro.onboarding.continue }));
     await fireEvent.press(screen.getByRole('button', { name: ro.onboarding.continue }));
     await fireEvent.press(screen.getByRole('button', { name: ro.onboarding.done }));
@@ -80,14 +82,14 @@ it.each(['finish', 'skip'])('%s saves onboarding and opens Scan, including on th
   await waitFor(() => expect(loaded).toHaveBeenCalled());
   await act(async () => { await loaded.mock.results[0]?.value; });
   expect(screen).toHavePathname('/');
-  expect(screen.queryByText(ro.onboarding.goalTitle)).toBeNull();
+  expect(screen.queryByText(ro.onboarding.languageTitle)).toBeNull();
 });
 
 it.each(['/product/example', '/add/review', '/admin/review'])('preserves a fresh user deep link to %s', async initialUrl => {
   await renderRouter(routes, { initialUrl });
   expect(await screen.findByText('Deep link destination')).toBeTruthy();
   expect(screen).toHavePathname(initialUrl);
-  expect(screen.queryByText(ro.onboarding.goalTitle)).toBeNull();
+  expect(screen.queryByText(ro.onboarding.languageTitle)).toBeNull();
 });
 
 

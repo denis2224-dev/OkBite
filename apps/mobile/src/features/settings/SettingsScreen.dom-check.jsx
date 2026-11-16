@@ -28,12 +28,16 @@ it('exposes the selected language on the real web buttons and offers no theme ch
   const setLanguage = jest.fn();
   await act(() => root.render(<ThemeProvider><SettingsScreen currentLanguage="en" setLanguage={setLanguage} /></ThemeProvider>));
   expect(button(ro.settings.english).getAttribute('aria-pressed')).toBe('true');
+  expect(button(ro.settings.russian).getAttribute('aria-pressed')).toBe('false');
   expect(button(ro.settings.romanian).getAttribute('aria-pressed')).toBe('false');
   expect(document.getElementById('screen').textContent).not.toMatch(/Întunecat|După telefon/);
+  await act(() => button(ro.settings.russian).click());
+  expect(setLanguage).toHaveBeenCalledWith('ru');
   await act(() => button(ro.settings.romanian).click());
   expect(setLanguage).toHaveBeenCalledWith('ro');
   await act(() => root.render(<ThemeProvider><SettingsScreen currentLanguage="ro" setLanguage={setLanguage} /></ThemeProvider>));
   expect(button(ro.settings.romanian).getAttribute('aria-pressed')).toBe('true');
+  expect(button(ro.settings.russian).getAttribute('aria-pressed')).toBe('false');
   expect(button(ro.settings.english).getAttribute('aria-pressed')).toBe('false');
 });
 it('names the actual web modal dialog and cancels it without deleting history', async () => {

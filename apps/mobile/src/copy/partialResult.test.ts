@@ -1,6 +1,7 @@
 import { ro } from './ro';
 import { roStrings } from './strings.ro';
 import { en } from './strings.en';
+import { ru } from './strings.ru';
 
 const required = ['nutritionUnavailable', 'insufficientNutrition', 'categoryUnconfirmed', 'transcribedLabel', 'explainedWithSource', 'missingAllergenNote', 'addNutrition', 'nutritionAdded'] as const;
 it.each(required)('provides the U8 result message %s without typographic diacritic substitutions', key => {
@@ -19,7 +20,7 @@ it('never describes missing allergen evidence as proof of safety', () => {
   expect(Object.keys(roStrings.result)).not.toContain('allergyNote');
 });
 it('keeps partial-data lines to one short sentence without describing the method', () => {
-  for (const copy of [roStrings, en]) {
+  for (const copy of [roStrings, en, ru]) {
     for (const key of ['insufficientNutrition', 'categoryUnconfirmed', 'missing', 'unverifiedNote'] as const) {
       expect(copy.result[key].split(/[.!?](\s|$)/).filter(part => part?.trim()).length).toBe(1);
       expect(copy.result[key].length).toBeLessThan(70);

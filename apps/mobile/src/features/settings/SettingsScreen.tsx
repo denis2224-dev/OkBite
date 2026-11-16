@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, View } from 'react-native';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
+import { type Language } from '../../copy/lang';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { ScreenSafeArea } from '../../shared/ScreenSafeArea';
@@ -10,9 +11,11 @@ import { Body, Button, Card, Heading, Icon, Screen } from '../../ui';
 import { useInstallPrompt } from '../../lib/installPrompt';
 import { clearHistory } from '../history/store';
 
+const languages: readonly Language[] = ['ro', 'ru', 'en'];
+
 export type SettingsScreenProps = {
-  currentLanguage?: 'ro' | 'en';
-  setLanguage?: (language: 'ro' | 'en') => void;
+  currentLanguage?: Language;
+  setLanguage?: (language: Language) => void;
   resetOnboarding?: () => void;
   /** Shown as an alert at the top of the content, inside the safe area. */
   alert?: string;
@@ -50,7 +53,8 @@ export function SettingsScreen({ currentLanguage = 'ro', setLanguage, resetOnboa
     catch { setInstallMessage(ro.pwa.install.failed); }
     finally { installPending.current = false; setInstalling(false); }
   }
-  function chooseLanguage(language: 'ro' | 'en') {
+  const languageNames: Record<Language, string> = { ro: ro.settings.romanian, ru: ro.settings.russian, en: ro.settings.english };
+  function chooseLanguage(language: Language) {
     try { setLanguage?.(language); setLanguageError(false); }
     catch { setLanguageError(true); }
   }
@@ -62,7 +66,7 @@ export function SettingsScreen({ currentLanguage = 'ro', setLanguage, resetOnboa
       <Card>
         <Heading style={styles.section}>{ro.settings.language}</Heading>
         <View style={styles.choices}>
-          {(['ro', 'en'] as const).map(language => <HomePressable key={language} label={ro.settings[language === 'ro' ? 'romanian' : 'english']} disabled={!setLanguage} aria-pressed={currentLanguage === language} accessibilityState={{ disabled: !setLanguage, selected: currentLanguage === language }} onPress={() => chooseLanguage(language)} style={[styles.choice, { backgroundColor: currentLanguage === language ? colors.primary : colors.surface, opacity: setLanguage ? 1 : 0.55 }]}><Body style={{ color: currentLanguage === language ? colors.onPrimary : colors.ink }}>{ro.settings[language === 'ro' ? 'romanian' : 'english']}</Body></HomePressable>)}
+          {languages.map(language => <HomePressable key={language} label={languageNames[language]} disabled={!setLanguage} aria-pressed={currentLanguage === language} accessibilityState={{ disabled: !setLanguage, selected: currentLanguage === language }} onPress={() => chooseLanguage(language)} style={[styles.choice, { backgroundColor: currentLanguage === language ? colors.primary : colors.surface, opacity: setLanguage ? 1 : 0.55 }]}><Body style={{ color: currentLanguage === language ? colors.onPrimary : colors.ink }}>{languageNames[language]}</Body></HomePressable>)}
         </View>
         {(!setLanguage || languageError) && <Body accessibilityLiveRegion="polite" style={{ color: colors.muted }}>{ro.settings.pending}</Body>}
       </Card>

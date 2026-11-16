@@ -62,7 +62,7 @@ export function AdditiveSheet({ ingredient, productId, onClose }: { ingredient: 
           <RiskChip risk={ingredient.risk} />
           <Card>
             <Body>{ingredient.explanation ?? ro.ingredients.explanationSoon}</Body>
-            {ingredient.explanation && getLanguage() === 'en' && <Body style={{ color: colors.muted }}>{ro.additives.romanianOnly}</Body>}
+            {ingredient.explanation && getLanguage() !== 'ro' && <Body style={{ color: colors.muted }}>{ro.additives.romanianOnly}</Body>}
           </Card>
           {ingredient.riskSource && <SourceLink label={ro.additives.source} onPress={() => open(ingredient.riskSource!)} />}
           {ingredient.source && <SourceLink label={ro.additives.explanationSource} onPress={() => open(ingredient.source!)} />}

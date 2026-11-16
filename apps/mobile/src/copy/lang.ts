@@ -1,4 +1,4 @@
-export type Language = 'ro' | 'en';
+export type Language = 'ro' | 'ru' | 'en';
 export function getLanguage(): Language { return 'ro'; }
 // Native language selection is deferred by N17; the PWA persists its choice.
 export const languageSelectable: boolean = false;

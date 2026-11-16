@@ -124,12 +124,13 @@ export const redesignEn: RedesignCopy = {
   title:'Your allergies', lead:'We warn you when a product contains them.', allergensLabel:'Allergens', avoidTitle:'I want to avoid',
  },
  onboarding: {
+  languageTitle:'Choose language',
   goalTitle:'What matters to you?', allergensTitle:'Which allergens do you want to watch for?', avoidTitle:'What do you want to avoid?',
   skip:'Skip', continue:'Continue', done:'Done, let’s start', flagNote:'We flag these when you scan a product.',
-  savedLocally:'Your preferences are saved only on this phone.', step:(n:number)=>`Step ${n} of 3`,
+  savedLocally:'Your preferences are saved only on this phone.', step:(n:number)=>`Step ${n} of 4`,
  },
  settings: {
-  title:'Settings', language:'Language', romanian:'Română', english:'English',
+  title:'Settings', language:'Language', romanian:'Română', russian:'Русский', english:'English',
   install:'Install the app', clearHistory:'Clear history',
   clearHistoryTitle:'Clear all history?', clearHistoryBody:'This clears history on this phone. Pending searches and published contributions remain.',
   clearHistoryConfirm:'Yes, clear history', cancel:'Cancel', privacy:'Privacy', terms:'Terms of use',

@@ -1,9 +1,10 @@
 import { redesignRo, roStrings } from './strings.ro';
 import { en, redesignEn } from './strings.en';
+import { ru, redesignRu } from './strings.ru';
 import { ALLERGENS } from '@okbite/shared';
 import { ro } from './ro';
 
-const required = ['nav.scan', 'nav.profile', 'nav.settings', 'tiers.excellent', 'tiers.good', 'tiers.fair', 'tiers.poor', 'tiers.bad', 'tiers.why', 'tiers.nutriScore', 'ledger.sugar', 'ledger.sat', 'ledger.salt', 'ledger.kcal', 'ledger.nutrition_other', 'ledger.additive', 'ledger.processing', 'ledger.cap', 'processing.unknown', 'additives.notAssessed', 'profile.savedLocally', 'onboarding.skip', 'settings.resetOnboarding', 'about.scoreTitle', 'scan.flashOn', 'scan.flashOff', 'scan.loadingReader', 'history.search', 'history.noMatches', 'history.remove', 'history.removed', 'history.undo', 'history.removeError', 'history.restoreError',
+const required = ['nav.scan', 'nav.profile', 'nav.settings', 'tiers.excellent', 'tiers.good', 'tiers.fair', 'tiers.poor', 'tiers.bad', 'tiers.why', 'tiers.nutriScore', 'ledger.sugar', 'ledger.sat', 'ledger.salt', 'ledger.kcal', 'ledger.nutrition_other', 'ledger.additive', 'ledger.processing', 'ledger.cap', 'processing.unknown', 'additives.notAssessed', 'profile.savedLocally', 'onboarding.languageTitle', 'onboarding.skip', 'settings.russian', 'settings.resetOnboarding', 'about.scoreTitle', 'scan.flashOn', 'scan.flashOff', 'scan.loadingReader', 'history.search', 'history.noMatches', 'history.remove', 'history.removed', 'history.undo', 'history.removeError', 'history.restoreError',
  'nav.allergies', 'allergies.title', 'allergies.lead', 'allergies.allergensLabel', 'allergies.avoidTitle', 'result.whyLetter', 'result.ingredientsTile', 'result.portionTile', 'result.profileAlertSub',
  'result.containsAllergen', 'result.mayContainAllergen', 'compare.design.better', 'compare.design.betterValue', 'compare.design.profileWarning',
  'scan.labelMode', 'scan.seeAll'];
@@ -22,20 +23,23 @@ function leaves(object: unknown, prefix = ''): [string, unknown][] {
   return value && typeof value === 'object' ? leaves(value, path) : [[path, value]];
  });
 }
-it('has matching nonempty translations for every redesign key in both languages', () => {
- const romanian = leaves(redesignRo), english = leaves(redesignEn);
+it('has matching nonempty translations for every redesign key in all three languages', () => {
+ const romanian = leaves(redesignRo), english = leaves(redesignEn), russian = leaves(redesignRu);
  expect(english.map(([key]) => key)).toEqual(romanian.map(([key]) => key));
- for (const [, value] of [...romanian, ...english]) {
+ expect(russian.map(([key]) => key)).toEqual(romanian.map(([key]) => key));
+ for (const [, value] of [...romanian, ...english, ...russian]) {
   expect(['string', 'function']).toContain(typeof value);
   if (typeof value === 'string') expect(value.trim()).not.toBe('');
  }
  expect(JSON.stringify(redesignRo)).not.toMatch(/[şţŞŢ]/);
 });
-it('keeps interpolation inputs in both languages', () => {
+it('keeps interpolation inputs in all three languages', () => {
  expect(redesignRo.ledger.points(12)).toBe('−12 puncte');
  expect(redesignEn.ledger.points(12)).toBe('−12 points');
- expect(redesignRo.onboarding.step(2)).toBe('Pasul 2 din 3');
- expect(redesignEn.onboarding.step(2)).toBe('Step 2 of 3');
+ expect(redesignRu.ledger.points(12)).toBe('−12 баллов');
+ expect(redesignRo.onboarding.step(2)).toBe('Pasul 2 din 4');
+ expect(redesignEn.onboarding.step(2)).toBe('Step 2 of 4');
+ expect(redesignRu.onboarding.step(2)).toBe('Шаг 2 из 4');
  expect(redesignRo.history.remove('Iaurt')).toContain('Iaurt');
  expect(redesignEn.history.remove('Yogurt')).toContain('Yogurt');
  expect(redesignRo.additives.open('E100')).toContain('E100');
@@ -55,6 +59,7 @@ it('words the five-tab, allergies, result and compare additions in both language
  expect(redesignEn.result.mayContainAllergen('peanuts')).toBe('May contain peanuts');
  expect(roStrings.compare.design.better).toBe('Alegere mai bună');
  expect(en.compare.design.better).toBe('Better choice');
+ expect(ru.compare.design.better).toBe('Лучший выбор');
  expect(roStrings.compare.design.profileWarning('lapte')).toBe('Conține lapte, din lista ta');
  expect(en.compare.design.profileWarning('milk')).toBe('Contains milk, from your list');
  expect(en.compare.design.betterValue).toBe('Better value');
