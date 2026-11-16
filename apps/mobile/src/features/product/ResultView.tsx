@@ -13,6 +13,7 @@ import { ScoreDeductions } from './ScoreDeductions';
 import { ProcessingCard } from './ProcessingCard';
 import { AdditivesCard } from './AdditivesCard';
 import { ProfileAllergenAlert } from './ProfileAllergenAlert';
+import { AllergenSummary } from './AllergenSummary';
 import { ResultTopBar } from './ResultTopBar';
 import { PortionSheet } from './PortionSheet';
 import { PartialNutritionCard } from './PartialNutritionCard';
@@ -57,6 +58,7 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
     </View>}
     <ProfileAllergenAlert product={product} />
     {canShowScore ? <ScoreCard product={product} score={shownScore} /> : <><Heading>{product.name}</Heading><Body>{[product.brand, product.quantity].filter(Boolean).join(', ')}</Body></>}
+    <AllergenSummary product={product} />
     {product.status === 'unverified' && <View testID="unverified-badge" style={{ gap: 4 }}>
       <Badge tone="unverified">{ro.result.unverified}</Badge>
       <Caption>{isOffProduct(product) ? ro.result.offNote : ro.result.unverifiedNote}</Caption>
