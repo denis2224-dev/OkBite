@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { randomUUID } from 'expo-crypto';
-import { api } from '../../lib/api';
+import { IdentifyResponse } from '@okbite/shared';
+import { api, ApiError } from '../../lib/api';
+import type { AnalysisOutcome } from '../../lib/analysisOutcome';
 import { compressPhoto } from '../capture/compressPhoto';
 import { useScreenActivity } from '../capture/useScreenActivity';
 import { identifyPhotoRoute, productRoute } from '../identify/routes';
@@ -11,7 +13,6 @@ import { draftToGuided, guidedToDraft } from './guidedDraftAdapter';
 import { createGuidedFlow, type GuidedFlowInitial, type GuidedFlowState, type GuidedPhotoKind } from './guidedFlow';
 import { clearUnknownDraft, loadUnknownDraft, saveUnknownDraft } from './unknownDraft';
 import { GuidedReadLabelRequest, GuidedReadLabelResponse, type NutritionMode } from './unknownFlowContract';
-import { requestUnknownFlow } from './unknownFlowTransport';
 import { clearIdentifyDraft } from './draftStore';
 
 export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: GuidedPhotoKind) {
@@ -66,13 +67,42 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
         const bindFlow = (restoredState?: GuidedFlowState) => {
           unsubscribe?.();
           let abandoned = false;
-          const nextFlow = createGuidedFlow(
+          const isCurrentActiveFlow = () => isSessionActive() && activeFlow === nextFlow;
+          const awaitOutcome = async <T,>(
+            call: () => Promise<AnalysisOutcome<unknown>>,
+            validate: (value: unknown) => T | null,
+            abortIfStale?: () => Promise<boolean>,
+            canUpdateUi: () => boolean = isCurrentActiveFlow,
+          ): Promise<T | null> => {
+            if (abortIfStale && await abortIfStale()) return null;
+            let pending = false;
+            try {
+              const outcome = await call();
+              if (abortIfStale && await abortIfStale()) {
+                if (outcome.status === 'pending') outcome.completion.catch(() => {});
+                return null;
+              }
+              pending = outcome.status === 'pending';
+              if (pending && canUpdateUi()) setFrontPending('waiting');
+              const result = outcome.status === 'pending' ? await outcome.completion : outcome.result;
+              if (abortIfStale && await abortIfStale()) return null;
+              const validated = validate(result);
+              if (validated === null) throw new ApiError('invalid_response');
+              if (pending && canUpdateUi()) setFrontPending('none');
+              return validated;
+            } catch (err) {
+              if (abortIfStale && await abortIfStale()) return null;
+              if (pending && isCurrentActiveFlow()) setFrontPending('retry');
+              throw err;
+            }
+          };
+          const nextFlow: ReturnType<typeof createGuidedFlow> = createGuidedFlow(
             initialRef.current,
             {
               preparePhoto: compressPhoto,
               keepPhoto,
               openPhoto,
-              async identify(base64) {
+              identify(base64) {
                 const requestToken = token;
                 const isCurrentRequest = () => isSessionActive() && runtimeRef.current.activity.isCurrent(requestToken);
                 const abandonIfStale = async () => {
@@ -82,29 +112,34 @@ export function useGuidedAddSession(initial: GuidedFlowInitial, retakeKind?: Gui
                     flowCancelledByBlur = true;
                     abandonedFrontIdentify = true;
                     setFrontPending('none');
+                    setState(prev => (prev && activeFlow === nextFlow && prev.stage === 'working'
+                      ? { ...prev, stage: 'interrupted', remotePhotoPath: null, error: undefined }
+                      : prev));
                   }
                   nextFlow.cancel();
                   return true;
                 };
-                if (await abandonIfStale()) return null;
-                let pending = false;
-                try {
-                  const outcome = await api.identifyOutcome(base64);
-                  pending = Boolean(outcome && typeof outcome === 'object' && 'status' in outcome && outcome.status === 'pending' && 'completion' in outcome);
-                  if (pending && isCurrentRequest()) setFrontPending('waiting');
-                  const result = pending
-                    ? await (outcome as { completion: Promise<unknown> }).completion
-                    : (outcome && typeof outcome === 'object' && 'result' in outcome ? outcome.result : outcome);
-                  if (await abandonIfStale()) return null;
-                  if (pending) setFrontPending('none');
-                  return result;
-                } catch (err) {
-                  if (await abandonIfStale()) return null;
-                  if (pending) setFrontPending('retry');
-                  throw err;
-                }
+                return awaitOutcome(
+                  () => api.identifyOutcome(base64),
+                  value => {
+                    const parsed = IdentifyResponse.safeParse(value);
+                    return parsed.success && parsed.data.photoPath.trim() ? parsed.data : null;
+                  },
+                  abandonIfStale,
+                  isCurrentRequest,
+                );
               },
-              readLabel: req => requestUnknownFlow('read-label', GuidedReadLabelRequest, GuidedReadLabelResponse, req),
+              async readLabel(req) {
+                const parsedReq = GuidedReadLabelRequest.safeParse(req);
+                if (!parsedReq.success) throw new ApiError('bad_request');
+                return awaitOutcome(
+                  () => api.readLabelOutcome(parsedReq.data),
+                  value => {
+                    const parsedResp = GuidedReadLabelResponse.safeParse(value);
+                    return parsedResp.success ? parsedResp.data : null;
+                  },
+                );
+              },
               persist: async snapshot => {
                 if (!isSessionActive() || abandoned || await hasNewerDraft() || !isSessionActive() || abandoned) return;
                 await saveUnknownDraft(guidedToDraft(snapshot, nextDraftId));

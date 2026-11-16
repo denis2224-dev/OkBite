@@ -2,7 +2,6 @@ import { act, renderHook } from '@testing-library/react-native';
 import { useGuidedAddSession } from './useGuidedAddSession';
 import { clearUnknownDraft, loadUnknownDraft, saveUnknownDraft, saveUnknownDraftIfCurrent } from './unknownDraft';
 import { completeUnknownDraft } from './completeUnknownDraft';
-import { requestUnknownFlow } from './unknownFlowTransport';
 import { api } from '../../lib/api';
 import type { AnalysisOutcome } from '../../lib/analysisOutcome';
 import { NUTRIENT_KEYS, ReadLabelResponse } from '@okbite/shared';
@@ -21,14 +20,13 @@ jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }), u
 }, [fn]) }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'draft-id' }));
 jest.mock('./unknownDraft', () => ({ ...jest.requireActual('./unknownDraftRepository'), loadUnknownDraft: jest.fn(), saveUnknownDraft: jest.fn(), saveUnknownDraftIfCurrent: jest.fn(async () => true), clearUnknownDraft: jest.fn() }));
-jest.mock('./unknownFlowTransport', () => ({ requestUnknownFlow: jest.fn() }));
 jest.mock('./completeUnknownDraft', () => ({ completeUnknownDraft: jest.fn() }));
-jest.mock('../../lib/api', () => ({ api: { identifyOutcome: jest.fn() } }));
+jest.mock('../../lib/api', () => ({ api: { identifyOutcome: jest.fn(), readLabelOutcome: jest.fn() } }));
 jest.mock('../capture/compressPhoto', () => ({ compressPhoto: async (uri: string) => ({ uri, base64: 'jpeg', bytes: 20 }) }));
 jest.mock('../offline/photos', () => ({ keepPhoto: async (uri: string) => 'kept-' + uri, openPhoto: async (id: string) => ({ uri: id, release() {} }), removePhoto: jest.fn() }));
 const initial = { code: '4840001000014', name: 'Test product', brand: null, quantity: null, photoPath: 'device/front.jpg' };
 const label = { ingredientsText: 'ingredient test', unit: null, nutrients: Object.fromEntries(NUTRIENT_KEYS.map(key => [key, null])), unclear: [], ingredientsPhotoPath: 'device/ingredients.jpg', nutritionPhotoPath: null, reasons: Object.fromEntries([...NUTRIENT_KEYS, 'ingredientsText'].map(key => [key, key === 'ingredientsText' ? 'read' : 'not_printed'])) };
-beforeEach(() => { jest.clearAllMocks(); mockDelayFocus = false; mockFocus = undefined; jest.mocked(loadUnknownDraft).mockResolvedValue(null); jest.mocked(requestUnknownFlow).mockResolvedValue(label); jest.mocked(completeUnknownDraft).mockResolvedValue(undefined); jest.mocked(api.identifyOutcome).mockReset(); });
+beforeEach(() => { jest.clearAllMocks(); mockDelayFocus = false; mockFocus = undefined; jest.mocked(loadUnknownDraft).mockResolvedValue(null); jest.mocked(api.readLabelOutcome).mockResolvedValue(completed(label) as never); jest.mocked(completeUnknownDraft).mockResolvedValue(undefined); jest.mocked(api.identifyOutcome).mockReset(); });
 
 test.each(['before', 'after'])('opens confirmation when first focus arrives %s draft restoration', async ordering => {
   mockDelayFocus = true;
@@ -48,11 +46,11 @@ test('does not navigate when a read finishes after blur and refocus', async () =
   let blur: void | (() => void);
   await act(async () => { blur = mockFocus!(); });
   await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
-  let finish!: (value: typeof label) => void;
-  jest.mocked(requestUnknownFlow).mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+  let finish!: (value: AnalysisOutcome<typeof label>) => void;
+  jest.mocked(api.readLabelOutcome).mockReturnValueOnce(new Promise(resolve => { finish = resolve; }) as never);
   let reading!: Promise<void>;
   await act(async () => { reading = result.current.controller!.chooseNutrition('none'); });
-  await act(async () => { blur!(); mockFocus!(); await result.current.controller!.retry(); finish(label); await reading; });
+  await act(async () => { blur!(); mockFocus!(); await result.current.controller!.retry(); finish(completed(label)); await reading; });
   expect(mockReplace).not.toHaveBeenCalled();
 });
 
@@ -62,10 +60,10 @@ test('asks after ingredients and reads only after an explicit answer', async () 
   expect(result.current.state?.stage).toBe('ingredients');
   await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
   expect(result.current.state?.stage).toBe('nutrition_question');
-  expect(requestUnknownFlow).not.toHaveBeenCalled();
+  expect(api.readLabelOutcome).not.toHaveBeenCalled();
   await act(async () => { await result.current.controller!.chooseNutrition('none'); });
-  expect(requestUnknownFlow).toHaveBeenCalledTimes(1);
-  expect(jest.mocked(requestUnknownFlow).mock.calls[0]?.[3]).toMatchObject({ nutrition: 'none' });
+  expect(api.readLabelOutcome).toHaveBeenCalledTimes(1);
+  expect(jest.mocked(api.readLabelOutcome).mock.calls[0]?.[0]).toMatchObject({ nutrition: 'none' });
   expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'draft-id' } });
   expect(saveUnknownDraft).toHaveBeenCalled();
 });
@@ -74,7 +72,7 @@ test('restores a pending read as interrupted without replay', async () => {
   const { result } = await renderHook(() => useGuidedAddSession(initial));
   await act(async () => {});
   expect(result.current.state?.stage).toBe('interrupted');
-  expect(requestUnknownFlow).not.toHaveBeenCalled();
+  expect(api.readLabelOutcome).not.toHaveBeenCalled();
   expect(mockReplace).not.toHaveBeenCalled();
 });
 
@@ -84,7 +82,7 @@ test('requires choosing a saved draft when a different barcode starts a new prod
   const { result } = await renderHook(() => useGuidedAddSession(initial));
   await act(async () => {});
   expect(result.current.draftConflict).toBe(true);
-  expect(requestUnknownFlow).not.toHaveBeenCalled();
+  expect(api.readLabelOutcome).not.toHaveBeenCalled();
 });
 
 test('discarding a saved draft restarts a usable session for the incoming product', async () => {
@@ -110,15 +108,15 @@ test('a failed draft deletion keeps the flow usable and reports the storage erro
   expect(result.current.state?.stage).toBe('nutrition_question');
 });
 test('suppresses navigation when a read finishes after unmount', async () => {
-  let finish!: (value: unknown) => void;
-  jest.mocked(requestUnknownFlow).mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+  let finish!: (value: AnalysisOutcome<typeof label>) => void;
+  jest.mocked(api.readLabelOutcome).mockReturnValueOnce(new Promise(resolve => { finish = resolve; }) as never);
   const { result, unmount } = await renderHook(() => useGuidedAddSession(initial));
   await act(async () => {});
   await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
   let reading!: Promise<void>;
   await act(async () => { reading = result.current.controller!.chooseNutrition('skipped'); });
   await unmount();
-  await act(async () => { finish(label); await reading; });
+  await act(async () => { finish(completed(label)); await reading; });
   expect(mockReplace).not.toHaveBeenCalled();
 });
 test('does not start a read when draft restoration fails', async () => {
@@ -127,7 +125,7 @@ test('does not start a read when draft restoration fails', async () => {
   await act(async () => {});
   expect(result.current.error).toBeTruthy();
   expect(result.current.controller).toBeNull();
-  expect(requestUnknownFlow).not.toHaveBeenCalled();
+  expect(api.readLabelOutcome).not.toHaveBeenCalled();
 });
 test('sends front photo for barcode-only entry and shows identify candidates while keeping scanned code', async () => {
   jest.mocked(api.identifyOutcome).mockResolvedValueOnce({
@@ -239,7 +237,7 @@ test('does not persist ingredients draft or navigate when pending front not_foun
   expect(result.current.frontPending).toBe('waiting');
   expect(api.identifyOutcome).toHaveBeenCalledTimes(1);
   expect(saveUnknownDraft).toHaveBeenLastCalledWith(expect.objectContaining({
-    stage: 'reading',
+    stage: 'front',
     readStatus: 'pending',
     photos: expect.objectContaining({ front: 'kept-front-shot' }),
   }));
@@ -424,8 +422,8 @@ test('persists completed label read across blur and refocus without navigating',
   let blur: void | (() => void);
   await act(async () => { blur = mockFocus!(); });
   await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
-  let finishRead!: (value: typeof label) => void;
-  jest.mocked(requestUnknownFlow).mockReturnValueOnce(new Promise(resolve => { finishRead = resolve; }));
+  let finishRead!: (value: AnalysisOutcome<typeof label>) => void;
+  jest.mocked(api.readLabelOutcome).mockReturnValueOnce(new Promise(resolve => { finishRead = resolve; }) as never);
   let reading!: Promise<void>;
   await act(async () => { reading = result.current.controller!.chooseNutrition('none'); });
   jest.mocked(saveUnknownDraft).mockClear();
@@ -434,7 +432,7 @@ test('persists completed label read across blur and refocus without navigating',
   await act(async () => {
     blur!();
     mockFocus!();
-    finishRead(label);
+    finishRead(completed(label));
     await reading;
   });
 
@@ -471,7 +469,7 @@ test('retries front identification rather than readLabel after front retake blur
   await act(async () => { running = result.current.controller!.capturePhoto('new-front-shot'); });
   expect(result.current.frontPending).toBe('waiting');
   expect(api.identifyOutcome).toHaveBeenCalledTimes(1);
-  jest.mocked(requestUnknownFlow).mockClear();
+  jest.mocked(api.readLabelOutcome).mockClear();
 
   await act(async () => { blur!(); });
   await act(async () => { finish(identifyFound); await running; });
@@ -479,7 +477,7 @@ test('retries front identification rather than readLabel after front retake blur
   await act(async () => { await result.current.controller!.retry(); });
 
   expect(api.identifyOutcome).toHaveBeenCalledTimes(2);
-  expect(requestUnknownFlow).not.toHaveBeenCalled();
+  expect(api.readLabelOutcome).not.toHaveBeenCalled();
   expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'review-draft' } });
 });
 
@@ -516,4 +514,87 @@ test('abandons stale front identification when blur happens while awaiting post-
   expect(result.current.state?.stage).not.toBe('error');
   expect(saveUnknownDraft).not.toHaveBeenCalled();
   expect(mockReplace).not.toHaveBeenCalled();
+});
+
+test('abandons pending front identify immediately without awaiting completion if blurred before 55 s', async () => {
+  mockDelayFocus = true;
+  let resolveOutcome!: (outcome: unknown) => void;
+  jest.mocked(api.identifyOutcome)
+    .mockReturnValueOnce(new Promise(resolve => { resolveOutcome = resolve; }) as never)
+    .mockResolvedValueOnce(completed(identifyNotFound) as never);
+  const { result } = await renderHook(() => useGuidedAddSession({ ...initial, photoPath: null }));
+  let blur: void | (() => void);
+  await act(async () => { blur = mockFocus!(); });
+
+  let settled = false;
+  let running!: Promise<void>;
+  await act(async () => {
+    running = result.current.controller!.capturePhoto('front-shot').finally(() => { settled = true; });
+    await Promise.resolve();
+  });
+  await act(async () => { blur!(); mockFocus!(); });
+
+  let finishCompletion!: (res: unknown) => void;
+  await act(async () => {
+    resolveOutcome(pendingOutcome(new Promise(resolve => { finishCompletion = resolve; })));
+    for (let i = 0; i < 6; i += 1) await Promise.resolve();
+  });
+
+  expect(settled).toBe(true);
+  expect(result.current.frontPending).toBe('none');
+  expect(result.current.state?.stage).toBe('interrupted');
+
+  await act(async () => { await result.current.controller!.retry(); });
+  expect(api.identifyOutcome).toHaveBeenCalledTimes(2);
+  expect(result.current.state?.stage).toBe('ingredients');
+
+  await act(async () => {
+    finishCompletion(identifyFound);
+    await running;
+  });
+});
+
+test('waits on >55 s label read completion, surfaces retry guidance on late failure, and allows retry', async () => {
+  let rejectLate!: (err: unknown) => void;
+  jest.mocked(api.readLabelOutcome)
+    .mockResolvedValueOnce(pendingOutcome(new Promise((_r, reject) => { rejectLate = reject; })) as never)
+    .mockResolvedValueOnce(completed(label) as never);
+  const { result } = await renderHook(() => useGuidedAddSession(initial));
+  await act(async () => {});
+  await act(async () => { await result.current.controller!.capturePhoto('ingredients'); });
+
+  let reading!: Promise<void>;
+  await act(async () => { reading = result.current.controller!.chooseNutrition('none'); });
+  expect(result.current.frontPending).toBe('waiting');
+  expect(result.current.state?.stage).toBe('working');
+
+  await act(async () => {
+    rejectLate(Object.assign(new Error('upstream'), { code: 'upstream_failed' }));
+    await reading;
+  });
+  expect(result.current.state?.stage).toBe('error');
+  expect(result.current.frontPending).toBe('retry');
+
+  await act(async () => { await result.current.controller!.retry(); });
+  expect(api.readLabelOutcome).toHaveBeenCalledTimes(2);
+  expect(result.current.frontPending).toBe('none');
+  expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'draft-id' } });
+});
+
+test('surfaces pending retry guidance when a >55 s front identify completes with a blank photoPath', async () => {
+  let finish!: (res: unknown) => void;
+  jest.mocked(api.identifyOutcome).mockResolvedValueOnce(pendingOutcome(new Promise(resolve => { finish = resolve; })) as never);
+  const { result } = await renderHook(() => useGuidedAddSession({ ...initial, photoPath: null }));
+  await act(async () => {});
+  let running!: Promise<void>;
+  await act(async () => { running = result.current.controller!.capturePhoto('front-shot'); });
+  expect(result.current.frontPending).toBe('waiting');
+
+  await act(async () => {
+    finish({ status: 'not_found', read: { brand: null, name: null, quantity: null, code: null }, photoPath: '   ' });
+    await running;
+  });
+
+  expect(result.current.state?.stage).toBe('error');
+  expect(result.current.frontPending).toBe('retry');
 });

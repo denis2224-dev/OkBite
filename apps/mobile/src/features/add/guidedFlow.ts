@@ -131,7 +131,12 @@ export function createGuidedFlow(initial: GuidedFlowInitial, deps: GuidedFlowDep
     retake(kind: GuidedPhotoKind) {
       if (busy || cancelled) return;
       completedRead = null;
-      set({ stage: kind, error: undefined, ...(kind === 'nutrition' ? { nutritionMode: 'separate' as const } : {}) });
+      set({
+        stage: kind,
+        error: undefined,
+        ...(kind === 'front' ? { remotePhotoPath: null } : {}),
+        ...(kind === 'nutrition' ? { nutritionMode: 'separate' as const } : {}),
+      });
     },
     async retry() {
       if (cancelled || busy) return;
