@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { productScore, type Product, type ScoreResult } from '@okbite/shared';
-import { Body, Heading } from '../../ui';
+import { Body, Caption, Heading } from '../../ui';
 import { fonts } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 import { letterTones } from '../../theme/letterTones';
@@ -42,6 +42,6 @@ export function ScoreCard({ product, score, identity = true }: { product?: Produ
       <Body>{ro.result.insufficient}</Body><Body>{ro.result.missing}</Body>
       {score.missing.map(key => <Body key={key}>{ro.result.nutrients[key]}</Body>)}
     </>}
-    <Body style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>{ro.score.disclaimer}</Body>
+    <Caption>{ro.score.disclaimer}</Caption>
   </View>;
 }

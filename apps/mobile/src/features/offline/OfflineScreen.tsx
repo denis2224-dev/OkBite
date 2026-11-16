@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
-import { Body, Button, Card, Heading, Screen } from '../../ui';
+import { Body, Button, Card, Screen, Section } from '../../ui';
 import { ro } from '../../copy/ro';
 import { listQueue, retryQueued, completeQueued, subscribeQueue, resumeQueuedItem, type QueueEntry } from './queue';
 import { productRoute } from '../identify/routes';
@@ -55,7 +55,7 @@ export function OfflineScreen() {
     {!!error && <><Body accessibilityLiveRegion="polite">{error}</Body><Button disabled={busy} onPress={() => { void refresh(); }}>{ro.offline.reload}</Button></>}
     {!loading && !rows.length && <Card><Body>{ro.offline.emptyQueue}</Body></Card>}
     {rows.map(item => <Card key={item.id}>
-      <Heading style={{ fontSize: 18 }}>{item.status === 'completed' ? ro.review.finishSave : item.kind === 'photo' ? ro.offline.photo : ro.offline.code}</Heading>
+      <Section>{item.status === 'completed' ? ro.review.finishSave : item.kind === 'photo' ? ro.offline.photo : ro.offline.code}</Section>
       {item.kind === 'code' && item.status !== 'completed' && <Body>{item.payload}</Body>}
       {item.outcome && <Body>{ro.offline.needsReview}</Body>}
       {item.status === 'completed' && <Body>{ro.offline.cleanupPending}</Body>}

@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import type { ScoreReason, ScoreResult } from '@okbite/shared';
-import { Body, Card, Heading } from '../../ui';
+import { Body, Caption, Card, Heading } from '../../ui';
 import { fonts } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 import { ro } from '../../copy/ro';
@@ -28,7 +28,7 @@ export function WhyScore({ score, sugar }: { score: ScoreResult; sugar: number |
           <View testID={`reason-tone-${reason.tone}`}><ResultIcon name={reason.tone === 'good' ? 'plus' : 'minus'} color={tone.fg} /></View>
           <View style={{ flex: 1, minWidth: 140 }}>
             <Body style={{ fontFamily: fonts.bold }}>{reason.title}</Body>
-            <Body style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>{reason.detail}</Body>
+            <Caption>{reason.detail}</Caption>
           </View>
           <Body style={{ color: colors.muted }}>{value}</Body>
         </View>;

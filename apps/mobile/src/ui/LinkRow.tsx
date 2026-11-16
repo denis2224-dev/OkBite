@@ -2,7 +2,7 @@ import { View, type PressableProps } from 'react-native';
 import { PressableOpacity } from '../shared/PressableOpacity';
 import { useTheme } from '../theme/useTheme';
 import { fonts } from '../theme/tokens';
-import { Body } from './Typography';
+import { Body, Caption } from './Typography';
 import { Icon, type IconName } from './Icon';
 
 /** A navigation row: optional leading icon, label, optional hint and a trailing chevron. */
@@ -15,7 +15,7 @@ export function LinkRow({ label, hint, icon, last = false, ...props }: Pressable
     </View> : null}
     <View style={{ flex: 1, minWidth: 0 }}>
       <Body style={{ fontFamily: fonts.bold }}>{label}</Body>
-      {hint ? <Body style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>{hint}</Body> : null}
+      {hint ? <Caption>{hint}</Caption> : null}
     </View>
     <Icon name="arrow" size={20} color={colors.muted} />
   </PressableOpacity>;

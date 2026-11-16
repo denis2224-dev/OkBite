@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { NUTRIENT_KEYS, type Product } from '@okbite/shared';
-import { Body, Card, Heading } from '../../ui';
+import { Body, Card, Section } from '../../ui';
 import { ro } from '../../copy/ro';
 import { formatAmount } from '../../lib/format';
 
@@ -8,7 +8,7 @@ import { formatAmount } from '../../lib/format';
 export function PartialNutritionCard({ product }: { product: Product }) {
   const available = NUTRIENT_KEYS.filter(key => product.nutrients[key] !== null);
   return <Card>
-    <Heading style={{ fontSize: 18 }}>{available.length ? ro.result.scoreUnavailable : ro.result.nutritionUnavailable}</Heading>
+    <Section>{available.length ? ro.result.scoreUnavailable : ro.result.nutritionUnavailable}</Section>
     {!available.length && <Body>{ro.result.scoreUnavailable}</Body>}
     {product.category.slug === 'necunoscut' && <Body>{ro.result.categoryUnconfirmed}</Body>}
     {!!available.length && <>

@@ -1,9 +1,8 @@
 import { View } from 'react-native';
 import { ro } from '../../copy/ro';
-import { useTheme } from '../../theme/useTheme';
 import { TabPageHeader } from '../../shared/TabPageHeader';
 import { Screen } from '../../ui/Screen';
-import { Body, Heading } from '../../ui/Typography';
+import { Caption, Section } from '../../ui/Typography';
 import { ProfileSaveError } from '../profile/ProfileSaveError';
 import { useProfileEditor } from '../profile/useProfileEditor';
 import { AllergenChips } from './AllergenChips';
@@ -11,7 +10,6 @@ import { AvoidSwitches } from './AvoidSwitches';
 
 /** Alergii tab: allergens and "avoid" keys, saved only on this phone through the shared profile. */
 export function AllergiesScreen() {
-  const { colors } = useTheme();
   const { profile, toggle, disabled, errorMessage, retry } = useProfileEditor();
   return (
     <Screen back={false}>
@@ -20,14 +18,14 @@ export function AllergiesScreen() {
       </View>
       <ProfileSaveError message={errorMessage} retry={retry} />
       <View style={{ gap: 8 }}>
-        <Heading style={{ fontSize: 18, lineHeight: 24 }}>{ro.allergies.allergensLabel}</Heading>
+        <Section>{ro.allergies.allergensLabel}</Section>
         <AllergenChips selected={profile.allergens} disabled={disabled} onToggle={(a) => toggle('allergens', a)} />
       </View>
       <View style={{ gap: 8 }}>
-        <Heading style={{ fontSize: 18, lineHeight: 24 }}>{ro.allergies.avoidTitle}</Heading>
+        <Section>{ro.allergies.avoidTitle}</Section>
         <AvoidSwitches selected={profile.avoid} disabled={disabled} onToggle={(k) => toggle('avoid', k)} />
       </View>
-      <Body style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>{ro.result.missingAllergenNote}</Body>
+      <Caption>{ro.result.missingAllergenNote}</Caption>
     </Screen>
   );
 }

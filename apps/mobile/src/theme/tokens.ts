@@ -4,4 +4,9 @@ export const light = {
 export type Palette = typeof light;
 export const radii = {small:12,card:20,hero:24,pill:999};
 export const spacing = {xs:4,sm:8,md:12,lg:16,xl:24,xxl:32,headerTop:12,phonePreviewTop:48};
-export const fonts = {body:'Manrope_500Medium',medium:'Manrope_600SemiBold',bold:'Manrope_700Bold',heading:'BricolageGrotesque_700Bold'};
+export const fonts = {body:'Manrope_500Medium',medium:'Manrope_600SemiBold',bold:'Manrope_700Bold',heading:'BricolageGrotesque_700Bold',headingExtra:'BricolageGrotesque_800ExtraBold'};
+/** One ladder, about 1.2x per step from caption to display; `score` is reserved for the score tag. */
+export const typeScale = {
+ score:{fontSize:40,lineHeight:44}, display:{fontSize:26,lineHeight:32}, title:{fontSize:22,lineHeight:28},
+ section:{fontSize:18,lineHeight:24}, body:{fontSize:15,lineHeight:23}, caption:{fontSize:13,lineHeight:19},
+};

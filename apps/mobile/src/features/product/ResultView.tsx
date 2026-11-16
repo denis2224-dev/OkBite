@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Image, View } from 'react-native';
 import { router } from 'expo-router';
 import { NUTRIENT_KEYS, resolveProductIngredients, type Product, type ScoreResult } from '@okbite/shared';
-import { AllergenChip, Badge, Body, Button, Card, Heading, LinkRow, useToast } from '../../ui';
-import { useTheme } from '../../theme/useTheme';
+import { AllergenChip, Badge, Body, Button, Caption, Card, Heading, LinkRow, Section, useToast } from '../../ui';
 import { fonts } from '../../theme/tokens';
 import { ro } from '../../copy/ro';
 import { isPreview } from '../../lib/preview';
@@ -32,7 +31,6 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
   const [sharing, setSharing] = useState(false);
   const [shareFailed, setShareFailed] = useState(false);
   const toast = useToast();
-  const { colors } = useTheme();
   const shownScore = displayScore(product, score);
   const hasNutrition = NUTRIENT_KEYS.some(key => product.nutrients[key] !== null);
   const canShowScore = shownScore.score !== null && shownScore.grade !== 'unavailable';
@@ -61,14 +59,14 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
     {canShowScore ? <ScoreCard product={product} score={shownScore} /> : <><Heading>{product.name}</Heading><Body>{[product.brand, product.quantity].filter(Boolean).join(', ')}</Body></>}
     {product.status === 'unverified' && <View testID="unverified-badge" style={{ gap: 4 }}>
       <Badge tone="unverified">{ro.result.unverified}</Badge>
-      <Body style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>{isOffProduct(product) ? ro.result.offNote : ro.result.unverifiedNote}</Body>
+      <Caption>{isOffProduct(product) ? ro.result.offNote : ro.result.unverifiedNote}</Caption>
     </View>}
     {canShowScore ? <WhyScore score={shownScore} sugar={product.nutrients.sugar} /> : <PartialNutritionCard product={product} />}
     {canShowScore && <ScoreDeductions product={product} score={score} />}
     <ProcessingCard product={product} />
     <AdditivesCard product={product} />
     <Card>
-      <Heading style={{ fontSize: 18 }}>{ro.result.allergens}</Heading>
+      <Section>{ro.result.allergens}</Section>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {product.allergens.map(name => <AllergenChip key={name} name={name} />)}
       </View>
@@ -79,11 +77,11 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
           {product.mayContain.map(name => <AllergenChip key={name} name={name} tone="trace" />)}
         </View>
       </>}
-      <Body style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>{ro.result.missingAllergenNote}</Body>
+      <Caption>{ro.result.missingAllergenNote}</Caption>
     </Card>
     {product.imageUrl && <Image source={{ uri: product.imageUrl }} accessibilityLabel={product.name} style={{ width: '100%', height: 180 }} resizeMode="contain" />}
     <Card>
-      <Heading style={{ fontSize: 18 }}>{ro.result.transcribedLabel}</Heading>
+      <Section>{ro.result.transcribedLabel}</Section>
       <Body selectable>{product.ingredientsText}</Body>
       {explainedIngredients.length > 0 && <View style={{ gap: 16, marginTop: 8 }}>
         <Body style={{ fontFamily: fonts.bold }}>{ro.result.explainedWithSource}</Body>

@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import type { Product } from '@okbite/shared';
-import { Body, Card, Heading } from '../../ui';
+import { Body, Card, Section } from '../../ui';
 import { useTheme } from '../../theme/useTheme';
 import { ro } from '../../copy/ro';
 import { formatAmount } from '../../lib/format';
@@ -10,7 +10,7 @@ export function PortionTable({ product }: { product: Product }) {
   const { colors } = useTheme();
   const sugar = product.nutrients.sugar;
   return <Card>
-    <Heading style={{ fontSize: 18 }}>{ro.result.portion}</Heading>
+    <Section>{ro.result.portion}</Section>
     <Body>{product.portion.label}</Body>
     <Body>{ro.result.portionAmount(formatAmount(product.portion.amount), product.unit)}</Body>
     {(['kcal', 'sugar', 'sat', 'salt'] as const).map(key => {

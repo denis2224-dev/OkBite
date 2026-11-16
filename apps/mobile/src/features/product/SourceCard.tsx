@@ -1,5 +1,5 @@
 import type { Product } from '@okbite/shared';
-import { Body, Card, Heading } from '../../ui';
+import { Body, Card, Section } from '../../ui';
 import { ro } from '../../copy/ro';
 
 // Contract dates are YYYY-MM-DD; Romanian readers expect DD.MM.YYYY.
@@ -10,7 +10,7 @@ export const isOffProduct = (product: Product) => product.source.startsWith('Ope
 
 export function SourceCard({ product }: { product: Product }) {
   return <Card>
-    <Heading style={{ fontSize: 18 }}>{ro.result.source}</Heading>
+    <Section>{ro.result.source}</Section>
     <Body>{product.source}</Body>
     <Body>{isOffProduct(product) ? ro.result.imported : ro.result.added}: {roDate(product.addedAt)}</Body>
     {product.status === 'verified' && product.verifiedAt
