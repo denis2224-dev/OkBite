@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AccessibilityInfo, Animated, Text, View } from 'react-native';
+import { AccessibilityInfo, Animated, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { Tier } from '@okbite/shared';
 import { fonts, typeScale } from '../../theme/tokens';
@@ -34,10 +34,15 @@ export function ScoreTag({ score, tier, label, testID }: { score: number; tier: 
   };
   return <Animated.View testID={testID} accessible accessibilityRole="image" accessibilityLabel={label}
     style={[{ flexDirection: 'row', alignItems: 'stretch', alignSelf: 'flex-start' }, motion]}>
-    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ width: 22, marginRight: -1 /* overlap: no hairline at the join */ }}>
-      <Svg width="100%" height="100%" viewBox="0 0 22 60" preserveAspectRatio="none" aria-hidden>
-        <Path d={POINT} fill={fg} fillRule="evenodd" />
-      </Svg>
+    {/* The text in the body sets the tag's height; the point only stretches to it. Its drawing sits in an absolute layer,
+        because on iOS and Android a 100%-high SVG in an auto-height row grows the whole tag instead. */}
+    <View testID={testID ? `${testID}-point` : undefined} accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
+      style={{ width: 22, alignSelf: 'stretch', marginRight: -1 /* overlap: no hairline at the join */ }}>
+      <View testID={testID ? `${testID}-point-art` : undefined} style={StyleSheet.absoluteFill}>
+        <Svg width="100%" height="100%" viewBox="0 0 22 60" preserveAspectRatio="none" aria-hidden>
+          <Path d={POINT} fill={fg} fillRule="evenodd" />
+        </Svg>
+      </View>
     </View>
     <View testID={testID ? `${testID}-body` : undefined} accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
       style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, backgroundColor: fg, borderTopRightRadius: 14, borderBottomRightRadius: 14,

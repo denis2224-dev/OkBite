@@ -62,3 +62,11 @@ it('stays still, without crashing, when the reduced-motion check is unavailable'
   expect(timing).not.toHaveBeenCalled();
   expect(screen.getByTestId('tag')).toBeTruthy();
 });
+
+it('draws the point in an absolute layer so the drawing can never set the tag height on a phone', async () => {
+  jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
+  await render(<ScoreTag score={86} tier="excellent" label="x" testID="tag" />);
+  expect(flat('tag-point')).toMatchObject({ width: 22, alignSelf: 'stretch' });
+  expect(flat('tag-point').height).toBeUndefined();
+  expect(flat('tag-point-art')).toMatchObject({ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 });
+});
