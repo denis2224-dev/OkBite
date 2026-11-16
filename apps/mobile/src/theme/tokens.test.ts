@@ -25,4 +25,28 @@ describe('light palette', () => {
   it.each(['A', 'B', 'C', 'D', 'E'] as const)('keeps the letter at least 4.5:1 on the selected %s segment', letter => {
     expect(contrast(letterTones.onSelected, letterTones[letter].fg)).toBeGreaterThanOrEqual(4.5);
   });
+  const rgb = (hex: string) => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+  it.each(['ground', 'border', 'divider', 'soft', 'neutralBg'] as const)('tints the %s neutral toward the brand green, not yellow cream', key => {
+    const [r, g, b] = rgb(colors[key]);
+    expect(g).toBeGreaterThanOrEqual(r!);
+    expect(g).toBeGreaterThanOrEqual(b!);
+  });
+  it('draws cards in pure white so they stand out from the page', () => {
+    expect(colors.surface).toBe('#FFFFFF');
+    expect(contrast(colors.surface, colors.ground)).toBeGreaterThan(1.05);
+  });
+  it('keeps the camera panel a deep forest-black, darker than any text colour', () => {
+    const [r, g, b] = rgb(colors.cameraPanel);
+    expect(g).toBeGreaterThan(r!);
+    expect(g).toBeGreaterThan(b!);
+    expect(contrast(colors.cameraInk, colors.cameraPanel)).toBeGreaterThanOrEqual(15);
+  });
+  it.each([
+    ['ink on ground', 'ink', 'ground'], ['ink on surface', 'ink', 'surface'], ['ink on soft', 'ink', 'soft'],
+    ['muted on ground', 'muted', 'ground'], ['muted on surface', 'muted', 'surface'], ['muted on soft', 'muted', 'soft'],
+    ['neutral on neutralBg', 'neutral', 'neutralBg'], ['good on goodBg', 'good', 'goodBg'], ['medium on mediumBg', 'medium', 'mediumBg'],
+    ['low on lowBg', 'low', 'lowBg'], ['primary on ground', 'primary', 'ground'],
+  ] as const)('keeps %s at least 4.5:1', (_, fg, bg) => {
+    expect(contrast(colors[fg], colors[bg])).toBeGreaterThanOrEqual(4.5);
+  });
 });
