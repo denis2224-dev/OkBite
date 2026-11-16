@@ -26,7 +26,10 @@ describe('light palette', () => {
     expect(contrast(letterTones.onSelected, letterTones[letter].fg)).toBeGreaterThanOrEqual(4.5);
   });
   const rgb = (hex: string) => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
-  it.each(['ground', 'border', 'divider', 'soft', 'neutralBg'] as const)('tints the %s neutral toward the brand green, not yellow cream', key => {
+  it('keeps the page background a warm cream', () => {
+    expect(colors.ground).toBe('#F7F4EC');
+  });
+  it.each(['border', 'divider', 'soft', 'neutralBg'] as const)('tints the %s neutral toward the brand green, not beige', key => {
     const [r, g, b] = rgb(colors[key]);
     expect(g).toBeGreaterThanOrEqual(r!);
     expect(g).toBeGreaterThanOrEqual(b!);
