@@ -356,6 +356,9 @@ export const redesignRu: RedesignCopy = {
     remove: (name: string) => `Удалить ${name} из истории`, removed: 'Товар удалён из истории.',
     undo: 'Отменить удаление', removeError: 'Не удалось удалить товар. Попробуйте снова.',
     scoreUnavailable: 'Оценка недоступна', restoreError: 'Не удалось восстановить товар. Повторите отмену.',
+    basket: { title: 'Ваша корзина', average: (n: number) => `Среднее для ${pluralRu(n, 'продукта', 'продуктов', 'продуктов')} с оценкой`,
+      count: (n: number, tier: string) => `${n} ${tier}`, unscored: (n: number) => `${n} без оценки`, best: (name: string) => `Ваш лучший выбор: ${name}`,
+      mixLabel: (mix: Record<string, number>) => `Отлично ${mix.excellent}, Хорошо ${mix.good}, Средне ${mix.fair}, Слабо ${mix.poor}, Плохо ${mix.bad}` },
   },
   allergens: {
     Gluten: 'Глютен', Crustacee: 'Ракообразные', Ouă: 'Яйца', Pește: 'Рыба', Arahide: 'Арахис', Soia: 'Соя', Lapte: 'Молоко',
