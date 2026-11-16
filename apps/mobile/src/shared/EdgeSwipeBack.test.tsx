@@ -22,6 +22,7 @@ it('lays a thin swipe strip along the left edge, over every page', async () => {
   expect(StyleSheet.flatten(strip.props.style)).toMatchObject({ position: 'absolute', left: 0, top: 0, bottom: 0, width: 20 });
   expect(typeof strip.props.onResponderRelease).toBe('function');
   expect(typeof strip.props.onMoveShouldSetResponder).toBe('function');
+  expect(strip.props.onResponderTerminationRequest()).toBe(false); // a scrolling page cannot steal the swipe
 });
 
 it('also goes back with the screen-reader escape gesture', async () => {

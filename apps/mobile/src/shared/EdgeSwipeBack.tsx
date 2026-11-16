@@ -12,8 +12,12 @@ export function goBack(): void {
  * The strip is thin so sideways scrolling inside pages keeps working; the screen-reader escape gesture also goes back. */
 export function EdgeSwipeBack({ children }: PropsWithChildren) {
   const pan = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => false,
+    // Claim touches that start on the strip: on the web a mouse drag only reaches a responder that took the press.
+    onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: (_, g) => g.dx > 6 && Math.abs(g.dx) > Math.abs(g.dy),
+    // Keep the gesture once taken: a scrolling page under the finger must not steal it halfway.
+    onPanResponderTerminationRequest: () => false,
+    onShouldBlockNativeResponder: () => true,
     onPanResponderRelease: (_, g) => { if (shouldGoBack(g.dx, g.dy, g.vx)) goBack(); },
   }), []);
   return <View testID="edge-swipe-root" style={styles.root} onAccessibilityEscape={goBack}>
