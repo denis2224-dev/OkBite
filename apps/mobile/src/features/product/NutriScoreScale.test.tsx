@@ -1,3 +1,4 @@
+import { StyleSheet } from 'react-native';
 import { render, screen } from '@testing-library/react-native';
 import { NutriScoreScale } from './NutriScoreScale';
 import { light as mockLight } from '../../theme/tokens';
@@ -26,4 +27,13 @@ it('omits the scale when the backend has no letter', async () => {
   await render(<NutriScoreScale letter={null} />);
   expect(screen.queryByRole('image')).toBeNull();
   expect(screen.queryByText('A')).toBeNull();
+});
+it.each(letters)('with showLetter, names only the selected %s inside a taller segment, hidden from screen readers', async letter => {
+  await render(<NutriScoreScale letter={letter} showLetter />);
+  expect(screen.getByRole('image', { name: `Nutri-Score: ${letter}` })).toBeTruthy();
+  const segment = screen.getByTestId(`nutri-score-${letter}`);
+  expect(StyleSheet.flatten(segment.props.style)).toMatchObject({ height: 22, borderRadius: 8, borderWidth: 0, backgroundColor: letterTones[letter].fg });
+  const shown = screen.getByText(letter, { includeHiddenElements: true });
+  expect(StyleSheet.flatten(shown.props.style).color).toBe(letterTones.onSelected);
+  for (const other of letters.filter(value => value !== letter)) expect(screen.queryByText(other, { includeHiddenElements: true })).toBeNull();
 });

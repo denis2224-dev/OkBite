@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, View } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
 import { NUTRIENT_KEYS, resolveProductIngredients, type Product, type ScoreResult } from '@okbite/shared';
 import { AllergenChip, Badge, Body, Button, Caption, Card, Heading, LinkRow, Section, useToast } from '../../ui';
@@ -79,7 +79,6 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
       </>}
       <Caption>{ro.result.missingAllergenNote}</Caption>
     </Card>
-    {product.imageUrl && <Image source={{ uri: product.imageUrl }} accessibilityLabel={product.name} style={{ width: '100%', height: 180 }} resizeMode="contain" />}
     <Card>
       <Section>{ro.result.transcribedLabel}</Section>
       <Body selectable>{product.ingredientsText}</Body>
