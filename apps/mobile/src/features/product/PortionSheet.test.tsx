@@ -24,3 +24,16 @@ it('turns off text selection on the sheet so a mouse drag on the web moves the s
   const sheet = screen.getByTestId('portion-sheet', { includeHiddenElements: true });
   expect(StyleSheet.flatten(sheet.props.style).userSelect).toBe('none');
 });
+
+it('opens over the page without darkening it', async () => {
+  await render(<PortionSheet product={foundYogurt.product} onClose={jest.fn()} />);
+  const overlay = screen.getByTestId('portion-sheet-overlay', { includeHiddenElements: true });
+  expect(StyleSheet.flatten(overlay.props.style).backgroundColor ?? 'transparent').toBe('transparent');
+});
+
+it('keeps the sheet edge visible on the page with a border and a soft shadow', async () => {
+  await render(<PortionSheet product={foundYogurt.product} onClose={jest.fn()} />);
+  const sheet = StyleSheet.flatten(screen.getByTestId('portion-sheet', { includeHiddenElements: true }).props.style);
+  expect(sheet.borderTopWidth).toBeGreaterThan(0);
+  expect(sheet.elevation).toBeGreaterThan(0);
+});

@@ -26,9 +26,10 @@ export function PortionSheet({ product, onClose }: { product: Product; onClose: 
   }), [drag, onClose]);
 
   return <Modal transparent animationType="slide" onRequestClose={onClose}>
-    <View style={[styles.overlay, { backgroundColor: colors.scrim }]}>
+    {/* No dimming: the page stays fully visible behind the sheet; tapping it still closes the sheet. */}
+    <View testID="portion-sheet-overlay" style={styles.overlay}>
       <Pressable testID="portion-sheet-backdrop" accessible={false} onPress={onClose} style={StyleSheet.absoluteFill} />
-      <Animated.View testID="portion-sheet" accessibilityViewIsModal style={[styles.sheet, { backgroundColor: colors.ground, transform: [{ translateY: drag }] }]}>
+      <Animated.View testID="portion-sheet" accessibilityViewIsModal style={[styles.sheet, { backgroundColor: colors.ground, borderColor: colors.border, shadowColor: colors.ink, transform: [{ translateY: drag }] }]}>
         {/* The drag zone sits above the scrolling table, so pulling it never fights the scroll. */}
         <View testID="portion-sheet-handle" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.handleZone} {...pan.panHandlers}>
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
@@ -45,7 +46,9 @@ export function PortionSheet({ product, onClose }: { product: Product; onClose: 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
   // No text selection: on the web a mouse drag would select the table text instead of moving the sheet.
-  sheet: { width: '100%', maxWidth: 480, maxHeight: '90%', alignSelf: 'center', borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden', userSelect: 'none' },
+  sheet: { width: '100%', maxWidth: 480, maxHeight: '90%', alignSelf: 'center', borderTopLeftRadius: 24, borderTopRightRadius: 24, userSelect: 'none', // no overflow:hidden: iOS would clip the shadow
+    // With no dark backdrop, a top border and a soft shadow mark where the sheet starts.
+    borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1, shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: -4 }, elevation: 12 },
   handleZone: { alignItems: 'center', justifyContent: 'center', paddingTop: 10, paddingBottom: 14 },
   handle: { width: 44, height: 5, borderRadius: 3 },
   scroll: { flexGrow: 0 },
