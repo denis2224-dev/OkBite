@@ -48,7 +48,8 @@ export function offImageUrl(off: OffProduct, code: string): string | null {
   const parsed = SelectedFronts.safeParse(off.images);
   const fronts = parsed.success ? parsed.data.selected.front : {};
   const lang = ['ro', off.lang ?? '', 'en'].find((l) => fronts[l]) ?? Object.keys(fronts)[0];
-  const rev = lang ? String(fronts[lang].rev) : '';
+  const front = lang ? fronts[lang] : undefined;
+  const rev = front ? String(front.rev) : '';
   // OFF pads codes to 13 digits and splits them 3/3/3/rest (00001373 -> 000/000/000/1373).
   const folder = code.padStart(13, '0').replace(/^(\d{3})(\d{3})(\d{3})(\d+)$/, '$1/$2/$3/$4');
   const url = `https://images.openfoodfacts.org/images/products/${folder}/front_${lang}.${rev}.400.jpg`;
