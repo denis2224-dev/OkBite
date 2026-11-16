@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Category, Code, Ingredient, type NutrientKey, Product, ScoreResult, Uuid } from '../_shared/contract.ts';
 import { BUILTIN_INGREDIENTS, matchIngredients, resolveOffCategory } from '../_shared/ingredients/index.ts';
-import { computeScore } from '../_shared/score/index.ts';
+import { scoreProductNutrition } from '../_shared/score/index.ts';
 import { photoUrl } from './photoUrl.ts';
 
 // Explicit public columns: C2 deliberately denies SELECT * to shopper readers.
@@ -101,6 +101,6 @@ export async function loadProduct(by: { id: string } | { code: string }): Promis
         missing: (['kcal', 'sat', 'sugar', 'salt'] as NutrientKey[])
           .filter((key) => product.nutrients[key] === null),
       }
-      : computeScore(product.nutrients, product.category.scoreKind, product.ingredientsText)),
+      : scoreProductNutrition(product)),
   };
 }

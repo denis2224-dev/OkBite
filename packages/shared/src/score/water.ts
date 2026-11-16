@@ -1,0 +1,240 @@
+import type { Grade, ScoreReason, ScoreResult, WaterProfile } from '../contract';
+
+export type WaterUsageTier =
+  | 'daily_low_sodium'
+  | 'daily'
+  | 'moderate_sport'
+  | 'occasional_high_mineral'
+  | 'therapeutic';
+
+export interface WaterSummary {
+  tier: WaterUsageTier;
+  effectiveTds: number | null;
+  effectiveNa: number | null;
+  equivBoron: number | null;
+  lowSodium: boolean;
+  magnesiumRich: boolean;
+  highCalcium: boolean;
+  iodized: boolean;
+  carbonated: boolean;
+}
+
+const comma = (v: number) => String(Math.round(v * 10) / 10).replace('.', ',');
+
+/** Sum of dissolved major ions when at least 2 ions are declared (fallback for missing TDS / g/L typos). */
+function dissolvedIonSum(w: WaterProfile): { count: number; sum: number } {
+  const ions = [
+    w.caMgL,
+    w.mgMgL,
+    w.naMgL ?? w.naPlusKMgL,
+    w.naMgL !== null ? w.kMgL : null,
+    w.hco3MgL,
+    w.so4MgL,
+    w.clMgL,
+  ];
+  let count = 0;
+  let sum = 0;
+  for (const val of ions) {
+    if (val !== null) {
+      count++;
+      sum += val;
+    }
+  }
+  return { count, sum };
+}
+
+/** Resolves effective mineralization (mg/L), rejecting unit-contradictory TDS (<50 vs ionSum >500). */
+export function effectiveWaterTds(w: WaterProfile): number | null {
+  const { count, sum } = dissolvedIonSum(w);
+  const declared = w.tdsMgL ?? w.dryResidueMgL;
+  if (declared !== null && declared < 50 && count >= 2 && sum > 500) return Math.round(sum);
+  return declared ?? (count >= 2 && sum > 0 ? Math.round(sum) : null);
+}
+
+export function summarizeWater(w: WaterProfile): WaterSummary {
+  const effectiveTds = effectiveWaterTds(w);
+  const effectiveNa = w.naMgL ?? w.naPlusKMgL;
+  const equivBoron = w.bMgL ?? (w.h3bo3MgL !== null ? w.h3bo3MgL * 0.1748 : null);
+  const lowSodium =
+    w.naMgL !== null ? w.naMgL < 20 : w.naPlusKMgL !== null ? w.naPlusKMgL < 20 : false;
+  const magnesiumRich =
+    w.mgMgL !== null &&
+    w.mgMgL >= 50 &&
+    (w.so4MgL === null || w.so4MgL <= 250) &&
+    (effectiveNa === null || effectiveNa <= 100);
+  const highCalcium = w.caMgL !== null && w.caMgL >= 50;
+  const iodized = w.iUgL !== null && w.iUgL >= 20;
+  const carbonated = w.carbonation === 'sparkling' || w.carbonation === 'lightly_sparkling';
+
+  let tier: WaterUsageTier = 'daily';
+  if (
+    w.classification === 'therapeutic' ||
+    (effectiveTds !== null && effectiveTds > 5000) ||
+    (effectiveNa !== null && effectiveNa > 1000) ||
+    (equivBoron !== null && equivBoron > 5.2) ||
+    (w.so4MgL !== null && w.so4MgL > 1500)
+  ) {
+    tier = 'therapeutic';
+  } else if (
+    (effectiveTds !== null && effectiveTds > 1500) ||
+    (effectiveNa !== null && effectiveNa > 200) ||
+    (w.so4MgL !== null && w.so4MgL > 250 && (effectiveTds === null || effectiveTds > 1000))
+  ) {
+    tier = 'occasional_high_mineral';
+  } else if (
+    (effectiveTds !== null && effectiveTds > 500) ||
+    w.carbonation === 'sparkling' ||
+    w.classification === 'table_mineral'
+  ) {
+    tier = 'moderate_sport';
+  } else if (
+    lowSodium &&
+    (w.fMgL === null || w.fMgL <= 1.5) &&
+    (w.no3MgL === null || w.no3MgL <= 10)
+  ) {
+    tier = 'daily_low_sodium';
+  }
+
+  return {
+    tier,
+    effectiveTds,
+    effectiveNa,
+    equivBoron,
+    lowSodium,
+    magnesiumRich,
+    highCalcium,
+    iodized,
+    carbonated,
+  };
+}
+
+function gradeFor(score: number): Grade {
+  if (score >= 60) return 'good';
+  if (score >= 40) return 'medium';
+  return 'low';
+}
+
+function tdsPenalty(tds: number | null, magnesiumRich: boolean, isTherapeutic: boolean): number {
+  if (tds === null) return isTherapeutic ? 65 : 0;
+  if (tds < 50) return 5;
+  if (tds <= 500) return 0;
+  if (tds <= 1000) return magnesiumRich && tds <= 900 ? 6 : 8;
+  if (tds <= 1500) return 16;
+  if (tds <= 3500) return 30;
+  if (tds <= 5000) return 42;
+  return 55;
+}
+
+function naPenalty(na: number | null): number {
+  if (na === null || na <= 20) return 0;
+  if (na <= 50) return 4;
+  if (na <= 100) return 8;
+  if (na <= 200) return 14;
+  if (na <= 500) return 24;
+  return 36;
+}
+
+function phPenalty(ph: number | null, carbonation: WaterProfile['carbonation']): number {
+  if (ph === null) return 0;
+  if (carbonation === 'sparkling') return ph < 4.5 ? 10 : 0;
+  if (ph < 6 || ph > 9.5) return 14;
+  if (ph < 6.5 || ph > 8.5) return 2;
+  return 0;
+}
+
+function buildWaterReasons(w: WaterProfile, s: WaterSummary): ScoreReason[] {
+  const reasons: ScoreReason[] = [];
+  if (s.tier === 'therapeutic') {
+    reasons.push({
+      tone: 'bad',
+      title: 'Apă terapeutică / medicinală',
+      detail: s.effectiveTds !== null ? `${comma(s.effectiveTds)} mg/l minerale; nu pentru uz zilnic nelimitat` : 'Utilizare ocazională conform recomandărilor',
+    });
+  } else if (s.effectiveTds !== null && s.effectiveTds > 1500) {
+    reasons.push({ tone: 'bad', title: 'Mineralizare ridicată', detail: `${comma(s.effectiveTds)} mg/l săruri dizolvate` });
+  }
+  if (s.effectiveNa !== null && s.effectiveNa > 200 && reasons.length < 2) {
+    reasons.push({ tone: 'bad', title: 'Conținut ridicat de sodiu', detail: `${comma(s.effectiveNa)} mg/l Na` });
+  }
+  if (w.so4MgL !== null && w.so4MgL > 250 && reasons.length < 2) {
+    reasons.push({ tone: 'bad', title: 'Conținut ridicat de sulfați', detail: `${comma(w.so4MgL)} mg/l SO₄` });
+  }
+  if ((w.fMgL !== null && w.fMgL > 1.5) || (s.equivBoron !== null && s.equivBoron > 5.2)) {
+    if (reasons.length < 2) {
+      const detail = w.h3bo3MgL !== null && w.h3bo3MgL > 30
+        ? `${comma(w.h3bo3MgL)} mg/l acid boric; nerecomandată copiilor`
+        : `${comma(w.fMgL ?? s.equivBoron ?? 0)} mg/l; atenție la consumul zilnic`;
+      reasons.push({ tone: 'bad', title: 'Elemente cu limitare de vârstă', detail });
+    }
+  }
+  if (w.no3MgL !== null && w.no3MgL > 10 && reasons.length < 2) {
+    reasons.push({ tone: 'bad', title: 'Nitrați peste pragul pentru sugari', detail: `${comma(w.no3MgL)} mg/l NO₃` });
+  }
+  if (s.tier !== 'therapeutic' && s.tier !== 'occasional_high_mineral') {
+    if (s.magnesiumRich) {
+      reasons.push({ tone: 'good', title: 'Sursă naturală de magneziu', detail: `${comma(w.mgMgL!)} mg/l Mg, săracă în sodiu` });
+    } else if (s.lowSodium) {
+      reasons.push({ tone: 'good', title: 'Săracă în sodiu', detail: `${comma(s.effectiveNa!)} mg/l Na (< 20 mg/l)` });
+    } else if (s.effectiveTds !== null && s.effectiveTds >= 50 && s.effectiveTds <= 500) {
+      reasons.push({ tone: 'good', title: 'Mineralizare echilibrată zilnic', detail: `${comma(s.effectiveTds)} mg/l` });
+    }
+  }
+  if (reasons.length < 2 && s.carbonated) {
+    reasons.push({
+      tone: 'neutral',
+      title: w.carbonation === 'lightly_sparkling' ? 'Slab carbogazoasă' : 'Carbogazoasă',
+      detail: 'Dioxidul de carbon poate irita refluxul gastric',
+    });
+  } else if (reasons.length < 2 && s.iodized) {
+    reasons.push({ tone: 'neutral', title: 'Îmbogățită cu iod', detail: `${comma(w.iUgL!)} µg/l I` });
+  }
+  return reasons.slice(0, 3);
+}
+
+/** Evaluates water suitability for everyday drinking (0–100) from EU/WHO/Moldova chemistry thresholds. */
+export function computeWaterScore(w: WaterProfile | null | undefined): ScoreResult {
+  if (!w) return { score: null, letter: null, grade: 'unavailable', reasons: [], missing: [] };
+  const s = summarizeWater(w);
+  if (s.effectiveTds === null && w.classification !== 'therapeutic') {
+    return { score: null, letter: null, grade: 'unavailable', reasons: [], missing: [] };
+  }
+
+  let raw = 100;
+  raw -= tdsPenalty(s.effectiveTds, s.magnesiumRich, w.classification === 'therapeutic');
+  raw -= naPenalty(s.effectiveNa);
+  raw -= phPenalty(w.ph, w.carbonation);
+  raw -= w.carbonation === 'sparkling' ? 6 : w.carbonation === 'lightly_sparkling' ? 2 : 0;
+  raw -= w.so4MgL !== null && w.so4MgL > 1000 ? 18 : w.so4MgL !== null && w.so4MgL > 250 ? 10 : 0;
+  const safetyFlag =
+    (s.equivBoron !== null && s.equivBoron > 5.2) ||
+    (w.fMgL !== null && w.fMgL > 1.5) ||
+    (w.no3MgL !== null && w.no3MgL > 10);
+  if (safetyFlag) raw -= 16;
+
+  if (
+    s.effectiveTds !== null &&
+    s.effectiveTds >= 50 &&
+    s.effectiveTds <= 1000 &&
+    (s.effectiveNa === null || s.effectiveNa <= 100) &&
+    (w.so4MgL === null || w.so4MgL <= 250)
+  ) {
+    const balance =
+      (w.caMgL !== null && w.caMgL >= 30 ? 2 : 0) +
+      (w.mgMgL !== null && w.mgMgL >= 50 ? 4 : w.mgMgL !== null && w.mgMgL >= 10 ? 2 : 0) +
+      (s.lowSodium ? 2 : 0);
+    raw += Math.min(4, balance);
+  }
+
+  const toxicViolation = (w.no3MgL !== null && w.no3MgL > 50) || (w.ph !== null && (w.ph < 4 || w.ph > 10.5));
+  const cap = s.tier === 'therapeutic' ? 40 : 100;
+  const floor = s.tier === 'therapeutic' && !toxicViolation ? 20 : 0;
+  const score = Math.max(floor, Math.min(cap, Math.round(raw)));
+
+  return {
+    score,
+    letter: null,
+    grade: gradeFor(score),
+    reasons: buildWaterReasons(w, s),
+    missing: [],
+  };
+}

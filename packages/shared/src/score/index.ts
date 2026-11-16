@@ -1,14 +1,17 @@
-import { NUTRIENT_KEYS, type Letter, type NutrientKey, type Nutrients, type ScoreKind, type ScoreResult } from '../contract';
+import { NUTRIENT_KEYS, type Letter, type NutrientKey, type Nutrients, type ScoreKind, type ScoreResult, type WaterProfile } from '../contract';
 import { nutriScorePoints } from './nutriscore';
 import { scoreReasons } from './reasons';
 import { hasNonNutritiveSweetener } from './sweeteners';
 import { toHundred } from './toHundred';
+import { computeWaterScore } from './water';
 
 export { nutriScorePoints } from './nutriscore';
 export { toHundred } from './toHundred';
 export { hasNonNutritiveSweetener } from './sweeteners';
 export { productScore, tierFor } from './product';
 export type { Deduction, DeductionKey, ProductScore, ScoredProduct, Tier } from './product';
+export { computeWaterScore, effectiveWaterTds, summarizeWater } from './water';
+export type { WaterSummary, WaterUsageTier } from './water';
 
 const GRADE: Record<Letter, ScoreResult['grade']> = { A: 'good', B: 'good', C: 'medium', D: 'low', E: 'low' };
 const REQUIRED: NutrientKey[] = ['kcal', 'sat', 'sugar', 'salt'];
@@ -26,4 +29,15 @@ export function computeScore(n: Nutrients, kind: ScoreKind, ingredientsText: str
     score: toHundred(points, letter, kind), letter, grade: GRADE[letter],
     reasons: scoreReasons(components, n, kind), missing: [],
   };
+}
+
+/** Shared product-level nutrition/chemical score dispatcher used by backend lookup and mobile display. */
+export function scoreProductNutrition(p: {
+  category: { scoreKind: ScoreKind };
+  nutrients: Nutrients;
+  ingredientsText: string;
+  water?: WaterProfile | null;
+}): ScoreResult {
+  if (p.category.scoreKind === 'water') return computeWaterScore(p.water);
+  return computeScore(p.nutrients, p.category.scoreKind, p.ingredientsText);
 }

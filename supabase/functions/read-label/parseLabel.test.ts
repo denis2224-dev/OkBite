@@ -266,3 +266,35 @@ Deno.test('parseLabel accepts Cyrillic units only where they match the field and
   assert.equal(parseLabel(label({ unit: 'per g' })).unit, null);
   assert.equal(parseLabel(label({ kcal: '1851 кДж' })).nutrients.kcal, null);
 });
+
+Deno.test('parseLabel extracts RO/RU/UA mineral profiles and ranges when kind is water', () => {
+  const omJson = JSON.stringify({
+    tdsMgL: '350-400 mg/l',
+    dryResidueMgL: '290-320 mg/l',
+    ph: '',
+    carbonation: 'Apă necarbogazoasă',
+    classification: 'apă potabilă',
+    caMgL: '30-35',
+    mgMgL: '10-15',
+    naPlusKMgL: '70-75',
+    hco3MgL: '130-150',
+    clMgL: '13-18',
+    ingredientsText: '',
+  });
+  const read = parseLabel(omJson, { ingredients: true, nutrition: 'same_photo', kind: 'water' });
+  assert.equal(read.unit, 'ml');
+  assert.equal(read.ingredientsText, null);
+  assert.equal(read.reasons.ingredientsText, 'not_printed');
+  assert.equal(read.water?.tdsMgL, 375);
+  assert.equal(read.water?.naPlusKMgL, 72.5);
+  assert.equal(read.water?.carbonation, 'still');
+  assert.equal(read.water?.classification, 'drinking');
+
+  const enrichWater = parseLabel(
+    JSON.stringify({ tdsMgL: '6,5-12 g/l', h3bo3MgL: '100-250 mg/l', naMgL: '1500-3000' }),
+    { ingredients: false, nutrition: 'separate', kind: 'water' },
+  );
+  assert.equal(enrichWater.reasons.ingredientsText, 'not_photographed');
+  assert.equal(enrichWater.water?.tdsMgL, 9250);
+  assert.equal(enrichWater.water?.h3bo3MgL, 175);
+});
