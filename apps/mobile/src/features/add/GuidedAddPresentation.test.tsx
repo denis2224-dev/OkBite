@@ -26,7 +26,7 @@ function showStage(stage: GuidedFlowState['stage'], photoPath: string | null = n
       stage, initial, initialFrontRead: initial, scannedCode: null, remotePhotoPath: photoPath,
       photos: { front: null, ingredients: null, nutrition: null }, nutritionMode: null, label: null,
     },
-    error: null, restoredFromDraft: false, draftConflict: false, discardError: false,
+    error: null, restoredFromDraft: false, draftConflict: false, discardError: false, frontPending: 'none',
     resumeDraft: jest.fn(), discardDraft: jest.fn(),
   });
   return render(<GuidedAddScreen />);

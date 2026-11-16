@@ -1,19 +1,17 @@
 import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { launchImageLibraryAsync } from 'expo-image-picker';
+import type { IdentifyResponse } from '@okbite/shared';
 import { api } from '../../lib/api';
 import { identifyPhotoRoute, isGuidedAddEnabled, productRoute } from '../identify/routes';
 import { keepPhoto, removePhoto } from '../offline/photos';
 import { enqueue } from '../offline/queue';
 import { compressPhoto } from './compressPhoto';
 import { findBarcode } from './findBarcode';
+import type { AnalysisFlowState } from './StatusPanel';
 import { useScreenActivity } from './useScreenActivity';
 
-export type CaptureState =
-  | { status: 'idle' }
-  | { status: 'working' }
-  | { status: 'offline' }
-  | { status: 'error'; code?: string };
+export type CaptureState = AnalysisFlowState;
 
 type Camera = { takePictureAsync(): Promise<{ uri: string } | undefined> };
 
@@ -43,6 +41,7 @@ export function useCaptureFlow() {
       setPhotoUri(null);
       let compressedUri: string | undefined;
       let frontPhotoId: string | undefined;
+      let awaitedPending = false;
       try {
         const uri = await getUri();
         if (!current()) return;
@@ -70,7 +69,15 @@ export function useCaptureFlow() {
           }
         }
         // No readable barcode, or an unknown one: the photo itself decides.
-        const result = await api.identify(photo.base64);
+        const outcome = await api.identifyOutcome(photo.base64);
+        let result: IdentifyResponse;
+        if (outcome.status === 'pending') {
+          awaitedPending = true;
+          if (current()) setState({ status: 'pending' });
+          result = await outcome.completion;
+        } else {
+          result = outcome.result;
+        }
         if (!current()) {
           if (frontPhotoId) await removePhoto(frontPhotoId).catch(() => {});
           return;
@@ -96,7 +103,8 @@ export function useCaptureFlow() {
             return;
           } catch { /* Keep the original photo available for retry if durable storage fails. */ }
         }
-        if (current()) setState(code === 'offline' ? { status: 'offline' } : { status: 'error', code });
+        const extra = awaitedPending ? { afterPending: true } : {};
+        if (current()) setState(code === 'offline' ? { status: 'offline', ...extra } : { status: 'error', code, ...extra });
       } finally {
         busy.current = false;
         if (!current()) setState(IDLE); // a stale answer leaves no spinner behind
@@ -124,5 +132,5 @@ export function useCaptureFlow() {
   const retry = useCallback(() => run(async () => lastUri.current), [run]);
   const dismiss = useCallback(() => { if (!busy.current) setState(IDLE); }, []);
 
-  return { state, takePhoto, pickFromGallery, retry, dismiss, canRetry, photoUri };
+  return { state, takePhoto, pickFromGallery, retry, dismiss, canRetry: canRetry && state.status !== 'pending', photoUri };
 }

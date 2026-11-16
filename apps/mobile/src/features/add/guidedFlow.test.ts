@@ -266,3 +266,31 @@ test('reload after provider failure waits for explicit retry and reuses the phot
   expect(deps.keepPhoto).toHaveBeenCalledTimes(1);
   expect(resumed.getState().stage).toBe('review');
 });
+
+test('retaking front photo clears remotePhotoPath and reloads interrupted draft as front retry rather than label read', async () => {
+  const { flow, deps } = setup();
+  await flow.capturePhoto('ingredients');
+  await flow.chooseNutrition('none');
+  expect(flow.getState().stage).toBe('review');
+
+  flow.retake('front');
+  expect(flow.getState().stage).toBe('front');
+  expect(flow.getState().remotePhotoPath).toBeNull();
+
+  deps.identify.mockRejectedValueOnce(new Error('offline'));
+  await flow.capturePhoto('new-front');
+  expect(flow.getState().stage).toBe('error');
+
+  const draft = guidedToDraft(flow.getState(), 'draft');
+  expect(draft.stage).toBe('front');
+  const restored = draftToGuided({ ...draft, readStatus: 'interrupted' });
+  expect(restored.remotePhotoPath).toBeNull();
+
+  const resumed = createGuidedFlow(initial, deps, restored);
+  deps.identify.mockResolvedValueOnce({ status: 'not_found', read: { brand: null, name: null, quantity: null, code: null }, photoPath: 'uploads/new-front' });
+  await resumed.retry();
+
+  expect(deps.identify).toHaveBeenCalledTimes(2);
+  expect(deps.readLabel).toHaveBeenCalledTimes(1);
+  expect(resumed.getState().stage).toBe('review');
+});

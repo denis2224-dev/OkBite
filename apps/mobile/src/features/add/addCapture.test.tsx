@@ -12,6 +12,8 @@ import {
 } from '@okbite/shared';
 import rawCategoriesJson from '../../../../../data/categories.json';
 import { ro } from '../../copy/ro';
+import type { AnalysisOutcome } from '../../lib/analysisOutcome';
+import { completed, pendingOutcome } from '../capture/__fixtures__/responses';
 import { writeHistory } from '../history/db';
 import AddScreen from '../../../app/add/index';
 import ReviewRouteScreen from '../../../app/add/review';
@@ -32,7 +34,7 @@ jest.mock('../history/db', () => ({
   deleteQueued: jest.fn(async () => {}),
   saveQueuedConfirmation: jest.fn(async () => {}),
 }));
-const mockReadLabel = jest.fn<(req: ReadLabelRequestType) => Promise<ReadLabelResponse>>();
+const mockReadLabel = jest.fn<(req: ReadLabelRequestType) => Promise<AnalysisOutcome<ReadLabelResponse>>>();
 const mockAddProduct = jest.fn<(req: AddProductRequestType) => Promise<LookupResponse>>();
 const mockCompressPhoto = jest.fn<
   (uri: string, maxBytes?: number) => Promise<{ uri: string; base64: string; bytes: number }>
@@ -81,7 +83,7 @@ jest.mock('../capture/compressPhoto', () => ({
 
 jest.mock('../../lib/api', () => ({
   api: {
-    readLabel: (req: ReadLabelRequestType) => mockReadLabel(req),
+    readLabelOutcome: (req: ReadLabelRequestType) => mockReadLabel(req),
     addProduct: (req: AddProductRequestType) => mockAddProduct(req),
   },
 }));
@@ -154,7 +156,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
   });
 
   it('does not open review or overwrite the draft after leaving label capture', async () => {
-    let finish!: (label: ReadLabelResponse) => void;
+    let finish!: (label: AnalysisOutcome<ReadLabelResponse>) => void;
     mockReadLabel.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
     const { result, unmount } = await renderHook(() => useAddFlow());
     await act(async () => { await result.current.takePhoto({ takePictureAsync: mockTakePicture }); });
@@ -162,7 +164,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
     await act(async () => { running = result.current.submitSamePhoto(); });
     expect(mockReadLabel).toHaveBeenCalledTimes(1);
     await unmount();
-    await act(async () => { finish(VALID_LABEL_RESPONSE); await running; });
+    await act(async () => { finish(completed(VALID_LABEL_RESPONSE)); await running; });
     expect(mockReplace).not.toHaveBeenCalled();
     expect(getAddReviewDraft()).toBeNull();
   });
@@ -172,7 +174,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
       ...VALID_LABEL_RESPONSE,
       nutritionPhotoPath: null,
     });
-    mockReadLabel.mockResolvedValueOnce(singlePhotoResponse);
+    mockReadLabel.mockResolvedValueOnce(completed(singlePhotoResponse));
 
     await render(<AddScreen />);
     await cameraReady();
@@ -212,7 +214,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
   });
 
   it('captures shot 1 and shot 2 with per-photo compression budget so UTF-8 JSON fits under 2 MB', async () => {
-    mockReadLabel.mockResolvedValueOnce(VALID_LABEL_RESPONSE);
+    mockReadLabel.mockResolvedValueOnce(completed(VALID_LABEL_RESPONSE));
     mockTakePicture
       .mockResolvedValueOnce({ uri: 'file:///cam-shot-1.jpg' })
       .mockResolvedValueOnce({ uri: 'file:///cam-shot-2.jpg' });
@@ -236,7 +238,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
 
   it('preserves edited product identity across review -> retake -> capture -> review and replaces label-photo paths', async () => {
     // 1. Capture first label pair on /add
-    mockReadLabel.mockResolvedValueOnce(VALID_LABEL_RESPONSE);
+    mockReadLabel.mockResolvedValueOnce(completed(VALID_LABEL_RESPONSE));
     mockTakePicture
       .mockResolvedValueOnce({ uri: 'file:///cam-shot-1.jpg' })
       .mockResolvedValueOnce({ uri: 'file:///cam-shot-2.jpg' });
@@ -281,7 +283,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
       throw new Error('Expected non-null ingredientsText in secondLabelResponse fixture');
     }
 
-    mockReadLabel.mockResolvedValueOnce(secondLabelResponse);
+    mockReadLabel.mockResolvedValueOnce(completed(secondLabelResponse));
     mockTakePicture.mockResolvedValueOnce({ uri: 'file:///cam-retake-1.jpg' });
 
     const addRender2 = await render(<AddScreen />);
@@ -360,7 +362,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
 
   it('does not leak product A identity when retake is abandoned and /add is opened for product B', async () => {
     // 1. Capture Product A (code 4840001000014) -> open /add/review -> begin retake
-    mockReadLabel.mockResolvedValueOnce(VALID_LABEL_RESPONSE);
+    mockReadLabel.mockResolvedValueOnce(completed(VALID_LABEL_RESPONSE));
     const addRenderA = await render(<AddScreen />);
     await cameraReady();
     await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
@@ -389,7 +391,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
       ingredientsPhotoPath: 'uploads/dev-1/ing-b.jpg',
       nutritionPhotoPath: null,
     });
-    mockReadLabel.mockResolvedValueOnce(productBLabel);
+    mockReadLabel.mockResolvedValueOnce(completed(productBLabel));
     mockTakePicture.mockResolvedValueOnce({ uri: 'file:///cam-prod-b.jpg' });
 
     const addRenderB = await render(<AddScreen />);
@@ -418,7 +420,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
   it('preserves captured photos when readLabel fails (rate_limited / upstream_failed / offline) and retries without re-capturing', async () => {
     mockReadLabel
       .mockRejectedValueOnce(Object.assign(new Error('upstream'), { code: 'upstream_failed' }))
-      .mockResolvedValueOnce(VALID_LABEL_RESPONSE);
+      .mockResolvedValueOnce(completed(VALID_LABEL_RESPONSE));
     mockTakePicture
       .mockResolvedValueOnce({ uri: 'file:///cam-shot-1.jpg' })
       .mockResolvedValueOnce({ uri: 'file:///cam-shot-2.jpg' });
@@ -466,10 +468,10 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
   });
 
   it('prevents duplicate readLabel requests while a request is in flight', async () => {
-    let resolveRead!: (res: ReadLabelResponse) => void;
+    let resolveRead!: (res: AnalysisOutcome<ReadLabelResponse>) => void;
     mockReadLabel.mockImplementationOnce(
       () =>
-        new Promise<ReadLabelResponse>((resolve) => {
+        new Promise<AnalysisOutcome<ReadLabelResponse>>((resolve) => {
           resolveRead = resolve;
         }),
     );
@@ -488,7 +490,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
     expect(screen.getByTestId('add-preview')).toBeTruthy(); // the label photo, not the live camera
 
     await act(async () => {
-      resolveRead(VALID_LABEL_RESPONSE);
+      resolveRead(completed(VALID_LABEL_RESPONSE));
     });
     expect(mockReplace).toHaveBeenCalledWith('/add/review');
   });
@@ -500,7 +502,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
       .mockResolvedValueOnce({ canceled: false, assets: [{ uri: 'file:///gal-shot-2.jpg' }] });
     mockReadLabel
       .mockRejectedValueOnce(Object.assign(new Error('rate_limited'), { code: 'rate_limited' }))
-      .mockResolvedValueOnce(VALID_LABEL_RESPONSE);
+      .mockResolvedValueOnce(completed(VALID_LABEL_RESPONSE));
 
     await render(<AddScreen />);
 
@@ -516,6 +518,52 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
 
     await fireEvent.press(screen.getByRole('button', { name: ro.add.gallery }));
     expect(await screen.findByText(ro.errors.rateLimited)).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole('button', { name: ro.errors.retry }));
+    expect(mockReadLabel).toHaveBeenCalledTimes(2);
+    expect(mockReplace).toHaveBeenCalledWith('/add/review');
+  });
+
+  it('shows pending analysis copy after >55 s without retry, blocks duplicate requests, and opens review once on late resolution', async () => {
+    let finish!: (res: ReadLabelResponse) => void;
+    mockReadLabel.mockResolvedValueOnce(pendingOutcome(new Promise((resolve) => { finish = resolve; })));
+
+    await render(<AddScreen />);
+    await cameraReady();
+    await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
+    await fireEvent.press(screen.getByRole('button', { name: ro.add.samePhoto }));
+
+    expect(await screen.findByTestId('add-pending-analysis')).toBeTruthy();
+    expect(screen.getByText(ro.pwa.analysis.title)).toBeTruthy();
+    expect(screen.getByText(ro.pwa.analysis.unknown)).toBeTruthy();
+    expect(screen.getByTestId('add-preview')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: ro.errors.retry })).toBeNull();
+    expect(screen.queryByRole('button', { name: ro.offline.retry })).toBeNull();
+    expect(screen.getByRole('button', { name: ro.capture.shutter }).props.accessibilityState).toMatchObject({ disabled: true });
+    expect(screen.getByRole('button', { name: ro.add.samePhoto }).props.accessibilityState).toMatchObject({ disabled: true });
+    await fireEvent.press(screen.getByRole('button', { name: ro.add.samePhoto }));
+    expect(mockReadLabel).toHaveBeenCalledTimes(1);
+
+    await act(async () => { finish(VALID_LABEL_RESPONSE); });
+    expect(mockReplace).toHaveBeenCalledTimes(1);
+    expect(mockReplace).toHaveBeenCalledWith('/add/review');
+  });
+
+  it('shows retry guidance and re-enables explicit retry on preserved photos after a pending read rejects', async () => {
+    let rejectLate!: (err: unknown) => void;
+    mockReadLabel
+      .mockResolvedValueOnce(pendingOutcome(new Promise((_resolve, reject) => { rejectLate = reject; })))
+      .mockResolvedValueOnce(completed(VALID_LABEL_RESPONSE));
+
+    await render(<AddScreen />);
+    await cameraReady();
+    await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
+    await fireEvent.press(screen.getByRole('button', { name: ro.add.samePhoto }));
+    expect(await screen.findByTestId('add-pending-analysis')).toBeTruthy();
+
+    await act(async () => { rejectLate(Object.assign(new Error('upstream'), { code: 'upstream_failed' })); });
+    expect(screen.getByTestId('add-error-recovery')).toBeTruthy();
+    expect(screen.getByText(new RegExp(ro.pwa.analysis.retry))).toBeTruthy();
 
     await fireEvent.press(screen.getByRole('button', { name: ro.errors.retry }));
     expect(mockReadLabel).toHaveBeenCalledTimes(2);

@@ -2,9 +2,13 @@ import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { NUTRIENT_KEYS, ReadLabelResponse } from '@okbite/shared';
 import { ro } from '../../copy/ro';
+import { api } from '../../lib/api';
+import type { AnalysisOutcome } from '../../lib/analysisOutcome';
 import { GuidedAddScreen } from './GuidedAddScreen';
 import { loadUnknownDraft, saveUnknownDraft } from './unknownDraft';
-import { requestUnknownFlow } from './unknownFlowTransport';
+
+const completed = <T,>(result: T): AnalysisOutcome<T> => ({ status: 'completed', result });
+const pendingOutcome = <T,>(completion: Promise<T>): AnalysisOutcome<T> => ({ status: 'pending', retryAllowed: false, completion });
 
 const mockReplace = jest.fn();
 const mockParams: { value: Record<string, string | string[] | undefined> } = { value: {} };
@@ -22,9 +26,8 @@ jest.mock('./unknownDraft', () => ({
   saveUnknownDraftIfCurrent: jest.fn(async () => true),
   clearUnknownDraft: jest.fn(),
 }));
-jest.mock('./unknownFlowTransport', () => ({ requestUnknownFlow: jest.fn() }));
 jest.mock('./completeUnknownDraft', () => ({ completeUnknownDraft: jest.fn() }));
-jest.mock('../../lib/api', () => ({ api: { identifyOutcome: jest.fn() } }));
+jest.mock('../../lib/api', () => ({ api: { identifyOutcome: jest.fn(), readLabelOutcome: jest.fn() } }));
 jest.mock('../capture/compressPhoto', () => ({
   compressPhoto: async (uri: string) => ({ uri, base64: `jpeg:${uri}`, bytes: 20 }),
 }));
@@ -64,15 +67,15 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockParams.value = { code: '4840001000014', name: 'Pâine', photoPath: 'device/front.jpg' };
   jest.mocked(loadUnknownDraft).mockResolvedValue(null);
-  jest.mocked(requestUnknownFlow).mockResolvedValue(baseLabel);
+  jest.mocked(api.readLabelOutcome).mockResolvedValue(completed(baseLabel) as never);
 });
 
 test('shows unreadable nutrition recovery with Retake and Continue with ingredients only', async () => {
-  jest.mocked(requestUnknownFlow).mockResolvedValueOnce({
+  jest.mocked(api.readLabelOutcome).mockResolvedValueOnce(completed({
     ...baseLabel,
     reasons: { ...readReasons, kcal: 'unreadable' },
     unclear: ['kcal'],
-  });
+  }) as never);
   await render(<GuidedAddScreen />);
 
   expect(screen.getByText(ro.add.ingredientsTitle)).toBeTruthy();
@@ -161,13 +164,13 @@ test('shows explicit retry when a restored draft was interrupted mid-read', asyn
   await act(async () => {});
 
   expect(screen.getByText(ro.add.draftInterrupted)).toBeTruthy();
-  expect(requestUnknownFlow).not.toHaveBeenCalled();
+  expect(api.readLabelOutcome).not.toHaveBeenCalled();
 
   await act(async () => {
     fireEvent.press(screen.getByRole('button', { name: ro.add.retryRead }));
   });
 
-  expect(requestUnknownFlow).toHaveBeenCalledTimes(1);
+  expect(api.readLabelOutcome).toHaveBeenCalledTimes(1);
   expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'draft-id' } });
 });
 
@@ -181,7 +184,7 @@ test('offers a return to confirmation for a completed draft without replaying a 
   });
   await render(<GuidedAddScreen />);
   await act(async () => {});
-  expect(requestUnknownFlow).not.toHaveBeenCalled();
+  expect(api.readLabelOutcome).not.toHaveBeenCalled();
   await fireEvent.press(screen.getByRole('button', { name: ro.add.confirmTitle }));
   expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'ready-draft' } });
 });
@@ -196,9 +199,9 @@ test('guided barcode entry does not ask for name or quantity before front photo'
 
 test('provider failure preserves durable photos and allows manual review without a second read', async () => {
   const failureReasons = Object.fromEntries([...NUTRIENT_KEYS, 'ingredientsText'].map(key => [key, 'failed']));
-  jest.mocked(requestUnknownFlow).mockResolvedValueOnce({
+  jest.mocked(api.readLabelOutcome).mockResolvedValueOnce(completed({
     ...baseLabel, ingredientsText: null, unit: null, reasons: failureReasons, unclear: [...NUTRIENT_KEYS, 'ingredientsText'],
-  });
+  }) as never);
   await render(<GuidedAddScreen />);
   await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
   await fireEvent.press(screen.getByRole('button', { name: ro.add.nutritionSame }));
@@ -206,8 +209,66 @@ test('provider failure preserves durable photos and allows manual review without
   expect(screen.queryByText(ro.add.nutritionUnreadable)).toBeNull();
   await fireEvent.press(screen.getByRole('button', { name: ro.add.manualEntry }));
   expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'draft-id', manual: '1' } });
-  expect(requestUnknownFlow).toHaveBeenCalledTimes(1);
+  expect(api.readLabelOutcome).toHaveBeenCalledTimes(1);
   expect(saveUnknownDraft).toHaveBeenLastCalledWith(expect.objectContaining({
     stage: 'review', photos: expect.objectContaining({ ingredients: 'kept:captured-photo' }),
   }));
+});
+test('shows >55 s pending message on front photo without retry, then advances to ingredients on late resolve', async () => {
+  mockParams.value = { code: '4840001000014', flow: 'guided' };
+  let finish!: (res: unknown) => void;
+  jest.mocked(api.identifyOutcome).mockResolvedValueOnce(pendingOutcome(new Promise(resolve => { finish = resolve; })) as never);
+
+  await render(<GuidedAddScreen />);
+  await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
+
+  expect(await screen.findByText(ro.pwa.analysis.title)).toBeTruthy();
+  expect(screen.getByText(ro.pwa.analysis.unknown)).toBeTruthy();
+  expect(screen.queryByRole('button', { name: ro.add.retryRead })).toBeNull();
+
+  await act(async () => {
+    finish({ status: 'not_found', read: { brand: 'Brand', name: null, quantity: null, code: null }, photoPath: 'device/front.jpg' });
+  });
+  expect(screen.getByText(ro.add.ingredientsTitle)).toBeTruthy();
+});
+
+test('shows retry guidance and explicit retry after a pending front identify rejects', async () => {
+  mockParams.value = { code: '4840001000014', flow: 'guided' };
+  let rejectLate!: (err: unknown) => void;
+  jest.mocked(api.identifyOutcome)
+    .mockResolvedValueOnce(pendingOutcome(new Promise((_r, reject) => { rejectLate = reject; })) as never)
+    .mockResolvedValueOnce(completed({ status: 'not_found', read: { brand: null, name: null, quantity: null, code: null }, photoPath: 'device/front.jpg' }) as never);
+
+  await render(<GuidedAddScreen />);
+  await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
+  expect(await screen.findByText(ro.pwa.analysis.title)).toBeTruthy();
+
+  await act(async () => {
+    rejectLate(Object.assign(new Error('upstream'), { code: 'upstream_failed' }));
+  });
+  expect(screen.getByText(new RegExp(ro.pwa.analysis.retry))).toBeTruthy();
+  await fireEvent.press(screen.getByRole('button', { name: ro.add.retryRead }));
+  expect(screen.getByText(ro.add.ingredientsTitle)).toBeTruthy();
+});
+
+test('shows >55 s pending message during label read, then retry guidance on late failure and navigates on retry', async () => {
+  let rejectLate!: (err: unknown) => void;
+  jest.mocked(api.readLabelOutcome)
+    .mockResolvedValueOnce(pendingOutcome(new Promise((_r, reject) => { rejectLate = reject; })) as never)
+    .mockResolvedValueOnce(completed(baseLabel) as never);
+
+  await render(<GuidedAddScreen />);
+  await fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
+  await fireEvent.press(screen.getByRole('button', { name: ro.add.nutritionSame }));
+
+  expect(await screen.findByText(ro.pwa.analysis.title)).toBeTruthy();
+  expect(screen.getByText(ro.pwa.analysis.unknown)).toBeTruthy();
+  expect(screen.queryByRole('button', { name: ro.add.retryRead })).toBeNull();
+
+  await act(async () => {
+    rejectLate(Object.assign(new Error('upstream'), { code: 'upstream_failed' }));
+  });
+  expect(screen.getByText(new RegExp(ro.pwa.analysis.retry))).toBeTruthy();
+  await fireEvent.press(screen.getByRole('button', { name: ro.add.retryRead }));
+  expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'draft-id' } });
 });
