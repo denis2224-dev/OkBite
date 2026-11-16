@@ -87,6 +87,7 @@ insufficientData:"Insufficient data",title:"Product analysis",allergens:"Declare
   analysis: {
    title: "The result is not confirmed yet",
    unknown: "This is taking too long. The result isn't confirmed yet.",
+   retry: "Another attempt may start a new processing operation. Try again only when you are ready.",
   },
  },
 } as const;

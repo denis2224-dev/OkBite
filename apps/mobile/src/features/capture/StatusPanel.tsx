@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { Button } from '../../ui/Button';
@@ -83,3 +83,63 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, lineHeight: 25, fontFamily: fonts.heading },
   message: { fontSize: 16, lineHeight: 23, fontFamily: fonts.body },
 });
+
+export type AnalysisFlowState =
+  | { status: 'idle' }
+  | { status: 'working' }
+  | { status: 'pending' }
+  | { status: 'offline'; afterPending?: boolean }
+  | { status: 'error'; code?: string; afterPending?: boolean };
+
+/** Overlay showing unconfirmed >55 s analysis status or recoverable error actions. */
+export function AnalysisOverlay({
+  state,
+  canRetry,
+  onRetry,
+  gallery,
+  onDismiss,
+  overlayStyle,
+  testIDPrefix,
+}: {
+  state: AnalysisFlowState;
+  canRetry: boolean;
+  onRetry: () => void;
+  gallery: PanelAction;
+  onDismiss: () => void;
+  overlayStyle: StyleProp<ViewStyle>;
+  testIDPrefix: string;
+}) {
+  if (state.status === 'pending') {
+    return (
+      <ScrollView
+        testID={`${testIDPrefix}-pending-analysis`}
+        style={StyleSheet.absoluteFill}
+        contentContainerStyle={[overlayStyle, { flexGrow: 1 }]}
+        keyboardShouldPersistTaps="handled"
+      >
+        <StatusPanel title={ro.pwa.analysis.title} message={ro.pwa.analysis.unknown} actions={[]} />
+      </ScrollView>
+    );
+  }
+  if (state.status !== 'error' && state.status !== 'offline') return null;
+  const offline = state.status === 'offline';
+  const base = offline ? ro.offline.subtitle : errorMessage(state.code);
+  return (
+    <ScrollView
+      testID={`${testIDPrefix}-error-recovery`}
+      style={StyleSheet.absoluteFill}
+      contentContainerStyle={[overlayStyle, { flexGrow: 1 }]}
+      keyboardShouldPersistTaps="handled"
+    >
+      <StatusPanel
+        title={offline ? ro.offline.title : undefined}
+        message={state.afterPending ? `${base}\n\n${ro.pwa.analysis.retry}` : base}
+        actions={[
+          ...(canRetry ? [{ label: offline ? ro.offline.retry : ro.errors.retry, onPress: onRetry }] : []),
+          gallery,
+          { label: ro.nav.close, onPress: onDismiss },
+        ]}
+      />
+    </ScrollView>
+  );
+}
