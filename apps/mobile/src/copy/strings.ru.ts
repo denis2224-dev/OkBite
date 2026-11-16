@@ -88,7 +88,7 @@ const legacyRu = {
     addNutrition: 'Добавить таблицу ценности',
     nutritionAdded: 'Данные о пищевой ценности добавлены к товару.',
     insufficientData: 'Недостаточно данных', title: 'Разбор товара', allergens: 'Указанные аллергены',
-    mayContain: 'Может содержать следы', noAllergens: 'На этикетке аллергены не указаны.', scoreUnavailable: 'Оценка недоступна',
+    mayContain: 'Может содержать следы', noAllergens: 'На этикетке аллергены не указаны.', noProfileAllergens: 'Ни одного аллергена из вашего списка на этикетке', scoreUnavailable: 'Оценка недоступна',
     insufficient: 'Недостаточно данных', missing: 'Не хватает данных для оценки:', unverified: 'Не проверено',
     verified: 'Проверено командой', unverifiedNote: 'Добавлено пользователем и ещё не проверено.', offNote: 'Данные из Open Food Facts.',
     portion: 'Что означает порция', portionNote: 'Суточная норма для взрослого. Ваши потребности могут отличаться.',
