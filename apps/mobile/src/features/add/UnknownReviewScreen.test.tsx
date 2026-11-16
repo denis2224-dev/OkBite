@@ -266,7 +266,7 @@ test('recalculates multilingual allergens and traces live before save and preser
   expect(screen.getByText('Bona Vita Musli Crunchy cu fructe 30%')).toBeTruthy();
   expect(screen.getByText(ro.result.allergens)).toBeTruthy();
   expect(screen.getByText(ro.result.mayContain)).toBeTruthy();
-  expect(screen.getByText(ingredientsText)).toBeTruthy();
+  expect(screen.getByRole('button', { name: ro.result.ingredientsTile })).toBeTruthy(); // the saved label text opens from Ingrediente
   expect(screen.getAllByText(ro.result.unverified).length).toBeGreaterThanOrEqual(1);
   expect(screen.getByLabelText('Gluten')).toBeTruthy();
   expect(screen.getByLabelText(`${ro.result.mayContain} Lapte`)).toBeTruthy();

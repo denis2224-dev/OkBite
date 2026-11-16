@@ -27,6 +27,7 @@ it('keeps report and additive sheets usable above the result sheet', async () =>
   await fireEvent.press(screen.getByRole('button', { name: ro.result.report }));
   expect(screen.getByLabelText(ro.result.reportLabel)).toBeTruthy();
   await fireEvent.press(screen.getByRole('button', { name: ro.app.cancel }));
+  expect(screen.queryByText('Explicație de test.')).toBeNull(); // not inline any more
   await fireEvent.press(screen.getByRole('button', { name: 'colorant caramel, Risc moderat' }));
-  expect(screen.getAllByText('Explicație de test.')).toHaveLength(2);
+  expect(screen.getAllByText('Explicație de test.')).toHaveLength(1); // in the additive sheet
 });
