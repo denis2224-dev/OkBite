@@ -146,7 +146,22 @@ export const redesignRo = {
   promiseTitle:'Gratuit, fără cont', promiseBody:'Fără reclame și fără urmărire publicitară.',
  },
  scan: {aimHint:'Încadrează codul de bare în chenar', flashOn:'Pornește blițul', flashOff:'Oprește blițul', manualCode:'Cod manual', photoLabel:'Fotografiază eticheta', loadingReader:'Se pregătește cititorul…',
-  labelMode:'Etichetă', seeAll:'Vezi tot'},
+  labelMode:'Etichetă', seeAll:'Vezi tot',
+  shelf: {
+   title:'Cel mai bun din raft', top:(category:string)=>`Top în ${category}`, count:(n:number)=>plural(n,'produs verificat','produse verificate'),
+   best:'Cea mai bună alegere', ranking:'Clasament după scorul OkBite, doar produse verificate.',
+   empty:'Încă niciun produs verificat pe acest raft.', emptyHint:'Scanează un produs de pe acest raft și îl adăugăm.',
+   error:'Nu am putut încărca raftul.',
+   // One name per category slug in data/categories.json (all but "necunoscut").
+   names: {
+    iaurt:'Iaurt', lapte:'Lapte', branza:'Brânză', 'unt-si-smantana':'Unt și smântână', biscuiti:'Biscuiți',
+    'ciocolata-si-dulciuri':'Ciocolată și dulciuri', cereale:'Cereale', paine:'Pâine', mezeluri:'Mezeluri din porc sau vită', 'mezeluri-pasare':'Mezeluri din pasăre',
+    ulei:'Ulei', 'snacks-sarate':'Snacks sărate', suc:'Suc', 'bauturi-racoritoare':'Băuturi răcoritoare', apa:'Apă',
+    inghetata:'Înghețată', conserve:'Conserve', 'sosuri-condimente':'Sosuri și condimente', 'paste-fainoase':'Paste făinoase', 'fructe-legume':'Fructe și legume',
+    'peste-fructe-de-mare':'Pește și fructe de mare', 'mancare-preparata':'Mâncare preparată', 'nuci-seminte':'Nuci și semințe', 'cafea-ceai':'Cafea și ceai', 'bauturi-vegetale':'Băuturi vegetale',
+   },
+  },
+ },
  result: {
   profileAllergens:'Alergeni din profilul tău', profileMayContain:'Poate conține alergeni din profilul tău',
   profileAvoid:'Ingrediente pe care vrei să le eviți', profileUnknown:'Nu putem verifica toate preferințele tale.',

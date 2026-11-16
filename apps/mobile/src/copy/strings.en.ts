@@ -145,7 +145,21 @@ export const redesignEn: RedesignCopy = {
   promiseTitle:'Free, no account', promiseBody:'No ads and no ad tracking.',
  },
  scan: {aimHint:'Keep the barcode inside the frame', flashOn:'Turn flash on', flashOff:'Turn flash off', manualCode:'Manual code', photoLabel:'Photograph the label', loadingReader:'Preparing the reader…',
-  labelMode:'Label', seeAll:'See all'},
+  labelMode:'Label', seeAll:'See all',
+  shelf: {
+   title:'Best on the shelf', top:(category:string)=>`Top in ${category}`, count:(n:number)=>plural(n,'verified product','verified products','en'),
+   best:'Best choice', ranking:'Ranked by OkBite score, verified products only.',
+   empty:'No verified product on this shelf yet.', emptyHint:'Scan a product from this shelf and we will add it.',
+   error:'We could not load this shelf.',
+   names: {
+    iaurt:'Yogurt', lapte:'Milk', branza:'Cheese', 'unt-si-smantana':'Butter and sour cream', biscuiti:'Biscuits',
+    'ciocolata-si-dulciuri':'Chocolate and sweets', cereale:'Cereals', paine:'Bread', mezeluri:'Pork or beef cold cuts', 'mezeluri-pasare':'Poultry cold cuts',
+    ulei:'Oil', 'snacks-sarate':'Salty snacks', suc:'Juice', 'bauturi-racoritoare':'Soft drinks', apa:'Water',
+    inghetata:'Ice cream', conserve:'Canned food', 'sosuri-condimente':'Sauces and condiments', 'paste-fainoase':'Pasta', 'fructe-legume':'Fruit and vegetables',
+    'peste-fructe-de-mare':'Fish and seafood', 'mancare-preparata':'Ready meals', 'nuci-seminte':'Nuts and seeds', 'cafea-ceai':'Coffee and tea', 'bauturi-vegetale':'Plant-based drinks',
+   },
+  },
+ },
  result: {
   profileAllergens:'Allergens in your profile', profileMayContain:'May contain allergens in your profile',
   profileAvoid:'Ingredients you want to avoid', profileUnknown:'We cannot check all your preferences.',
