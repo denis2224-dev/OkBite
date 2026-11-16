@@ -42,7 +42,7 @@ jest.mock('expo-file-system/legacy', () => ({
   getInfoAsync: async (path: string) => ({ exists: await mockFs.stat(path).then(() => true, () => false) }),
   deleteAsync: async (path: string) => mockFs.rm(path, { force: true }),
 }));
-jest.mock('../../lib/api', () => ({ ...jest.requireActual('../../lib/api'), api: { lookup: jest.fn(), identify: jest.fn() } }));
+jest.mock('../../lib/api', () => ({ ...jest.requireActual('../../lib/api'), api: { lookup: jest.fn(), identify: jest.fn(), identifyOutcome: jest.fn() } }));
 afterAll(async () => { await mockFs.rm(FileSystem.documentDirectory!, { recursive: true, force: true }); });
 it('recovers the captured JPEG after temporary photos disappear and stores the resolved product in history', async () => {
   const original = FileSystem.documentDirectory! + 'camera.jpg';
@@ -54,7 +54,8 @@ it('recovers the captured JPEG after temporary photos disappear and stores the r
       saveAsync: async () => ({ uri: compressed, base64: Buffer.from('jpeg').toString('base64') }),
     }),
   } as unknown as ReturnType<typeof ImageManipulator.manipulate>);
-  jest.mocked(api.identify).mockRejectedValueOnce(new ApiError('offline')).mockResolvedValueOnce(identifyFound);
+  jest.mocked(api.identifyOutcome).mockRejectedValueOnce(new ApiError('offline'));
+  jest.mocked(api.identify).mockResolvedValueOnce(identifyFound);
   const hook = await renderHook(() => useCaptureFlow());
   await act(async () => { await hook.result.current.takePhoto({ takePictureAsync: async () => ({ uri: original }) }); });
   expect(mockReplace).toHaveBeenCalledWith('/offline');
@@ -63,7 +64,8 @@ it('recovers the captured JPEG after temporary photos disappear and stores the r
   await mockFs.unlink(compressed);
   expect(await mockFs.readFile(kept.payload, 'utf8')).toBe('jpeg');
   expect(await flushQueue()).toEqual({ resolved: 1 });
-  expect(api.identify).toHaveBeenNthCalledWith(2, 'anBlZw==');
+  expect(api.identifyOutcome).toHaveBeenCalledWith('anBlZw==');
+  expect(api.identify).toHaveBeenCalledWith('anBlZw==');
   expect((await getFromHistory(PRODUCT_ID))?.product.id).toBe(PRODUCT_ID);
   expect(await listQueued()).toEqual([]);
   await expect(mockFs.stat(kept.payload)).rejects.toThrow();

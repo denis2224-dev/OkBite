@@ -10,7 +10,7 @@ import { ApiError, api } from '../../lib/api';
 import { enqueue } from '../offline/queue';
 import { ro } from '../../copy/ro';
 import CaptureScreen from './CaptureScreen';
-import { PRODUCT_ID, identifyFound } from './__fixtures__/responses';
+import { PRODUCT_ID, completed, identifyFound, pendingOutcome } from './__fixtures__/responses';
 
 const mockReplace = jest.fn();
 const mockPermission: { value: unknown } = { value: null };
@@ -22,7 +22,7 @@ jest.mock('expo-image-picker', () => ({ launchImageLibraryAsync: jest.fn() }));
 jest.mock('../offline/queue', () => ({ enqueue: jest.fn(async () => { throw new Error('storage unavailable'); }) }));
 jest.mock('../../lib/api', () => {
   const actual = jest.requireActual<typeof import('../../lib/api')>('../../lib/api');
-  return { ...actual, api: { ...actual.api, lookup: jest.fn(), identify: jest.fn() } };
+  return { ...actual, api: { ...actual.api, lookup: jest.fn(), identifyOutcome: jest.fn() } };
 });
 jest.mock('expo-camera', () => {
   const ReactActual = jest.requireActual<typeof import('react')>('react');
@@ -35,7 +35,7 @@ jest.mock('expo-camera', () => {
 });
 
 type AsyncMock = jest.Mock<(...a: unknown[]) => Promise<unknown>>;
-const identify = api.identify as unknown as AsyncMock;
+const identifyOutcome = api.identifyOutcome as unknown as AsyncMock;
 const granted = { granted: true, status: 'granted', canAskAgain: true };
 const shutter = () => screen.getByRole('button', { name: ro.capture.shutter });
 const camera = () => screen.getByTestId('camera');
@@ -119,21 +119,21 @@ describe('CaptureScreen', () => {
 
   it('shows the working state and sends one request for a double tap', async () => {
     let finish!: (v: unknown) => void;
-    identify.mockReturnValue(new Promise((r) => { finish = r; }));
+    identifyOutcome.mockReturnValue(new Promise((r) => { finish = r; }));
     await render(<CaptureScreen />);
     await cameraReady();
     await fireEvent.press(shutter());
     await fireEvent.press(shutter());
     expect(await screen.findByText(ro.capture.working)).toBeTruthy();
-    await act(async () => { finish(identifyFound); });
+    await act(async () => { finish(completed(identifyFound)); });
     expect(mockTakePicture).toHaveBeenCalledTimes(1);
-    expect(identify).toHaveBeenCalledTimes(1);
+    expect(identifyOutcome).toHaveBeenCalledTimes(1);
     expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
   });
 
   it('keeps the taken photo on screen while it is analysed and on an error, then returns to the camera', async () => {
     let fail!: (e: unknown) => void;
-    identify.mockReturnValue(new Promise((_r, reject) => { fail = reject; }));
+    identifyOutcome.mockReturnValue(new Promise((_r, reject) => { fail = reject; }));
     await render(<CaptureScreen />);
     await cameraReady();
     expect(screen.queryByTestId('capture-preview')).toBeNull();
@@ -146,19 +146,19 @@ describe('CaptureScreen', () => {
   });
 
   it('offers retry on the same photo when offline queue storage fails', async () => {
-    identify.mockRejectedValueOnce(Object.assign(new Error('offline'), { code: 'offline' })).mockResolvedValue(identifyFound);
+    identifyOutcome.mockRejectedValueOnce(Object.assign(new Error('offline'), { code: 'offline' })).mockResolvedValue(completed(identifyFound));
     await render(<CaptureScreen />);
     await cameraReady();
     await fireEvent.press(shutter());
     expect(await screen.findByText(ro.offline.title)).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: ro.offline.retry }));
-    expect(identify).toHaveBeenCalledTimes(2);
+    expect(identifyOutcome).toHaveBeenCalledTimes(2);
     expect(mockTakePicture).toHaveBeenCalledTimes(1);
     expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
   });
 
   it('shows the server error message and lets the user close it and shoot again', async () => {
-    identify.mockRejectedValueOnce(new ApiError('rate_limited'));
+    identifyOutcome.mockRejectedValueOnce(new ApiError('rate_limited'));
     await render(<CaptureScreen />);
     await cameraReady();
     await fireEvent.press(shutter());
@@ -170,7 +170,7 @@ describe('CaptureScreen', () => {
   });
 
   it('shows ro.errors.configuration when ApiError("configuration") is thrown', async () => {
-    identify.mockRejectedValueOnce(new ApiError('configuration'));
+    identifyOutcome.mockRejectedValueOnce(new ApiError('configuration'));
     await render(<CaptureScreen />);
     await cameraReady();
     await fireEvent.press(shutter());
@@ -218,18 +218,18 @@ describe('CaptureScreen', () => {
       pick.mockResolvedValueOnce({ canceled: true, assets: null });
       await fireEvent.press(screen.getByRole('button', { name: ro.capture.gallery }));
       assertFallbackVisible();
-      expect(identify).not.toHaveBeenCalled();
+      expect(identifyOutcome).not.toHaveBeenCalled();
 
       // 2. Pending gallery photo shows working feedback and hides fallback buttons to prevent duplicate requests.
       let rejectWorking!: (err: unknown) => void;
       pick.mockResolvedValueOnce({ canceled: false, assets: [{ uri: 'file:///gal-1.jpg' }] });
-      identify.mockReturnValueOnce(new Promise((_r, rej) => { rejectWorking = rej; }));
+      identifyOutcome.mockReturnValueOnce(new Promise((_r, rej) => { rejectWorking = rej; }));
       await fireEvent.press(screen.getByRole('button', { name: ro.capture.gallery }));
       expect(await screen.findByText(ro.capture.working)).toBeTruthy();
       expect(screen.queryByRole('button', { name: ro.capture.gallery })).toBeNull();
 
       // 3. Rejecting with offline surfaces the offline panel; retry reuses the same gallery photo.
-      identify.mockResolvedValueOnce(identifyFound);
+      identifyOutcome.mockResolvedValueOnce(completed(identifyFound));
       await act(async () => {
         rejectWorking(Object.assign(new Error('offline'), { code: 'offline' }));
       });
@@ -238,7 +238,7 @@ describe('CaptureScreen', () => {
       expect(screen.getByTestId('capture-error-recovery')).toBeTruthy();
       await fireEvent.press(screen.getByRole('button', { name: ro.offline.retry }));
       expect(pick).toHaveBeenCalledTimes(2); // 1 cancelled + 1 selected (not re-opened on retry)
-      expect(identify).toHaveBeenCalledTimes(2);
+      expect(identifyOutcome).toHaveBeenCalledTimes(2);
       expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
     },
   );
@@ -255,7 +255,7 @@ describe('CaptureScreen', () => {
         await act(() => { (camera().props.onMountError as () => void)(); });
       }
       pick.mockResolvedValueOnce({ canceled: false, assets: [{ uri: 'file:///gal-err.jpg' }] });
-      identify.mockRejectedValueOnce(Object.assign(new Error('upstream'), { code: 'upstream_failed' }));
+      identifyOutcome.mockRejectedValueOnce(Object.assign(new Error('upstream'), { code: 'upstream_failed' }));
       await fireEvent.press(screen.getByRole('button', { name: ro.capture.gallery }));
       expect(await screen.findByText(ro.errors.upstreamFailed)).toBeTruthy();
       await fireEvent.press(screen.getByRole('button', { name: ro.nav.close }));
@@ -267,4 +267,41 @@ describe('CaptureScreen', () => {
       }
     },
   );
+
+  it('shows the pending analysis message after >55 s without a retry button and navigates once on late resolution', async () => {
+    let finish!: (v: unknown) => void;
+    identifyOutcome.mockResolvedValueOnce(pendingOutcome(new Promise((r) => { finish = r; })));
+    await render(<CaptureScreen />);
+    await cameraReady();
+    await fireEvent.press(shutter());
+    expect(await screen.findByTestId('capture-pending-analysis')).toBeTruthy();
+    expect(screen.getByText(ro.pwa.analysis.title)).toBeTruthy();
+    expect(screen.getByText(ro.pwa.analysis.unknown)).toBeTruthy();
+    expect(screen.getByTestId('capture-preview')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: ro.errors.retry })).toBeNull();
+    expect(screen.queryByRole('button', { name: ro.offline.retry })).toBeNull();
+    expect(shutter().props.accessibilityState).toMatchObject({ disabled: true });
+    await fireEvent.press(shutter());
+    expect(identifyOutcome).toHaveBeenCalledTimes(1);
+    await act(async () => { finish(identifyFound); });
+    expect(mockReplace).toHaveBeenCalledTimes(1);
+    expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+  });
+
+  it('shows retry guidance and allows explicit retry when a pending analysis rejects later', async () => {
+    let rejectLate!: (e: unknown) => void;
+    identifyOutcome
+      .mockResolvedValueOnce(pendingOutcome(new Promise((_r, rej) => { rejectLate = rej; })))
+      .mockResolvedValueOnce(completed(identifyFound));
+    await render(<CaptureScreen />);
+    await cameraReady();
+    await fireEvent.press(shutter());
+    expect(await screen.findByTestId('capture-pending-analysis')).toBeTruthy();
+    await act(async () => { rejectLate(new ApiError('upstream_failed')); });
+    expect(screen.getByTestId('capture-error-recovery')).toBeTruthy();
+    expect(screen.getByText(new RegExp(ro.pwa.analysis.retry))).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: ro.errors.retry }));
+    expect(identifyOutcome).toHaveBeenCalledTimes(2);
+    expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+  });
 });
