@@ -3,6 +3,7 @@ import { useEffect as mockUseEffect } from 'react';
 import Compare from '../../../app/(tabs)/compare';
 import { previewEntries } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
+import { productScoreFor } from '../product/productScoreFor';
 import { ProductPicker } from './ProductPicker';
 import { router } from 'expo-router';
 import { StyleSheet } from 'react-native';
@@ -34,7 +35,7 @@ test('renders the same-category comparison from history and announces picker exp
   await choose(1);
   expect(screen.getByText('4,1 g')).toBeTruthy();
   expect(screen.getByText('13,2 g')).toBeTruthy();
-  expect(screen.getAllByText(ro.score.disclaimer)).toHaveLength(2);
+  expect(screen.getAllByText(ro.score.disclaimer)).toHaveLength(1); // once, under both cards
 });
 test('can photograph another product after completing a compatible comparison', async () => {
   await render(<Compare />);
@@ -114,27 +115,31 @@ test('compatible comparison withholds a stale score for an incomplete label', as
   try {
     await render(<Compare />);
     await choose(0); await choose(1);
-    expect(screen.getByText(ro.result.scoreUnavailable)).toBeTruthy();
-    expect(screen.getByText(ro.result.missing)).toBeTruthy();
+    expect(within(screen.getAllByTestId('compare-card')[0]!).getByText(ro.history.noScore)).toBeTruthy();
+    expect(screen.queryByText(ro.result.missing)).toBeNull(); // missing values show as gaps in the table
   } finally { mockEntries[0] = original; }
 });
 
-test('each product card shows only name, brand, score, reasons and the disclaimer, laid out the same way', async () => {
+test('each product card is minimal: A/B label, name and tier word only, no numbers, no footer', async () => {
   await render(<Compare />);
   await choose(0); await choose(1);
-  for (const index of [0, 1]) {
-    const { product } = previewEntries[index]!;
-    expect(screen.getByText(product.name)).toBeTruthy();
-    const initials = product.name.split(/\s+/).slice(0, 2).map(word => word[0]).join('').toLocaleUpperCase('ro');
-    expect(screen.queryByText(initials)).toBeNull();
-  }
   const cards = screen.getAllByTestId('compare-card');
   expect(cards).toHaveLength(2);
+  for (const [index, card] of cards.entries()) {
+    const { product, score } = previewEntries[index]!;
+    const { tier } = productScoreFor(product, score);
+    expect(within(card).getByText(product.name)).toBeTruthy();
+    expect(within(card).getByText(ro.tiers[tier!])).toBeTruthy();
+    expect(within(card).queryByText(product.brand)).toBeNull();
+    for (const reason of score.reasons) expect(within(card).queryByText(reason.title)).toBeNull();
+    expect(within(card).queryByText(ro.score.disclaimer)).toBeNull();
+    // No numbers besides the product's own name: nothing the table below already says.
+    expect(within(card).queryAllByText(/\d/).filter(node => node.props.children !== product.name)).toHaveLength(0);
+  }
+  expect(screen.queryByTestId('compare-card-footer')).toBeNull();
+  expect(screen.queryByTestId('compare-card-reasons')).toBeNull();
   const styles = cards.map(card => StyleSheet.flatten(card.props.style));
   expect(styles[0]).toEqual(styles[1]);
-  // The disclaimer sits at the foot of each card so both cards line up.
-  for (const footer of screen.getAllByTestId('compare-card-footer')) expect(StyleSheet.flatten(footer.props.style).marginTop).toBe('auto');
-  for (const reasons of screen.getAllByTestId('compare-card-reasons')) expect(StyleSheet.flatten(reasons.props.style).gap).toBeGreaterThanOrEqual(12);
 });
 
 const design = ro.compare.design;
