@@ -34,13 +34,13 @@ export async function readAdminProduct(id: string) {
   const { data: row, error } = await db
     .from('products')
     .select(
-      'id,name,brand,quantity,code,unit,category_slug,ingredients_text,kcal,fat,sat,sugar,salt,protein,fiber,fruit_veg_pct,image_path,ingredients_photo_path,nutrition_photo_path',
+      'id,name,brand,quantity,code,unit,category_slug,ingredients_text,kcal,fat,sat,sugar,salt,protein,fiber,fruit_veg_pct,water,image_path,ingredients_photo_path,nutrition_photo_path',
     )
     .eq('id', Uuid.parse(id))
     .single();
   if (error) throw new Error(ro.app.admin.failed);
   // A shopper may save an unreadable brand as ''; the editor makes the moderator fill it before verifying.
-  const input = ProductInput.extend({ brand: z.string().max(80) }).parse({
+  const input = ProductInput.innerType().extend({ brand: z.string().max(80) }).parse({
     code: row.code,
     name: row.name,
     brand: row.brand,
@@ -48,6 +48,7 @@ export async function readAdminProduct(id: string) {
     categorySlug: row.category_slug,
     unit: row.unit,
     ingredientsText: row.ingredients_text,
+    water: row.water ?? null,
     nutrients: {
       kcal: row.kcal,
       fat: row.fat,

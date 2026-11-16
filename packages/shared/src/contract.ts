@@ -16,6 +16,30 @@ export const Nutrients = z.object({
   kcal: amount, fat: amount, sat: amount, sugar: amount, salt: amount, protein: amount, fiber: amount,
   fruitVegPct: z.number().min(0).max(100).nullable(),
 });
+const mineralAmount = z.number().finite().min(0).nullable();
+export const Carbonation = z.enum(['still', 'lightly_sparkling', 'sparkling']);
+export const WaterClassification = z.enum(['drinking', 'natural_mineral', 'table_mineral', 'therapeutic']);
+export const LabelKind = z.enum(['food', 'water']);
+export const WaterProfile = z.object({
+  tdsMgL: z.number().finite().min(0).max(50_000).nullable(),
+  dryResidueMgL: z.number().finite().min(0).max(50_000).nullable(),
+  ph: z.number().finite().min(0).max(14).nullable(),
+  carbonation: Carbonation.nullable(),
+  classification: WaterClassification.nullable(),
+  caMgL: mineralAmount,
+  mgMgL: mineralAmount,
+  naMgL: mineralAmount,
+  kMgL: mineralAmount,
+  naPlusKMgL: mineralAmount,
+  hco3MgL: mineralAmount,
+  so4MgL: mineralAmount,
+  clMgL: mineralAmount,
+  fMgL: mineralAmount,
+  no3MgL: mineralAmount,
+  bMgL: mineralAmount,
+  h3bo3MgL: mineralAmount,
+  iUgL: mineralAmount,
+});
 export const IsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 export const Category = z.object({ slug: z.string(), name: z.string(), scoreKind: ScoreKind });
@@ -29,7 +53,8 @@ export const Product = z.object({
   id: Uuid, code: Code.nullable(), status: ProductStatus,
   name: z.string(), brand: z.string(), quantity: z.string(), category: Category, unit: Unit,
   portion: z.object({ amount: z.number().positive(), label: z.string() }),
-  nutrients: Nutrients, ingredientsText: z.string(), ingredients: z.array(Ingredient),
+  nutrients: Nutrients, water: WaterProfile.nullable().optional(),
+  ingredientsText: z.string(), ingredients: z.array(Ingredient),
   allergens: z.array(Allergen), mayContain: z.array(Allergen),
   imageUrl: z.string().url().nullable(), labelImageUrl: z.string().url().nullable(),
   source: z.string(), addedAt: IsoDate, verifiedAt: IsoDate.nullable(),
@@ -50,6 +75,7 @@ export const LookupResponse = z.discriminatedUnion('status', [
 
 export const FrontRead = z.object({
   brand: z.string().nullable(), name: z.string().nullable(), quantity: z.string().nullable(), code: Code.nullable(),
+  isWater: z.boolean().optional(),
 });
 export const Candidate = z.object({
   id: Uuid, name: z.string(), brand: z.string(), quantity: z.string(),
@@ -69,15 +95,18 @@ export const LabelField = z.enum(LABEL_FIELDS);
 // No nutrition = an old client: a null nutritionImage meant "both on one photo".
 export const ReadLabelRequest = z.object({
   ingredientsImage: z.string().min(1), nutritionImage: z.string().min(1).nullable(), nutrition: NutritionMode.optional(),
+  kind: LabelKind.optional(),
 }).refine((r) => r.nutrition === undefined || (r.nutrition === 'separate') === (r.nutritionImage !== null), {
   message: 'nutritionImage must match the nutrition mode', path: ['nutritionImage'],
 });
 // Adding nutrition later to a saved product: the nutrition photo alone.
 export const EnrichReadLabelRequest = z.object({
   ingredientsImage: z.null(), nutritionImage: z.string().min(1), nutrition: z.literal('separate'),
+  kind: LabelKind.optional(),
 });
 const LabelResponse = z.object({
   ingredientsText: z.string().nullable(), unit: Unit.nullable(), nutrients: Nutrients,
+  water: WaterProfile.nullable().optional(),
   unclear: z.array(LabelField), // kept for old clients; reasons says why a field is null
   reasons: z.object(Object.fromEntries(LABEL_FIELDS.map((k) => [k, FieldReason])) as Record<LabelField, typeof FieldReason>)
     .optional(), // shortcut: optional while servers without U3 still answer; make required once U3 is deployed
@@ -99,18 +128,29 @@ export const ReadLabelResponse = LabelResponse.superRefine(reasonsMatchValues);
 export const EnrichReadLabelResponse = LabelResponse.extend({
   ingredientsPhotoPath: z.null(), nutritionPhotoPath: z.string().min(1),
 }).superRefine(reasonsMatchValues);
-export const AddProductRequest = z.object({
+const AddProductFields = z.object({
   code: Code.nullable(), name: z.string().min(1).max(120), brand: z.string().max(80), // '' = unreadable on the pack
   quantity: z.string().max(30), unit: Unit, categorySlug: z.string().optional(), // absent = add-product saves 'necunoscut'
-  ingredientsText: z.string().min(3).max(3000), nutrients: Nutrients,
+  ingredientsText: z.string().max(3000), nutrients: Nutrients, water: WaterProfile.nullable().optional(),
   photoPath: z.string().nullable(), ingredientsPhotoPath: z.string(), nutritionPhotoPath: z.string().nullable(),
 });
+const requireIngredientsUnlessWater = (
+  r: { categorySlug?: string; ingredientsText: string; water?: z.infer<typeof WaterProfile> | null },
+  ctx: z.RefinementCtx,
+) => {
+  const isWater = r.categorySlug === 'apa' || (r.water !== null && r.water !== undefined);
+  if (!isWater && r.ingredientsText.length < 3) {
+    ctx.addIssue({ code: 'too_small', minimum: 3, type: 'string', inclusive: true, path: ['ingredientsText'] });
+  }
+};
+export const AddProductRequest = AddProductFields.superRefine(requireIngredientsUnlessWater);
 export const EnrichProductRequest = z.object({
-  productId: Uuid, unit: Unit, nutrients: Nutrients, nutritionPhotoPath: z.string().min(1),
+  productId: Uuid, unit: Unit, nutrients: Nutrients, water: WaterProfile.nullable().optional(), nutritionPhotoPath: z.string().min(1),
 });
 export const ReportRequest = z.object({ productId: Uuid, message: z.string().min(3).max(1000) });
-export const ProductInput = AddProductRequest.omit({ photoPath: true, ingredientsPhotoPath: true, nutritionPhotoPath: true })
-  .extend({ brand: z.string().min(1).max(80), categorySlug: z.string() }); // a verified product names both
+export const ProductInput = AddProductFields.omit({ photoPath: true, ingredientsPhotoPath: true, nutritionPhotoPath: true })
+  .extend({ brand: z.string().min(1).max(80), categorySlug: z.string() }) // a verified product names both
+  .superRefine(requireIngredientsUnlessWater);
 export const ModerateRequest = z.discriminatedUnion('action', [
   z.object({ action: z.literal('verify'), productId: Uuid, product: ProductInput }),
   z.object({ action: z.literal('hide'), productId: Uuid, reason: z.string().min(3) }),
@@ -148,6 +188,10 @@ export type IngredientGroup = z.infer<typeof IngredientGroup>;
 export type ProductStatus = z.infer<typeof ProductStatus>;
 export type NutrientKey = z.infer<typeof NutrientKey>;
 export type Nutrients = z.infer<typeof Nutrients>;
+export type Carbonation = z.infer<typeof Carbonation>;
+export type WaterClassification = z.infer<typeof WaterClassification>;
+export type LabelKind = z.infer<typeof LabelKind>;
+export type WaterProfile = z.infer<typeof WaterProfile>;
 export type IsoDate = z.infer<typeof IsoDate>;
 export type Category = z.infer<typeof Category>;
 export type Ingredient = z.infer<typeof Ingredient>;

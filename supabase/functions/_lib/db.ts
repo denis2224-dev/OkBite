@@ -6,7 +6,7 @@ import { photoUrl } from './photoUrl.ts';
 
 // Explicit public columns: C2 deliberately denies SELECT * to shopper readers.
 const columns =
-  'id,code,status,name,brand,quantity,unit,portion_amount,portion_label,kcal,fat,sat,sugar,salt,protein,fiber,fruit_veg_pct,ingredients_text,allergens,may_contain,image_path,ingredients_photo_path,nutrition_photo_path,source,added_at,verified_at,nova_group,nova_source,category:categories(slug,name,scoreKind:score_kind)';
+  'id,code,status,name,brand,quantity,unit,portion_amount,portion_label,kcal,fat,sat,sugar,salt,protein,fiber,fruit_veg_pct,water,ingredients_text,allergens,may_contain,image_path,ingredients_photo_path,nutrition_photo_path,source,added_at,verified_at,nova_group,nova_source,category:categories(slug,name,scoreKind:score_kind)';
 export async function loadProduct(by: { id: string } | { code: string }): Promise<
   {
     product: Product;
@@ -71,6 +71,7 @@ export async function loadProduct(by: { id: string } | { code: string }): Promis
       fiber: row.fiber,
       fruitVegPct: row.fruit_veg_pct,
     },
+    water: row.water ?? null,
     ingredientsText: row.ingredients_text,
     ingredients: resolvedLinks.map((link) => ({
       ...(link.ingredient ? Ingredient.parse(link.ingredient) : {

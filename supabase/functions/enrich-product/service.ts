@@ -62,7 +62,10 @@ export async function enrichProduct(input: EnrichProductRequest, device: string)
     publishing = true;
     await publishPhoto(upload, input.productId, suffix);
     const { fruitVegPct, ...nutrients } = input.nutrients;
-    await rpc({ p_nutrients: { ...nutrients, fruit_veg_pct: fruitVegPct }, p_unit: input.unit });
+    await rpc({
+      p_nutrients: { ...nutrients, fruit_veg_pct: fruitVegPct, ...(input.water !== undefined ? { water: input.water } : {}) },
+      p_unit: input.unit,
+    });
     const row = await db.from('products').select('nutrition_photo_path').eq('id', input.productId).single();
     if (row.error) throw new Error('Enrichment outcome unknown');
     if (row.data.nutrition_photo_path !== path) await cleanup();

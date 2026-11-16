@@ -36,6 +36,7 @@ export async function moderate(input: ModerateRequest, actor: string): Promise<v
       unit: p.unit,
       ...nutrients,
       fruit_veg_pct: fruitVegPct,
+      ...(p.water !== undefined ? { water: p.water } : {}),
       ingredients_text: p.ingredientsText,
       allergens: allergens.allergens,
       may_contain: allergens.mayContain,
