@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { computeScore } from '../score';
-import { OFF_FIELDS, inferCategorySlug, mapOffProduct, toRow, type AdditiveKey, type OffProduct } from './mapOffProduct';
+import { OFF_FIELDS, inferCategorySlug, offImageUrl, mapOffProduct, toRow, type AdditiveKey, type OffProduct } from './mapOffProduct';
 
 const off: OffProduct = {
   code: '4840001000014',
@@ -57,6 +57,7 @@ describe('mapOffProduct fixtures (N22)', () => {
         { code: 'E330', slug: 'acid-citric-e330' },
         { code: 'E150d', slug: 'colorant-caramel-e150d' },
       ],
+      imageUrl: null,
       source: 'Open Food Facts (ODbL)',
       sourceUrl: 'https://world.openfoodfacts.org/product/4840001000014',
     });
@@ -278,5 +279,24 @@ describe('inferCategorySlug everyday categories', () => {
     expect(slug(['en:iced-teas', 'en:teas'])).toBe('bauturi-racoritoare');
     expect(slug(['en:alcoholic-beverages', 'en:beers'])).toBe('necunoscut');
     expect(slug(['en:dietary-supplements'])).toBe('necunoscut');
+  });
+});
+
+describe('offImageUrl', () => {
+  const nutella = 'https://images.openfoodfacts.org/images/products/301/762/042/2003/front_en.879.400.jpg';
+  it('keeps the API front URL', () => {
+    expect(offImageUrl({ image_front_url: nutella }, '3017620422003')).toBe(nutella);
+    expect(toRow(mapOffProduct({ ...off, image_front_url: nutella })!).image_path).toBe(nutella);
+  });
+  it('builds the URL from the export, preferring Romanian, padding short codes like OFF', () => {
+    const images = { selected: { front: { fr: { rev: '4' }, ro: { rev: 12 } } } };
+    expect(offImageUrl({ images }, '3017620422003')).toBe(nutella.replace('front_en.879', 'front_ro.12'));
+    expect(offImageUrl({ lang: 'en', images: { selected: { front: { en: { rev: '17' } } } } }, '00001373'))
+      .toBe('https://images.openfoodfacts.org/images/products/000/000/000/1373/front_en.17.400.jpg');
+  });
+  it('drops anything that is not an OFF front photo, and never drops the product', () => {
+    expect(offImageUrl({ image_front_url: 'https://evil.example/x.jpg' }, '3017620422003')).toBeNull();
+    expect(offImageUrl({ images: { selected: 'odd' } }, '3017620422003')).toBeNull();
+    expect(toRow(mapOffProduct({ ...off, images: { selected: 'odd' } })!).image_path).toBeNull();
   });
 });
