@@ -11,8 +11,8 @@ import { ScoreTag } from '../product/ScoreTag';
 import type { Basket } from './basket';
 
 const order: Tier[] = ['excellent', 'good', 'fair', 'poor', 'bad'];
-// The A–E scale colours keep the five tiers apart in the bar (excellent and good share one tier tone).
-const barColor: Record<Tier, string> = { excellent: letterTones.A.fg, good: letterTones.B.fg, fair: letterTones.C.fg, poor: letterTones.D.fg, bad: letterTones.E.fg };
+// Tier colours from the palette; "Foarte slab" borrows the E red so it stays apart from "Slab".
+const barColor: Record<Tier, string> = { excellent: tierTone('excellent').fg, good: tierTone('good').fg, fair: tierTone('fair').fg, poor: tierTone('poor').fg, bad: letterTones.E.fg };
 
 /** Counts from 0 to `target` once; shows `target` at once when motion is reduced or the check is unavailable. */
 function useCountUp(target: number): number {
@@ -48,7 +48,7 @@ export function BasketCard({ basket }: { basket: Basket }) {
       </View>
     </View>
     <View accessible accessibilityRole="image" accessibilityLabel={ro.history.basket.mixLabel(basket.mix)} style={{ flexDirection: 'row', height: 14, gap: 3 }}>
-      {present.map(tier => <View key={tier} style={{ flexGrow: basket.mix[tier], borderRadius: 4, backgroundColor: barColor[tier] }} />)}
+      {present.map(tier => <View key={tier} testID={`basket-bar-${tier}`} style={{ flexGrow: basket.mix[tier], borderRadius: 4, backgroundColor: barColor[tier] }} />)}
     </View>
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 4 }}>
       {present.map(tier => <View key={tier} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>

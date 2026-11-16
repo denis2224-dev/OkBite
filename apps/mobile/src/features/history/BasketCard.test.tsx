@@ -3,6 +3,8 @@ import { render, screen, waitFor } from '@testing-library/react-native';
 import { BasketCard } from './BasketCard';
 import type { Basket } from './basket';
 import { ro } from '../../copy/ro';
+import { StyleSheet } from 'react-native';
+import { light } from '../../theme/tokens';
 
 const basket: Basket = { average: 69, tier: 'good', scored: 5, unscored: 1,
   mix: { excellent: 1, good: 3, fair: 1, poor: 0, bad: 0 }, best: { name: 'Iaurt natural 2,5%', score: 86, tier: 'excellent' } };
@@ -32,4 +34,11 @@ it('counts the average up to its final value when motion is allowed', async () =
   jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(false);
   await render(<BasketCard basket={basket} />);
   await waitFor(() => expect(screen.getAllByText('69', { includeHiddenElements: true }).length).toBeGreaterThan(0), { timeout: 2000 });
+});
+
+it('colours the tier bar like the mockup: Excelent dark green, Bun lighter green, Moderat amber', async () => {
+  jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
+  await render(<BasketCard basket={basket} />);
+  const colours = ['excellent', 'good', 'fair'].map(t => StyleSheet.flatten(screen.getByTestId(`basket-bar-${t}`, { includeHiddenElements: true }).props.style).backgroundColor);
+  expect(colours).toEqual([light.good, light.goodTier, light.medium]);
 });
