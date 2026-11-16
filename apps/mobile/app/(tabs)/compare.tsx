@@ -51,7 +51,7 @@ export default function Compare() {
     const fromProduct = Boolean(id);
     return <SafeAreaView edges={fromProduct ? ['top', 'bottom', 'left', 'right'] : ['top', 'left', 'right']} style={styles.safe}>
       <View style={styles.frame}>
-        <TabPageHeader title={copy.title} subtitle={copy.subtitle(a.product.category.name, a.product.unit)} back={fromProduct}/>
+        <TabPageHeader title={copy.title} subtitle={copy.subtitle(a.product.category.name, a.product.unit)}/>
         <ScrollView style={styles.scroll} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
           {error && <Body accessibilityLiveRegion="polite">{ro.history.storageError}</Body>}
           <View style={styles.products}>{products.map(({ entry, label, side }) => {
@@ -115,7 +115,7 @@ export default function Compare() {
   }
   return <SafeAreaView edges={id ? ['top','bottom','left','right'] : ['top','left','right']} style={styles.safe}>
    <View style={styles.frame}>
-    <TabPageHeader title={copy.title} subtitle={a ? copy.subtitle(a.product.category.name,a.product.unit) : copy.hint} back={Boolean(id)}/>
+    <TabPageHeader title={copy.title} subtitle={a ? copy.subtitle(a.product.category.name,a.product.unit) : copy.hint}/>
     <ScrollView style={styles.scroll} contentContainerStyle={[styles.body,{gap:16}]} keyboardShouldPersistTaps="handled">
     {error && <Body accessibilityLiveRegion="polite">{ro.history.storageError}</Body>}
     <ProductPicker slot={copy.productA} entries={entries} selected={a} excluded={b?.product.id} onSelect={entry => select({ id, a: entry, b })} />

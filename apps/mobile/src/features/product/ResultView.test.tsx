@@ -275,17 +275,16 @@ it('makes "Compară cu alt produs" the primary action for this product', async (
   await fireEvent.press(compare);
   expect(router.push).toHaveBeenLastCalledWith({ pathname: '/compare', params: { id: foundYogurt.product.id } });
 });
-it('puts collapse, share and report in a top row of 44 pt icon buttons', async () => {
+it('puts share and report in a top row of 44 pt icon buttons, with no back arrow', async () => {
   await render(<ResultView {...foundYogurt} />);
-  for (const name of [ro.result.closeSheet, ro.share.button, ro.result.report]) {
+  expect(screen.queryByRole('button', { name: ro.result.closeSheet })).toBeNull();
+  for (const name of [ro.share.button, ro.result.report]) {
     const style = StyleSheet.flatten(screen.getByRole('button', { name }).props.style);
     expect(style.minWidth).toBeGreaterThanOrEqual(44);
     expect(style.minHeight).toBeGreaterThanOrEqual(44);
   }
   const order = inOrder();
   expect(order.indexOf(ro.result.report)).toBeLessThan(order.indexOf(productLine(foundYogurt.product, foundYogurt.score)));
-  await fireEvent.press(screen.getByRole('button', { name: ro.result.closeSheet }));
-  expect(router.back).toHaveBeenCalled();
   await fireEvent.press(screen.getByRole('button', { name: ro.result.report }));
   expect(screen.getByLabelText(ro.result.reportLabel)).toBeTruthy();
 });

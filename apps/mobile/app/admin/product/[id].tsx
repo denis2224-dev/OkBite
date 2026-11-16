@@ -87,7 +87,7 @@ function Editor({ id }: { id: string }) {
 export default function AdminProductPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
   return (
-    <Screen title={ro.app.admin.title} back>
+    <Screen title={ro.app.admin.title}>
       <AdminGate>
         <Editor key={id} id={id} />
       </AdminGate>

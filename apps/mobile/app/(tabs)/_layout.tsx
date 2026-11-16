@@ -4,6 +4,8 @@ import { useProfile } from '../../src/features/profile';
 import { ro } from '../../src/copy/ro';
 import { AppBottomNav } from '../../src/shared/AppBottomNav';
 export const unstable_settings = { initialRouteName: 'index' };
+// Back (swipe) returns to the tab or page visited just before.
+export const tabBackBehavior = 'history' as const;
 // Settings and About stay routes (deep links keep working) but have no tab; they open from rows in Profil.
 export default function TabLayout() {
  const router = useRouter();
@@ -16,7 +18,7 @@ export default function TabLayout() {
   checkedOnboarding.current = true;
   if (!profile.onboarded) router.replace('/onboarding');
  }, [inTabs, hydrated, profile.onboarded, router]);
- return <Tabs tabBar={props => <AppBottomNav {...props} />} screenOptions={{ headerShown: false, tabBarHideOnKeyboard: true }}>
+ return <Tabs backBehavior={tabBackBehavior} tabBar={props => <AppBottomNav {...props} />} screenOptions={{ headerShown: false, tabBarHideOnKeyboard: true }}>
   <Tabs.Screen name="history" options={{ title: ro.nav.history }} />
   <Tabs.Screen name="compare" options={{ title: ro.nav.compare }} />
   <Tabs.Screen name="index" options={{ title: ro.nav.scan }} />

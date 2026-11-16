@@ -62,7 +62,7 @@ test('repeated capture and scan navigation preserves React hook ordering', async
   for (let i = 0; i < 2; i++) {
     await page.getByRole('button', { name: 'Fotografiază eticheta', exact: true }).click();
     await expect(page).toHaveURL(/\/capture$/);
-    await page.getByRole('button', { name: 'Înapoi', exact: true }).click();
+    await page.goBack(); // pages have no back arrow; browser back / edge swipe go back
     await expect(page.getByRole('tab', { name: 'Scanează', exact: true })).toHaveAttribute('aria-selected', 'true');
     await page.getByRole('tab', { name: 'Istoric', exact: true }).click();
     await page.getByRole('tab', { name: 'Scanează', exact: true }).click();
