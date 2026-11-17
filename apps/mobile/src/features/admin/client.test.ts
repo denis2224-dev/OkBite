@@ -1,6 +1,6 @@
 import { readAdminProduct } from './client';
 
-const row = {
+const row: Record<string, unknown> & { id: string } = {
   id: '0b6f3c1e-2d4a-4c8e-9f10-1a2b3c4d5e6f',
   name: 'Biscuiți',
   brand: '',
@@ -41,4 +41,12 @@ it('opens a shopper product whose brand was unreadable so the moderator can fill
   const { input } = await readAdminProduct(row.id);
   expect(input.brand).toBe('');
   expect(input.nutrients.sugar).toBeNull();
+});
+
+it('shows an Open Food Facts front photo to the moderator as is', async () => {
+  const url = 'https://images.openfoodfacts.org/images/products/301/762/042/2003/front_en.879.400.jpg';
+  row.image_path = url;
+  const { photos } = await readAdminProduct(row.id);
+  row.image_path = null;
+  expect(photos).toEqual([{ label: expect.any(String), url }]);
 });
