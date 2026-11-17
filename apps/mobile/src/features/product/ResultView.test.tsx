@@ -8,7 +8,7 @@ import { api, ApiError } from '../../lib/api';
 import { router } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { light } from '../../theme/tokens';
-import type { Product, Profile, ScoreResult } from '@okbite/shared';
+import { computeWaterScore, emptyWaterProfile, type Product, type Profile, type ScoreResult } from '@okbite/shared';
 import { displayScore } from './displayScore';
 import { productScoreFor } from './productScoreFor';
 
@@ -323,4 +323,60 @@ it('puts the product photo first, and falls back to initials when there is none 
   await fireEvent(photo, 'error');
   expect(screen.queryByTestId('product-photo')).toBeNull();
   expect(screen.getByTestId('product-photo-placeholder', { includeHiddenElements: true })).toBeTruthy();
+});
+
+it('scores daily Moldovan water from its mineral profile without food macros or Nutri-Score bar', async () => {
+  const emptyNutrients = Object.fromEntries(Object.keys(foundYogurt.product.nutrients).map(k => [k, null])) as Product['nutrients'];
+  const omWater: Product = {
+    ...foundYogurt.product,
+    name: 'OM Apă Plată',
+    brand: 'OM',
+    quantity: '1500 ml',
+    unit: 'ml',
+    category: { slug: 'apa', name: 'Apă', scoreKind: 'water' },
+    nutrients: emptyNutrients,
+    water: { ...emptyWaterProfile(), carbonation: 'still', classification: 'natural_mineral', ph: 6.56, tdsMgL: 375, dryResidueMgL: 260, hco3MgL: 140, so4MgL: 115, naPlusKMgL: 72.5, caMgL: 32.5, mgMgL: 12.5 },
+    ingredientsText: '',
+    ingredients: [],
+    allergens: [],
+    mayContain: [],
+  };
+  await render(<ResultView product={omWater} score={{ score: 100, letter: 'A', grade: 'good', reasons: [], missing: [] }} />);
+  const omExpected = computeWaterScore(omWater.water);
+  expect(omExpected.score).toBe(96);
+  expect(screen.getByTestId('product-score')).toHaveTextContent(`${omExpected.score} din 100 · Excelent`);
+  expect(screen.getByText(ro.result.water.tiers.daily)).toBeTruthy();
+  expect(screen.getByTestId('water-card')).toBeTruthy();
+  expect(within(screen.getByTestId('water-card')).getByText('375 mg/l')).toBeTruthy();
+  expect(screen.getByText('6,56')).toBeTruthy();
+  expect(screen.getByText('Mineralizare echilibrată zilnic')).toBeTruthy();
+  expect(screen.queryByTestId('nutri-score-A')).toBeNull();
+  expect(screen.queryByText(ro.processing.title)).toBeNull();
+  expect(screen.queryByText(ro.result.transcribedLabel)).toBeNull();
+  expect(screen.queryByRole('button', { name: ro.tiers.why })).toBeNull();
+});
+
+it('caps therapeutic mineral water scores and flags not-for-daily-use insight', async () => {
+  const emptyNutrients = Object.fromEntries(Object.keys(foundYogurt.product.nutrients).map(k => [k, null])) as Product['nutrients'];
+  const donatMg: Product = {
+    ...foundYogurt.product,
+    name: 'Donat Mg',
+    brand: 'Donat Mg',
+    quantity: '1000 ml',
+    unit: 'ml',
+    category: { slug: 'apa', name: 'Apă', scoreKind: 'water' },
+    nutrients: emptyNutrients,
+    water: { ...emptyWaterProfile(), carbonation: 'sparkling', classification: 'therapeutic', tdsMgL: 13200, mgMgL: 1030, naMgL: 1565, caMgL: 380, hco3MgL: 7790, so4MgL: 2200, clMgL: 59, h3bo3MgL: 45 },
+    ingredientsText: '',
+    ingredients: [],
+    allergens: [],
+    mayContain: [],
+  };
+  await render(<ResultView product={donatMg} score={{ score: 100, letter: 'A', grade: 'good', reasons: [], missing: [] }} />);
+  const donatExpected = computeWaterScore(donatMg.water);
+  expect(donatExpected.score).toBe(20);
+  expect(screen.getByTestId('product-score')).toHaveTextContent(`${donatExpected.score} din 100 · Slab`);
+  expect(screen.getByText(ro.result.water.tiers.therapeutic)).toBeTruthy();
+  expect(screen.getByText('Apă terapeutică / medicinală')).toBeTruthy();
+  expect(screen.queryByTestId('nutri-score-A')).toBeNull();
 });

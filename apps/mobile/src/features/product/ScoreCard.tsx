@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { productScore, type Product, type ScoreResult } from '@okbite/shared';
+import { productScore, summarizeWater, type Product, type ScoreResult } from '@okbite/shared';
 import { Body, Heading } from '../../ui';
 import { fonts } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
@@ -11,6 +11,8 @@ import { NutriScoreScale } from './NutriScoreScale';
  * Compare's picker passes no product: it shows its own name line. */
 export function ScoreCard({ product, score, identity = true }: { product?: Product; score: ScoreResult; identity?: boolean }) {
   const { colors } = useTheme();
+  const isWater = product?.category.scoreKind === 'water';
+  const waterSummary = isWater && product?.water ? summarizeWater(product.water) : null;
   // With a product, the 0-100 number is the product score (nutrition, additives, processing) with its tier,
   // and the tile carries only the Nutri-Score letter, so each number appears once.
   const scored = product ? productScore(product, score) : null;
@@ -35,13 +37,14 @@ export function ScoreCard({ product, score, identity = true }: { product?: Produ
           <Body style={{ color: colors.muted }}>{[product.brand, product.quantity].filter(Boolean).join(', ')}</Body>
         </>}
         {productLine && <Body testID="product-score" style={{ fontFamily: fonts.bold }}>{productLine}</Body>}
-        <Body style={{ color: colors.muted }}>{shown ? `${ro.score.title}: ${ro.score[shown.grade]}` : ro.result.scoreUnavailable}</Body>
+        {waterSummary && shown && <Body testID="water-tier-insight" style={{ color: colors[shown.grade] }}>{ro.result.water.tiers[waterSummary.tier]}</Body>}
+        <Body style={{ color: colors.muted }}>{shown ? `${isWater ? ro.result.water.scoreTitle : ro.score.title}: ${ro.score[shown.grade]}` : ro.result.scoreUnavailable}</Body>
       </View>
     </View>
     {shown ? <NutriScoreScale letter={score.letter} /> : <>
       <Body>{ro.result.insufficient}</Body><Body>{ro.result.missing}</Body>
       {score.missing.map(key => <Body key={key}>{ro.result.nutrients[key]}</Body>)}
     </>}
-    <Body style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>{ro.score.disclaimer}</Body>
+    <Body style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>{isWater ? ro.result.water.disclaimer : ro.score.disclaimer}</Body>
   </View>;
 }

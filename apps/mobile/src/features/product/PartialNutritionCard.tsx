@@ -3,9 +3,17 @@ import { NUTRIENT_KEYS, type Product } from '@okbite/shared';
 import { Body, Card, Heading } from '../../ui';
 import { ro } from '../../copy/ro';
 import { formatAmount } from '../../lib/format';
+import { WaterSummaryBody } from './WaterCard';
 
 /** The current Product contract stores values per 100 g/ml, never per portion. */
 export function PartialNutritionCard({ product }: { product: Product }) {
+  if (product.category.slug !== 'necunoscut' && product.category.scoreKind === 'water') {
+    return <Card>
+      <Heading style={{ fontSize: 18 }}>{ro.result.scoreUnavailable}</Heading>
+      <Body>{ro.result.water.noChemistry}</Body>
+      {product.water && <WaterSummaryBody water={product.water} />}
+    </Card>;
+  }
   const available = NUTRIENT_KEYS.filter(key => product.nutrients[key] !== null);
   return <Card>
     <Heading style={{ fontSize: 18 }}>{available.length ? ro.result.scoreUnavailable : ro.result.nutritionUnavailable}</Heading>
