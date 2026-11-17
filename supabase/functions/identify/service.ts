@@ -11,6 +11,7 @@ import { loadProduct } from '../_lib/db.ts';
 import { adminClient, logEvent } from '../_lib/http.ts';
 import { releaseUsage, reserveUsage } from '../_lib/quota.ts';
 import { saveJpeg } from '../_lib/storage.ts';
+import { photoUrl } from '../_lib/photoUrl.ts';
 import { parseFront } from './parseFront.ts';
 import { dedupeCandidates, groupKey } from './dedupe.ts';
 import { FRONT_PROMPT } from './prompt.ts';
@@ -62,12 +63,7 @@ async function findCandidates(db: Db, read: FrontRead): Promise<Candidate[]> {
     name: row.name,
     brand: row.brand,
     quantity: row.quantity,
-    // Same rule as the lookup loader: only promoted product-bucket photos become public URLs.
-    imageUrl:
-      row.image_path?.startsWith(`${row.id}/`) &&
-      /^[a-f0-9-]+\/[a-z][a-z0-9-]*\.jpg$/.test(row.image_path)
-        ? db.storage.from('products').getPublicUrl(row.image_path).data.publicUrl
-        : null,
+    imageUrl: photoUrl(db, row.id, row.image_path), // same rule as the lookup loader
     similarity: Math.min(1, Math.max(0, row.similarity)),
   }));
 }

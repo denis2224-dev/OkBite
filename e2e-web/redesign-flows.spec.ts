@@ -77,14 +77,14 @@ test.describe('returning user', () => {
     await expect.poll(() => page.evaluate(() => document.activeElement?.closest('[role="dialog"]')?.getAttribute('aria-label'))).toBe(yogurt.product.name);
     await expect(page).not.toHaveURL(new RegExp(`/product/${yogurt.product.id}`));
     expect(lookups).toBe(1);
-    await expect(page.getByTestId('product-score')).toHaveText(
+    await expect(page.getByTestId('product-score')).toHaveAccessibleName(
       `${ro.history.score(yogurtScore.score!)} · ${ro.tiers[yogurtScore.tier!]}`,
     );
     await expect(page.getByText(ro.processing.title, { exact: true })).toBeVisible();
     await expect(page.getByText(ro.processing.unknown, { exact: true })).toBeVisible();
+    // The B8 result lists the reasons under the score; the separate "De ce?" points breakdown is gone.
+    await expect(page.getByRole('button', { name: ro.tiers.why, exact: true })).toHaveCount(0);
     await expect(page.getByTestId('deduction-row')).toHaveCount(0);
-    await page.getByRole('button', { name: ro.tiers.why, exact: true }).click();
-    expect(await page.getByTestId('deduction-row').count()).toBeGreaterThan(0);
     await page.getByRole('button', { name: ro.result.report, exact: true }).click();
     await expect(page.getByRole('textbox', { name: ro.result.reportLabel, exact: true })).toBeVisible();
     await page.getByRole('button', { name: ro.app.cancel, exact: true }).click();
@@ -176,19 +176,16 @@ test.describe('returning user', () => {
     await page.getByRole('button', { name: ro.nav.settings, exact: true }).click();
     await page.getByRole('button', { name: ro.settings.english, exact: true }).click(); // reloads the page
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-    await expect(page.getByRole('tablist').getByRole('tab')).toHaveText([
-      en.nav.history,
-      en.nav.compare,
-      en.nav.scan,
-      en.nav.allergies,
-      en.nav.profile,
-    ]);
+    // The pill tab bar shows icons; each tab is named by its label.
+    const tabs = page.getByRole('tablist').getByRole('tab');
+    await expect(tabs).toHaveCount(5);
+    for (const [index, name] of [en.nav.history, en.nav.compare, en.nav.scan, en.nav.allergies, en.nav.profile].entries())
+      await expect(tabs.nth(index)).toHaveAccessibleName(name);
     await page.goto(`/product/${yogurt.product.id}`);
-    await expect(page.getByTestId('product-score')).toHaveText(
+    await expect(page.getByTestId('product-score')).toHaveAccessibleName(
       `${en.history.score(yogurtScore.score!)} · ${en.tiers[yogurtScore.tier!]}`,
     );
-    await page.getByRole('button', { name: en.tiers.why, exact: true }).click();
-    expect(await page.getByTestId('deduction-row').count()).toBeGreaterThan(0);
+    await expect(page.getByRole('button', { name: en.tiers.why, exact: true })).toHaveCount(0);
     await expect(page.getByText(en.processing.title, { exact: true })).toBeVisible();
   });
 });

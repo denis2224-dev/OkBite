@@ -7,3 +7,4 @@ export * from './allergens/index.ts';
 export * from './ingredients/index.ts';
 export * from './profile/types.ts';
 export * from './profile/match.ts';
+export { OFF_IMAGE_URL } from './off/mapOffProduct.ts';

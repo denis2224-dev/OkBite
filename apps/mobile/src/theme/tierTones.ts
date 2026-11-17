@@ -5,7 +5,8 @@ type Tone = { fg: string; bg: string };
 const good: Tone = { fg: light.good, bg: light.goodBg };
 const medium: Tone = { fg: light.medium, bg: light.mediumBg };
 const low: Tone = { fg: light.low, bg: light.lowBg };
-const tones: Record<Tier, Tone> = { excellent: good, good, fair: medium, poor: low, bad: low };
+// Excelent and Bun get two greens so they read apart (as in the mockup palette).
+const tones: Record<Tier, Tone> = { excellent: good, good: { fg: light.goodTier, bg: light.goodBg }, fair: medium, poor: low, bad: low };
 
 /** The product-score tier drawn in the grade colours. Light only. */
 export function tierTone(tier: Tier): Tone {

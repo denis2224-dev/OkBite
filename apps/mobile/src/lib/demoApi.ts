@@ -28,6 +28,10 @@ export const demoApi = {
       ingredientsPhotoPath: 'demo/ingredients.jpg', nutritionPhotoPath: withNutrition ? 'demo/nutrition.jpg' : null,
     };
   },
+  topProducts(category: string, limit: number): { category: string; products: Pick<Found, 'product' | 'score'>[] } {
+    const products = entries.filter((e) => e.product.category.slug === category).slice(0, limit).map(({ product, score }) => ({ product, score }));
+    return { category, products };
+  },
   addProduct(req: AddProductRequest): LookupResponse {
     const base = previewEntries[0]!.product;
     const category = entries.find((e) => e.product.category.slug === req.categorySlug)?.product.category ?? base.category;
