@@ -1,11 +1,13 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { light, radii } from '../../theme/tokens';
 import { router } from 'expo-router';
 import { SettingsScreen } from './SettingsScreen';
 import { ThemeProvider } from '../../theme/useTheme';
 import { InstallPromptProvider } from '../../lib/installPrompt';
 import { deleteHistory } from '../history/db';
 import { ro } from '../../copy/ro';
-jest.mock('expo-router', () => ({ router: { push: jest.fn(), back: jest.fn() } }));
+jest.mock('expo-router', () => ({ router: { push: jest.fn(), back: jest.fn(), canGoBack: () => true } }));
 jest.mock('../history/db', () => ({ deleteHistory: jest.fn(async () => {}), readHistory: jest.fn(), writeHistory: jest.fn() }));
 jest.mock('../../lib/installPrompt', () => jest.requireActual('../../lib/installPrompt.web'));
 let browser: EventTarget;
@@ -89,4 +91,24 @@ it('orders the groups Language, App (clear history last), Info with sentence-cas
   const names = screen.getAllByRole('button').map(b => b.props.accessibilityLabel).filter(n => n !== 'Înapoi');
   expect(names).toEqual([ro.settings.romanian, ro.settings.russian, ro.settings.english, ro.settings.install, ro.settings.resetOnboarding, ro.settings.clearHistory, ro.settings.method, ro.settings.privacy, ro.settings.terms]);
   expect(screen.getByText(ro.settings.version, { exact: false })).toBeTruthy();
+});
+it('goes back to Profile from the header back button', async () => {
+  await render(<SettingsScreen />);
+  await fireEvent.press(screen.getByRole('button', { name: ro.app.back }));
+  expect(router.back).toHaveBeenCalledTimes(1);
+});
+it('draws the language choice as a segmented pill: forest fill and white label when selected', async () => {
+  await render(<SettingsScreen currentLanguage="en" setLanguage={jest.fn()} />);
+  expect(StyleSheet.flatten(screen.getByTestId('language-segments').props.style)).toMatchObject({ borderRadius: radii.hero, backgroundColor: light.sageSoft });
+  const style = (name: string) => StyleSheet.flatten(screen.getByRole('button', { name }).props.style);
+  expect(style(ro.settings.english)).toMatchObject({ backgroundColor: light.primary, borderRadius: radii.pill });
+  expect(screen.getByText(ro.settings.english)).toHaveStyle({ color: light.onPrimary });
+  expect(style(ro.settings.russian).backgroundColor).toBe(light.transparent);
+  expect(screen.getByText(ro.settings.russian)).toHaveStyle({ color: light.primary });
+});
+it('groups the rows in flat cards and draws clear history in the terracotta tone', async () => {
+  await render(<SettingsScreen />);
+  expect(screen.getByText(ro.settings.clearHistory)).toHaveStyle({ color: light.low });
+  expect(StyleSheet.flatten(screen.getByTestId('clear-history-icon').props.style)).toMatchObject({ backgroundColor: light.lowBg });
+  expect(screen.getAllByTestId('link-row-icon').length).toBeGreaterThanOrEqual(4);
 });

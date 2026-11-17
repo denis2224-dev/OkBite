@@ -8,10 +8,8 @@ under the settings/about routes; this task deliberately adds no route files.
   N17's current native setter is a no-op; enable selection only on platforms
   with an implemented setter. Until supplied, language choices are disabled
   and N2's pending copy is shown. A storage failure keeps the chosen state.
-- N4: pass `tierPalette` to `AboutScreen`, mapping the five keys `excellent`,
-  `good`, `fair`, `poor`, `bad` to colors returned by the production `tierFor`.
-  N4 is absent here, so the five labels render without invented colors or
-  score ranges. Score band pills require the approved N4 ranges at integration.
+- N4: `AboutScreen` draws the five tier swatches with `tierTone` from the theme;
+  it shows no score ranges. Score band pills require the approved N4 ranges.
 - N10: pass `resetOnboarding` only when the real onboarding store exists.
   The row is hidden otherwise. The callback owns store reset and navigation.
 - `ThemeProvider` and `InstallPromptProvider` must wrap the route, as in the

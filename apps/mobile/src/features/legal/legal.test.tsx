@@ -5,6 +5,8 @@ import PrivacyPage from '../../../app/(info)/privacy';
 import TermsPage from '../../../app/(info)/terms';
 import MethodPage from '../../../app/(info)/method';
 import { ro } from '../../copy/ro';
+import { StyleSheet } from 'react-native';
+import { light, typeScale } from '../../theme/tokens';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), canGoBack: () => false, replace: jest.fn() } }));
 beforeEach(() => jest.clearAllMocks());
@@ -52,4 +54,14 @@ it('discloses local queues, public contribution photos and the AI provider witho
 it('formats legal pages with sections as headings', async () => {
   await render(<PrivacyPage />);
   for (const section of ro.legal.privacySections) expect(screen.getByRole('header', { name: section.title })).toBeTruthy();
+});
+it('formats legal pages on the palette: section headings, a readable measure and divided sections', async () => {
+  await render(<PrivacyPage />);
+  expect(StyleSheet.flatten(screen.getByTestId('legal-page').props.style)).toMatchObject({ maxWidth: 560 });
+  const first = ro.legal.privacySections[0];
+  expect(screen.getByRole('header', { name: first.title })).toHaveStyle({ ...typeScale.section, color: light.ink });
+  expect(screen.getByText(first.body)).toHaveStyle({ ...typeScale.body, color: light.ink });
+  expect(screen.getByText(/Ultima actualizare/)).toHaveStyle({ ...typeScale.caption, color: light.muted });
+  const sections = screen.getAllByTestId('legal-section').map(s => StyleSheet.flatten(s.props.style));
+  expect(sections[1]).toMatchObject({ borderTopWidth: 1, borderTopColor: light.divider });
 });
