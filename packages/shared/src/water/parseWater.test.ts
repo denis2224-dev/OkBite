@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   detectWaterFrontHint,
+  inferFrontWaterMeta,
   normalizeWaterObject,
   parseWaterCarbonation,
   parseWaterClassification,
@@ -116,5 +117,51 @@ describe('parseWaterValue & normalizeWaterObject', () => {
     expect(om.ranges?.fMgL).toEqual({ min: 0, max: 0.05 });
     expect(om.ranges?.no3MgL).toBeUndefined();
     expect(om.ranges?.ph).toBeUndefined();
+  });
+
+  it('strips explicit inline ion charge prefixes (NO3-6,4, Ca2 + 14,0, Mg2 + 42,6) without inventing ranges or leaking negatives/NO2/SO2', () => {
+    expect(parseWaterValueWithRange('NO3-6,4')).toEqual({ value: 6.4 });
+    expect(parseWaterValueWithRange('NO3- 6,4 mg/l')).toEqual({ value: 6.4 });
+    expect(parseWaterValueWithRange('Ca2 + 14,0')).toEqual({ value: 14 });
+    expect(parseWaterValueWithRange('Ca2+14,0')).toEqual({ value: 14 });
+    expect(parseWaterValueWithRange('Mg2 + 42,6 mg/l')).toEqual({ value: 42.6 });
+    expect(parseWaterValueWithRange('HCO3- 130-150 mg/l')).toEqual({ value: 140, range: { min: 130, max: 150 } });
+
+    expect(parseWaterValueWithRange('-6,4')).toEqual({ value: null });
+    expect(parseWaterValueWithRange('NO2-0,23')).toEqual({ value: null });
+    expect(parseWaterValueWithRange('SO2-54,1')).toEqual({ value: null });
+
+    const davidan = normalizeWaterObject({
+      dryResidueMgL: '390',
+      no3MgL: 'NO3-6,4',
+      caMgL: 'Ca2 + 14,0',
+      mgMgL: 'Mg2 + 42,6',
+      so4MgL: 'SO2-54,1',
+      carbonation: 'Apă potabilă Carbogazificată',
+      classification: 'Corespunde NS privind calitatea apei potabile HG Nr. 934/2',
+    });
+    expect(davidan.dryResidueMgL).toBe(390);
+    expect(davidan.no3MgL).toBe(6.4);
+    expect(davidan.caMgL).toBe(14);
+    expect(davidan.mgMgL).toBe(42.6);
+    expect(davidan.so4MgL).toBeNull();
+    expect(davidan.carbonation).toBe('sparkling');
+    expect(davidan.classification).toBe('drinking');
+    expect(davidan.ranges).toBeUndefined();
+  });
+
+  it('infers water flag and carbonation consistently from front reads even without backend isWater', () => {
+    expect(inferFrontWaterMeta({ brand: 'DAVIDAN', name: 'Apă potabilă Carbogazificată' })).toEqual({
+      isWater: true,
+      carbonation: 'sparkling',
+    });
+    expect(inferFrontWaterMeta({ brand: 'Zorel', name: 'Iaurt cu căpșuni' })).toEqual({
+      isWater: false,
+      carbonation: null,
+    });
+    expect(inferFrontWaterMeta({ brand: 'Coca-Cola', name: 'Băutură carbogazoasă' })).toEqual({
+      isWater: false,
+      carbonation: null,
+    });
   });
 });

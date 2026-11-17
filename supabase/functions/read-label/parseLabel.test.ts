@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { UpstreamError } from '../_lib/claude.ts';
 import { parseLabel } from './parseLabel.ts';
+import { WATER_PROMPT } from './waterLabel.ts';
 
 const label = (over: Record<string, unknown>) =>
   JSON.stringify({
@@ -301,4 +302,25 @@ Deno.test('parseLabel extracts RO/RU/UA mineral profiles and ranges when kind is
   assert.deepEqual(enrichWater.water?.ranges?.h3bo3MgL, { min: 100, max: 250 });
   assert.deepEqual(enrichWater.water?.ranges?.naMgL, { min: 1500, max: 3000 });
   assert.deepEqual(read.water?.ranges?.tdsMgL, { min: 350, max: 400 });
+
+  const davidan = parseLabel(
+    JSON.stringify({
+      dryResidueMgL: '390',
+      no3MgL: 'NO3-6,4',
+      caMgL: 'Ca2 + 14,0',
+      mgMgL: 'Mg2 + 42,6',
+      carbonation: 'Apă potabilă Carbogazificată',
+      classification: 'apei potabile HG Nr. 934/2',
+    }),
+    { ingredients: true, nutrition: 'same_photo', kind: 'water' },
+  );
+  assert.equal(davidan.water?.dryResidueMgL, 390);
+  assert.equal(davidan.water?.no3MgL, 6.4);
+  assert.equal(davidan.water?.caMgL, 14);
+  assert.equal(davidan.water?.mgMgL, 42.6);
+  assert.equal(davidan.water?.carbonation, 'sparkling');
+  assert.equal(davidan.water?.classification, 'drinking');
+  assert.match(WATER_PROMPT, /reziduu sec solubil/i);
+  assert.match(WATER_PROMPT, /NO2/);
+  assert.match(WATER_PROMPT, /SO2/);
 });

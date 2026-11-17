@@ -46,8 +46,14 @@ export function emptyWaterProfile(): WaterProfileType {
 
 const NUM = '(\\d+(?:[.,]\\d+)?)';
 const UNIT_CLASS = '[a-zа-яµμ/%³0-9]*';
+const ION_PREFIX_RE =
+  /^(?:(?:Ca|Mg)(?:\s*2|\s*²)?\s*[+⁺]|(?:Na|K)\s*[+⁺]|(?:HCO\s*[3₃]|SO\s*[4₄]\s*(?:2|²)?|NO\s*[3₃]|Cl|F|I)\s*[-⁻]|(?:Ca|Mg|Na|K|HCO\s*[3₃]|SO\s*[4₄]|NO\s*[3₃]|Cl|F|I)\s*(?:=|:|\s))\s*/iu;
 const RANGE_RE = new RegExp(`^\\s*${NUM}\\s*[-–—]{1,2}\\s*${NUM}\\s*(${UNIT_CLASS})\\s*$`, 'iu');
 const LIMIT_RE = new RegExp(`^\\s*([<>≤≥]?)\\s*${NUM}\\s*(${UNIT_CLASS})\\s*$`, 'iu');
+
+function stripIonPrefix(raw: string): string {
+  return raw.replace(ION_PREFIX_RE, '').trim();
+}
 
 const toNum = (s: string) => Number(s.replace(',', '.'));
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
@@ -81,7 +87,7 @@ export function parseWaterValueWithRange(raw: unknown, kind: WaterValueKind = 'm
     return { value: v };
   }
   if (typeof raw !== 'string') return { value: null };
-  const text = raw.trim();
+  const text = stripIonPrefix(raw.trim());
   if (!text) return { value: null };
 
   const rangeMatch = RANGE_RE.exec(text);
@@ -216,4 +222,20 @@ export function detectWaterFrontHint(brand: string | null, name: string | null):
   return /(borjomi|nabeghlavi|essentuki|ессентуки|donat\s*mg|polyana\s*kvasova|поляна\s*квасова|morshynska|моршинськ|aqua\s*carpatica|aqua\s*uniqa|gura\s*cainarului|borsec|dorna|izvorul\s*alb|acqua\s*panna|evian|vittel|perrier|san\s*pellegrino|alcalia|magnesia)/i.test(
     combined,
   );
+}
+
+/** Shared front-read water & carbonation inference used across Edge Functions and mobile/web UI. */
+export function inferFrontWaterMeta(front: {
+  brand?: string | null;
+  name?: string | null;
+  isWater?: boolean;
+  carbonation?: Carbonation | null;
+}): { isWater: boolean; carbonation: Carbonation | null } {
+  const brand = front.brand ?? null;
+  const name = front.name ?? null;
+  const isWater = front.isWater === true || detectWaterFrontHint(brand, name);
+  const carbonation = isWater
+    ? front.carbonation ?? parseWaterCarbonation(`${brand ?? ''} ${name ?? ''}`)
+    : null;
+  return { isWater, carbonation };
 }
