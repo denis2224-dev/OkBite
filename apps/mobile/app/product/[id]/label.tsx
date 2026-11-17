@@ -9,7 +9,7 @@ export default function Label() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data, loading, error } = useProduct(id);
   const product = data?.product;
-  return <Screen title={ro.result.original} back>
+  return <Screen title={ro.result.original}>
     {loading && <Body accessibilityLiveRegion="polite">{ro.app.loading}</Body>}
     {error && <Body accessibilityLiveRegion="polite">{error.message}</Body>}
     {product?.status === 'hidden' && <Body>{ro.result.notFound}</Body>}

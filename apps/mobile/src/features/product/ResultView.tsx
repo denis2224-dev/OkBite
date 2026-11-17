@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { router } from 'expo-router';
 import { NUTRIENT_KEYS, type Product, type ScoreResult } from '@okbite/shared';
-import { Badge, Body, Button, Caption, Card, Heading, LinkRow, useToast } from '../../ui';
+import { Body, Button, Card, Heading, LinkRow, useToast } from '../../ui';
 import { ro } from '../../copy/ro';
 import { isPreview } from '../../lib/preview';
 import { displayScore } from './displayScore';
@@ -15,7 +15,7 @@ import { AllergenSummary } from './AllergenSummary';
 import { ResultTopBar } from './ResultTopBar';
 import { PortionSheet } from './PortionSheet';
 import { PartialNutritionCard } from './PartialNutritionCard';
-import { SourceCard, isOffProduct } from './SourceCard';
+import { SourceCard } from './SourceCard';
 import { ReportSheet } from './ReportSheet';
 import { shareProduct } from '../share/shareProduct';
 import { productShareUrl } from '../share/productShareText';
@@ -52,10 +52,6 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
     <ProfileAllergenAlert product={product} />
     {canShowScore ? <ScoreCard product={product} score={shownScore} /> : <><Heading>{product.name}</Heading><Body>{[product.brand, product.quantity].filter(Boolean).join(', ')}</Body></>}
     <AllergenSummary product={product} />
-    {product.status === 'unverified' && <View testID="unverified-badge" style={{ gap: 4 }}>
-      <Badge tone="unverified">{ro.result.unverified}</Badge>
-      <Caption>{isOffProduct(product) ? ro.result.offNote : ro.result.unverifiedNote}</Caption>
-    </View>}
     {canShowScore ? <WhyScore score={shownScore} sugar={product.nutrients.sugar} /> : <PartialNutritionCard product={product} />}
     <AdditivesCard product={product} />
     <Card testID="result-link-rows" style={{ paddingVertical: 4, gap: 0 }}>
@@ -63,12 +59,13 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
       {showPortion && <LinkRow label={ro.result.portionTile} last onPress={() => setPortion(true)} />}
     </Card>
     <CompositionCard product={product} />
-    <SourceCard product={product} />
     {nutritionAdditionAvailable && product.status === 'unverified' && !hasNutrition &&
       <Button variant="secondary" onPress={() => router.push({pathname: '/add/nutrition', params: {productId: product.id}})}>{ro.result.addNutrition}</Button>}
     <Card style={{ paddingVertical: 4, gap: 0 }}>
       <LinkRow icon="camera" label={ro.result.original} last onPress={() => router.push({ pathname: '/product/[id]/label', params: { id: product.id } })} />
     </Card>
+    {/* Provenance is the last card: source, dates, and the OFF or shopper note. */}
+    <SourceCard product={product} />
     {report && <ReportSheet productId={product.id} onClose={() => setReport(false)} />}
     {portion && <PortionSheet product={product} onClose={() => setPortion(false)} />}
   </>;

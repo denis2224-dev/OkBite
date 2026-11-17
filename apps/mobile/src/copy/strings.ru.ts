@@ -341,6 +341,20 @@ export const redesignRu: RedesignCopy = {
     aimHint: 'Поместите штрихкод в рамку', flashOn: 'Включить вспышку', flashOff: 'Выключить вспышку',
     manualCode: 'Ввести код', photoLabel: 'Снять этикетку', loadingReader: 'Подготовка сканера…',
     labelMode: 'Этикетка', seeAll: 'Смотреть все',
+    shelf: {
+      title: 'Лучшее с полки', top: (category: string) => `Топ: ${category}`,
+      count: (n: number) => pluralRu(n, 'проверенный продукт', 'проверенных продукта', 'проверенных продуктов'),
+      best: 'Лучший выбор', ranking: 'Рейтинг по оценке OkBite, только проверенные продукты.',
+      empty: 'На этой полке пока нет проверенных продуктов.', emptyHint: 'Отсканируйте продукт с этой полки, и мы его добавим.',
+      error: 'Не удалось загрузить полку.',
+      names: {
+        iaurt: 'Йогурт', lapte: 'Молоко', branza: 'Сыр', 'unt-si-smantana': 'Масло и сметана', biscuiti: 'Печенье',
+        'ciocolata-si-dulciuri': 'Шоколад и сладости', cereale: 'Хлопья', paine: 'Хлеб', mezeluri: 'Колбасы из свинины или говядины', 'mezeluri-pasare': 'Колбасы из птицы',
+        ulei: 'Растительное масло', 'snacks-sarate': 'Солёные снеки', suc: 'Сок', 'bauturi-racoritoare': 'Прохладительные напитки', apa: 'Вода',
+        inghetata: 'Мороженое', conserve: 'Консервы', 'sosuri-condimente': 'Соусы и приправы', 'paste-fainoase': 'Макаронные изделия', 'fructe-legume': 'Фрукты и овощи',
+        'peste-fructe-de-mare': 'Рыба и морепродукты', 'mancare-preparata': 'Готовая еда', 'nuci-seminte': 'Орехи и семена', 'cafea-ceai': 'Кофе и чай', 'bauturi-vegetale': 'Растительные напитки',
+      },
+    },
   },
   result: {
     profileAllergens: 'Аллергены из вашего профиля', profileMayContain: 'Может содержать аллергены из профиля',
@@ -356,6 +370,11 @@ export const redesignRu: RedesignCopy = {
     remove: (name: string) => `Удалить ${name} из истории`, removed: 'Товар удалён из истории.',
     undo: 'Отменить удаление', removeError: 'Не удалось удалить товар. Попробуйте снова.',
     scoreUnavailable: 'Оценка недоступна', restoreError: 'Не удалось восстановить товар. Повторите отмену.',
+    noScore: 'без оценки',
+    when: { today: (time: string) => `Сегодня, ${time}`, yesterday: 'Вчера', weekdays: ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'] },
+    basket: { title: 'Ваша корзина', average: (n: number) => `Среднее для ${pluralRu(n, 'продукта', 'продуктов', 'продуктов')} с оценкой`,
+      count: (n: number, tier: string) => `${n} ${tier}`, unscored: (n: number) => `${n} без оценки`, best: (name: string) => `Ваш лучший выбор: ${name}`,
+      mixLabel: (mix: Record<string, number>) => `Отлично ${mix.excellent}, Хорошо ${mix.good}, Средне ${mix.fair}, Слабо ${mix.poor}, Плохо ${mix.bad}` },
   },
   allergens: {
     Gluten: 'Глютен', Crustacee: 'Ракообразные', Ouă: 'Яйца', Pește: 'Рыба', Arahide: 'Арахис', Soia: 'Соя', Lapte: 'Молоко',

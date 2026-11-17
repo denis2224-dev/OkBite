@@ -8,6 +8,7 @@ import { fonts } from '../../theme/tokens';
 import { listHistory, type HistoryEntry } from '../history/store';
 import { useProfile } from '../profile';
 import { RecentScanRow } from './RecentScanRow';
+import { ShelfPicks } from '../shelf/ShelfPicks';
 
 const LIMIT = 3;
 
@@ -31,6 +32,7 @@ export function RecentScans({ active }: { active: boolean }) {
   const muted = [styles.note, { color: colors.muted }];
   return <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
     <View style={[styles.grabber, { backgroundColor: colors.border }]} />
+    <ShelfPicks />
     <View style={styles.header}>
       <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>{ro.home.design.recent}</Text>
       <Pressable accessibilityRole="button" accessibilityLabel={ro.home.allHistory} onPress={() => router.navigate('/history')} style={styles.link}>

@@ -5,7 +5,7 @@ import type { ComponentProps } from 'react';
 import { AppBottomNav } from './AppBottomNav';
 
 const names = ['history', 'compare', 'index', 'allergies', 'profile', 'settings', 'about'];
-const flat = ['history', 'compare', 'allergies', 'profile'];
+const tabs = ['history', 'compare', 'index', 'allergies', 'profile'];
 const makeProps = (index = 2) => ({
  state: { index, routes: names.map(name => ({ key: name, name })) },
  emitter: { emit: jest.fn(() => ({ defaultPrevented: false })) },
@@ -42,16 +42,25 @@ it.each([[5, 'settings'], [6, 'about']])('selects no tab while %s (route %s) is 
  expect(ui.getAllByRole('tab')).toHaveLength(5);
  expect(ui.getAllByRole('tab').every(tab => !tab.props.accessibilityState.selected)).toBe(true);
 });
-it('raises Scan as a filled 64 pt circle above the flat tabs', async () => {
- const ui = await render(<AppBottomNav {...makeProps(0)} />);
- const scan = style(ui, 'nav-icon-index');
- expect([scan.width, scan.height, scan.borderRadius, scan.backgroundColor]).toEqual([64, 64, 32, light.primary]);
- expect(new Set(flat.map(name => { const { width, height } = style(ui, `nav-icon-${name}`); return `${width}x${height}`; }))).toEqual(new Set(['56x32']));
+it('draws the bar as a floating white pill with a thin border and a soft shadow', async () => {
+ const ui = await render(<AppBottomNav {...makeProps()} />);
+ const pill = style(ui, 'nav-pill');
+ expect(pill).toMatchObject({ backgroundColor: light.surface, borderWidth: 1, borderColor: light.border, borderRadius: 999, flexDirection: 'row' });
+ expect(pill.shadowOpacity).toBeGreaterThan(0);
+ expect(pill.elevation).toBeGreaterThan(0);
+ expect(style(ui, 'nav-bar').paddingHorizontal).toBeGreaterThanOrEqual(16); // floats off the screen edges
+ expect(pill.marginHorizontal).toBeUndefined(); // no width overflow
 });
-it.each([[0, 'history'], [1, 'compare'], [3, 'allergies'], [4, 'profile']] as const)('marks only the current flat tab (route %i)', async (index, current) => {
+it.each([[0, 'history'], [1, 'compare'], [2, 'index'], [3, 'allergies'], [4, 'profile']] as const)('fills only the current tab with a dark circle (route %i)', async (index, current) => {
  const ui = await render(<AppBottomNav {...makeProps(index)} />);
- for (const name of flat) expect(style(ui, `nav-icon-${name}`).backgroundColor).toBe(name === current ? light.mint : light.transparent);
- expect(ui.getByRole('tab', { name: 'Scanează' }).props.accessibilityState.selected).toBe(false);
+ for (const name of tabs) expect(style(ui, `nav-icon-${name}`).backgroundColor).toBe(name === current ? light.primary : light.transparent);
+ const dot = style(ui, `nav-icon-${current}`);
+ expect([dot.width, dot.height, dot.borderRadius]).toEqual([52, 52, 26]);
+});
+it('gives every tab the same size; Scan is no longer raised', async () => {
+ const ui = await render(<AppBottomNav {...makeProps(0)} />);
+ expect(new Set(tabs.map(name => { const { width, height } = style(ui, `nav-icon-${name}`); return `${width}x${height}`; }))).toEqual(new Set(['52x52']));
+ for (const tab of ui.getAllByRole('tab')) expect(StyleSheet.flatten(tab.props.style).minHeight).toBeGreaterThanOrEqual(44);
 });
 it('tints a tab the pointer hovers so it reads as clickable', async () => {
  const ui = await render(<AppBottomNav {...makeProps(2)} />);
@@ -60,9 +69,10 @@ it('tints a tab the pointer hovers so it reads as clickable', async () => {
  await fireEvent(ui.getByRole('tab', { name: 'Profil' }), 'hoverOut', {});
  expect(style(ui, 'nav-icon-profile').backgroundColor).toBe(light.transparent);
 });
-it('keeps every label whole on one line and lets it shrink at large font sizes', async () => {
+it('shows icons only, while screen readers still hear each tab name', async () => {
  const ui = await render(<AppBottomNav {...makeProps()} />);
  for (const label of ['Istoric', 'Compară', 'Scanează', 'Alergii', 'Profil']) {
-  expect(ui.getByText(label).props).toEqual(expect.objectContaining({ numberOfLines: 1, adjustsFontSizeToFit: true }));
+  expect(ui.queryByText(label)).toBeNull();
+  expect(ui.getByRole('tab', { name: label })).toBeTruthy();
  }
 });

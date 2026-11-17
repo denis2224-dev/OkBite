@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Category, Code, Ingredient, type NutrientKey, Product, ScoreResult, Uuid } from '../_shared/contract.ts';
 import { BUILTIN_INGREDIENTS, matchIngredients, resolveOffCategory } from '../_shared/ingredients/index.ts';
 import { computeScore } from '../_shared/score/index.ts';
+import { photoUrl } from './photoUrl.ts';
 
 // Explicit public columns: C2 deliberately denies SELECT * to shopper readers.
 const columns =
@@ -42,11 +43,6 @@ export async function loadProduct(by: { id: string } | { code: string }): Promis
       ingredient: m.slug ? (mergedKb.get(m.slug) ?? null) : null,
     }));
   }
-  const photoUrl = (path: string | null) =>
-    path?.startsWith(`${row.id}/`) &&
-      /^[a-f0-9-]+\/[a-z][a-z0-9-]*\.jpg$/.test(path)
-      ? db.storage.from('products').getPublicUrl(path).data.publicUrl
-      : null;
   const date = (value: string) => new Date(value).toISOString().slice(0, 10);
   const resolvedCategory = resolveOffCategory({
     category: Category.parse(row.category),
@@ -89,8 +85,8 @@ export async function loadProduct(by: { id: string } | { code: string }): Promis
     })),
     allergens: row.allergens,
     mayContain: row.may_contain,
-    imageUrl: photoUrl(row.image_path),
-    labelImageUrl: photoUrl(row.ingredients_photo_path ?? row.nutrition_photo_path),
+    imageUrl: photoUrl(db, row.id, row.image_path),
+    labelImageUrl: photoUrl(db, row.id, row.ingredients_photo_path ?? row.nutrition_photo_path),
     source: row.source,
     addedAt: date(row.added_at),
     verifiedAt: row.verified_at ? date(row.verified_at) : null,
