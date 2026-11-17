@@ -3,7 +3,7 @@ import { createReadStream } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { parseArgs } from 'node:util';
 import { createGunzip } from 'node:zlib';
-import { OffProduct, inferCategorySlug, offNutrients } from '../packages/shared/src/off/mapOffProduct';
+import { OffProduct, inferCategorySlug, offImageUrl, offNutrients } from '../packages/shared/src/off/mapOffProduct';
 
 /**
  * Fills nutrients of OFF-imported products saved with none, from OFF's JSONL export.
@@ -11,13 +11,15 @@ import { OffProduct, inferCategorySlug, offNutrients } from '../packages/shared/
  * Only unverified, non-shopper rows whose nutrients are all still null are touched, and only nutrient columns.
  * With --categories it instead re-infers category_slug of such rows in 'necunoscut' (no score) or
  * 'unt-si-smantana' (ice cream used to land there) from OFF's categories, using the importer's rules.
+ * With --images it fills image_path of such rows saved without a photo with OFF's front-photo URL.
  */
 const NUTRIENTS = ['kcal', 'fat', 'sat', 'sugar', 'salt', 'protein', 'fiber'] as const;
 const EMPTY = NUTRIENTS.map((c) => `${c}=is.null`).join('&');
 const OFF_ROWS = 'source=like.Open%20Food%20Facts*&status=eq.unverified&added_by_device=is.null';
-const TARGETS = { nutrients: `${OFF_ROWS}&${EMPTY}`, categories: `${OFF_ROWS}&category_slug=in.(necunoscut,unt-si-smantana)` };
+const TARGETS = { nutrients: `${OFF_ROWS}&${EMPTY}`, categories: `${OFF_ROWS}&category_slug=in.(necunoscut,unt-si-smantana)`,
+  images: `${OFF_ROWS}&image_path=is.null` };
 export type Mode = keyof typeof TARGETS;
-type Patch = Partial<Record<(typeof NUTRIENTS)[number], number>> | { category_slug: string };
+type Patch = Partial<Record<(typeof NUTRIENTS)[number], number>> | { category_slug: string } | { image_path: string };
 
 /** The columns to set for one export line, or null when it is not a target code or OFF has nothing new. */
 export function patchFor(
@@ -36,6 +38,10 @@ export function patchFor(
   const off = OffProduct.safeParse(raw);
   const code = off.success ? off.data.code?.trim() : null;
   if (!off.success || !code || !codes.has(code)) return null;
+  if (mode === 'images') {
+    const url = offImageUrl(off.data, code);
+    return url ? { code, patch: { image_path: url } } : null;
+  }
   if (mode === 'categories') {
     const unit = off.data.nutrition_data_per === '100ml' || off.data.product_quantity_unit === 'ml' ? 'ml' : 'g';
     const slug = inferCategorySlug(off.data, off.data.product_name ?? '', off.data.ingredients_text_ro ?? '', unit);
@@ -86,7 +92,7 @@ async function save(code: string, patch: Patch, mode: Mode) {
 
 export async function backfill(file: string, write: boolean, mode: Mode = 'nutrients') {
   const codes = await targetCodes(mode);
-  console.log(`${codes.size} OFF rows have no ${mode === 'nutrients' ? 'nutrients' : 'category'}`);
+  console.log(`${codes.size} OFF rows have no ${{ nutrients: 'nutrients', categories: 'category', images: 'photo' }[mode]}`);
   const lines = createInterface({
     input: createReadStream(file).pipe(createGunzip()),
     crlfDelay: Infinity,
@@ -112,14 +118,14 @@ export async function backfill(file: string, write: boolean, mode: Mode = 'nutri
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const { values } = parseArgs({
     options: { file: { type: 'string' }, write: { type: 'boolean', default: false },
-      categories: { type: 'boolean', default: false },
+      categories: { type: 'boolean', default: false }, images: { type: 'boolean', default: false },
     },
   });
   if (!values.file) throw new Error('--file <openfoodfacts-products.jsonl.gz> is required');
   const write = values.write ?? false;
   if (!write) console.log('Dry run: nothing is written. Add --write to save.');
-  const mode: Mode = values.categories ? 'categories' : 'nutrients';
-  const what = mode === 'nutrients' ? 'nutrients' : 'a category';
+  const mode: Mode = values.images ? 'images' : values.categories ? 'categories' : 'nutrients';
+  const what = { nutrients: 'nutrients', categories: 'a category', images: 'a photo' }[mode];
   backfill(values.file, write, mode).then(
     ({ found, saved, rest }) =>
       console.log(

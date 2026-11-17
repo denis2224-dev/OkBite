@@ -7,7 +7,7 @@ import { normalizeCode } from '../ean';
 export const OFF_FIELDS =
   'code,product_name,product_name_ro,brands,quantity,ingredients_text,ingredients_text_ro,lang,' +
   'nutrition_data_per,product_quantity_unit,nutriments,categories_tags,allergens_tags,traces_tags,' +
-  'nova_group,additives_tags';
+  'nova_group,additives_tags,image_front_url';
 export const OFF_USER_AGENT = 'OkBite/1.0 (https://github.com/denis2224-dev/OkBite)'; // OFF asks every client to name itself
 export const OFF_SOURCE = 'Open Food Facts (ODbL)';
 
@@ -28,10 +28,33 @@ export const OffProduct = z.object({
   traces_tags: z.array(z.string()).nullish(),
   nova_group: z.unknown(), // anything but an integer 1..4 maps to processing null
   additives_tags: z.array(z.string()).nullish(),
+  image_front_url: z.string().nullish(), // API only; the JSONL export has just `images.selected.front`
+  images: z.unknown(), // parsed in offImageUrl, so an odd photo entry never drops the product
   // OFF schema 1004+ (the 2026 JSONL export) keeps nutrients here and leaves `nutriments` empty.
   nutrition: z.object({ aggregated_set: z.unknown() }).passthrough().nullish(),
 });
 export type OffProduct = z.infer<typeof OffProduct>;
+
+const SelectedFronts = z.object({
+  selected: z.object({ front: z.record(z.object({ rev: z.union([z.string(), z.number()]) }).passthrough()) }),
+});
+
+/** Only OFF's own front-photo URLs are kept, at the 400 px size. */
+export const OFF_IMAGE_URL = /^https:\/\/images\.openfoodfacts\.org\/images\/products\/(\d{3}\/){3}\d+\/front_[a-z]{2}\.\d+\.400\.jpg$/;
+
+/** The front photo: OFF's URL when the API gave one, else built from the export's selected front image. */
+export function offImageUrl(off: OffProduct, code: string): string | null {
+  if (off.image_front_url && OFF_IMAGE_URL.test(off.image_front_url)) return off.image_front_url;
+  const parsed = SelectedFronts.safeParse(off.images);
+  const fronts = parsed.success ? parsed.data.selected.front : {};
+  const lang = ['ro', off.lang ?? '', 'en'].find((l) => fronts[l]) ?? Object.keys(fronts)[0];
+  const front = lang ? fronts[lang] : undefined;
+  const rev = front ? String(front.rev) : '';
+  // OFF pads codes to 13 digits and splits them 3/3/3/rest (00001373 -> 000/000/000/1373).
+  const folder = code.padStart(13, '0').replace(/^(\d{3})(\d{3})(\d{3})(\d+)$/, '$1/$2/$3/$4');
+  const url = `https://images.openfoodfacts.org/images/products/${folder}/front_${lang}.${rev}.400.jpg`;
+  return OFF_IMAGE_URL.test(url) ? url : null;
+}
 
 /** Ingredient knowledge-base entries the additive tags are matched against (data/ingredients.json). */
 export type AdditiveKey = Pick<IngredientEntry, 'slug' | 'aliases' | 'group'>;
@@ -208,6 +231,7 @@ export function mapOffProduct(
         ? { level: nova, source: 'off' as const }
         : null,
     additives, // slug null = an E-number not in our knowledge base yet
+    imageUrl: offImageUrl(off, code),
     source: OFF_SOURCE,
     sourceUrl: `https://world.openfoodfacts.org/product/${code}`,
   };
@@ -239,6 +263,7 @@ export function toRow(p: OffMapped, source: string = p.source) {
     may_contain: p.mayContain,
     nova_group: p.processing?.level ?? null,
     nova_source: p.processing?.source ?? null,
+    image_path: p.imageUrl, // an OFF URL, not a bucket path; the loaders accept both
     source,
   };
 }

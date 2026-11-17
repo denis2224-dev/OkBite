@@ -26,6 +26,14 @@ describe('api in demo mode without a backend', () => {
     await expect(api.report({ productId: sample.id, message: 'Greșit' })).resolves.toBeUndefined();
   });
 
+  it('returns the sample products of one shelf only, as product and score pairs', async () => {
+    const yogurts = await api.topProducts('iaurt');
+    expect(yogurts.category).toBe('iaurt');
+    expect(yogurts.products).toHaveLength(3);
+    expect(yogurts.products.every(entry => entry.product.category.slug === 'iaurt' && 'score' in entry)).toBe(true);
+    expect(await api.topProducts('apa')).toEqual({ category: 'apa', products: [] });
+  });
+
   it('identifies a photo as one of the sample products', async () => {
     const result = await api.identify('aGVsbG8=');
     expect(result.status).toBe('found');

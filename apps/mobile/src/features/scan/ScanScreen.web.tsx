@@ -6,6 +6,7 @@ import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import type { Palette } from '../../theme/tokens';
 import { StatusPanel, errorMessage } from '../capture/StatusPanel';
+import { CameraBlocked } from './CameraBlocked';
 import { ManualCode } from './ManualCode';
 import { useScanLookup } from './useScanLookup';
 import { useWebLiveScan } from './useWebLiveScan';
@@ -38,21 +39,21 @@ export default function ScanScreenWeb({ embedded = false }: ScanScreenProps = {}
   const working = state.status === 'working';
   const denied = liveStatus === 'denied';
   const cameraOn = liveStatus === 'starting' || liveStatus === 'live';
+  const frame = embedded ? styles.embeddedPreview : styles.preview;
 
   const body = (
     <>
-      {focused && state.status !== 'found' && cameraOn ? (
-        <View testID="scan-preview" style={embedded ? styles.embeddedPreview : styles.preview}>
-          <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          {liveStatus === 'live' ? <ScanReticle /> : <ActivityIndicator style={StyleSheet.absoluteFill} color={colors.cameraInk} />}
+      {focused && state.status !== 'found' ? (
+        <View testID="scan-preview" style={cameraOn ? frame : [frame, styles.blocked]}>
+          {cameraOn ? <>
+            <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            {liveStatus === 'live' ? <ScanReticle /> : <ActivityIndicator style={StyleSheet.absoluteFill} color={colors.cameraInk} />}
+          </> : <CameraBlocked
+            title={denied && retried ? ro.scan.deniedText : undefined}
+            message={liveStatus === 'unsupported' ? ro.scan.webManualOnly : !denied ? cameraMessage(liveStatus) : retried ? deniedHelp() : ro.scan.deniedText}
+            actions={['unavailable', 'denied', 'busy'].includes(liveStatus) ? [{ label: ro.errors.retry, onPress: () => { setRetried(true); retryLive(); } }] : []}
+          />}
         </View>
-      ) : null}
-      {focused && state.status !== 'found' && !cameraOn ? (
-        <StatusPanel
-          title={denied && retried ? ro.scan.deniedText : undefined}
-          message={liveStatus === 'unsupported' ? ro.scan.webManualOnly : !denied ? cameraMessage(liveStatus) : retried ? deniedHelp() : ro.scan.deniedText}
-          actions={['unavailable', 'denied', 'busy'].includes(liveStatus) ? [{ label: ro.errors.retry, onPress: () => { setRetried(true); retryLive(); } }] : []}
-        />
       ) : null}
       {working ? <View style={styles.status}><ActivityIndicator /><Body style={embedded ? { color: colors.cameraInk } : undefined}>{ro.capture.working}</Body></View> : null}
       {state.status === 'error' || state.status === 'offline' ? (
@@ -87,5 +88,7 @@ const createStyles = (colors: Palette) => StyleSheet.create({
   preview: { width: '100%', aspectRatio: 3 / 4, minHeight: 280, maxHeight: 440, borderRadius: 20, overflow: 'hidden', backgroundColor: colors.cameraBackground, justifyContent: 'center' },
   embedded: { gap: 16, paddingHorizontal: 16 },
   embeddedPreview: { width: '100%', aspectRatio: 1.15, minHeight: 240, maxHeight: 340, borderRadius: 20, overflow: 'hidden', backgroundColor: colors.cameraBackground, justifyContent: 'center' },
+  // A blocked camera keeps the frame's minimum size but grows with its text (200% font) instead of clipping it.
+  blocked: { maxHeight: undefined, aspectRatio: undefined },
   status: { flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },
 });

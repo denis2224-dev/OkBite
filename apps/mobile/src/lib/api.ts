@@ -5,6 +5,7 @@ import { ro } from '../copy/ro';
 import { isPreview } from './preview';
 import { demoApi } from './demoApi';
 import { waitForAnalysis, type AnalysisOutcome } from './analysisOutcome';
+import { ShelfCategory, TopProductsResponse, TOP_PRODUCTS_LIMIT } from '../features/shelf/topProducts';
 export class ApiError extends Error {constructor(public code:ErrorCode|'offline'|'invalid_response'|'configuration'){super(ro.errors[code]);this.name='ApiError';}}
 // Photo analysis waits past the server's 40 s provider deadline (supabase/functions/_lib/claude.ts AI_DEADLINE_MS).
 const TIMEOUT_MS=20000,AI_TIMEOUT_MS=55000;
@@ -28,5 +29,11 @@ export const api={
  async identifyOutcome(photoBase64:string):Promise<AnalysisOutcome<IdentifyResponse>>{const body=validate(IdentifyRequest,{photo:photoBase64});return waitForAnalysis(Promise.resolve(demo()?demoApi.identify():request('identify',IdentifyResponse,body,undefined,null)));},
  async readLabelOutcome(req:ReadLabelRequest):Promise<AnalysisOutcome<ReadLabelResponse>>{const body=validate(ReadLabelRequest,req);return waitForAnalysis(Promise.resolve(demo()?demoApi.readLabel(body.nutritionImage!==null):request('read-label',ReadLabelResponse,body,undefined,null)));},
  async addProduct(req:AddProductRequest):Promise<LookupResponse>{if(demo())return demoApi.addProduct(validate(AddProductRequest,req));return request('add-product',LookupResponse,validate(AddProductRequest,req));},
+ /** Candidates for "Cel mai bun din raft" in one category; the app ranks them (docs/api/top-products.md). */
+ async topProducts(category:string):Promise<TopProductsResponse>{
+  const slug=validate(ShelfCategory,category);if(demo())return demoApi.topProducts(slug,TOP_PRODUCTS_LIMIT);
+  const result=await request('top-products',TopProductsResponse,undefined,{category:slug,limit:String(TOP_PRODUCTS_LIMIT)});
+  if(result.category!==slug)throw new ApiError('invalid_response');return result;
+ },
  async report(req:ReportRequest):Promise<void>{if(demo()){validate(ReportRequest,req);return;}await request('report',z.object({status:z.literal('ok')}),validate(ReportRequest,req));},
 };
