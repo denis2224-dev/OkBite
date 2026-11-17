@@ -44,20 +44,20 @@ it('removes one record on long press and offers undo that restores the saved dat
   await waitFor(() => expect(screen.getByText(entry.product.name)).toBeTruthy());
   expect(restoreToHistory).toHaveBeenCalledWith(entry);
 });
-it('keeps a row when delete fails and provides an accessible delete button', async () => {
+it('keeps a row when delete fails, deleting through the accessible delete action', async () => {
   jest.mocked(removeFromHistory).mockRejectedValueOnce(new Error('disk'));
   await render(<ToastProvider><HistoryScreen/></ToastProvider>);
   await screen.findByText(entry.product.name);
-  await fireEvent.press(screen.getByRole('button', { name: ro.history.remove(entry.product.name) }));
+  await fireEvent(screen.getByRole('button', { name: new RegExp(ro.history.open(entry.product.name)) }), 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
   await screen.findByText(ro.history.removeError);
   expect(screen.getByText(entry.product.name)).toBeTruthy();
 });
-it('shows a thumbnail when supplied and a dash for unavailable scores', async () => {
+it('shows no photo in rows and fără scor for unavailable scores', async () => {
   jest.mocked(listHistory).mockResolvedValue([{ ...entry, product: { ...entry.product, imageUrl: 'https://example.com/product.jpg' }, score: { ...entry.score, score: null, grade: 'unavailable' } }]);
   await render(<HistoryScreen/>);
   await screen.findByText(entry.product.name);
-  expect(screen.getByTestId('history-thumbnail').props.source).toEqual({ uri: 'https://example.com/product.jpg' });
-  expect(screen.getByText('—')).toBeTruthy();
+  expect(screen.queryByTestId('history-thumbnail')).toBeNull(); // rows show the score tag, not a photo
+  expect(screen.getByText(ro.history.noScore)).toBeTruthy();
   expect(screen.queryByText('0')).toBeNull();
 });
 it('keeps failed undo retryable and shows a newer scan after restoration succeeds', async () => {
@@ -66,7 +66,7 @@ it('keeps failed undo retryable and shows a newer scan after restoration succeed
   jest.mocked(restoreToHistory).mockRejectedValueOnce(new Error('disk')).mockResolvedValueOnce();
   await render(<ToastProvider><HistoryScreen/></ToastProvider>);
   await screen.findByText(entry.product.name);
-  await fireEvent.press(screen.getByRole('button', { name: ro.history.remove(entry.product.name) }));
+  await fireEvent(screen.getByRole('button', { name: new RegExp(ro.history.open(entry.product.name)) }), 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
   await screen.findByText(ro.history.removed);
   await fireEvent.press(screen.getByRole('button', { name: ro.history.undo }));
   await screen.findByText(ro.history.restoreError);
@@ -86,7 +86,7 @@ it('refreshes queue-saved products when a queue event arrives during deletion', 
   jest.mocked(listHistory).mockResolvedValueOnce([entry, second]).mockResolvedValue([queued, second]);
   await render(<HistoryScreen/>);
   await screen.findByText(entry.product.name);
-  await fireEvent.press(screen.getByRole('button', { name: ro.history.remove(entry.product.name) }));
+  await fireEvent(screen.getByRole('button', { name: new RegExp(ro.history.open(entry.product.name)) }), 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
   await act(() => mockQueueListener());
   await act(() => finish());
   await screen.findByText(queued.product.name);

@@ -1,5 +1,5 @@
 import type { Product } from '@okbite/shared';
-import { Body, Card, Heading } from '../../ui';
+import { Body, Card, Section } from '../../ui';
 import { useTheme } from '../../theme/useTheme';
 import { ro } from '../../copy/ro';
 
@@ -15,7 +15,7 @@ export function SourceCard({ product }: { product: Product }) {
   const off = isOffProduct(product);
   const verified = product.status === 'verified' && !!product.verifiedAt;
   return <Card testID="source-card">
-    <Heading style={{ fontSize: 18 }}>{ro.result.source}</Heading>
+    <Section>{ro.result.source}</Section>
     {off ? <Body>{ro.result.offNote}</Body> : !verified && <Body>{ro.result.unverifiedNote}</Body>}
     <Body style={{ color: colors.muted }}>{product.source}</Body>
     <Body style={{ color: colors.muted }}>{off ? ro.result.imported : ro.result.added}: {roDate(product.addedAt)}</Body>

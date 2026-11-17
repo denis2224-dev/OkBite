@@ -1,16 +1,23 @@
-import { View } from 'react-native';
+import { useState } from 'react';
+import { Image, View } from 'react-native';
 import { productScore, type Product, type ScoreResult } from '@okbite/shared';
-import { Body, Heading } from '../../ui';
-import { fonts } from '../../theme/tokens';
+import { Body, Caption, Title } from '../../ui';
+import { fonts, radii } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 import { letterTones } from '../../theme/letterTones';
+import { tierTone } from '../../theme/tierTones';
 import { ro } from '../../copy/ro';
 import { NutriScoreScale } from './NutriScoreScale';
+import { ScoreTag } from './ScoreTag';
 
-/** Letter tile, product name and tier, then the A–E bar with the disclaimer directly under it.
- * Compare's picker passes no product: it shows its own name line. */
+/** Result hero: photo thumbnail and name, the product score as a shelf tag with its tier, then the A–E bar
+ * (naming the letter) with the disclaimer directly under it. Without a tier, and in Compare's picker
+ * (`identity={false}`), it keeps the letter tile, name and tier lines. */
 export function ScoreCard({ product, score, identity = true }: { product?: Product; score: ScoreResult; identity?: boolean }) {
   const { colors } = useTheme();
+  // A photo URL that fails to load (e.g. a removed OFF image) hides the thumbnail instead of leaving an empty tile.
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const thumbUrl = product?.imageUrl && product.imageUrl !== failedUrl ? product.imageUrl : null;
   // With a product, the 0-100 number is the product score (nutrition, additives, processing) with its tier,
   // and the tile carries only the Nutri-Score letter, so each number appears once.
   const scored = product ? productScore(product, score) : null;
@@ -22,6 +29,29 @@ export function ScoreCard({ product, score, identity = true }: { product?: Produ
   // With a product line the tile is decoration: the line reads the score and the A-E bar reads the letter.
   const tileA11y = productLine ? { accessible: false, accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' as const }
     : { accessible: true, accessibilityRole: 'image' as const, accessibilityLabel: shown ? ro.score.ringLabel(shown.value, shown.grade) : '' };
+  const hidden = { accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' as const };
+  if (product && identity && shown && scored?.tier && productLine) {
+    const tier = scored.tier;
+    return <View style={{ gap: 16 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+        {thumbUrl && <Image testID="product-thumb" source={{ uri: thumbUrl }} accessible={false} {...hidden} resizeMode="contain"
+          onError={() => setFailedUrl(thumbUrl)}
+          style={{ width: 64, height: 64, borderRadius: radii.small, backgroundColor: colors.soft }} />}
+        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+          <Title numberOfLines={2}>{product.name}</Title>
+          <Body style={{ color: colors.muted }}>{[product.brand, product.quantity].filter(Boolean).join(', ')}</Body>
+        </View>
+      </View>
+      <View testID="score-row" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', rowGap: 14, columnGap: 18 }}>
+        <ScoreTag testID="product-score" score={shown.value} tier={tier} label={productLine} />
+        <Title {...hidden} accessibilityRole={undefined} style={{ color: tierTone(tier).fg }}>{ro.tiers[tier]}</Title>
+      </View>
+      <View style={{ gap: 12 }}>
+        <NutriScoreScale letter={score.letter} showLetter />
+        <Caption>{ro.score.disclaimer}</Caption>
+      </View>
+    </View>;
+  }
   return <View style={{ gap: 12 }}>
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 16 }}>
       {shown && tone && <View {...tileA11y}
@@ -31,7 +61,7 @@ export function ScoreCard({ product, score, identity = true }: { product?: Produ
       </View>}
       <View style={{ flex: 1, minWidth: 160, gap: 2 }}>
         {product && identity && <>
-          <Heading numberOfLines={2} style={{ fontSize: 22, lineHeight: 28 }}>{product.name}</Heading>
+          <Title numberOfLines={2}>{product.name}</Title>
           <Body style={{ color: colors.muted }}>{[product.brand, product.quantity].filter(Boolean).join(', ')}</Body>
         </>}
         {productLine && <Body testID="product-score" style={{ fontFamily: fonts.bold }}>{productLine}</Body>}
@@ -42,6 +72,6 @@ export function ScoreCard({ product, score, identity = true }: { product?: Produ
       <Body>{ro.result.insufficient}</Body><Body>{ro.result.missing}</Body>
       {score.missing.map(key => <Body key={key}>{ro.result.nutrients[key]}</Body>)}
     </>}
-    <Body style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>{ro.score.disclaimer}</Body>
+    <Caption>{ro.score.disclaimer}</Caption>
   </View>;
 }

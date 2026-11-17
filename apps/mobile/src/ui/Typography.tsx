@@ -1,5 +1,19 @@
 import { Text, type TextProps } from 'react-native';
 import { useTheme } from '../theme/useTheme';
-import { fonts } from '../theme/tokens';
-export function Body({style,...props}:TextProps) {const {colors}=useTheme();return <Text {...props} allowFontScaling style={[{fontFamily:fonts.body,fontSize:15,lineHeight:23,color:colors.ink},style]}/>;}
-export function Heading({style,...props}:TextProps) {const {colors}=useTheme();return <Text {...props} accessibilityRole="header" allowFontScaling style={[{fontFamily:fonts.heading,fontSize:25,lineHeight:30,color:colors.ink},style]}/>;}
+import { fonts, typeScale } from '../theme/tokens';
+type Step = keyof typeof typeScale;
+function header(step: Step) {
+ return function Header({ style, ...props }: TextProps) {
+  const { colors } = useTheme();
+  return <Text {...props} accessibilityRole="header" allowFontScaling style={[{ fontFamily: fonts.heading, ...typeScale[step], color: colors.ink }, style]} />;
+ };
+}
+export function Body({style,...props}:TextProps) {const {colors}=useTheme();return <Text {...props} allowFontScaling style={[{fontFamily:fonts.body,...typeScale.body,color:colors.ink},style]}/>;}
+/** Muted small text for notes, sources and disclaimers. */
+export function Caption({style,...props}:TextProps) {const {colors}=useTheme();return <Text {...props} allowFontScaling style={[{fontFamily:fonts.body,...typeScale.caption,color:colors.muted},style]}/>;}
+/** Screen titles (26/32). */
+export const Heading = header('display');
+/** Product names and other large titles (22/28). */
+export const Title = header('title');
+/** Card and section headings (18/24). */
+export const Section = header('section');

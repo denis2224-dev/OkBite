@@ -48,10 +48,28 @@ it.each([['with', foundYogurt.product.nutrients], ['without', { ...foundYogurt.p
   expect(screen.getByText(`${foundYogurt.product.brand}, ${foundYogurt.product.quantity}`)).toBeTruthy();
   expect(screen.queryByText(`${foundYogurt.product.brand} · ${foundYogurt.product.quantity}`)).toBeNull();
 });
-it('shows the yogurt fixture as 86 din 100, Excelent, and reads that score once', async () => {
+it('shows the yogurt fixture as 86 din 100, Excelent, and reads that score once, from the tag', async () => {
   await render(<ResultView {...foundYogurt} />);
-  expect(screen.getByTestId('product-score')).toHaveTextContent('86 din 100 · Excelent');
-  expect(screen.queryByLabelText('86 din 100 · Excelent')).toBeNull(); // the tile does not repeat it
+  expect(screen.getAllByLabelText('86 din 100 · Excelent')).toHaveLength(1);
+  expect(screen.getByTestId('product-score')).toHaveProp('accessibilityLabel', '86 din 100 · Excelent');
+  expect(screen.queryByText(`${ro.score.title}:`, { exact: false })).toBeNull();
+  expect(screen.queryByText(`${ro.tiers.nutriScore} B`)).toBeNull(); // no chip
+});
+it('shows the product photo once, as a thumbnail before the name', async () => {
+  const product = { ...foundYogurt.product, imageUrl: 'https://example.test/y.jpg' };
+  await render(<ResultView product={product} score={foundYogurt.score} />);
+  expect(screen.getAllByTestId('product-thumb', { includeHiddenElements: true })).toHaveLength(1);
+  expect(inOrder().match(/"type":"Image"/g)).toHaveLength(1); // the mid-page photo is gone
+  expect(inOrder().indexOf('product-thumb')).toBeLessThan(inOrder().indexOf(product.name));
+});
+it('leaves no empty photo box when the product has no photo', async () => {
+  await render(<ResultView product={{ ...foundYogurt.product, imageUrl: null }} score={foundYogurt.score} />);
+  expect(screen.queryByTestId('product-thumb', { includeHiddenElements: true })).toBeNull();
+  expect(screen.getByText(foundYogurt.product.name)).toBeTruthy();
+});
+it('lets the score row wrap at large text sizes', async () => {
+  await render(<ResultView {...foundYogurt} />);
+  expect(StyleSheet.flatten(screen.getByTestId('score-row').props.style)).toMatchObject({ flexWrap: 'wrap' });
 });
 it('shows the score disclaimer exactly once', async () => {
   await render(<ResultView {...foundYogurt} />);
@@ -83,7 +101,7 @@ it('preserves a supplied water score when label nutrients are absent', async () 
   const water = { ...foundYogurt.score, score: 100, letter: 'A' as const, grade: 'good' as const };
   await render(<ResultView product={product} score={water} />);
   expect(displayScore(product, water).score).toBe(100);
-  expect(screen.getByText(productLine(product, water))).toBeTruthy();
+  expect(screen.getByLabelText(productLine(product, water))).toBeTruthy();
 });
 it('withholds a fat-category score when total fat is missing', async () => {
   const product = { ...foundYogurt.product, category: { ...foundYogurt.product.category, scoreKind: 'fat' as const }, nutrients: { ...foundYogurt.product.nutrients, fat: null } };
@@ -100,7 +118,7 @@ it('opens the real ingredient and original-label routes for the displayed produc
   expect(router.push).toHaveBeenLastCalledWith({ pathname: '/product/[id]/label', params: { id: foundYogurt.product.id } });
 });
 
-it('displays matched ingredient roles and risk explanations inline on the product result screen', async () => {
+it('keeps additives in the list and their roles and explanations one tap away in the additive sheet', async () => {
   const colaProduct = {
     ...foundYogurt.product,
     name: 'Coca-Cola Zero',
@@ -130,11 +148,12 @@ it('displays matched ingredient roles and risk explanations inline on the produc
     ],
   };
   await render(<ResultView product={colaProduct} score={{ ...foundYogurt.score, score: 53, letter: 'C', grade: 'medium' }} />);
-  // Once in the additives list, once in the explained ingredients.
-  expect(screen.getAllByText('aspartam')).toHaveLength(2);
-  expect(screen.getByText('Îndulcitor intens fără calorii (E951)')).toBeTruthy();
+  // In the additives list only; ingredient explanations live on the Ingrediente page.
+  expect(screen.getAllByText('aspartam')).toHaveLength(1);
+  expect(screen.queryByText(/sursă de fenilalanină/)).toBeNull(); // not inline any more
+  await fireEvent.press(screen.getByRole('button', { name: /^aspartam, / }));
   expect(screen.getByText(/sursă de fenilalanină/)).toBeTruthy();
-  expect(screen.getByText('Colorant sintetic (E150d)')).toBeTruthy();
+  expect(screen.getByText(/Îndulcitor intens fără calorii/)).toBeTruthy();
 });
 
 it('re-scores Open Food Facts Coca-Cola Zero as a beverage (53/100) and analyzes its ingredients when DB links are empty', async () => {
@@ -160,13 +179,11 @@ it('re-scores Open Food Facts Coca-Cola Zero as a beverage (53/100) and analyzes
   };
   await render(<ResultView product={offCola} score={wrongGeneralScore} />);
   expect(displayScore(offCola, wrongGeneralScore).score).toBe(53);
-  expect(screen.getByText(productLine(offCola, wrongGeneralScore))).toBeTruthy();
+  expect(screen.getByLabelText(productLine(offCola, wrongGeneralScore))).toBeTruthy();
   expect(screen.getByText('Conține îndulcitori')).toBeTruthy();
-  expect(screen.getAllByText('aspartam')).toHaveLength(2); // additives list and explained ingredients
-  expect(screen.getByText('Îndulcitor intens fără calorii (E951)')).toBeTruthy();
-  // The name already says "acidifiant", so the role line is left out.
-  expect(screen.getAllByText('acidifiant: acid fosforic (E338)')).toHaveLength(2); // additives list and explained ingredients
-  expect(screen.queryByText('Acidifiant (E338)')).toBeNull();
+  expect(screen.getAllByText('aspartam')).toHaveLength(1); // additives list; explanations are on the Ingrediente page
+  expect(screen.getAllByText('acidifiant: acid fosforic (E338)')).toHaveLength(1); // additives list
+  expect(screen.queryByText('Îndulcitor intens fără calorii (E951)')).toBeNull(); // role lines left the result screen
 });
 
 
@@ -174,11 +191,11 @@ it('re-scores Open Food Facts Coca-Cola Zero as a beverage (53/100) and analyzes
 it.each(['A', 'B', 'C', 'D', 'E'] as const)('shows the supplied Nutri-Score letter %s in the tile, on the bar and with the disclaimer under it', async letter => {
   await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter }} />);
   expect(screen.getByText(letter, { includeHiddenElements: true })).toBeTruthy(); // drawn in the tile; the A-E bar announces it
-  expect(screen.getByText(productLine(foundYogurt.product, { ...foundYogurt.score, letter }))).toBeTruthy();
+  expect(screen.getByLabelText(productLine(foundYogurt.product, { ...foundYogurt.score, letter }))).toBeTruthy();
   expect(screen.getByLabelText(`Nutri-Score: ${letter}`)).toBeTruthy();
   const order = inOrder();
   expect(order.indexOf(`Nutri-Score: ${letter}`)).toBeLessThan(order.indexOf(ro.score.disclaimer));
-  expect(order.indexOf(ro.score.disclaimer)).toBeLessThan(order.indexOf(ro.result.whyLetter(letter)));
+  expect(order.indexOf(ro.score.disclaimer)).toBeLessThan(order.indexOf('reason-tone-'));
 });
 it('does not present a stale letter when the nutrition score is unavailable', async () => {
   await render(<ResultView product={{ ...foundYogurt.product, nutrients: { ...foundYogurt.product.nutrients, salt: null } }} score={foundYogurt.score} />);
@@ -188,14 +205,14 @@ it('does not present a stale letter when the nutrition score is unavailable', as
 it('leaves an absent Nutri-Score letter unavailable without inventing one', async () => {
   await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter: null }} />);
   expect(screen.queryByLabelText(/Nutri-Score:/)).toBeNull();
-  expect(screen.getByText(productLine(foundYogurt.product, { ...foundYogurt.score, letter: null }))).toBeTruthy();
+  expect(screen.getByLabelText(productLine(foundYogurt.product, { ...foundYogurt.score, letter: null }))).toBeTruthy();
 });
-it('orders the profile alert, photo, score, reasons, allergens, ingredients, portion, the original label and the source last', async () => {
+it('orders the profile alert, score, reasons, the detail buttons, the composition card, the original label and the source last', async () => {
   mockProfile = { ...mockProfile, allergens: ['Lapte'] };
   await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter: 'B' }} />);
   const order = inOrder();
-  const markers = [ro.result.profileAlertSub, productLine(foundYogurt.product, foundYogurt.score), ro.result.whyLetter('B'),
-    ro.result.allergens, ro.result.transcribedLabel, ro.result.portionNote, ro.result.original, ro.result.source].map(text => order.indexOf(text));
+  const markers = [ro.result.profileAlertSub, productLine(foundYogurt.product, foundYogurt.score), 'reason-tone-',
+    ro.result.ingredientsTile, ro.result.composition, ro.result.original, ro.result.source].map(text => order.indexOf(text));
   expect(markers.every(index => index >= 0)).toBe(true);
   expect([...markers].sort((a, b) => a - b)).toEqual(markers);
 });
@@ -222,13 +239,14 @@ it('raises an amber outlined alert for a may-contain allergen on the profile', a
   expect(screen.queryByTestId('profile-alert-contains')).toBeNull();
 });
 
-it('explains the letter with at most three supplied reasons, problems first, and sugar in teaspoons', async () => {
+it('lists at most three supplied reasons, problems first, sugar in teaspoons, with no heading above them', async () => {
   const score = { ...foundYogurt.score, letter: 'D' as const, reasons: [
     { tone: 'good' as const, title: 'Bogat în fibre', detail: '6 g la 100 g' },
     { tone: 'bad' as const, title: 'Mult zahăr', detail: '24 g la 100 g' },
   ] };
   await render(<ResultView product={{ ...foundYogurt.product, nutrients: { ...foundYogurt.product.nutrients, sugar: 8 } }} score={score} />);
-  expect(screen.getByText(ro.result.whyLetter('D'))).toBeTruthy();
+  expect(screen.queryByText(ro.result.whyLetter('D'))).toBeNull(); // no "De ce" heading above the reasons
+  expect(screen.queryByText(ro.tiers.why)).toBeNull();
   const order = inOrder();
   expect(order.indexOf('Mult zahăr')).toBeLessThan(order.indexOf('Bogat în fibre'));
   expect(screen.getByText(`≈ ${ro.result.teaspoons.many('2')}`)).toBeTruthy();
@@ -257,21 +275,20 @@ it('makes "Compară cu alt produs" the primary action for this product', async (
   await fireEvent.press(compare);
   expect(router.push).toHaveBeenLastCalledWith({ pathname: '/compare', params: { id: foundYogurt.product.id } });
 });
-it('puts collapse, share and report in a top row of 44 pt icon buttons', async () => {
+it('puts share and report in a top row of 44 pt icon buttons, with no back arrow', async () => {
   await render(<ResultView {...foundYogurt} />);
-  for (const name of [ro.result.closeSheet, ro.share.button, ro.result.report]) {
+  expect(screen.queryByRole('button', { name: ro.result.closeSheet })).toBeNull();
+  for (const name of [ro.share.button, ro.result.report]) {
     const style = StyleSheet.flatten(screen.getByRole('button', { name }).props.style);
     expect(style.minWidth).toBeGreaterThanOrEqual(44);
     expect(style.minHeight).toBeGreaterThanOrEqual(44);
   }
   const order = inOrder();
   expect(order.indexOf(ro.result.report)).toBeLessThan(order.indexOf(productLine(foundYogurt.product, foundYogurt.score)));
-  await fireEvent.press(screen.getByRole('button', { name: ro.result.closeSheet }));
-  expect(router.back).toHaveBeenCalled();
   await fireEvent.press(screen.getByRole('button', { name: ro.result.report }));
   expect(screen.getByLabelText(ro.result.reportLabel)).toBeTruthy();
 });
-it('shows Ingrediente and Porție as full-width chevron rows in one card, and Porție opens the portion table', async () => {
+it('shows Ingrediente and Porție as full-width chevron rows in one card, and only Porție shows the portion table', async () => {
   await render(<ResultView {...foundYogurt} />);
   const rows = screen.getByTestId('result-link-rows');
   expect(rows).not.toHaveStyle({ flexDirection: 'row' });
@@ -279,31 +296,50 @@ it('shows Ingrediente and Porție as full-width chevron rows in one card, and Po
   expect(buttons.map(button => button.props.accessibilityLabel)).toEqual([ro.result.ingredientsTile, ro.result.portionTile]);
   for (const button of buttons) expect(StyleSheet.flatten(button.props.style).minHeight).toBeGreaterThanOrEqual(44);
   expect(within(rows).queryAllByTestId('link-row-icon')).toHaveLength(0);
-  expect(screen.getAllByText(ro.result.portionNote)).toHaveLength(1);
+  expect(screen.queryByText(ro.result.portionNote)).toBeNull(); // the table lives only in the sheet
   await fireEvent.press(screen.getByRole('button', { name: ro.result.portionTile }));
-  expect(screen.getAllByText(ro.result.portionNote)).toHaveLength(2);
-  await fireEvent.press(screen.getByRole('button', { name: ro.nav.close }));
   expect(screen.getAllByText(ro.result.portionNote)).toHaveLength(1);
+  await fireEvent.press(screen.getByRole('button', { name: ro.nav.close }));
+  expect(screen.queryByText(ro.result.portionNote)).toBeNull();
 });
-it('explains each ingredient in one line and drops a role the name already says', async () => {
+it('leaves the label text and ingredient explanations to the Ingrediente page', async () => {
   const ingredient = { group: 'add' as const, source: 'https://example.invalid/source', allergen: null };
   await render(<ResultView product={{ ...foundYogurt.product, ingredients: [
-    { ...ingredient, slug: 'test-a', name: 'acid citric (E330)', role: 'Acid citric (E330)', explanation: 'Prima propoziție de test. A doua propoziție de test.' },
-    { ...ingredient, slug: 'test-b', name: 'aspartam', role: 'Îndulcitor de test (E951)', explanation: 'O singură propoziție de test.' },
+    { ...ingredient, slug: 'test-a', name: 'acid citric (E330)', role: 'Acid citric (E330)', explanation: 'Prima propoziție de test.' },
   ] }} score={foundYogurt.score} />);
-  expect(screen.getByText(ro.result.explainedWithSource)).toBeTruthy();
-  expect(screen.queryByText('Acid citric (E330)')).toBeNull();
-  expect(screen.getByText('Prima propoziție de test.')).toBeTruthy();
-  expect(screen.queryByText(/A doua propoziție/)).toBeNull();
-  expect(screen.getByText('Îndulcitor de test (E951)')).toBeTruthy();
-  expect(screen.getByText('O singură propoziție de test.')).toBeTruthy();
+  expect(screen.queryByText(ro.result.transcribedLabel)).toBeNull();
+  expect(screen.queryByText(foundYogurt.product.ingredientsText)).toBeNull();
+  expect(screen.queryByText(ro.result.explainedWithSource)).toBeNull();
+  expect(screen.queryByText('Prima propoziție de test.')).toBeNull();
+  await fireEvent.press(screen.getByRole('button', { name: ro.result.ingredientsTile }));
+  expect(router.push).toHaveBeenLastCalledWith({ pathname: '/product/[id]/ingredients', params: { id: foundYogurt.product.id } });
 });
 
-it('labels each score reason with its tone next to an icon', async () => {
+it('marks each reason with a tone icon and keeps the tone word out of sight but in the spoken label', async () => {
   await render(<ResultView {...foundYogurt} />);
-  const tones = { good: ro.score.positive, bad: ro.score.negative, neutral: ro.score.neutral } as const;
   for (const reason of foundYogurt.score.reasons) expect(screen.getAllByTestId(`reason-tone-${reason.tone}`).length).toBeGreaterThan(0);
-  expect(screen.getAllByText(tones[foundYogurt.score.reasons[0]!.tone]).length).toBeGreaterThan(0);
+  for (const word of [ro.score.positive, ro.score.negative, ro.score.neutral]) expect(screen.queryByText(word)).toBeNull();
+  const first = foundYogurt.score.reasons[0]!;
+  const tone = { good: ro.score.positive, bad: ro.score.negative, neutral: ro.score.neutral }[first.tone];
+  expect(screen.getByLabelText(new RegExp(`^${tone}: ${first.title}`))).toBeTruthy();
+});
+it('drops the separate "De ce?" points breakdown', async () => {
+  await render(<ResultView {...foundYogurt} />);
+  expect(screen.queryByRole('button', { name: ro.tiers.why })).toBeNull();
+  expect(screen.queryByTestId('deduction-row')).toBeNull();
+});
+it('puts declared allergens and the processing level together in one "Compoziție" card', async () => {
+  await render(<ResultView product={{ ...foundYogurt.product, allergens: ['Lapte'], mayContain: ['Soia'], processing: { level: 1, source: 'off' } }} score={foundYogurt.score} />);
+  const card = screen.getByTestId('composition-card');
+  expect(within(card).getByRole('header', { name: ro.result.composition })).toBeTruthy();
+  expect(within(card).getByText(ro.result.allergens)).toBeTruthy();
+  expect(within(card).getByLabelText('Lapte')).toBeTruthy();
+  expect(within(card).getByLabelText(`${ro.result.mayContain} Soia`)).toBeTruthy();
+  expect(within(card).getByText(ro.result.missingAllergenNote)).toBeTruthy();
+  expect(within(card).getByText(ro.processing.title)).toBeTruthy();
+  expect(within(card).getByText(`1 · ${ro.processing[1]}`)).toBeTruthy();
+  expect(screen.getAllByText(ro.processing.title)).toHaveLength(1);
+  expect(screen.getAllByText(ro.result.allergens)).toHaveLength(1);
 });
 it.each([
   ['Open Food Facts import', 'Open Food Facts (ODbL)', () => ro.result.offNote, () => ro.result.unverifiedNote],
@@ -314,13 +350,13 @@ it.each([
   expect(screen.queryByText(ro.result.unverified)).toBeNull();
   expect(screen.queryByText(hidden())).toBeNull();
 });
-it('puts the product photo first, and falls back to initials when there is none or it fails', async () => {
+it('puts the product thumbnail before the name, and drops it when the photo fails to load', async () => {
   const imageUrl = 'https://images.openfoodfacts.org/images/products/301/762/042/2003/front_en.879.400.jpg';
   await render(<ResultView product={{ ...foundYogurt.product, imageUrl }} score={foundYogurt.score} />);
-  const photo = screen.getByTestId('product-photo');
-  expect(photo.props.source).toEqual({ uri: imageUrl });
-  expect(inOrder().indexOf(imageUrl)).toBeLessThan(inOrder().indexOf(foundYogurt.product.name));
-  await fireEvent(photo, 'error');
-  expect(screen.queryByTestId('product-photo')).toBeNull();
-  expect(screen.getByTestId('product-photo-placeholder', { includeHiddenElements: true })).toBeTruthy();
+  const thumb = screen.getByTestId('product-thumb', { includeHiddenElements: true });
+  expect(thumb.props.source).toEqual({ uri: imageUrl });
+  expect(inOrder().indexOf('product-thumb')).toBeLessThan(inOrder().indexOf(foundYogurt.product.name));
+  await fireEvent(thumb, 'error');
+  expect(screen.queryByTestId('product-thumb', { includeHiddenElements: true })).toBeNull();
+  expect(screen.queryByTestId('product-photo', { includeHiddenElements: true })).toBeNull();
 });

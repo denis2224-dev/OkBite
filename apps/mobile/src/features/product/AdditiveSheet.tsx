@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Linking, Modal, ScrollView, View } from 'react-native';
 import type { Ingredient } from '@okbite/shared';
-import { Body, Button, Card, Heading, Icon } from '../../ui';
+import { Body, Button, Caption, Card, Heading, Icon } from '../../ui';
 import { PressableOpacity } from '../../shared/PressableOpacity';
 import { useTheme } from '../../theme/useTheme';
 import { fonts } from '../../theme/tokens';
@@ -23,7 +23,7 @@ export function RiskChip({ risk }: { risk: Ingredient['risk'] }) {
   const [fg, bg] = risk === 'high' ? [colors.low, colors.lowBg] : risk === 'moderate' ? [colors.medium, colors.mediumBg]
     : risk === 'low' ? [colors.good, colors.goodBg] : [colors.neutral, colors.neutralBg];
   return <View style={{ alignSelf: 'flex-start', backgroundColor: bg, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-    <Body style={{ fontSize: 13, lineHeight: 19, fontFamily: fonts.bold, color: fg }}>{risk ? ro.additives[risk] : ro.additives.notAssessed}</Body>
+    <Caption style={{ fontFamily: fonts.bold, color: fg }}>{risk ? ro.additives[risk] : ro.additives.notAssessed}</Caption>
   </View>;
 }
 

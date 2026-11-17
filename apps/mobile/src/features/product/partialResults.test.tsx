@@ -13,14 +13,13 @@ const empty = Object.fromEntries(NUTRIENT_KEYS.map(key => [key, null])) as typeo
 const product = { ...foundYogurt.product, status: 'unverified' as const, nutrients: empty };
 describe('partial result', () => {
   beforeEach(() => { jest.clearAllMocks(); });
-  it('replaces absent nutrition with a neutral card while keeping ingredients and provenance', async () => {
+  it('replaces absent nutrition with a neutral card while keeping the ingredients button and provenance', async () => {
     await render(<ResultView product={{...product, allergens: [], mayContain: ['Soia']}} score={foundYogurt.score} />);
     expect(screen.getByText(ro.result.nutritionUnavailable)).toBeTruthy();
     expect(screen.queryByText(ro.score.title)).toBeNull();
     expect(screen.queryByText(ro.result.portion)).toBeNull();
     expect(screen.queryAllByText(/% din referința zilnică/)).toHaveLength(0);
-    expect(screen.getByText(product.ingredientsText)).toBeTruthy();
-    expect(screen.getByText(ro.result.transcribedLabel)).toBeTruthy();
+    expect(screen.getByRole('button', { name: ro.result.ingredientsTile })).toBeTruthy(); // the label text opens from here
     expect(screen.getByText('Soia')).toBeTruthy();
     expect(screen.getByText(ro.result.missingAllergenNote)).toBeTruthy();
     expect(screen.queryByText(ro.result.noAllergens)).toBeNull();
