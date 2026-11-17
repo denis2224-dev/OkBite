@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { z } from 'zod';
 import {
   Code,
+  WATER_FIELD_KEYS,
   WaterProfile,
   emptyWaterProfile,
   normalizeCode,
@@ -22,11 +23,42 @@ export const WaterCatalogEntry = z.object({
 });
 export type WaterCatalogEntry = z.infer<typeof WaterCatalogEntry>;
 
-function fullWater(w: WaterCatalogEntry['water']): WaterProfileType | null {
-  return w ? WaterProfile.parse({ ...emptyWaterProfile(), ...w }) : null;
+function fullWater(w: WaterCatalogEntry['water'], sourceLabel: string): WaterProfileType | null {
+  if (!w) return null;
+  const merged = { ...emptyWaterProfile(), ...w };
+  const evidence = { ...(merged.evidence ?? {}) };
+  const cleanSource = sourceLabel.slice(0, 200);
+  for (const key of WATER_FIELD_KEYS) {
+    if (merged[key] !== null && merged[key] !== undefined && !evidence[key]) {
+      evidence[key] = { status: 'unverified', source: cleanSource };
+    }
+  }
+  if (Object.keys(evidence).length > 0) merged.evidence = evidence;
+  return WaterProfile.parse(merged);
 }
 
 const norm = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/\s+/g, ' ').trim();
+const QUANTITY_RE = /^\s*(\d+(?:[.,]\d+)?)\s*(ml|cl|l|g|kg)\s*$/i;
+const UNIT_FACTOR: Record<string, [number, 'ml' | 'g']> = {
+  ml: [1, 'ml'],
+  cl: [10, 'ml'],
+  l: [1000, 'ml'],
+  g: [1, 'g'],
+  kg: [1000, 'g'],
+};
+
+/** Normalizes "1,5 L" and "1500 ml" to a shared key ("1500 ml") for code=null idempotency. */
+export function normalizeWaterQuantity(raw: string): string {
+  const m = QUANTITY_RE.exec(raw);
+  if (!m) return norm(raw);
+  const [factor, unit] = UNIT_FACTOR[m[2]!.toLowerCase()]!;
+  const amount = Math.round(Number(m[1]!.replace(',', '.')) * factor * 1000) / 1000;
+  return `${amount} ${unit}`;
+}
+
+export function waterIdentityKey(entry: { brand: string; name: string; quantity: string }): string {
+  return `${norm(entry.brand)}|${norm(entry.name)}|${normalizeWaterQuantity(entry.quantity)}`;
+}
 
 export function checkWaterCatalog(raw: unknown[]): string[] {
   const errors: string[] = [];
@@ -47,7 +79,7 @@ export function checkWaterCatalog(raw: unknown[]): string[] {
       if (seenCodes.has(e.code)) errors.push(`waters-md.json[${i}] ${e.code}: duplicate code`);
       seenCodes.add(e.code);
     }
-    const key = `${norm(e.brand)}|${norm(e.name)}|${norm(e.quantity)}`;
+    const key = waterIdentityKey(e);
     if (seenIdentity.has(key)) errors.push(`waters-md.json[${i}] ${e.brand} ${e.name}: duplicate variant SKU`);
     seenIdentity.add(key);
   }
@@ -55,30 +87,33 @@ export function checkWaterCatalog(raw: unknown[]): string[] {
 }
 
 export function toWaterProductRows(entries: readonly WaterCatalogEntry[]) {
-  return entries.map((e) => ({
-    code: e.code,
-    status: 'unverified' as const,
-    name: e.name,
-    brand: e.brand,
-    quantity: e.quantity,
-    category_slug: 'apa',
-    unit: 'ml' as const,
-    portion_amount: 100,
-    portion_label: '100 ml',
-    kcal: null,
-    fat: null,
-    sat: null,
-    sugar: null,
-    salt: null,
-    protein: null,
-    fiber: null,
-    fruit_veg_pct: null,
-    water: fullWater(e.water),
-    ingredients_text: e.ingredientsText,
-    allergens: [] as string[],
-    may_contain: [] as string[],
-    source: `${e.source} (${e.sourceUrl})`,
-  }));
+  return entries.map((e) => {
+    const sourceLabel = `${e.source} (${e.sourceUrl})`;
+    return {
+      code: e.code,
+      status: 'unverified' as const,
+      name: e.name,
+      brand: e.brand,
+      quantity: e.quantity,
+      category_slug: 'apa',
+      unit: 'ml' as const,
+      portion_amount: 100,
+      portion_label: '100 ml',
+      kcal: null,
+      fat: null,
+      sat: null,
+      sugar: null,
+      salt: null,
+      protein: null,
+      fiber: null,
+      fruit_veg_pct: null,
+      water: fullWater(e.water, sourceLabel),
+      ingredients_text: e.ingredientsText,
+      allergens: [] as string[],
+      may_contain: [] as string[],
+      source: sourceLabel,
+    };
+  });
 }
 
 function service() {
@@ -88,7 +123,14 @@ function service() {
   return { url, headers: { apikey: key, ...(key.startsWith('sb_') ? {} : { authorization: `Bearer ${key}` }) } };
 }
 
-export async function loadWaters(entries?: readonly WaterCatalogEntry[]): Promise<{ coded: number; uncodedInserted: number }> {
+export interface LoadWatersResult {
+  codedInserted: number;
+  codedSkipped: number;
+  uncodedInserted: number;
+  uncodedSkipped: number;
+}
+
+export async function loadWaters(entries?: readonly WaterCatalogEntry[]): Promise<LoadWatersResult> {
   const list =
     entries ??
     WaterCatalogEntry.array().parse(
@@ -102,29 +144,34 @@ export async function loadWaters(entries?: readonly WaterCatalogEntry[]): Promis
   const uncoded = rows.filter((r) => r.code === null);
   const { url, headers } = service();
 
-  let codedCount = 0;
+  let codedInserted = 0;
   if (coded.length) {
     const res = await fetch(`${url}/rest/v1/products?on_conflict=code`, {
       method: 'POST',
-      headers: { ...headers, 'content-type': 'application/json', prefer: 'resolution=merge-duplicates,return=representation' },
+      headers: {
+        ...headers,
+        'content-type': 'application/json',
+        prefer: 'resolution=ignore-duplicates,return=representation',
+      },
       body: JSON.stringify(coded),
     });
-    if (!res.ok) throw new Error(`waters coded upsert failed: ${res.status}`);
-    codedCount = ((await res.json()) as unknown[]).length;
+    if (!res.ok) throw new Error(`waters coded insert failed: ${res.status}`);
+    codedInserted = ((await res.json()) as unknown[]).length;
   }
+  const codedSkipped = coded.length - codedInserted;
 
   let uncodedInserted = 0;
   if (uncoded.length) {
     const existingRes = await fetch(
-      `${url}/rest/v1/products?select=brand,name,quantity&code=is.null&category_slug=eq.apa`,
+      `${url}/rest/v1/products?select=brand,name,quantity&code=is.null&category_slug=eq.apa&limit=5000`,
       { headers },
     );
     if (!existingRes.ok) throw new Error(`waters existing fetch failed: ${existingRes.status}`);
     const existing = ((await existingRes.json()) as { brand: string; name: string; quantity: string }[]).map(
-      (r) => `${norm(r.brand)}|${norm(r.name)}|${norm(r.quantity)}`,
+      (r) => waterIdentityKey(r),
     );
     const have = new Set(existing);
-    const missing = uncoded.filter((r) => !have.has(`${norm(r.brand)}|${norm(r.name)}|${norm(r.quantity)}`));
+    const missing = uncoded.filter((r) => !have.has(waterIdentityKey(r)));
     if (missing.length) {
       const ins = await fetch(`${url}/rest/v1/products`, {
         method: 'POST',
@@ -135,14 +182,24 @@ export async function loadWaters(entries?: readonly WaterCatalogEntry[]): Promis
       uncodedInserted = ((await ins.json()) as unknown[]).length;
     }
   }
-  return { coded: codedCount, uncodedInserted };
+  const uncodedSkipped = uncoded.length - uncodedInserted;
+  return { codedInserted, codedSkipped, uncodedInserted, uncodedSkipped };
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const path = join(import.meta.dirname, '..', 'data', 'waters-md.json');
   if (!existsSync(path)) throw new Error('data/waters-md.json missing');
   loadWaters().then(
-    (counts) => console.log(`coded: ${counts.coded}, uncodedInserted: ${counts.uncodedInserted}`),
-    (e: Error) => { console.error(e.message); process.exitCode = 1; },
+    (counts) => {
+      const inserted = counts.codedInserted + counts.uncodedInserted;
+      const skipped = counts.codedSkipped + counts.uncodedSkipped;
+      console.log(
+        `waters-md import: ${inserted} inserted (coded: ${counts.codedInserted}, uncoded: ${counts.uncodedInserted}), ${skipped} skipped (coded: ${counts.codedSkipped}, uncoded: ${counts.uncodedSkipped})`,
+      );
+    },
+    (e: Error) => {
+      console.error(e.message);
+      process.exitCode = 1;
+    },
   );
 }
