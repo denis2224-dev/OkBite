@@ -4,7 +4,7 @@ import { useProfile } from '../../src/features/profile';
 import { ro } from '../../src/copy/ro';
 import { AppBottomNav } from '../../src/shared/AppBottomNav';
 export const unstable_settings = { initialRouteName: 'index' };
-// Back (swipe) returns to the tab or page visited just before.
+// Back (swipe) from Setări or Despre returns to Profil; tab presses replace the page, so tabs have no back step.
 export const tabBackBehavior = 'history' as const;
 // Settings and About stay routes (deep links keep working) but have no tab; they open from rows in Profil.
 export default function TabLayout() {

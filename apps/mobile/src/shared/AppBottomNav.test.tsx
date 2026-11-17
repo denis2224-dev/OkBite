@@ -2,14 +2,17 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 import { Keyboard, StyleSheet } from 'react-native';
 import { light } from '../theme/tokens';
 import type { ComponentProps } from 'react';
+import { router } from 'expo-router';
 import { AppBottomNav } from './AppBottomNav';
+
+jest.mock('expo-router', () => ({ router: { replace: jest.fn() } }));
 
 const names = ['history', 'compare', 'index', 'allergies', 'profile', 'settings', 'about'];
 const tabs = ['history', 'compare', 'index', 'allergies', 'profile'];
 const makeProps = (index = 2) => ({
  state: { index, routes: names.map(name => ({ key: name, name })) },
  emitter: { emit: jest.fn(() => ({ defaultPrevented: false })) },
- navigateToTab: jest.fn(), insets: { top: 0, left: 0, right: 0, bottom: 34 },
+ insets: { top: 0, left: 0, right: 0, bottom: 34 },
 } as unknown as ComponentProps<typeof AppBottomNav>);
 const style = (ui: Awaited<ReturnType<typeof render>>, id: string) => StyleSheet.flatten(ui.getByTestId(id).props.style);
 
@@ -21,13 +24,16 @@ it('renders the five tabs in order with Scan selected and Settings/About off the
  expect(ui.queryByRole('tab', { name: 'Setări' })).toBeNull();
  expect(ui.queryByRole('tab', { name: 'Despre' })).toBeNull();
 });
-it('emits navigation and respects prevented tab presses', async () => {
+it('replaces the page on a tab press (no back step to the previous tab) and respects prevented presses', async () => {
+ jest.mocked(router.replace).mockClear();
  const props = makeProps(); const ui = await render(<AppBottomNav {...props} />);
  await fireEvent.press(ui.getByRole('tab', { name: 'Alergii' }));
- expect(props.navigateToTab).toHaveBeenCalledWith('allergies');
+ expect(router.replace).toHaveBeenCalledWith('/allergies');
+ await fireEvent.press(ui.getByRole('tab', { name: 'Istoric' }));
+ expect(router.replace).toHaveBeenLastCalledWith('/history');
  (props.emitter.emit as jest.Mock).mockReturnValue({ defaultPrevented: true });
  await fireEvent.press(ui.getByRole('tab', { name: 'Profil' }));
- expect(props.navigateToTab).toHaveBeenCalledTimes(1);
+ expect(router.replace).toHaveBeenCalledTimes(2);
 });
 it('hides for the keyboard and cleans up listeners', async () => {
  const callbacks: Record<string, () => void> = {}; const remove = jest.fn();

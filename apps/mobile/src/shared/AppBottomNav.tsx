@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Keyboard, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
+import { router } from 'expo-router';
 import { ro } from '../copy/ro';
 import { useTheme } from '../theme/useTheme';
 import { HomeIcon } from './HomeChrome';
@@ -20,7 +21,11 @@ function TabIcon({ name, color }: { name: TabName; color: string }) {
  </Svg>;
 }
 
-export function AppBottomNav({ state, emitter, navigateToTab, insets }: BottomTabBarProps) {
+// The five nav-bar pages are roots: a tab press replaces the current page instead of stacking on it,
+// so no back gesture (edge swipe, the browser's back swipe or Android back) returns to the previous tab.
+const tabHref = (name: TabName) => (name === 'index' ? '/' : `/${name}`);
+
+export function AppBottomNav({ state, emitter, insets }: BottomTabBarProps) {
  const { colors } = useTheme();
  const [keyboard, setKeyboard] = useState(false);
  const [hovered, setHovered] = useState<string | null>(null);
@@ -44,7 +49,7 @@ export function AppBottomNav({ state, emitter, navigateToTab, insets }: BottomTa
     const selected = state.routes[state.index]?.key === route.key;
     const fill = selected ? colors.primary : hovered === item.name ? colors.soft : colors.transparent;
     return <PressableOpacity key={route.key} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected }} aria-selected={selected}
-     onPress={() => { const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true }); if (!selected && !event.defaultPrevented) navigateToTab(route.key); }}
+     onPress={() => { const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true }); if (!selected && !event.defaultPrevented) router.replace(tabHref(item.name)); }}
      onLongPress={() => emitter.emit({ type: 'tabLongPress', target: route.key })}
      onHoverIn={() => setHovered(item.name)} onHoverOut={() => setHovered(current => (current === item.name ? null : current))}
      style={{ flex: 1, minWidth: 0, minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 26 }}>
