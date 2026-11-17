@@ -55,15 +55,19 @@ it('announces the checked state and saves a toggled allergen through useProfile'
   expect(await store.loadProfile()).toEqual({ ...existing, allergens: ['Soia', 'Lapte'] });
 });
 
-it('marks selected chips with a check icon and the selected state, unselected without', async () => {
+it('shows a selected chip by colour only: no check mark, same size, so the text never moves', async () => {
   const screen = await renderReady();
   const selected = screen.getByRole('checkbox', { name: ro.allergens.Soia });
   const unselected = screen.getByRole('checkbox', { name: ro.allergens.Lapte });
   expect(selected.props.accessibilityState.selected).toBe(true);
   expect(unselected.props.accessibilityState.selected).toBe(false);
-  // The check icon is an extra child (svg) before the label.
-  expect(selected.children).toHaveLength(2);
+  expect(selected.children).toHaveLength(1); // just the label, no check icon
   expect(unselected.children).toHaveLength(1);
+  const box = (el: typeof selected) => { const { backgroundColor: _bg, opacity: _o, ...rest } = StyleSheet.flatten(el.props.style); return rest; };
+  expect(box(selected)).toEqual(box(unselected)); // same padding, radius and size
+  expect(StyleSheet.flatten(selected.props.style).backgroundColor).not.toBe(StyleSheet.flatten(unselected.props.style).backgroundColor);
+  const font = (name: string) => StyleSheet.flatten(screen.getByText(name).props.style).fontFamily;
+  expect(font(ro.allergens.Soia)).toBe(font(ro.allergens.Lapte)); // same weight, same width
 });
 
 it('saves an avoid switch and announces it as a switch', async () => {
