@@ -1,18 +1,22 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Image, Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ScreenSafeArea as SafeAreaView } from '../../shared/ScreenSafeArea';
 import { useHomeTheme, type HomeTheme } from '../../theme/home';
-import { HomeCard, HomeChip, HomeIcon, HomePressable } from '../../shared/HomeChrome';
+import { HomeIcon, HomePressable } from '../../shared/HomeChrome';
 import { router, useFocusEffect } from 'expo-router';
-import { Body, Button, Card, Heading } from '../../ui';
+import { Body, Button, Caption, Card, Heading } from '../../ui';
 import { ro } from '../../copy/ro';
 import { roDate } from '../product/SourceCard';
 import { clearHistory, listHistory, removeFromHistory, restoreToHistory, type HistoryEntry } from './store';
 import { subscribeQueue } from '../offline/queue';
 import { TabPageHeader } from '../../shared/TabPageHeader';
 import { useToast } from '../../ui/Toast';
-import { productScoreFor, tierGrade } from '../product/productScoreFor';
+import { productScoreFor } from '../product/productScoreFor';
+import { ScoreTagSmall } from '../shelf/ScoreTagSmall';
+import { savedWhen } from './when';
 import { showStorageWarning } from '../../lib/storagePersistence';
+import { summarizeBasket } from './basket';
+import { BasketCard } from './BasketCard';
 import { useStorageNoticeDismissal } from '../../lib/storageNotice';
 
 export function HistoryScreen() {
@@ -56,6 +60,7 @@ export function HistoryScreen() {
     return () => { focused.current = false; generation.current++; stop(); };
   }, [load]));
 
+  const basket = useMemo(() => summarizeBasket(entries), [entries]);
   const visible = entries.filter(({ product }) => `${product.name} ${product.brand}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())).sort((a, b) => b.savedAt.localeCompare(a.savedAt));
 
   async function remove(entry: HistoryEntry) {
@@ -110,6 +115,7 @@ export function HistoryScreen() {
       <TabPageHeader title={copy.title} subtitle={copy.note} action={entries.length > 0 ? <HomePressable label={ro.history.clear} disabled={clearing} onPress={() => setConfirming(true)} style={styles.clear}><HomeIcon name="trash" size={18} color={t.colors.low}/><Text style={styles.clearText}>{ro.history.clear}</Text></HomePressable> : null} />
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        {!loading && !error && basket && <BasketCard basket={basket} />}
         {entries.length > 0 && <TextInput accessibilityLabel={ro.history.search} placeholder={ro.history.search} placeholderTextColor={t.colors.muted} value={query} onChangeText={setQuery} style={styles.search}/>}
         {showStorageWarning && !noticeDismissed && entries.length > 0 ? <View style={styles.notice}><Text style={styles.noticeText}>{copy.storageNotice}</Text><HomePressable label={copy.dismissNotice} onPress={dismissNotice} style={styles.noticeClose}><HomeIcon name="close" size={18} color={t.colors.muted}/></HomePressable></View> : null}
         {loading && <Body accessibilityLiveRegion="polite">{ro.app.loading}</Body>}
@@ -120,23 +126,31 @@ export function HistoryScreen() {
           <Button onPress={() => router.push('/scan')}>{copy.scan}</Button>
         </View>}
         {!loading && !error && entries.length > 0 && visible.length === 0 && <Body>{ro.history.noMatches}</Body>}
-        {visible.length > 0 && <View accessibilityRole="list" accessibilityLabel={ro.history.title} style={styles.list}>
-          {visible.map(entry => {
-            const {product,score:storedScore,savedAt}=entry;
-            const { score: value, tier } = productScoreFor(product, storedScore);
-            const score = { score: value };
-            const grade = tierGrade(tier);
-            const verification = product.status === 'verified' && product.verifiedAt
-              ? `${ro.result.checked}: ${roDate(product.verifiedAt)}` : ro.result.unverified;
-            const scoreLabel = score.score === null ? ro.result.scoreUnavailable : `${ro.history.score(score.score)} · ${tier ? ro.tiers[tier] : ''}`;
-            const label = [ro.history.open(product.name), product.brand, scoreLabel, ro.score.disclaimer, product.source, `${ro.result.added}: ${roDate(product.addedAt)}`, verification, ro.history.savedAt(roDate(savedAt.slice(0,10)))].join('. ');
-            return <HomeCard key={product.id} style={styles.historyCard}><HomePressable label={label} disabled={clearing} onLongPress={() => void remove(entry)} onPress={() => router.push({pathname:'/product/[id]',params:{id:product.id,cached:'1'}})} style={styles.row}>
-              <View style={[styles.tile,{backgroundColor:t.colors.neutralBg}]}>{product.imageUrl ? <Image testID="history-thumbnail" source={{uri:product.imageUrl}} resizeMode="cover" accessible={false} style={styles.thumbnail}/> : <Text style={styles.initials}>{product.name.split(/\s+/).slice(0,2).map(word=>word[0]).join('').toLocaleUpperCase('ro')}</Text>}</View>
-              <View style={styles.product}><Text style={styles.name}>{product.name}</Text><Text style={styles.meta}>{product.brand} · {new Date(savedAt).toLocaleDateString('ro-RO')}</Text><Text style={styles.meta}>{product.source}</Text><Text style={styles.meta}>{ro.result.added}: {roDate(product.addedAt)}</Text><Text style={styles.meta}>{verification}</Text><Text style={styles.meta}>{ro.score.disclaimer}</Text>{score.score === null && <Text style={styles.meta}>{ro.result.scoreUnavailable}</Text>}</View>
-              <HomeChip background={t.colors[`${grade}Bg`]} color={t.colors[grade]}>{score.score===null?'—':`${score.score} · ${tier ? ro.tiers[tier] : ''}`}</HomeChip>
-            </HomePressable><HomePressable label={ro.history.remove(product.name)} disabled={clearing} onPress={() => void remove(entry)} style={styles.delete}><HomeIcon name="trash" size={20} color={t.colors.low}/></HomePressable></HomeCard>;
-          })}
-        </View>}
+        {visible.length > 0 && <>
+          {/* One white card like the mockup: small score tag, name, short time. Source, dates and status are read aloud. */}
+          <Card testID="history-list" accessibilityRole="list" accessibilityLabel={ro.history.title} style={styles.list}>
+            {visible.map((entry, index) => {
+              const {product,score:storedScore,savedAt}=entry;
+              const { score: value, tier } = productScoreFor(product, storedScore);
+              const verification = product.status === 'verified' && product.verifiedAt
+                ? `${ro.result.checked}: ${roDate(product.verifiedAt)}` : ro.result.unverified;
+              const scoreLabel = value === null || !tier ? ro.result.scoreUnavailable : `${ro.history.score(value)} · ${ro.tiers[tier]}`;
+              const when = savedWhen(savedAt);
+              const label = [ro.history.open(product.name), product.brand, scoreLabel, ro.score.disclaimer, product.source, `${ro.result.added}: ${roDate(product.addedAt)}`, verification, when].join('. ');
+              return <HomePressable key={product.id} label={label} disabled={clearing}
+                accessibilityActions={[{ name: 'delete', label: ro.history.remove(product.name) }]}
+                onAccessibilityAction={event => { if (event.nativeEvent.actionName === 'delete') void remove(entry); }}
+                onLongPress={() => void remove(entry)} onPress={() => router.push({pathname:'/product/[id]',params:{id:product.id,cached:'1'}})}
+                style={[styles.row, index > 0 && { borderTopWidth: 1, borderColor: t.colors.separator }]}>
+                {value === null || !tier
+                  ? <View style={styles.noScore}><Text style={styles.noScoreText}>{ro.history.noScore}</Text></View>
+                  : <ScoreTagSmall score={value} tier={tier} />}
+                <View style={styles.product}><Text style={styles.name}>{product.name}</Text><Text style={styles.meta}>{when}</Text></View>
+              </HomePressable>;
+            })}
+          </Card>
+          <Caption>{ro.score.disclaimer}</Caption>
+        </>}
         <Button variant="ghost" onPress={() => router.push('/offline')}>{ro.offline.queueTitle}</Button>
       </ScrollView>
     </View>
@@ -163,8 +177,7 @@ const createStyles=(t:HomeTheme)=>StyleSheet.create({
  emptyText:{fontFamily:t.fonts.body,fontSize:14,lineHeight:20.3,color:t.colors.muted,textAlign:'center',marginBottom:18},
  notice:{flexDirection:'row',alignItems:'center',gap:8},noticeText:{flex:1,fontFamily:t.fonts.body,fontSize:13,lineHeight:18.85,color:t.colors.muted},noticeClose:{minWidth:44,minHeight:44,alignItems:'center',justifyContent:'center'},
  search:{minHeight:48,padding:12,borderWidth:1,borderColor:t.colors.border,borderRadius:14,color:t.colors.ink,fontFamily:t.fonts.body,fontSize:16},
- historyCard:{padding:0},delete:{minHeight:48,padding:12,alignSelf:'flex-end'},thumbnail:{width:48,height:48,borderRadius:14},
- list:{gap:12},row:{minHeight:68,paddingVertical:10,paddingHorizontal:14,gap:12,flexDirection:'row',flexWrap:'wrap',alignItems:'center'},
- tile:{width:48,height:48,borderRadius:14,alignItems:'center',justifyContent:'center'},initials:{fontFamily:t.fonts.extra,fontSize:15,lineHeight:21.75,color:t.colors.ink},product:{flex:1,minWidth:130},
+ list:{paddingVertical:2,paddingHorizontal:14,gap:0},row:{minHeight:64,paddingVertical:10,gap:14,flexDirection:'row',alignItems:'center'},
+ noScore:{minWidth:56,paddingVertical:7,paddingHorizontal:8,borderRadius:9,backgroundColor:t.colors.soft,alignItems:'center'},noScoreText:{fontFamily:t.fonts.bold,fontSize:12,lineHeight:16,color:t.colors.muted},product:{flex:1,minWidth:0},
  name:{fontFamily:t.fonts.bold,fontSize:15,lineHeight:21.75,color:t.colors.ink},meta:{fontFamily:t.fonts.body,fontSize:13,lineHeight:18.85,color:t.colors.muted},
 });

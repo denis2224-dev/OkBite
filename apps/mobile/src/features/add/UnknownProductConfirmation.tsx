@@ -66,7 +66,7 @@ export function UnknownProductConfirmation({ initial, label, photos, categories,
   const field = (key: 'name' | 'brand' | 'quantity' | 'ingredientsText', title: string) =>
     <UnknownConfirmationField label={title} value={value[key]} disabled={pending} multiline={key === 'ingredientsText'}
       onChange={text => change({ ...value, [key]: text })} />;
-  return <Screen title={ro.add.confirmTitle} back={false}>
+  return <Screen title={ro.add.confirmTitle}>
     <GuidedAddProgress step={4} total={4} />
     <Text style={{ color: colors.muted, fontSize: 16 }}>{ro.add.tapToEdit}</Text>
     <View style={[card, { flexDirection: 'row', flexWrap: 'wrap' }]}>

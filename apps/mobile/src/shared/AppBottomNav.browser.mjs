@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
    await page.goto('http://127.0.0.1:18766/');
    await page.getByRole('tab',{name:'Scanează',exact:true}).waitFor();
    await page.getByTestId('startup-artwork').waitFor({state:'hidden'});
-   assert.deepEqual(await page.getByRole('tab').allTextContents(),['Istoric','Compară','Scanează','Alergii','Profil']);
+   assert.deepEqual(await page.getByRole('tab').evaluateAll(tabs=>tabs.map(t=>t.getAttribute('aria-label'))),['Istoric','Compară','Scanează','Alergii','Profil']);
    assert.equal(await page.getByRole('tab',{name:'Scanează',exact:true}).getAttribute('aria-selected'),'true');
    if(scaled) await page.evaluate(()=>{ for(const el of document.querySelectorAll('[dir="auto"]')) { const style=getComputedStyle(el);el.style.fontSize=`${parseFloat(style.fontSize)*2}px`;el.style.lineHeight=`${parseFloat(style.lineHeight)*2}px`; }});
    const nav=await page.getByRole('tablist').boundingBox();assert(nav.x>=0&&nav.x+nav.width<=376);
@@ -24,7 +24,7 @@ import { tmpdir } from 'node:os';
    assert.equal(await page.locator('[role="tab"][aria-selected="true"]').count(),0);
    await page.goto('http://127.0.0.1:18766/compare?id=example');await page.getByRole('tablist').waitFor();assert.equal(new URL(page.url()).pathname,'/compare');
    assert.deepEqual(errors,[]);await page.close();
-   console.log(`${name} ${scaled?'200%':'100%'}: five tabs in order, initial selection, raised Scan hit target, History, Profil to Setări, compare link, no page errors PASS`);
+   console.log(`${name} ${scaled?'200%':'100%'}: five tabs in order, initial selection, Scan hit target, History, Profil to Setări, compare link, no page errors PASS`);
   }
   await browser.close();
  }
