@@ -13,7 +13,7 @@ it('keeps "Compară cu alt produs" fixed below the scrolling result', async () =
   const find = (node: Node | string): Node | undefined => typeof node === 'string' ? undefined
     : node.type === 'RCTScrollView' ? node : node.children?.map(find).find(Boolean);
   const scroll = find(screen.toJSON() as Node);
-  expect(JSON.stringify(scroll)).toContain(ro.result.closeSheet);
+  expect(JSON.stringify(scroll)).toContain(ro.result.report);
   expect(JSON.stringify(scroll)).not.toContain(ro.result.compare);
-  expect(screen.getAllByRole('button', { name: /înapoi|back|închide analiza|close product/i })).toHaveLength(1);
+  expect(screen.queryAllByRole('button', { name: /înapoi|back|închide analiza|close product/i })).toHaveLength(0); // swipe goes back
 });

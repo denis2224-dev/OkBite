@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+
 import { render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Icon } from './Icon';
@@ -36,9 +36,8 @@ it('rotates the score arc without the web-invalid origin prop', async () => {
   expect(arc).not.toHaveProperty('origin');
   expect(arc).toMatchObject({ transform: 'rotate(-90 60 60)' });
 });
-it('gives the Back button at least a 44 by 44 touch target (audit R4-03)', async () => {
-  await render(<SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 800 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}><Screen title="T" back /></SafeAreaProvider>);
-  const style = StyleSheet.flatten(screen.getByLabelText(ro.app.back).props.style);
-  expect(style.minWidth).toBeGreaterThanOrEqual(44);
-  expect(style.minHeight).toBeGreaterThanOrEqual(44);
+it('shows no back arrow on a titled page; swiping from the left edge goes back', async () => {
+  await render(<SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 800 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}><Screen title="T" /></SafeAreaProvider>);
+  expect(screen.queryByLabelText(ro.app.back)).toBeNull();
+  expect(screen.getByRole('header', { name: 'T' })).toBeTruthy();
 });

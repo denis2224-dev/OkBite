@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Image, View } from 'react-native';
 import { productScore, type Product, type ScoreResult } from '@okbite/shared';
 import { Body, Caption, Title } from '../../ui';
@@ -14,6 +15,9 @@ import { ScoreTag } from './ScoreTag';
  * (`identity={false}`), it keeps the letter tile, name and tier lines. */
 export function ScoreCard({ product, score, identity = true }: { product?: Product; score: ScoreResult; identity?: boolean }) {
   const { colors } = useTheme();
+  // A photo URL that fails to load (e.g. a removed OFF image) hides the thumbnail instead of leaving an empty tile.
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const thumbUrl = product?.imageUrl && product.imageUrl !== failedUrl ? product.imageUrl : null;
   // With a product, the 0-100 number is the product score (nutrition, additives, processing) with its tier,
   // and the tile carries only the Nutri-Score letter, so each number appears once.
   const scored = product ? productScore(product, score) : null;
@@ -30,7 +34,8 @@ export function ScoreCard({ product, score, identity = true }: { product?: Produ
     const tier = scored.tier;
     return <View style={{ gap: 16 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-        {product.imageUrl && <Image testID="product-thumb" source={{ uri: product.imageUrl }} accessible={false} {...hidden} resizeMode="contain"
+        {thumbUrl && <Image testID="product-thumb" source={{ uri: thumbUrl }} accessible={false} {...hidden} resizeMode="contain"
+          onError={() => setFailedUrl(thumbUrl)}
           style={{ width: 64, height: 64, borderRadius: radii.small, backgroundColor: colors.soft }} />}
         <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
           <Title numberOfLines={2}>{product.name}</Title>

@@ -11,7 +11,7 @@ export function LegalScreen({ kind, children }: PropsWithChildren<{ kind: LegalK
   const text = texts[kind];
   const { colors } = useTheme();
   return (
-    <Screen title={text.title} back>
+    <Screen title={text.title}>
       <View style={styles.page}>
         <Heading>{text.lead}</Heading>
         <Body style={[styles.notice, { color: colors.muted }]}>{ro.legal.updated}</Body>
