@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Image, View } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
 import { NUTRIENT_KEYS, resolveProductIngredients, type Product, type ScoreResult } from '@okbite/shared';
-import { AllergenChip, Badge, Body, Button, Card, Heading, LinkRow, useToast } from '../../ui';
+import { AllergenChip, Body, Button, Card, Heading, LinkRow, useToast } from '../../ui';
 import { useTheme } from '../../theme/useTheme';
 import { fonts } from '../../theme/tokens';
 import { ro } from '../../copy/ro';
@@ -18,7 +18,8 @@ import { ResultTopBar } from './ResultTopBar';
 import { PortionSheet } from './PortionSheet';
 import { PartialNutritionCard } from './PartialNutritionCard';
 import { PortionTable } from './PortionTable';
-import { SourceCard, isOffProduct } from './SourceCard';
+import { SourceCard } from './SourceCard';
+import { ProductPhoto } from './ProductPhoto';
 import { ReportSheet } from './ReportSheet';
 import { ExplainedIngredient } from './ExplainedIngredient';
 import { shareProduct } from '../share/shareProduct';
@@ -58,15 +59,12 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
       <Body selectable>{productShareUrl(product)}</Body>
     </View>}
     <ProfileAllergenAlert product={product} />
+    {/* Hero: photo, then name, score and the A-E strip. Provenance sits in the source card at the bottom. */}
+    <ProductPhoto product={product} />
     {canShowScore ? <ScoreCard product={product} score={shownScore} /> : <><Heading>{product.name}</Heading><Body>{[product.brand, product.quantity].filter(Boolean).join(', ')}</Body></>}
-    {product.status === 'unverified' && <View testID="unverified-badge" style={{ gap: 4 }}>
-      <Badge tone="unverified">{ro.result.unverified}</Badge>
-      <Body style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>{isOffProduct(product) ? ro.result.offNote : ro.result.unverifiedNote}</Body>
-    </View>}
     {canShowScore ? <WhyScore score={shownScore} sugar={product.nutrients.sugar} /> : <PartialNutritionCard product={product} />}
     {canShowScore && <ScoreDeductions product={product} score={score} />}
     <ProcessingCard product={product} />
-    <AdditivesCard product={product} />
     <Card>
       <Heading style={{ fontSize: 18 }}>{ro.result.allergens}</Heading>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -81,7 +79,7 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
       </>}
       <Body style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>{ro.result.missingAllergenNote}</Body>
     </Card>
-    {product.imageUrl && <Image source={{ uri: product.imageUrl }} accessibilityLabel={product.name} style={{ width: '100%', height: 180 }} resizeMode="contain" />}
+    <AdditivesCard product={product} />
     <Card>
       <Heading style={{ fontSize: 18 }}>{ro.result.transcribedLabel}</Heading>
       <Body selectable>{product.ingredientsText}</Body>
@@ -95,12 +93,12 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
       <LinkRow label={ro.result.ingredientsTile} last={!showPortion} onPress={() => router.push({ pathname: '/product/[id]/ingredients', params: { id: product.id } })} />
       {showPortion && <LinkRow label={ro.result.portionTile} last onPress={() => setPortion(true)} />}
     </Card>
-    <SourceCard product={product} />
     {nutritionAdditionAvailable && product.status === 'unverified' && !hasNutrition &&
       <Button variant="secondary" onPress={() => router.push({pathname: '/add/nutrition', params: {productId: product.id}})}>{ro.result.addNutrition}</Button>}
     <Card style={{ paddingVertical: 4, gap: 0 }}>
       <LinkRow icon="camera" label={ro.result.original} last onPress={() => router.push({ pathname: '/product/[id]/label', params: { id: product.id } })} />
     </Card>
+    <SourceCard product={product} />
     {report && <ReportSheet productId={product.id} onClose={() => setReport(false)} />}
     {portion && <PortionSheet product={product} onClose={() => setPortion(false)} />}
   </>;
