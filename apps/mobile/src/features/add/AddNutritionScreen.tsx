@@ -40,6 +40,7 @@ export function AddNutritionScreen() {
   const [water, setWater] = useState<WaterProfile | null>(null);
   const [waterInvalid, setWaterInvalid] = useState(false);
   const [invalid, setInvalid] = useState<Record<string, boolean>>({});
+  const [submissionNotice, setSubmissionNotice] = useState<'queued_for_review' | 'partial' | null>(null);
   const busy = useRef(false);
   const isWater = initialIsWater || Boolean(readResult?.water);
 
@@ -108,7 +109,11 @@ export function AddNutritionScreen() {
       if (response.status !== 'found') throw Object.assign(new Error('invalid_response'), { code: 'invalid_response' });
       await saveToHistory(response);
       if (activity.isCurrent(token)) {
-        router.replace(productRoute(response.product.id));
+        if (response.waterSubmissionStatus === 'queued_for_review' || response.waterSubmissionStatus === 'partial') {
+          setSubmissionNotice(response.waterSubmissionStatus);
+        } else {
+          router.replace(productRoute(response.product.id));
+        }
       }
     } catch (err) {
       if (activity.isCurrent(token)) {
@@ -119,6 +124,21 @@ export function AddNutritionScreen() {
       setSaving(false);
     }
   };
+
+  if (submissionNotice) {
+    return (
+      <Screen title={ro.result.water.cardTitle}>
+        <StatusPanel
+          message={submissionNotice === 'partial' ? ro.result.water.submissionPartial : ro.result.water.submissionQueued}
+          actions={[{
+            label: ro.result.water.viewProductAfterSubmit,
+            variant: 'primary',
+            onPress: () => router.replace(productRoute(productId)),
+          }]}
+        />
+      </Screen>
+    );
+  }
 
   if (reading) {
     return (

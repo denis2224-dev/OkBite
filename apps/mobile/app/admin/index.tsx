@@ -3,12 +3,15 @@ import { router } from 'expo-router';
 import { Screen, Heading, Body, Button } from '../../src/ui';
 import { ro } from '../../src/copy/ro';
 import { AdminGate } from '../../src/features/admin/AdminGate';
-import { getAdminClient, sendModeration } from '../../src/features/admin/client';
+import type { WaterSubmission } from '@okbite/shared';
+import { getAdminClient, readWaterSubmissions, sendModeration } from '../../src/features/admin/client';
 import { UnverifiedList, type UnverifiedItem } from '../../src/features/admin/UnverifiedList';
 import { ReportsList, type ReportItem } from '../../src/features/admin/ReportsList';
+import { WaterSubmissionsList } from '../../src/features/admin/WaterSubmissionsList';
 function Dashboard() {
   const [products, setProducts] = useState<UnverifiedItem[]>([]);
   const [reports, setReports] = useState<ReportItem[]>([]);
+  const [waterSubmissions, setWaterSubmissions] = useState<WaterSubmission[]>([]);
   const [error, setError] = useState('');
   const [db] = useState(getAdminClient);
   const reload = useCallback(
@@ -26,11 +29,13 @@ function Dashboard() {
           .eq('status', 'open')
           .order('created_at', { ascending: false })
           .limit(100),
+        readWaterSubmissions(),
       ])
-        .then(([p, r]) => {
+        .then(([p, r, w]) => {
           if (p.error || r.error) throw new Error();
           setProducts(p.data);
           setReports(r.data);
+          setWaterSubmissions(w);
           setError('');
         })
         .catch(() => setError(ro.app.admin.failed)),
@@ -47,6 +52,14 @@ function Dashboard() {
       setError(ro.app.admin.failed);
     }
   };
+  const resolveWater = async (submissionId: string, decision: 'accept' | 'reject') => {
+    try {
+      await sendModeration({ action: 'resolve_water_submission', submissionId, decision });
+      await reload();
+    } catch {
+      setError(ro.app.admin.failed);
+    }
+  };
   return (
     <>
       {!!error && <Body accessibilityRole="alert">{error}</Body>}
@@ -57,6 +70,8 @@ function Dashboard() {
       <UnverifiedList items={products} onOpen={(id) => router.push(`/admin/product/${id}`)} />
       <Heading>{ro.app.admin.reports}</Heading>
       <ReportsList items={reports} onClose={close} />
+      <Heading>{ro.app.admin.waterSubmissions}</Heading>
+      <WaterSubmissionsList items={waterSubmissions} onResolve={resolveWater} />
     </>
   );
 }

@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
-import { parseWaterValue, WaterProfile, type Carbonation, type WaterNumericKey as SharedWaterNumericKey, type WaterProfile as WaterProfileType } from '@okbite/shared';
+import { Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  parseWaterValueWithRange,
+  WaterProfile,
+  WaterRange,
+  type Carbonation,
+  type WaterNumericKey as SharedWaterNumericKey,
+  type WaterProfile as WaterProfileType,
+} from '@okbite/shared';
 import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
@@ -14,7 +21,13 @@ const PRIMARY_KEYS: readonly WaterNumericKey[] = [
 ];
 const TRACE_KEYS: readonly WaterNumericKey[] = ['kMgL', 'fMgL', 'no3MgL', 'h3bo3MgL', 'iUgL'];
 
-const formatValue = (v: number | null) => (v === null ? '' : String(v).replace('.', ','));
+const formatNum = (v: number) => String(v).replace('.', ',');
+const formatFieldValue = (w: WaterProfileType, key: WaterNumericKey): string => {
+  const r = w.ranges?.[key];
+  if (r) return `${formatNum(r.min)}-${formatNum(r.max)}`;
+  const v = w[key];
+  return v === null || v === undefined ? '' : formatNum(v);
+};
 
 export interface WaterFieldsProps {
   value: WaterProfileType;
@@ -43,18 +56,31 @@ export function WaterFields({ value, disabled, onChange, onInvalidChange }: Wate
     setDrafts(prev => ({ ...prev, [key]: text }));
     const trimmed = text.trim();
     const kind = key === 'ph' ? 'ph' : key === 'iUgL' ? 'i_ug' : 'mg';
-    const parsed = trimmed ? parseWaterValue(trimmed, kind) : null;
-    const valid = !trimmed || (parsed !== null && WaterProfile.shape[key].safeParse(parsed).success);
+    const maxCap = key === 'ph' ? 14 : 50_000;
+    const { value: parsed, range } = trimmed ? parseWaterValueWithRange(trimmed, kind) : { value: null };
+    const valid =
+      !trimmed ||
+      (parsed !== null &&
+        WaterProfile.shape[key].safeParse(parsed).success &&
+        (!range || (WaterRange.safeParse(range).success && range.max <= maxCap)));
     const nextInvalid = { ...invalid, [key]: !valid };
     setInvalid(nextInvalid);
     onInvalidChange?.(Object.values(nextInvalid).some(Boolean));
-    if (valid) onChange({ ...value, [key]: parsed });
+    if (valid) {
+      const nextRanges = { ...(value.ranges ?? {}) };
+      if (range) nextRanges[key] = range;
+      else delete nextRanges[key];
+      const next: WaterProfileType = { ...value, [key]: parsed };
+      if (Object.keys(nextRanges).length > 0) next.ranges = nextRanges;
+      else delete next.ranges;
+      onChange(next);
+    }
   };
 
   const renderField = (key: WaterNumericKey) => {
     const label = labelFor(key);
     const unit = unitFor(key);
-    const display = key in drafts ? drafts[key]! : formatValue(value[key]);
+    const display = key in drafts ? drafts[key]! : formatFieldValue(value, key);
     const isBad = Boolean(invalid[key]);
     return (
       <View key={key} style={styles.row}>
@@ -66,7 +92,7 @@ export function WaterFields({ value, disabled, onChange, onInvalidChange }: Wate
           testID={`water-${key}`}
           accessibilityLabel={label}
           editable={!disabled}
-          keyboardType="decimal-pad"
+          keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'default'}
           value={display}
           onChangeText={t => handleText(key, t)}
           placeholder="0"

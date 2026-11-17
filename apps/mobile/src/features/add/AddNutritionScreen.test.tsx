@@ -167,3 +167,35 @@ test('enriches a water product with kind=water and saves mineral profile', async
     nutritionPhotoPath: 'uploads/dev-1/water-panel.jpg',
   });
 });
+
+test('informs the shopper when water submission is queued for moderation instead of mutating verified data silently', async () => {
+  mockParams.value = { productId: foundProductId, kind: 'water' };
+  const water = { ...emptyWaterProfile(), carbonation: 'still' as const, tdsMgL: 390 };
+  jest.mocked(requestUnknownFlow)
+    .mockResolvedValueOnce({
+      ingredientsText: null,
+      unit: 'ml',
+      nutrients: { kcal: null, fat: null, sat: null, sugar: null, salt: null, protein: null, fiber: null, fruitVegPct: null },
+      water,
+      unclear: [],
+      ingredientsPhotoPath: null,
+      nutritionPhotoPath: 'uploads/dev-1/water-conflict.jpg',
+      reasons: Object.fromEntries([...NUTRIENT_KEYS, 'ingredientsText'].map(k => [k, 'not_printed'])),
+    })
+    .mockResolvedValueOnce({ ...lookupFound, waterSubmissionStatus: 'queued_for_review' });
+
+  await render(<AddNutritionScreen />);
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
+  });
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: ro.add.confirmSave }));
+  });
+
+  expect(screen.getByText(ro.result.water.submissionQueued)).toBeTruthy();
+  expect(mockReplace).not.toHaveBeenCalled();
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: ro.result.water.viewProductAfterSubmit }));
+  });
+  expect(mockReplace).toHaveBeenCalledWith(`/product/${foundProductId}`);
+});

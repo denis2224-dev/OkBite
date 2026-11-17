@@ -100,8 +100,13 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
       {(!isWater || hasIngredients) && <LinkRow label={ro.result.ingredientsTile} last={!showPortion} onPress={() => router.push({ pathname: '/product/[id]/ingredients', params: { id: product.id } })} />}
       {showPortion && <LinkRow label={ro.result.portionTile} last onPress={() => setPortion(true)} />}
     </Card>}
-    {nutritionAdditionAvailable && product.status === 'unverified' && !hasNutrition && (!isWater || !canShowScore) &&
-      <Button variant="secondary" onPress={() => router.push({pathname: '/add/nutrition', params: isWater ? {productId: product.id, kind: 'water'} : {productId: product.id}})}>{isWater ? ro.result.water.addChemistry : ro.result.addNutrition}</Button>}
+    {nutritionAdditionAvailable && (
+      isWater && product.status !== 'hidden'
+        ? <Button variant="secondary" onPress={() => router.push({ pathname: '/add/nutrition', params: { productId: product.id, kind: 'water' } })}>{canShowScore ? ro.result.water.addOrUpdateChemistry : ro.result.water.addChemistry}</Button>
+        : !isWater && product.status === 'unverified' && !hasNutrition
+          ? <Button variant="secondary" onPress={() => router.push({ pathname: '/add/nutrition', params: { productId: product.id } })}>{ro.result.addNutrition}</Button>
+          : null
+    )}
     <Card style={{ paddingVertical: 4, gap: 0 }}>
       <LinkRow icon="camera" label={ro.result.original} last onPress={() => router.push({ pathname: '/product/[id]/label', params: { id: product.id } })} />
     </Card>
