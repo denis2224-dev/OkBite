@@ -24,7 +24,8 @@ it('keeps missing nutrients undeclared in the portion table', async () => {
 });
 it('does not claim verification for an unverified source', async () => {
   await render(<SourceCard product={{ ...foundYogurt.product, status: 'unverified', verifiedAt: null }} />);
-  expect(screen.getByText(ro.result.unverified)).toBeTruthy();
+  expect(screen.getByText(ro.result.unverifiedNote)).toBeTruthy();
+  expect(screen.queryByText(ro.result.unverified)).toBeNull();
   expect(screen.queryByText(ro.result.verified)).toBeNull();
   expect(screen.getByText(foundYogurt.product.source)).toBeTruthy();
 });

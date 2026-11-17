@@ -62,7 +62,7 @@ function Dashboard() {
 }
 export default function AdminPage() {
   return (
-    <Screen title={ro.app.admin.title} back>
+    <Screen title={ro.app.admin.title}>
       <AdminGate>
         <Dashboard />
       </AdminGate>

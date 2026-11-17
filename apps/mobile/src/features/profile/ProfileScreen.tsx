@@ -18,7 +18,7 @@ export function ProfileScreen({ children }: PropsWithChildren) {
   const { profile, toggle, disabled, errorMessage, retry } = useProfileEditor();
 
   return (
-    <Screen title={ro.profile.title} back={false}>
+    <Screen title={ro.profile.title}>
       <View style={{ marginBottom: 4 }}>
         <Body style={{ color: colors.muted }}>{ro.profile.savedLocally}</Body>
       </View>

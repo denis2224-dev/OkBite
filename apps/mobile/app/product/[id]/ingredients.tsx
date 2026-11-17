@@ -16,7 +16,7 @@ export default function Ingredients() {
   const toast = useToast();
   const product = data?.product;
   const resolvedIngredients = product ? resolveProductIngredients(product) : [];
-  return <Screen title={ro.ingredients.title} back>
+  return <Screen title={ro.ingredients.title}>
     {loading && <Body accessibilityLiveRegion="polite">{ro.app.loading}</Body>}
     {error && <Body accessibilityLiveRegion="polite">{error.message}</Body>}
     {product?.status === 'hidden' && <Body>{ro.result.notFound}</Body>}

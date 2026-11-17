@@ -22,7 +22,8 @@ for (const mode of ['light'] as const) for (const size of sizes) {
       }});
     });
     await page.goto('/', {waitUntil:'domcontentloaded'});
-    const screen = page.getByRole('progressbar', {name:ro.app.loading});
+    // The startup screen is the loading bar that holds the artwork; Scan home has its own shelf placeholder.
+    const screen = page.getByRole('progressbar', {name:ro.app.loading}).filter({has: page.getByTestId('startup-artwork')});
     await expect(screen).toBeVisible();
     for (const layer of [screen, page.getByTestId('startup-background'), page.getByTestId('startup-artwork')]) {
       await expect(layer).toBeVisible();
@@ -35,7 +36,7 @@ for (const mode of ['light'] as const) for (const size of sizes) {
     await expect(screen).toHaveCSS('background-color', 'rgb(247, 244, 236)');
     await page.screenshot({path:test.info().outputPath(`${mode}-${size.name}.png`)});
     await page.evaluate(() => (window as unknown as {__okbiteReleaseStartup: () => void}).__okbiteReleaseStartup());
-    await expect(page.getByRole('progressbar', {name:ro.app.loading})).toHaveCount(0);
+    await expect(screen).toHaveCount(0);
     await expect(page.getByRole('tablist')).toBeVisible();
   });
 }

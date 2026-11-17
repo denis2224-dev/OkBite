@@ -12,7 +12,7 @@ import { AvoidSwitches } from './AvoidSwitches';
 export function AllergiesScreen() {
   const { profile, toggle, disabled, errorMessage, retry } = useProfileEditor();
   return (
-    <Screen back={false}>
+    <Screen>
       <View style={{ marginHorizontal: -16, marginTop: -12 }}>
         <TabPageHeader title={ro.allergies.title} subtitle={ro.allergies.lead} />
       </View>
