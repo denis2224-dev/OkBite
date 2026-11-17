@@ -16,10 +16,10 @@ describe('ProfileScreen English rendering (mocked language)', () => {
   });
 
   it('renders ProfileScreen in English when English is selected', async () => {
-    const { findByText } = await render(<ProfileScreen />);
+    const { findByText, queryByText } = await render(<ProfileScreen />);
     expect(await findByText('Profile')).toBeTruthy();
     expect(await findByText('What matters to you?')).toBeTruthy();
-    expect(await findByText('Saved only on this phone')).toBeTruthy();
     expect(await findByText('More balanced food choices')).toBeTruthy();
+    expect(queryByText('Saved only on this phone')).toBeNull();
   });
 });

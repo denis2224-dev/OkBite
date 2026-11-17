@@ -24,24 +24,25 @@ async function renderReady() {
   return screen;
 }
 
-it('renders the title, the 14 allergens, the avoid switches and both notes in Romanian', async () => {
+it('renders the title, the 14 allergens, the avoid switches and the allergen note in Romanian', async () => {
   const screen = await renderReady();
-  for (const text of [ro.allergies.title, ro.allergies.lead, ro.allergies.avoidTitle,
+  expect(screen.queryByText('Te avertizăm când un produs le conține.')).toBeNull();
+  for (const text of [ro.allergies.title, ro.allergies.avoidTitle,
     ro.allergies.allergensLabel, ro.result.missingAllergenNote]) {
     expect(screen.getByText(text, { exact: false })).toBeTruthy();
   }
-  expect(screen.queryByText(ro.profile.savedLocally, { exact: false })).toBeNull();
+  expect(screen.queryByText('Salvat doar pe acest telefon', { exact: false })).toBeNull();
   expect(screen.getAllByRole('checkbox')).toHaveLength(ALLERGENS.length);
   expect(screen.getAllByRole('switch')).toHaveLength(5);
   expect(screen.queryByText(ro.profile.goalTitle)).toBeNull();
 });
 
-it('renders the title like the Compare page title (22px) and the lead once', async () => {
+it('renders the title like the Compare page title (22px) with no subtitle under it', async () => {
   const screen = await renderReady();
   const style = StyleSheet.flatten(screen.getByRole('header', { name: ro.allergies.title }).props.style);
   expect(style.fontSize).toBe(22);
   expect(style.lineHeight).toBe(31.9);
-  expect(screen.getAllByText(ro.allergies.lead)).toHaveLength(1);
+  expect(screen.queryByTestId('tab-page-subtitle')).toBeNull();
 });
 
 it('announces the checked state and saves a toggled allergen through useProfile', async () => {

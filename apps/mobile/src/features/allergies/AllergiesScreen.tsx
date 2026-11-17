@@ -14,7 +14,7 @@ export function AllergiesScreen() {
   return (
     <Screen>
       <View style={{ marginHorizontal: -16, marginTop: -12 }}>
-        <TabPageHeader title={ro.allergies.title} subtitle={ro.allergies.lead} />
+        <TabPageHeader title={ro.allergies.title} />
       </View>
       <ProfileSaveError message={errorMessage} retry={retry} />
       <View style={{ gap: 8 }}>

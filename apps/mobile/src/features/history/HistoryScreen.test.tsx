@@ -21,7 +21,6 @@ jest.mock('expo-router', () => ({
 }));
 jest.mock('./store', () => ({ listHistory: jest.fn(), clearHistory: jest.fn(), removeFromHistory: jest.fn(), restoreToHistory: jest.fn() }));
 jest.mock('../offline/queue', () => ({ subscribeQueue: () => jest.fn() }));
-jest.mock('../../lib/storagePersistence', () => ({ showStorageWarning: true }));
 const entry: HistoryEntry = { ...foundYogurt, savedAt: '2026-11-05T09:00:00.000Z' };
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -33,7 +32,6 @@ async function refocus() {
 }
 beforeEach(() => {
   jest.clearAllMocks();
-  jest.requireMock('../../lib/storagePersistence').showStorageWarning = true;
   jest.mocked(listHistory).mockResolvedValue([entry]);
   jest.mocked(clearHistory).mockResolvedValue();
 });
@@ -64,35 +62,10 @@ it('opens a clear confirmation dialog even with a long history', async () => {
   expect(screen.queryByLabelText(ro.history.clearTitle)).toBeNull();
   expect(clearHistory).not.toHaveBeenCalled();
 });
-function stubLocalStorage() {
-  const store = new Map<string, string>();
-  const before = Object.getOwnPropertyDescriptor(globalThis, 'window');
-  Object.defineProperty(globalThis, 'window', { configurable: true, value: { localStorage: {
-    getItem: (key: string) => store.get(key) ?? null, setItem: (key: string, value: string) => { store.set(key, value); },
-  } } });
-  return () => { if (before) Object.defineProperty(globalThis, 'window', before); else Reflect.deleteProperty(globalThis, 'window'); };
-}
-it('shows a dismissible one-line browser storage notice once history has a product', async () => {
-  const restore = stubLocalStorage();
-  try {
-    await render(<HistoryScreen />);
-    await screen.findByText(ro.history.design.storageNotice);
-    await fireEvent.press(screen.getByRole('button', { name: ro.history.design.dismissNotice }));
-    expect(screen.queryByText(ro.history.design.storageNotice)).toBeNull();
-    await screen.unmount();
-    await render(<HistoryScreen />);
-    await screen.findByText(entry.product.name);
-    expect(screen.queryByText(ro.history.design.storageNotice)).toBeNull();
-  } finally { restore(); }
-});
-it('does not show the storage notice while history is empty', async () => {
-  const restore = stubLocalStorage();
-  try {
-    jest.mocked(listHistory).mockResolvedValue([]);
-    await render(<HistoryScreen />);
-    await screen.findByText(ro.history.design.emptyTitle);
-    expect(screen.queryByText(ro.history.design.storageNotice)).toBeNull();
-  } finally { restore(); }
+it('shows no "saved only in this browser" banner above the list', async () => {
+  await render(<HistoryScreen />);
+  await screen.findByText(entry.product.name);
+  expect(screen.queryByText('Istoricul e salvat doar în acest browser.')).toBeNull();
 });
 it('hides the search field while history is empty', async () => {
   jest.mocked(listHistory).mockResolvedValue([]);
@@ -105,15 +78,6 @@ it('shows the search field when history has products', async () => {
   await render(<HistoryScreen />);
   await screen.findByText(entry.product.name);
   expect(screen.getByLabelText(ro.history.search)).toBeTruthy();
-});
-it('omits the storage notice on native', async () => {
-  const restore = stubLocalStorage();
-  try {
-    jest.requireMock('../../lib/storagePersistence').showStorageWarning = false;
-    await render(<HistoryScreen />);
-    await screen.findByText(entry.product.name);
-    expect(screen.queryByText(ro.history.design.storageNotice)).toBeNull();
-  } finally { restore(); }
 });
 it('shows loading before an empty saved history', async () => {
   const pending = deferred<HistoryEntry[]>();
@@ -204,12 +168,13 @@ it('withholds a cached score when required nutrition data is missing', async () 
   expect(screen.queryByText(String(productScoreFor(entry.product, entry.score).score), { includeHiddenElements: true })).toBeNull();
 });
 
-it('renders the title and subtitle through the shared tab page header', async () => {
+it('renders only the title in the shared tab page header, with no filler subtitle', async () => {
   await render(<HistoryScreen />);
   await screen.findByText(entry.product.name);
   const title = screen.getByRole('header', { name: ro.history.design.title });
   expect(StyleSheet.flatten(title.props.style).fontSize).toBe(22);
-  expect(screen.getByText(ro.history.design.note)).toBeTruthy();
+  expect(screen.queryByText('Disponibil și fără internet.')).toBeNull();
+  expect(screen.queryByTestId('tab-page-subtitle')).toBeNull();
 });
 
 it('sums up the saved products in a "Coșul tău" card above the list', async () => {
