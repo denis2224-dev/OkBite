@@ -8,9 +8,6 @@ import { tierTone } from '../../theme/tierTones';
 import { ScoreTagSmall } from './ScoreTagSmall';
 import type { ShelfPick } from './topProducts';
 
-// Lighter than `goodBg`, so every tier colour still reads on it (the lighter "Bun" green needs 4.5:1).
-const BEST_FILL = '#F1F6EE';
-
 /** One ranked product: score tag, name, "brand, quantity" and the tier word. `best` marks the first row. */
 export function ShelfPickRow({ pick, best }: { pick: ShelfPick; best: boolean }) {
   const { colors } = useTheme();
@@ -20,7 +17,7 @@ export function ShelfPickRow({ pick, best }: { pick: ShelfPick; best: boolean })
   const label = [best ? ro.scan.shelf.best : null, [product.name, product.brand].filter(Boolean).join(', '), `${ro.history.score(score)} · ${ro.tiers[tier]}`].filter(Boolean).join('. ');
   return <Pressable accessibilityRole="button" accessibilityLabel={label}
     onPress={() => router.push({ pathname: '/product/[id]', params: { id: product.id } })}
-    style={[styles.row, { borderColor: best ? colors.primary : colors.border, backgroundColor: best ? BEST_FILL : colors.surface }]}>
+    style={[styles.row, { borderColor: best ? colors.primary : colors.border, backgroundColor: best ? colors.highlightBg : colors.surface }]}>
     <ScoreTagSmall score={score} tier={tier} />
     <View style={styles.text}>
       {best ? <Text style={[styles.pill, { backgroundColor: colors.primary, color: colors.onPrimary }]}>{ro.scan.shelf.best}</Text> : null}

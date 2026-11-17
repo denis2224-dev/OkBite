@@ -28,5 +28,5 @@ it('ignores a dark choice saved by an older version', async () => {
 it('ships no dark palettes', () => {
   expect('dark' in tokens).toBe(false);
   expect('dark' in letterTones).toBe(false);
-  expect(letterTones.A).toEqual({ fg: '#1F6B3A', bg: '#D9EDD9' });
+  expect(letterTones.A).toEqual({ fg: '#2F5136', bg: '#E6EDE1' });
 });
