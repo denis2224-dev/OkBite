@@ -6,6 +6,7 @@ import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { Screen } from '../../ui/Screen';
+import { radii } from '../../theme/tokens';
 import { compressPhoto } from '../capture/compressPhoto';
 import { ActionButton, StatusPanel, errorMessage } from '../capture/StatusPanel';
 import { useScreenActivity } from '../capture/useScreenActivity';
@@ -131,7 +132,7 @@ export function AddNutritionScreen() {
 
   return (
     <Screen title={ro.add.confirmTitle}>
-      <View style={{ gap: 12, padding: 16, borderRadius: 20, backgroundColor: colors.surface }}>
+      <View style={{ gap: 12, padding: 16, borderRadius: radii.card, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={ro.review.per100}

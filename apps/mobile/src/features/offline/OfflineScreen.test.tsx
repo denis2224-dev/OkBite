@@ -35,3 +35,15 @@ it('requires confirmation before releasing a queued capture', async () => {
   await waitFor(() => expect(completeQueued).toHaveBeenCalledWith('queued'));
   await waitFor(() => expect(screen.getByText(ro.offline.emptyQueue)).toBeTruthy());
 });
+it('shows queue errors in a terracotta panel on the palette', async () => {
+  const { StyleSheet } = jest.requireActual<typeof import('react-native')>('react-native');
+  const { light, radii } = jest.requireActual<typeof import('../../theme/tokens')>('../../theme/tokens');
+  jest.mocked(retryQueued).mockRejectedValueOnce(new Error('storage'));
+  await render(<OfflineScreen />);
+  await waitFor(() => expect(screen.getByText(ro.errors.rate_limited)).toBeTruthy());
+  expect(screen.getByText(ro.errors.rate_limited)).toHaveStyle({ color: light.low });
+  await fireEvent.press(screen.getByRole('button', { name: ro.app.retry }));
+  await waitFor(() => expect(screen.getByTestId('offline-error')).toBeTruthy());
+  expect(StyleSheet.flatten(screen.getByTestId('offline-error').props.style)).toMatchObject({ backgroundColor: light.lowBg, borderRadius: radii.small });
+  expect(screen.getByText(ro.offline.queueError)).toHaveStyle({ color: light.low });
+});

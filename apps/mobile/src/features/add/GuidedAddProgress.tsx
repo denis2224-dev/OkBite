@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import { ro } from '../../copy/ro';
-import { fonts, spacing } from '../../theme/tokens';
+import { fonts, radii, spacing } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 import { Body } from '../../ui/Typography';
 
@@ -20,7 +20,8 @@ export function GuidedAddProgress({ step, total }: { step: number; total: number
         {Array.from({ length: total }, (_, index) => (
           <View
             key={index}
-            style={[styles.segment, { backgroundColor: index < step ? colors.primary : colors.border }]}
+            testID={`progress-step-${index}`}
+            style={[styles.segment, { backgroundColor: index < step ? colors.primary : colors.sageSoft }]}
           />
         ))}
       </View>
@@ -32,5 +33,5 @@ const styles = StyleSheet.create({
   progress: { gap: spacing.sm },
   label: { fontFamily: fonts.bold },
   track: { flexDirection: 'row', gap: spacing.xs },
-  segment: { flex: 1, height: 5, borderRadius: 3 },
+  segment: { flex: 1, height: 6, borderRadius: radii.pill },
 });

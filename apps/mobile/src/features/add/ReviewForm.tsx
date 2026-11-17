@@ -16,7 +16,7 @@ import {
 } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
-import type { Palette } from '../../theme/tokens';
+import { radii, type Palette } from '../../theme/tokens';
 import { AllergenChip } from '../../ui/AllergenChip';
 import { ActionButton, errorMessage } from '../capture/StatusPanel';
 import type { AddInitialValues } from '../identify/routes';
@@ -268,22 +268,22 @@ const createStyles = (colors: Palette) => StyleSheet.create({
   container: { flexGrow: 1, padding: 16, gap: 14, backgroundColor: colors.ground },
   title: { fontSize: 22, fontWeight: '800', color: colors.ink },
   hint: { fontSize: 14, color: colors.muted },
-  unclearBanner: { padding: 14, borderRadius: 14, backgroundColor: colors.mediumBg, borderWidth: 1, borderColor: colors.medium, gap: 6 },
+  unclearBanner: { padding: 14, borderRadius: radii.small, backgroundColor: colors.warningBg, borderWidth: 1, borderColor: colors.warningBorder, gap: 6 },
   unclearBannerTitle: { fontSize: 15, fontWeight: '800', color: colors.medium },
   unclearBannerText: { fontSize: 14, color: colors.medium },
-  card: { padding: 14, borderRadius: 16, backgroundColor: colors.surface, gap: 8 },
+  card: { padding: 16, borderRadius: radii.card, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, gap: 8 },
   fieldLabel: { fontSize: 15, fontWeight: '700', color: colors.ink },
   subLabel: { fontSize: 13, fontWeight: '700', color: colors.muted, marginTop: 4 },
   unclearMark: { fontSize: 12, fontWeight: '800', color: colors.medium },
-  input: { minHeight: 46, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, borderWidth: 1.5, borderColor: colors.muted, backgroundColor: colors.surface, color: colors.ink, fontSize: 15 },
+  input: { minHeight: 46, paddingHorizontal: 12, paddingVertical: 10, borderRadius: radii.small, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, color: colors.ink, fontSize: 15 },
   multiline: { minHeight: 96, textAlignVertical: 'top' },
   unitRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  unitButton: { minHeight: 44, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, borderWidth: 1.5, borderColor: colors.muted, justifyContent: 'center' },
-  unitButtonSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
-  unitText: { fontSize: 14, fontWeight: '600', color: colors.ink },
+  unitButton: { minHeight: 44, paddingHorizontal: 16, paddingVertical: 8, borderRadius: radii.pill, borderWidth: 0, backgroundColor: colors.sageSoft, justifyContent: 'center' },
+  unitButtonSelected: { backgroundColor: colors.primary },
+  unitText: { fontSize: 14, fontWeight: '600', color: colors.primary },
   unitTextSelected: { color: colors.onPrimary },
   allergensSection: { gap: 6 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' },
   muted: { fontSize: 13, color: colors.muted },
-  errorBanner: { fontSize: 14, fontWeight: '700', color: colors.low },
+  errorBanner: { padding: 12, borderRadius: radii.small, overflow: 'hidden', backgroundColor: colors.lowBg, fontSize: 14, fontWeight: '700', color: colors.low },
 });

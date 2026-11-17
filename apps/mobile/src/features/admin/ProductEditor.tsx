@@ -4,6 +4,7 @@ import { NUTRIENT_KEYS, normalizeCode, ProductInput } from '@okbite/shared';
 import { Body, Button } from '../../ui';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
+import { radii } from '../../theme/tokens';
 
 export function ProductEditor({
   initial,
@@ -36,6 +37,8 @@ export function ProductEditor({
           padding: 12,
           borderWidth: 1,
           borderColor: colors.border,
+          backgroundColor: colors.surface,
+          borderRadius: radii.small,
           color: colors.ink,
         }}
       />

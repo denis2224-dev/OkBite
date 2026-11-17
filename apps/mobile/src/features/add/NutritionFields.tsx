@@ -3,7 +3,7 @@ import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { NUTRIENT_KEYS, type NutrientKey, type ReadLabelResponse } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
-import type { Palette } from '../../theme/tokens';
+import { radii, type Palette } from '../../theme/tokens';
 import { unitForNutrient } from './parseAmount';
 
 export interface NutritionFieldsProps {
@@ -96,11 +96,11 @@ export function NutritionFields({
 }
 
 const createStyles = (colors: Palette) => StyleSheet.create({
-  card: { padding: 14, borderRadius: 16, backgroundColor: colors.surface, gap: 8 },
+  card: { padding: 16, borderRadius: radii.card, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, gap: 8 },
   header: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between', alignItems: 'center' },
   title: { fontSize: 15, fontWeight: '700', color: colors.ink },
   muted: { fontSize: 13, color: colors.muted },
-  unavailableBox: { padding: 12, borderRadius: 12, backgroundColor: colors.ground, gap: 4 },
+  unavailableBox: { padding: 12, borderRadius: radii.small, backgroundColor: colors.highlightBg, gap: 4 },
   row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
   labelCol: { flexGrow: 1, flexShrink: 1, flexBasis: 160, minWidth: 0 },
   labelText: { fontSize: 14, fontWeight: '600', color: colors.ink },
@@ -113,9 +113,9 @@ const createStyles = (colors: Palette) => StyleSheet.create({
     minHeight: 46,
     paddingHorizontal: 10,
     paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: colors.muted,
+    borderRadius: radii.small,
+    borderWidth: 1,
+    borderColor: colors.border,
     backgroundColor: colors.surface,
     textAlign: 'right',
     fontSize: 15,

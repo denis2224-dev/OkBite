@@ -5,6 +5,7 @@ import { ProductInput } from '@okbite/shared';
 import { Screen, Body, Button } from '../../../src/ui';
 import { ro } from '../../../src/copy/ro';
 import { useTheme } from '../../../src/theme/useTheme';
+import { radii } from '../../../src/theme/tokens';
 import { AdminGate } from '../../../src/features/admin/AdminGate';
 import { ProductEditor } from '../../../src/features/admin/ProductEditor';
 import { readAdminProduct, sendModeration } from '../../../src/features/admin/client';
@@ -73,6 +74,8 @@ function Editor({ id }: { id: string }) {
         style={{
           color: colors.ink,
           borderColor: colors.border,
+          backgroundColor: colors.surface,
+          borderRadius: radii.small,
           minHeight: 48,
           borderWidth: 1,
           padding: 12,

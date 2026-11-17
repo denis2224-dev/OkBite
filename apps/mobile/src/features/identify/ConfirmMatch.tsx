@@ -3,7 +3,7 @@ import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { Candidate } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
-import type { Palette } from '../../theme/tokens';
+import { fonts, radii, typeScale, type Palette } from '../../theme/tokens';
 import { ActionButton } from '../capture/StatusPanel';
 
 export function ConfirmMatch({
@@ -22,7 +22,7 @@ export function ConfirmMatch({
       <Text accessibilityRole="header" style={styles.title}>
         {ro.identify.confirmTitle}
       </Text>
-      <View style={styles.card}>
+      <View testID="confirm-match-card" style={styles.card}>
         {candidate.imageUrl ? (
           <Image
             source={{ uri: candidate.imageUrl }}
@@ -44,9 +44,9 @@ export function ConfirmMatch({
 
 const createStyles = (colors: Palette) => StyleSheet.create({
   container: { flexGrow: 1, padding: 16, gap: 16, backgroundColor: colors.ground },
-  title: { fontSize: 22, fontWeight: '700', color: colors.ink },
-  card: { padding: 20, borderRadius: 16, backgroundColor: colors.surface, alignItems: 'center', gap: 8 },
-  hero: { width: 160, height: 160, borderRadius: 12 },
+  title: { fontFamily: fonts.heading, ...typeScale.title, color: colors.ink },
+  card: { padding: 20, borderRadius: radii.card, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', gap: 8 },
+  hero: { width: 160, height: 160, borderRadius: radii.small },
   name: { maxWidth: '100%', fontSize: 20, fontWeight: '700', color: colors.ink, textAlign: 'center' },
   meta: { maxWidth: '100%', fontSize: 15, color: colors.muted, textAlign: 'center' },
   hint: { fontSize: 14, color: colors.muted, textAlign: 'center' },

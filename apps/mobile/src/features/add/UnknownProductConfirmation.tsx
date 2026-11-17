@@ -5,6 +5,7 @@ import type { AddInitialValues } from '../identify/routes';
 import { useTheme } from '../../theme/useTheme';
 import { ro } from '../../copy/ro';
 import { Screen } from '../../ui/Screen';
+import { radii } from '../../theme/tokens';
 import { AllergenChip } from '../../ui/AllergenChip';
 import { ActionButton } from '../capture/StatusPanel';
 import { GuidedAddProgress } from './GuidedAddProgress';
@@ -61,7 +62,7 @@ export function UnknownProductConfirmation({ initial, label, photos, categories,
     finally { busy.current = false; setPending(false); }
   };
   const textStyle = { color: colors.ink, fontSize: 16 };
-  const card = { gap: 12, padding: 16, borderRadius: 20, backgroundColor: colors.surface };
+  const card = { gap: 12, padding: 16, borderRadius: radii.card, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface };
   const photoLabels = { front: ro.app.admin.front, ingredients: ro.app.admin.ingredientsPhoto, nutrition: ro.app.admin.nutritionPhoto };
   const field = (key: 'name' | 'brand' | 'quantity' | 'ingredientsText', title: string) =>
     <UnknownConfirmationField label={title} value={value[key]} disabled={pending} multiline={key === 'ingredientsText'}

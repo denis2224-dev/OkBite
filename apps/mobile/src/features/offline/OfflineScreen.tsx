@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
+import { View } from 'react-native';
+import { useTheme } from '../../theme/useTheme';
+import { radii } from '../../theme/tokens';
 import { Body, Button, Card, Screen, Section } from '../../ui';
 import { ro } from '../../copy/ro';
 import { listQueue, retryQueued, completeQueued, subscribeQueue, resumeQueuedItem, type QueueEntry } from './queue';
 import { productRoute } from '../identify/routes';
 
 export function OfflineScreen() {
+  const { colors } = useTheme();
   const [rows, setRows] = useState<QueueEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -52,14 +56,14 @@ export function OfflineScreen() {
   return <Screen title={ro.offline.queueTitle}>
     <Body>{ro.offline.description}</Body>
     {loading ? <Body accessibilityLiveRegion="polite">{ro.app.loading}</Body> : <Body>{ro.offline.pendingCount(rows.length)}</Body>}
-    {!!error && <><Body accessibilityLiveRegion="polite">{error}</Body><Button disabled={busy} onPress={() => { void refresh(); }}>{ro.offline.reload}</Button></>}
+    {!!error && <><View testID="offline-error" style={{ padding: 12, borderRadius: radii.small, backgroundColor: colors.lowBg }}><Body accessibilityLiveRegion="polite" style={{ color: colors.low }}>{error}</Body></View><Button disabled={busy} onPress={() => { void refresh(); }}>{ro.offline.reload}</Button></>}
     {!loading && !rows.length && <Card><Body>{ro.offline.emptyQueue}</Body></Card>}
     {rows.map(item => <Card key={item.id}>
       <Section>{item.status === 'completed' ? ro.review.finishSave : item.kind === 'photo' ? ro.offline.photo : ro.offline.code}</Section>
       {item.kind === 'code' && item.status !== 'completed' && <Body>{item.payload}</Body>}
       {item.outcome && <Body>{ro.offline.needsReview}</Body>}
       {item.status === 'completed' && <Body>{ro.offline.cleanupPending}</Body>}
-      {item.error && <Body>{item.error in ro.errors ? ro.errors[item.error as keyof typeof ro.errors] : ro.offline.queueError}</Body>}
+      {item.error && <Body style={{ color: colors.low }}>{item.error in ro.errors ? ro.errors[item.error as keyof typeof ro.errors] : ro.offline.queueError}</Body>}
       <Button disabled={busy} onPress={() => { void run(async () => {
         if (!item.outcome) return retryQueued(item.id);
         const actionRev = focusRev.current;

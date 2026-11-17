@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { Button, Body } from '../../ui';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
+import { radii } from '../../theme/tokens';
 import { getAdminClient } from './client';
 import { sessionFromUrl } from './session';
 import { consumeInitialAuthUrl } from './callback';
@@ -151,6 +152,8 @@ export function AdminGate({ children }: PropsWithChildren) {
                 style={{
                   color: colors.ink,
                   borderColor: colors.border,
+          backgroundColor: colors.surface,
+          borderRadius: radii.small,
                   borderWidth: 1,
                   padding: 12,
                   minHeight: 48,

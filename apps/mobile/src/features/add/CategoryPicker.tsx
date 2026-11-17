@@ -4,7 +4,7 @@ import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import type { Category } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
-import type { Palette } from '../../theme/tokens';
+import { radii, type Palette } from '../../theme/tokens';
 
 export interface CategoryPickerProps {
   categories: readonly Category[];
@@ -64,22 +64,18 @@ const createStyles = (colors: Palette) => StyleSheet.create({
     maxWidth: '100%',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: colors.muted,
-    backgroundColor: colors.surface,
+    borderRadius: radii.pill,
+    borderWidth: 0,
+    backgroundColor: colors.sageSoft,
     justifyContent: 'center',
   },
-  chipSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary,
-  },
+  chipSelected: { backgroundColor: colors.primary },
   chipDisabled: { opacity: 0.55 },
-  chipText: { flexShrink: 1, fontSize: 14, fontWeight: '600', color: colors.ink },
+  chipText: { flexShrink: 1, fontSize: 14, fontWeight: '600', color: colors.primary },
   chipTextSelected: { color: colors.onPrimary },
   emptyBox: {
     padding: 12,
-    borderRadius: 12,
+    borderRadius: radii.small,
     backgroundColor: colors.lowBg,
     gap: 4,
   },
