@@ -1,8 +1,9 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { ScrollView, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { Button } from '../../ui/Button';
+import { Card } from '../../ui/Card';
 import { fonts } from '../../theme/tokens';
 
 export const errorMessage = (code?: string): string => {
@@ -39,7 +40,7 @@ export function ActionButton({
   );
 }
 
-/** A message with the actions that get the user out of it. */
+/** A message with the actions that get the user out of it, on the shared raised card: forest primary first, raised ivory secondary after. */
 export function StatusPanel({
   title,
   message,
@@ -51,10 +52,7 @@ export function StatusPanel({
 }) {
   const { colors } = useTheme();
   return (
-    <View
-      style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.border }]}
-      accessibilityLiveRegion="polite"
-    >
+    <Card testID="status-panel" style={styles.panel} accessibilityLiveRegion="polite">
       {title ? (
         <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>
           {title}
@@ -68,18 +66,12 @@ export function StatusPanel({
           {...a}
         />
       ))}
-    </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  panel: {
-    gap: 12,
-    padding: 20,
-    alignItems: 'stretch',
-    borderRadius: 16,
-    borderWidth: 1,
-  },
+  panel: { padding: 20, alignItems: 'stretch' },
   title: { fontSize: 18, lineHeight: 25, fontFamily: fonts.heading },
   message: { fontSize: 16, lineHeight: 23, fontFamily: fonts.body },
 });

@@ -4,7 +4,8 @@ import { router } from 'expo-router';
 import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
-import { fonts } from '../../theme/tokens';
+import { fonts, radii } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
 import { listHistory, type HistoryEntry } from '../history/store';
 import { useProfile } from '../profile';
 import { RecentScanRow } from './RecentScanRow';
@@ -12,7 +13,7 @@ import { ShelfPicks } from '../shelf/ShelfPicks';
 
 const LIMIT = 3;
 
-/** Light sheet under the camera with the newest history products. Reloads each time the Scan tab is focused. */
+/** Raised ivory sheet under the camera (on-dark depth: its top edge meets the dark camera panel, where a white lift would glow) with the newest history products. Reloads each time the Scan tab is focused. */
 export function RecentScans({ active }: { active: boolean }) {
   const { colors } = useTheme();
   const { profile } = useProfile();
@@ -30,13 +31,13 @@ export function RecentScans({ active }: { active: boolean }) {
   }, [active]);
 
   const muted = [styles.note, { color: colors.muted }];
-  return <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
+  return <View testID="recent-scans-sheet" style={[styles.sheet, { backgroundColor: colors.surface }, depth.raisedOnDark]}>
     <View style={[styles.grabber, { backgroundColor: colors.border }]} />
     <ShelfPicks />
     <View style={styles.header}>
       <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>{ro.home.design.recent}</Text>
       <Pressable accessibilityRole="button" accessibilityLabel={ro.home.allHistory} onPress={() => router.navigate('/history')} style={styles.link}>
-        <Text style={[styles.linkText, { color: colors.ink }]}>{ro.scan.seeAll}</Text>
+        <Text style={[styles.linkText, { color: colors.primary }]}>{ro.scan.seeAll}</Text>
       </Pressable>
     </View>
     {failed ? <Text accessibilityRole="alert" style={muted}>{ro.history.loadError}</Text>
@@ -52,11 +53,11 @@ export function RecentScans({ active }: { active: boolean }) {
 
 const styles = StyleSheet.create({
   // Bottom padding leaves room for the bar's raised Scan circle.
-  sheet: { flexGrow: 1, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 48, gap: 8 },
+  sheet: { flexGrow: 1, borderTopLeftRadius: radii.hero, borderTopRightRadius: radii.hero, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 48, gap: 8 },
   grabber: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, marginBottom: 8 },
   header: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   title: { fontFamily: fonts.heading, fontSize: 20, lineHeight: 27, flexShrink: 1 },
   link: { justifyContent: 'center', paddingHorizontal: 4 },
-  linkText: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 21 },
+  linkText: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 21 },
   note: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, paddingVertical: 8 },
 });

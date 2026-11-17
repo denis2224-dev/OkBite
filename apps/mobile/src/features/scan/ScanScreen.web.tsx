@@ -4,7 +4,8 @@ import { useIsFocused, useRouter } from 'expo-router';
 import { Body, Button, Heading } from '../../ui';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
-import type { Palette } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
+import { radii, type Palette } from '../../theme/tokens';
 import { StatusPanel, errorMessage } from '../capture/StatusPanel';
 import { CameraBlocked } from './CameraBlocked';
 import { ManualCode } from './ManualCode';
@@ -39,12 +40,14 @@ export default function ScanScreenWeb({ embedded = false }: ScanScreenProps = {}
   const working = state.status === 'working';
   const denied = liveStatus === 'denied';
   const cameraOn = liveStatus === 'starting' || liveStatus === 'live';
-  const frame = embedded ? styles.embeddedPreview : styles.preview;
+  const frame = [styles.frame, embedded ? styles.embeddedPreview : styles.preview];
+  // A blocked camera keeps the minimum size but grows with its text (200% font); no fixed size, since the web keeps one an `undefined` override tries to clear.
+  const sized = [...frame, embedded ? styles.embeddedSize : styles.previewSize];
 
   const body = (
     <>
       {focused && state.status !== 'found' ? (
-        <View testID="scan-preview" style={cameraOn ? frame : [frame, styles.blocked]}>
+        <View testID="scan-preview" style={cameraOn ? sized : [...frame, styles.blockedWell]}>
           {cameraOn ? <>
             <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             {liveStatus === 'live' ? <ScanReticle /> : <ActivityIndicator style={StyleSheet.absoluteFill} color={colors.cameraInk} />}
@@ -84,11 +87,14 @@ export default function ScanScreenWeb({ embedded = false }: ScanScreenProps = {}
 const createStyles = (colors: Palette) => StyleSheet.create({
   content: { flexGrow: 1, padding: 16, gap: 16, backgroundColor: colors.ground },
   title: { fontSize: 22, lineHeight: 29 },
+  // The scanner sits in an inset well: black while the camera runs, ivory when it is blocked.
+  frame: { width: '100%', borderRadius: radii.card, overflow: 'hidden', backgroundColor: colors.cameraBackground, justifyContent: 'center', ...depth.well },
+  blockedWell: { backgroundColor: colors.surface },
   // Portrait preview: tall enough to aim at a shelf, capped so manual entry stays reachable.
-  preview: { width: '100%', aspectRatio: 3 / 4, minHeight: 280, maxHeight: 440, borderRadius: 20, overflow: 'hidden', backgroundColor: colors.cameraBackground, justifyContent: 'center' },
+  preview: { minHeight: 280 },
+  previewSize: { aspectRatio: 3 / 4, maxHeight: 440 },
   embedded: { gap: 16, paddingHorizontal: 16 },
-  embeddedPreview: { width: '100%', aspectRatio: 1.15, minHeight: 240, maxHeight: 340, borderRadius: 20, overflow: 'hidden', backgroundColor: colors.cameraBackground, justifyContent: 'center' },
-  // A blocked camera keeps the frame's minimum size but grows with its text (200% font) instead of clipping it.
-  blocked: { maxHeight: undefined, aspectRatio: undefined },
+  embeddedPreview: { minHeight: 240 },
+  embeddedSize: { aspectRatio: 1.15, maxHeight: 340 },
   status: { flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },
 });

@@ -5,6 +5,7 @@ import { StyleSheet } from 'react-native';
 import { api } from '../../lib/api';
 import { ro } from '../../copy/ro';
 import { light } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
 import ScanScreenWeb from './ScanScreen.web';
 import { cameraMessage } from '../capture/cameraSupport.web';
 import { CODE, lookupNotFound } from '../capture/__fixtures__/responses';
@@ -42,8 +43,9 @@ describe('ScanScreen (web)', () => {
     mockLive.status = status;
     await render(<ScanScreenWeb embedded />);
     const blocked = within(screen.getByTestId('scan-preview')).getByTestId('camera-blocked');
-    expect(StyleSheet.flatten(within(blocked).getByText(message()).props.style).color).toBe(light.cameraInk);
-    expect(StyleSheet.flatten(blocked.props.style).backgroundColor).not.toBe(light.surface);
+    expect(StyleSheet.flatten(within(blocked).getByText(message()).props.style).color).toBe(light.ink);
+    // Soft depth: a blocked camera turns the frame into an ivory inset well.
+    expect(StyleSheet.flatten(screen.getByTestId('scan-preview').props.style)).toMatchObject({ backgroundColor: light.surface, ...depth.well });
     expect(within(blocked).getAllByRole('button', { name: ro.errors.retry })).toHaveLength(1);
   });
 
@@ -63,6 +65,8 @@ describe('ScanScreen (web)', () => {
     expect(frame.maxHeight).toBeUndefined();
     expect(frame.aspectRatio).toBeUndefined();
     expect(frame.minHeight).toBe(240);
+    // React Native Web keeps a size an `undefined` override tries to clear, so the blocked frame must never get one.
+    expect(JSON.stringify(screen.getByTestId('scan-preview').props.style)).not.toMatch(/aspectRatio|maxHeight/);
   });
 
   it('releases the live preview on blur and restores it on focus', async () => {
@@ -115,7 +119,7 @@ describe('ScanScreen (web)', () => {
     await render(<ScanScreenWeb />);
     expect(screen.getByTestId('scan-reticle')).toBeTruthy();
     const preview = screen.getByTestId('scan-preview');
-    expect(preview.props.style).toEqual(expect.objectContaining({ aspectRatio: 3 / 4 }));
+    expect(StyleSheet.flatten(preview.props.style)).toEqual(expect.objectContaining({ aspectRatio: 3 / 4, backgroundColor: light.cameraBackground, ...depth.well }));
   });
 
   it('shows no corner guides when the camera is unavailable', async () => {

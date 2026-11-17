@@ -6,6 +6,7 @@ import { notificationAsync } from 'expo-haptics';
 import { api } from '../../lib/api';
 import { ro } from '../../copy/ro';
 import { light } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
 import ScanScreen from './ScanScreen';
 import { CODE, lookupFound, lookupNotFound } from '../capture/__fixtures__/responses';
 
@@ -90,12 +91,13 @@ describe('ScanScreen', () => {
     expect(mockPush).toHaveBeenCalledWith('/capture');
   });
 
-  it('shows the denied state inside the dark camera frame, not as a white card', async () => {
+  it('shows the denied state inside an ivory inset well', async () => {
     mockPermission.value = { granted: false, status: 'denied', canAskAgain: false };
     await render(<ScanScreen embedded />);
     const blocked = within(screen.getByTestId('scan-preview')).getByTestId('camera-blocked');
-    expect(StyleSheet.flatten(within(blocked).getByText(ro.scan.deniedText).props.style).color).toBe(light.cameraInk);
-    expect(StyleSheet.flatten(blocked.props.style).backgroundColor).not.toBe(light.surface);
+    expect(StyleSheet.flatten(within(blocked).getByText(ro.scan.deniedText).props.style).color).toBe(light.ink);
+    // Soft depth: a blocked camera turns the frame into an ivory inset well.
+    expect(StyleSheet.flatten(screen.getByTestId('scan-preview').props.style)).toMatchObject({ backgroundColor: light.surface, ...depth.well });
     expect(within(blocked).getByRole('button', { name: ro.errors.retry })).toBeTruthy();
   });
 
@@ -106,6 +108,8 @@ describe('ScanScreen', () => {
     expect(frame.maxHeight).toBeUndefined();
     expect(frame.aspectRatio).toBeUndefined();
     expect(frame.minHeight).toBe(240);
+    // React Native Web keeps a size an `undefined` override tries to clear, so the blocked frame must never get one.
+    expect(JSON.stringify(screen.getByTestId('scan-preview').props.style)).not.toMatch(/aspectRatio|maxHeight/);
   });
 
   it('reports a rejected native settings action and keeps manual entry', async () => {

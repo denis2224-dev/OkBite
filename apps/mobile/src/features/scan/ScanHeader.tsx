@@ -1,34 +1,28 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { fonts } from '../../theme/tokens';
-import { ScanIcon, type ScanIconName } from './ScanIcon';
+import { IconButton } from '../../ui/IconButton';
+import { ScanIcon } from './ScanIcon';
 
 type Props = { torch: boolean; onTorch?: () => void };
 
-/** okBite wordmark with the flash button; `onTorch` is omitted where flash is unsupported. Manual entry lives under the scanner. */
+/** okBite wordmark with the flash button; `onTorch` is omitted where flash is unsupported. Manual entry lives under the scanner.
+ * The bolt is filled while the torch is on; the label also says which way the press goes. */
 export function ScanHeader({ torch, onTorch }: Props) {
   const { colors } = useTheme();
   const brand = ro.home.design.brand;
-  const button = (icon: ScanIconName, label: string, on: boolean, onPress: () => void, state: object) =>
-    <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={state} onPress={onPress}
-      style={[styles.round, { backgroundColor: on ? colors.accent : colors.hero }]}>
-      <ScanIcon name={icon} color={on ? colors.onAccent : colors.cameraInk} />
-    </Pressable>;
   return <View style={styles.row}>
     <Text accessibilityRole="header" accessibilityLabel={brand} style={[styles.brand, { color: colors.cameraInk }]}>
-      {brand.slice(0, 2)}<Text style={{ color: colors.accent }}>{brand.slice(2)}</Text>
+      {brand.slice(0, 2)}<Text style={{ color: colors.sage }}>{brand.slice(2)}</Text>
     </Text>
-    <View style={styles.actions}>
-      {onTorch ? button('flash', torch ? ro.scan.flashOff : ro.scan.flashOn, torch, onTorch, {}) : null}
-    </View>
+    {onTorch ? <IconButton onDark label={torch ? ro.scan.flashOff : ro.scan.flashOn} onPress={onTorch}>
+      <ScanIcon name="flash" size={22} color={colors.primary} fill={torch ? colors.primary : colors.transparent} />
+    </IconButton> : null}
   </View>;
 }
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 16, paddingTop: 12 },
   brand: { fontFamily: fonts.heading, fontSize: 28, lineHeight: 36, letterSpacing: -0.3 },
-  actions: { flexDirection: 'row', gap: 12 },
-  round: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
 });

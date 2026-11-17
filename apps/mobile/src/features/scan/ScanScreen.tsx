@@ -7,7 +7,8 @@ import { notificationAsync, NotificationFeedbackType } from 'expo-haptics';
 import { ro } from '../../copy/ro';
 import { Button } from '../../ui';
 import { useTheme } from '../../theme/useTheme';
-import { fonts, type Palette } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
+import { fonts, radii, type Palette } from '../../theme/tokens';
 import { StatusPanel, errorMessage } from '../capture/StatusPanel';
 import { CameraBlocked } from './CameraBlocked';
 import { ScanReticle } from './ScanReticle';
@@ -33,6 +34,8 @@ export default function ScanScreen({ embedded = false, torch = false }: ScanScre
   const working = state.status === 'working';
 
   let preview: React.ReactNode;
+  // A blocked camera keeps the frame's minimum size but grows with its text (200% font): it gets no fixed size at all,
+  // because React Native Web keeps a size that an `undefined` override tries to clear.
   const blocked = !!permission && permission.status !== 'undetermined' && (!permission.granted || mountFailed);
   if (!permission || permission.status === 'undetermined') {
     preview = <ActivityIndicator size="large" testID="permission-loading" />;
@@ -64,7 +67,7 @@ export default function ScanScreen({ embedded = false, torch = false }: ScanScre
 
   const body = (
     <>
-      {focused && state.status !== 'found' ? <View testID="scan-preview" style={[embedded ? styles.embeddedPreview : styles.preview, blocked && styles.blocked]}>{preview}</View> : null}
+      {focused && state.status !== 'found' ? <View testID="scan-preview" style={[styles.frame, embedded ? styles.embeddedPreview : styles.preview, blocked ? styles.blockedWell : (embedded ? styles.embeddedSize : styles.previewSize)]}>{preview}</View> : null}
       {working ? <View style={styles.status}><ActivityIndicator color={embedded ? colors.cameraInk : colors.primary} /><Text style={[styles.working, embedded && { color: colors.cameraInk }]}>{ro.capture.working}</Text></View> : null}
       {state.status === 'error' || state.status === 'offline' ? (
         <StatusPanel
@@ -94,13 +97,16 @@ export default function ScanScreen({ embedded = false, torch = false }: ScanScre
 const createStyles = (colors: Palette) => StyleSheet.create({
   content: { flexGrow: 1, padding: 16, gap: 16, backgroundColor: colors.ground },
   title: { fontSize: 22, lineHeight: 29, fontFamily: fonts.heading, color: colors.ink },
+  // The scanner sits in an inset well: black while the camera runs, ivory when it is blocked.
+  frame: { width: '100%', borderRadius: radii.card, overflow: 'hidden', backgroundColor: colors.cameraBackground, justifyContent: 'center', ...depth.well },
+  blockedWell: { backgroundColor: colors.surface },
   // Portrait preview: tall enough to aim at a shelf, capped so manual entry stays reachable.
-  preview: { width: '100%', aspectRatio: 3 / 4, minHeight: 280, maxHeight: 440, borderRadius: 20, overflow: 'hidden', backgroundColor: colors.cameraBackground, justifyContent: 'center' },
+  preview: { minHeight: 280 },
+  previewSize: { aspectRatio: 3 / 4, maxHeight: 440 },
   embedded: { gap: 16, paddingHorizontal: 16 },
   // Inside Scan home the dark area frames the camera; keep the recent-scans sheet in view.
-  embeddedPreview: { width: '100%', aspectRatio: 1.15, minHeight: 240, maxHeight: 340, borderRadius: 20, overflow: 'hidden', backgroundColor: colors.cameraBackground, justifyContent: 'center' },
-  // A blocked camera keeps the frame's minimum size but grows with its text (200% font) instead of clipping it.
-  blocked: { maxHeight: undefined, aspectRatio: undefined },
+  embeddedPreview: { minHeight: 240 },
+  embeddedSize: { aspectRatio: 1.15, maxHeight: 340 },
   status: { flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },
   working: { color: colors.ink, fontFamily: fonts.body },
 });

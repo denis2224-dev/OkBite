@@ -8,9 +8,9 @@ const paths = {
 };
 export type ScanIconName = keyof typeof paths;
 
-/** Line icons for Scan home, drawn like `ui/Icon`. Decorative: the pressable carries the label. */
-export function ScanIcon({ name, size = 24, color }: { name: ScanIconName; size?: number; color: ColorValue }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+/** Line icons for Scan home, drawn like `ui/Icon`; `fill` marks an "on" state. Decorative: the pressable carries the label. */
+export function ScanIcon({ name, size = 24, color, fill = 'none' }: { name: ScanIconName; size?: number; color: ColorValue; fill?: ColorValue }) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     {name === 'keyboard' && <Rect x={2.5} y={5.5} width={19} height={13} rx={3} />}
     <Path d={paths[name]} />
   </Svg>;
