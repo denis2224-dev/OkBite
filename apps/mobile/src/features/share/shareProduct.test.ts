@@ -1,4 +1,5 @@
 import { AccessibilityInfo, Platform, Share } from 'react-native';
+import { emptyWaterProfile } from '@okbite/shared';
 import { foundYogurt } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
 import { productShareText } from './productShareText';
@@ -40,4 +41,25 @@ afterEach(() => jest.restoreAllMocks());
 
 it('does not share a numeric score when label data is insufficient', () => {
   expect(productShareText({ ...product, nutrients: { ...product.nutrients, salt: null } }, score)).toContain(ro.result.scoreUnavailable);
+});
+
+it('shares adaptive water ranges and withholds legacy 100/A scores when water chemistry is absent', () => {
+  const emptyNutrients = Object.fromEntries(Object.keys(product.nutrients).map(k => [k, null])) as typeof product.nutrients;
+  const { water: _w, ...withoutWater } = product;
+  const legacyWater = {
+    ...withoutWater,
+    unit: 'ml' as const,
+    category: { slug: 'apa', name: 'Apă', scoreKind: 'water' as const },
+    nutrients: emptyNutrients,
+    ingredientsText: '',
+  };
+  expect(productShareText(legacyWater, { score: 100, letter: 'A', grade: 'good', reasons: [], missing: [] }))
+    .toContain(ro.result.scoreUnavailable);
+
+  const partialWater = {
+    ...legacyWater,
+    water: { ...emptyWaterProfile(), tdsMgL: 350, ph: 7.5, carbonation: 'still' as const },
+  };
+  expect(productShareText(partialWater, { score: 100, letter: null, grade: 'good', reasons: [], missing: [] }))
+    .toContain('60–100');
 });

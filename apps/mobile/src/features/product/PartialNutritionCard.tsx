@@ -10,7 +10,7 @@ export function PartialNutritionCard({ product }: { product: Product }) {
   if (product.category.slug !== 'necunoscut' && product.category.scoreKind === 'water') {
     return <Card>
       <Heading style={{ fontSize: 18 }}>{ro.result.scoreUnavailable}</Heading>
-      <Body>{ro.result.water.noChemistry}</Body>
+      <Body>{product.water ? ro.result.water.noChemistryPartial : ro.result.water.noChemistry}</Body>
       {product.water && <WaterSummaryBody water={product.water} />}
     </Card>;
   }

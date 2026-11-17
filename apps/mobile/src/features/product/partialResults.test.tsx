@@ -67,10 +67,12 @@ describe('partial result', () => {
     const view = await render(<ResultView product={partialWater} score={{ ...foundYogurt.score, score: 100, letter: 'A', grade: 'good' }} nutritionAdditionAvailable />);
     expect(screen.queryByLabelText(/100 din 100/)).toBeNull();
     expect(screen.queryByText(ro.result.nutritionUnavailable)).toBeNull();
-    expect(screen.getByText(ro.result.water.noChemistry)).toBeTruthy();
+    expect(screen.getByText(ro.result.water.noChemistryPartial)).toBeTruthy();
     expect(screen.getByText('9,37')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: ro.result.water.addChemistry })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: ro.result.water.addChemistry }));
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/add/nutrition', params: { productId: partialWater.id, kind: 'water' } });
     await view.rerender(<ResultView product={{ ...partialWater, water: null }} score={{ ...foundYogurt.score, score: 100, letter: 'A', grade: 'good' }} nutritionAdditionAvailable />);
+    expect(screen.getByText(ro.result.water.noChemistry)).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: ro.result.water.addChemistry }));
     expect(router.push).toHaveBeenCalledWith({ pathname: '/add/nutrition', params: { productId: partialWater.id, kind: 'water' } });
   });

@@ -1,19 +1,26 @@
 import { View } from 'react-native';
-import { summarizeWater, type Product, type WaterProfile } from '@okbite/shared';
+import { summarizeWater, type Product, type WaterFieldKey, type WaterNumericKey, type WaterProfile } from '@okbite/shared';
 import { Badge, Body, Card, Heading } from '../../ui';
 import { fonts } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 import { ro } from '../../copy/ro';
-import { formatAmount } from '../../lib/format';
+import { waterFieldDisplayValue, waterFieldLabel } from './waterFormat';
 
-const ION_KEYS = [
+const DISPLAY_NUMERIC_KEYS: readonly WaterNumericKey[] = [
+  'tdsMgL', 'dryResidueMgL', 'ph',
   'caMgL', 'mgMgL', 'naMgL', 'naPlusKMgL', 'kMgL',
-  'hco3MgL', 'so4MgL', 'clMgL', 'fMgL', 'no3MgL', 'h3bo3MgL', 'iUgL',
-] as const;
+  'hco3MgL', 'so4MgL', 'clMgL', 'fMgL', 'no3MgL', 'bMgL', 'h3bo3MgL', 'iUgL',
+];
 
-const formatPh = (n: number) => n.toFixed(2).replace(/\.?0+$/, '').replace('.', ',');
+function provenanceLine(water: WaterProfile, key: WaterFieldKey): string | null {
+  const ev = water.evidence?.[key];
+  if (!ev) return null;
+  const wCopy = ro.result.water;
+  const tag = ev.status === 'verified' ? wCopy.verifiedFieldTag : wCopy.unverifiedFieldTag;
+  return `${ev.source} · ${tag}`;
+}
 
-/** Mineral highlights, pH/mineralization metrics and declared ions for bottled water. */
+/** Mineral highlights, pH/mineralization metrics, ranges, explicit zeroes, and per-field provenance. */
 export function WaterSummaryBody({ water }: { water: WaterProfile }) {
   const { colors } = useTheme();
   const wCopy = ro.result.water;
@@ -26,13 +33,20 @@ export function WaterSummaryBody({ water }: { water: WaterProfile }) {
   if (s.highCalcium) badges.push(wCopy.badges.highCalcium);
   if (s.iodized) badges.push(wCopy.badges.iodized);
 
-  const rows: [string, string][] = [];
-  if (water.tdsMgL !== null) rows.push([wCopy.tdsLabel, `${formatAmount(water.tdsMgL)} ${wCopy.mgL}`]);
-  if (water.dryResidueMgL !== null) rows.push([wCopy.dryResidueLabel, `${formatAmount(water.dryResidueMgL)} ${wCopy.mgL}`]);
-  if (water.ph !== null) rows.push([wCopy.phLabel, formatPh(water.ph)]);
-  for (const key of ION_KEYS) {
-    const val = water[key];
-    if (val !== null) rows.push([wCopy.ions[key], `${formatAmount(val)} ${key === 'iUgL' ? wCopy.ugL : wCopy.mgL}`]);
+  const rows: { key: WaterFieldKey; label: string; value: string; provenance: string | null }[] = [];
+  for (const key of DISPLAY_NUMERIC_KEYS) {
+    const val = waterFieldDisplayValue(water, key);
+    if (val !== null) {
+      rows.push({ key, label: waterFieldLabel(key), value: val, provenance: provenanceLine(water, key) });
+    }
+  }
+  if (!rows.length && water.carbonation) {
+    rows.push({
+      key: 'carbonation',
+      label: wCopy.carbonationLabel,
+      value: wCopy.carbonation[water.carbonation],
+      provenance: provenanceLine(water, 'carbonation'),
+    });
   }
 
   if (!badges.length && !rows.length) return null;
@@ -41,11 +55,14 @@ export function WaterSummaryBody({ water }: { water: WaterProfile }) {
       {badges.map(label => <Badge key={label}>{label}</Badge>)}
     </View>}
     {!!rows.length && <View>
-      {rows.map(([label, value], i) => <View key={label} accessible accessibilityLabel={`${label}: ${value}`}
+      {rows.map((row, i) => <View key={row.key} accessible accessibilityLabel={`${row.label}: ${row.value}`}
         style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, paddingVertical: 8,
           borderTopWidth: i ? 1 : 0, borderColor: colors.divider }}>
-        <Body style={{ flex: 1, color: colors.muted }}>{label}</Body>
-        <Body style={{ fontFamily: fonts.bold }}>{value}</Body>
+        <View style={{ flex: 1 }}>
+          <Body style={{ color: colors.muted }}>{row.label}</Body>
+          {row.provenance && <Body style={{ fontSize: 11, lineHeight: 15, color: colors.muted }}>{row.provenance}</Body>}
+        </View>
+        <Body style={{ fontFamily: fonts.bold }}>{row.value}</Body>
       </View>)}
     </View>}
   </View>;

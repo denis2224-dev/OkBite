@@ -12,6 +12,7 @@ import { subscribeQueue } from '../offline/queue';
 import { TabPageHeader } from '../../shared/TabPageHeader';
 import { useToast } from '../../ui/Toast';
 import { productScoreFor, tierGrade } from '../product/productScoreFor';
+import { displayScore } from '../product/displayScore';
 import { showStorageWarning } from '../../lib/storagePersistence';
 import { useStorageNoticeDismissal } from '../../lib/storageNotice';
 
@@ -123,17 +124,28 @@ export function HistoryScreen() {
         {visible.length > 0 && <View accessibilityRole="list" accessibilityLabel={ro.history.title} style={styles.list}>
           {visible.map(entry => {
             const {product,score:storedScore,savedAt}=entry;
+            const displayed = displayScore(product, storedScore);
             const { score: value, tier } = productScoreFor(product, storedScore);
-            const score = { score: value };
-            const grade = tierGrade(tier);
+            const isRange = product.category.scoreKind === 'water' && value === null && Boolean(displayed.range) && displayed.grade !== 'unavailable';
+            const range = isRange ? displayed.range! : null;
+            const grade = isRange ? displayed.grade as 'good' | 'medium' | 'low' : tierGrade(tier);
             const verification = product.status === 'verified' && product.verifiedAt
               ? `${ro.result.checked}: ${roDate(product.verifiedAt)}` : ro.result.unverified;
-            const scoreLabel = score.score === null ? ro.result.scoreUnavailable : `${ro.history.score(score.score)} · ${tier ? ro.tiers[tier] : ''}`;
+            const scoreLabel = value !== null
+              ? `${ro.history.score(value)} · ${tier ? ro.tiers[tier] : ''}`
+              : range
+              ? ro.result.water.estimatedRange(range.min, range.max)
+              : ro.result.scoreUnavailable;
+            const chipText = value !== null
+              ? `${value} · ${tier ? ro.tiers[tier] : ''}`
+              : range
+              ? ro.result.water.rangeChip(range.min, range.max)
+              : '—';
             const label = [ro.history.open(product.name), product.brand, scoreLabel, ro.score.disclaimer, product.source, `${ro.result.added}: ${roDate(product.addedAt)}`, verification, ro.history.savedAt(roDate(savedAt.slice(0,10)))].join('. ');
             return <HomeCard key={product.id} style={styles.historyCard}><HomePressable label={label} disabled={clearing} onLongPress={() => void remove(entry)} onPress={() => router.push({pathname:'/product/[id]',params:{id:product.id,cached:'1'}})} style={styles.row}>
               <View style={[styles.tile,{backgroundColor:t.colors.neutralBg}]}>{product.imageUrl ? <Image testID="history-thumbnail" source={{uri:product.imageUrl}} resizeMode="cover" accessible={false} style={styles.thumbnail}/> : <Text style={styles.initials}>{product.name.split(/\s+/).slice(0,2).map(word=>word[0]).join('').toLocaleUpperCase('ro')}</Text>}</View>
-              <View style={styles.product}><Text style={styles.name}>{product.name}</Text><Text style={styles.meta}>{product.brand} · {new Date(savedAt).toLocaleDateString('ro-RO')}</Text><Text style={styles.meta}>{product.source}</Text><Text style={styles.meta}>{ro.result.added}: {roDate(product.addedAt)}</Text><Text style={styles.meta}>{verification}</Text><Text style={styles.meta}>{ro.score.disclaimer}</Text>{score.score === null && <Text style={styles.meta}>{ro.result.scoreUnavailable}</Text>}</View>
-              <HomeChip background={t.colors[`${grade}Bg`]} color={t.colors[grade]}>{score.score===null?'—':`${score.score} · ${tier ? ro.tiers[tier] : ''}`}</HomeChip>
+              <View style={styles.product}><Text style={styles.name}>{product.name}</Text><Text style={styles.meta}>{product.brand} · {new Date(savedAt).toLocaleDateString('ro-RO')}</Text><Text style={styles.meta}>{product.source}</Text><Text style={styles.meta}>{ro.result.added}: {roDate(product.addedAt)}</Text><Text style={styles.meta}>{verification}</Text><Text style={styles.meta}>{ro.score.disclaimer}</Text>{value === null && !range && <Text style={styles.meta}>{ro.result.scoreUnavailable}</Text>}{range && <Text style={styles.meta}>{scoreLabel}</Text>}</View>
+              <HomeChip background={t.colors[`${grade}Bg`]} color={t.colors[grade]}>{chipText}</HomeChip>
             </HomePressable><HomePressable label={ro.history.remove(product.name)} disabled={clearing} onPress={() => void remove(entry)} style={styles.delete}><HomeIcon name="trash" size={20} color={t.colors.low}/></HomePressable></HomeCard>;
           })}
         </View>}
