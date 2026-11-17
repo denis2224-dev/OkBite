@@ -39,7 +39,8 @@ test('denied camera on Scan asks once, then shows this browser’s steps after t
     ? 'Pe iPhone, permite accesul din Setări > Safari > Cameră, apoi reîncearcă.'
     : 'În Chrome, apasă lacătul de lângă adresă > Permisiuni > Cameră, apoi reîncearcă.';
   await expect(page.getByText(steps, { exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Încearcă din nou', exact: true }).click();
+  // Scope to the camera frame: the shelf section below can show its own retry.
+  await page.getByTestId('camera-blocked').getByRole('button', { name: 'Încearcă din nou', exact: true }).click();
   await expect(page.getByText(steps, { exact: true })).toBeVisible();
   expect(errors).toEqual([]);
 });
