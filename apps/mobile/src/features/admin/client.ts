@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import { ErrorBody, ModerateRequest, ProductInput, Uuid } from '@okbite/shared';
+import { ErrorBody, ModerateRequest, OFF_IMAGE_URL, ProductInput, Uuid } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 
 let instance: SupabaseClient | undefined;
@@ -64,7 +64,8 @@ export async function readAdminProduct(id: string) {
     [ro.app.admin.ingredientsPhoto, row.ingredients_photo_path],
     [ro.app.admin.nutritionPhoto, row.nutrition_photo_path],
   ].flatMap(([label, path]) =>
-    typeof path === 'string' && path.startsWith(`${id}/`)
+    typeof path === 'string' && OFF_IMAGE_URL.test(path) ? [{ label: String(label), url: path }] // OFF imports keep OFF's photo URL
+    : typeof path === 'string' && path.startsWith(`${id}/`)
       ? [
           {
             label: String(label),

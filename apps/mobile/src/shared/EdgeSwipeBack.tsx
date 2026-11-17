@@ -1,14 +1,14 @@
 import { useMemo, type PropsWithChildren } from 'react';
 import { PanResponder, StyleSheet, View } from 'react-native';
-import { router } from 'expo-router';
-import { shouldGoBack } from './swipeBack';
+import { router, usePathname } from 'expo-router';
+import { shouldGoBack, swipeBackEnabled } from './swipeBack';
 
 /** Back to wherever the user was just before (page or tab); nothing on the first screen. */
 export function goBack(): void {
   if (router.canGoBack()) router.back();
 }
 
-/** The app's only back control: swipe right from the left edge on any page.
+/** The app's only back control: swipe right from the left edge on pages opened from somewhere (not on nav-bar pages).
  * The strip is thin so sideways scrolling inside pages keeps working; the screen-reader escape gesture also goes back. */
 export function EdgeSwipeBack({ children }: PropsWithChildren) {
   const pan = useMemo(() => PanResponder.create({
@@ -20,9 +20,10 @@ export function EdgeSwipeBack({ children }: PropsWithChildren) {
     onShouldBlockNativeResponder: () => true,
     onPanResponderRelease: (_, g) => { if (shouldGoBack(g.dx, g.dy, g.vx)) goBack(); },
   }), []);
-  return <View testID="edge-swipe-root" style={styles.root} onAccessibilityEscape={goBack}>
+  const enabled = swipeBackEnabled(usePathname());
+  return <View testID="edge-swipe-root" style={styles.root} onAccessibilityEscape={enabled ? goBack : undefined}>
     {children}
-    <View testID="edge-swipe" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.strip} {...pan.panHandlers} />
+    {enabled && <View testID="edge-swipe" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.strip} {...pan.panHandlers} />}
   </View>;
 }
 

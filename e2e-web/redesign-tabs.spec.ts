@@ -9,7 +9,10 @@ test.describe('N9 five-tab redesign acceptance', () => {
 
   test('tabs appear in order with Scan selected at startup', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('tablist').getByRole('tab')).toHaveText(tabs);
+    // The pill tab bar shows icons; each tab is named by its label.
+    const items = page.getByRole('tablist').getByRole('tab');
+    await expect(items).toHaveCount(tabs.length);
+    for (const [index, name] of tabs.entries()) await expect(items.nth(index)).toHaveAccessibleName(name);
     await expect(page.getByRole('tab', { name: 'Scanează', exact: true })).toHaveAttribute('aria-selected', 'true');
   });
 

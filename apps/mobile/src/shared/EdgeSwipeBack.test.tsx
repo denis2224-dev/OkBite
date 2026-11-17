@@ -3,8 +3,9 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { EdgeSwipeBack, goBack } from './EdgeSwipeBack';
 
-jest.mock('expo-router', () => ({ router: { back: jest.fn(), canGoBack: jest.fn() } }));
-beforeEach(() => jest.clearAllMocks());
+let mockPath = '/product/abc';
+jest.mock('expo-router', () => ({ router: { back: jest.fn(), canGoBack: jest.fn() }, usePathname: () => mockPath }));
+beforeEach(() => { jest.clearAllMocks(); mockPath = '/product/abc'; });
 
 it('goes back to wherever the user was before, and does nothing on the first screen', () => {
   jest.mocked(router.canGoBack).mockReturnValue(true);
@@ -30,4 +31,14 @@ it('also goes back with the screen-reader escape gesture', async () => {
   await render(<EdgeSwipeBack><Text>Pagina</Text></EdgeSwipeBack>);
   await fireEvent(screen.getByTestId('edge-swipe-root'), 'accessibilityEscape');
   expect(router.back).toHaveBeenCalledTimes(1);
+});
+
+it('has no swipe strip and no escape-back on a nav-bar page', async () => {
+  mockPath = '/history';
+  jest.mocked(router.canGoBack).mockReturnValue(true);
+  await render(<EdgeSwipeBack><Text>Pagina</Text></EdgeSwipeBack>);
+  expect(screen.getByText('Pagina')).toBeTruthy();
+  expect(screen.queryByTestId('edge-swipe', { includeHiddenElements: true })).toBeNull();
+  await fireEvent(screen.getByTestId('edge-swipe-root'), 'accessibilityEscape');
+  expect(router.back).not.toHaveBeenCalled();
 });

@@ -42,3 +42,15 @@ describe('patchFor --categories', () => {
     expect(patchFor(nutella(['en:groceries']), codes, 'categories')).toBeNull();
   });
 });
+
+describe('patchFor --images', () => {
+  it("sets image_path from the export's selected front photo, and skips products without one", () => {
+    const codes = new Set(['5449000000996']);
+    const withPhoto = JSON.stringify({ code: '5449000000996', lang: 'ro', images: { selected: { front: { ro: { rev: '7' } } } } });
+    expect(patchFor(withPhoto, codes, 'images')).toEqual({
+      code: '5449000000996',
+      patch: { image_path: 'https://images.openfoodfacts.org/images/products/544/900/000/0996/front_ro.7.400.jpg' },
+    });
+    expect(patchFor(JSON.stringify({ code: '5449000000996', images: {} }), codes, 'images')).toBeNull();
+  });
+});

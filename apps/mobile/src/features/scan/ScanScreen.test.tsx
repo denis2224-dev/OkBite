@@ -1,10 +1,11 @@
 import React from 'react';
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { render, fireEvent, screen, act } from '@testing-library/react-native';
+import { render, fireEvent, screen, act, within } from '@testing-library/react-native';
 import { Linking, StyleSheet } from 'react-native';
 import { notificationAsync } from 'expo-haptics';
 import { api } from '../../lib/api';
 import { ro } from '../../copy/ro';
+import { light } from '../../theme/tokens';
 import ScanScreen from './ScanScreen';
 import { CODE, lookupFound, lookupNotFound } from '../capture/__fixtures__/responses';
 
@@ -74,7 +75,7 @@ describe('ScanScreen', () => {
     const openSettings = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined);
     await render(<ScanScreen />);
     expect(screen.getByText('Permite accesul la cameră ca să scanezi.')).toBeTruthy();
-    const preview = StyleSheet.flatten(screen.getByText(ro.scan.deniedText).parent!.parent!.props.style);
+    const preview = StyleSheet.flatten(screen.getByTestId('scan-preview').props.style);
     expect(preview.height).toBeUndefined();
     expect(preview.minHeight).toBe(280);
     expect(screen.queryByTestId('camera')).toBeNull();
@@ -87,6 +88,24 @@ describe('ScanScreen', () => {
     expect(openSettings).toHaveBeenCalled();
     await fireEvent.press(screen.getByRole('button', { name: ro.scan.photoLabel }));
     expect(mockPush).toHaveBeenCalledWith('/capture');
+  });
+
+  it('shows the denied state inside the dark camera frame, not as a white card', async () => {
+    mockPermission.value = { granted: false, status: 'denied', canAskAgain: false };
+    await render(<ScanScreen embedded />);
+    const blocked = within(screen.getByTestId('scan-preview')).getByTestId('camera-blocked');
+    expect(StyleSheet.flatten(within(blocked).getByText(ro.scan.deniedText).props.style).color).toBe(light.cameraInk);
+    expect(StyleSheet.flatten(blocked.props.style).backgroundColor).not.toBe(light.surface);
+    expect(within(blocked).getByRole('button', { name: ro.errors.retry })).toBeTruthy();
+  });
+
+  it('lets the blocked frame grow with large text instead of cutting it off', async () => {
+    mockPermission.value = { granted: false, status: 'denied', canAskAgain: false };
+    await render(<ScanScreen embedded />);
+    const frame = StyleSheet.flatten(screen.getByTestId('scan-preview').props.style);
+    expect(frame.maxHeight).toBeUndefined();
+    expect(frame.aspectRatio).toBeUndefined();
+    expect(frame.minHeight).toBe(240);
   });
 
   it('reports a rejected native settings action and keeps manual entry', async () => {
