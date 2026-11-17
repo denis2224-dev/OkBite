@@ -49,7 +49,7 @@ export function OfflineScreen() {
     catch { if (mounted.current) setError(ro.offline.queueError); }
     finally { if (mounted.current) setBusy(false); }
   }
-  return <Screen title={ro.offline.queueTitle} back>
+  return <Screen title={ro.offline.queueTitle}>
     <Body>{ro.offline.description}</Body>
     {loading ? <Body accessibilityLiveRegion="polite">{ro.app.loading}</Body> : <Body>{ro.offline.pendingCount(rows.length)}</Body>}
     {!!error && <><Body accessibilityLiveRegion="polite">{error}</Body><Button disabled={busy} onPress={() => { void refresh(); }}>{ro.offline.reload}</Button></>}

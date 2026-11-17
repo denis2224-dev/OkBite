@@ -1,4 +1,4 @@
-import { AccessibilityInfo } from 'react-native';
+import { AccessibilityInfo, Animated } from 'react-native';
 import { render, screen, waitFor } from '@testing-library/react-native';
 import { BasketCard } from './BasketCard';
 import type { Basket } from './basket';
@@ -30,10 +30,14 @@ it('shows the final average straight away when the phone asks for reduced motion
   expect(screen.getAllByText('69', { includeHiddenElements: true }).length).toBeGreaterThan(0);
 });
 
-it('counts the average up to its final value when motion is allowed', async () => {
+it('shows the average straight away and keeps the text still; only the tag swings in', async () => {
+  const timing = jest.spyOn(Animated, 'timing');
   jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(false);
   await render(<BasketCard basket={basket} />);
-  await waitFor(() => expect(screen.getAllByText('69', { includeHiddenElements: true }).length).toBeGreaterThan(0), { timeout: 2000 });
+  expect(screen.getAllByText('69', { includeHiddenElements: true }).length).toBeGreaterThan(0); // no count-up from 0
+  expect(screen.queryByText('0', { includeHiddenElements: true })).toBeNull();
+  await waitFor(() => expect(timing).toHaveBeenCalledTimes(1)); // the tag's own swing, as on the product page
+  expect(screen.getAllByText('69', { includeHiddenElements: true }).length).toBeGreaterThan(0);
 });
 
 it('colours the tier bar like the mockup: Excelent dark green, Bun lighter green, Moderat amber', async () => {

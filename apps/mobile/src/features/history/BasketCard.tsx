@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { AccessibilityInfo, View } from 'react-native';
+import { View } from 'react-native';
 import type { Tier } from '@okbite/shared';
 import { Body, Caption, Card, Section } from '../../ui';
 import { fonts } from '../../theme/tokens';
@@ -14,34 +13,14 @@ const order: Tier[] = ['excellent', 'good', 'fair', 'poor', 'bad'];
 // Tier colours from the palette; "Foarte slab" borrows the E red so it stays apart from "Slab".
 const barColor: Record<Tier, string> = { excellent: tierTone('excellent').fg, good: tierTone('good').fg, fair: tierTone('fair').fg, poor: tierTone('poor').fg, bad: letterTones.E.fg };
 
-/** Counts from 0 to `target` once; shows `target` at once when motion is reduced or the check is unavailable. */
-function useCountUp(target: number): number {
-  const [value, setValue] = useState(target);
-  useEffect(() => {
-    let live = true; let frame = 0;
-    void Promise.resolve(AccessibilityInfo.isReduceMotionEnabled?.()).then(reduced => {
-      if (!live || reduced !== false) return;
-      const start = Date.now();
-      const tick = () => {
-        const t = Math.min(1, (Date.now() - start) / 750);
-        setValue(Math.round(target * (1 - Math.pow(1 - t, 3))));
-        if (t < 1 && live) frame = requestAnimationFrame(tick);
-      };
-      setValue(0); frame = requestAnimationFrame(tick);
-    }).catch(() => undefined);
-    return () => { live = false; cancelAnimationFrame(frame); };
-  }, [target]);
-  return value;
-}
-
 export function BasketCard({ basket }: { basket: Basket }) {
   const { colors } = useTheme();
-  const shown = useCountUp(basket.average);
   const present = order.filter(tier => basket.mix[tier] > 0);
   return <Card testID="basket-card">
     <Section>{ro.history.basket.title}</Section>
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', rowGap: 10, columnGap: 14 }}>
-      <ScoreTag score={shown} tier={basket.tier} label={`${ro.history.score(basket.average)} · ${ro.tiers[basket.tier]}`} />
+      {/* The number is the average straight away; only the tag swings in, as on the product page. */}
+      <ScoreTag score={basket.average} tier={basket.tier} label={`${ro.history.score(basket.average)} · ${ro.tiers[basket.tier]}`} />
       <View style={{ flex: 1, minWidth: 140 }}>
         <Body style={{ fontFamily: fonts.heading, fontSize: 22, lineHeight: 28, color: tierTone(basket.tier).fg }}>{ro.tiers[basket.tier]}</Body>
         <Caption>{ro.history.basket.average(basket.scored)}</Caption>

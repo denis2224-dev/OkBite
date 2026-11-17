@@ -25,13 +25,13 @@ const productLine = (product: Product, score: ScoreResult) => {
 };
 
 jest.mock('../../lib/api', () => ({ ...jest.requireActual('../../lib/api'), api: { report: jest.fn() } }));
-it('shows allergens, unverified provenance and the disclaimer', async () => {
+it('shows allergens, provenance only in the bottom source card, and the disclaimer', async () => {
   await render(<ResultView product={{ ...foundYogurt.product, status: 'unverified', allergens: ['Lapte'], mayContain: ['Soia'] }} score={foundYogurt.score} />);
   expect(screen.getByText('Lapte')).toBeTruthy();
   expect(screen.getByText('Soia')).toBeTruthy();
-  const badge = screen.getByTestId('unverified-badge');
-  expect(within(badge).getByText(ro.result.unverified)).toBeTruthy();
-  expect(within(badge).getByText(ro.result.unverifiedNote)).toBeTruthy();
+  expect(screen.queryByText(ro.result.unverified)).toBeNull();
+  expect(within(screen.getByTestId('source-card')).getByText(ro.result.unverifiedNote)).toBeTruthy();
+  expect(inOrder().lastIndexOf(ro.result.unverifiedNote)).toBeGreaterThan(inOrder().indexOf(ro.result.original));
   expect(screen.getByText(ro.score.disclaimer)).toBeTruthy();
 });
 it.each([
@@ -207,12 +207,12 @@ it('leaves an absent Nutri-Score letter unavailable without inventing one', asyn
   expect(screen.queryByLabelText(/Nutri-Score:/)).toBeNull();
   expect(screen.getByLabelText(productLine(foundYogurt.product, { ...foundYogurt.score, letter: null }))).toBeTruthy();
 });
-it('orders the profile alert, score, reasons, the detail buttons, the composition card, source and the original label', async () => {
+it('orders the profile alert, score, reasons, the detail buttons, the composition card, the original label and the source last', async () => {
   mockProfile = { ...mockProfile, allergens: ['Lapte'] };
   await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter: 'B' }} />);
   const order = inOrder();
   const markers = [ro.result.profileAlertSub, productLine(foundYogurt.product, foundYogurt.score), 'reason-tone-',
-    ro.result.ingredientsTile, ro.result.composition, ro.result.source, ro.result.original].map(text => order.indexOf(text));
+    ro.result.ingredientsTile, ro.result.composition, ro.result.original, ro.result.source].map(text => order.indexOf(text));
   expect(markers.every(index => index >= 0)).toBe(true);
   expect([...markers].sort((a, b) => a - b)).toEqual(markers);
 });
@@ -275,17 +275,16 @@ it('makes "Compară cu alt produs" the primary action for this product', async (
   await fireEvent.press(compare);
   expect(router.push).toHaveBeenLastCalledWith({ pathname: '/compare', params: { id: foundYogurt.product.id } });
 });
-it('puts collapse, share and report in a top row of 44 pt icon buttons', async () => {
+it('puts share and report in a top row of 44 pt icon buttons, with no back arrow', async () => {
   await render(<ResultView {...foundYogurt} />);
-  for (const name of [ro.result.closeSheet, ro.share.button, ro.result.report]) {
+  expect(screen.queryByRole('button', { name: ro.result.closeSheet })).toBeNull();
+  for (const name of [ro.share.button, ro.result.report]) {
     const style = StyleSheet.flatten(screen.getByRole('button', { name }).props.style);
     expect(style.minWidth).toBeGreaterThanOrEqual(44);
     expect(style.minHeight).toBeGreaterThanOrEqual(44);
   }
   const order = inOrder();
   expect(order.indexOf(ro.result.report)).toBeLessThan(order.indexOf(productLine(foundYogurt.product, foundYogurt.score)));
-  await fireEvent.press(screen.getByRole('button', { name: ro.result.closeSheet }));
-  expect(router.back).toHaveBeenCalled();
   await fireEvent.press(screen.getByRole('button', { name: ro.result.report }));
   expect(screen.getByLabelText(ro.result.reportLabel)).toBeTruthy();
 });
@@ -345,9 +344,19 @@ it('puts declared allergens and the processing level together in one "Compoziți
 it.each([
   ['Open Food Facts import', 'Open Food Facts (ODbL)', () => ro.result.offNote, () => ro.result.unverifiedNote],
   ['shopper photos', 'Fotografiile utilizatorului', () => ro.result.unverifiedNote, () => ro.result.offNote],
-])('explains the unverified badge for %s', async (_, source, shown, hidden) => {
+])('names the source at the bottom for %s, with no badge', async (_, source, shown, hidden) => {
   await render(<ResultView product={{ ...foundYogurt.product, source, status: 'unverified' }} score={foundYogurt.score} />);
-  const badge = screen.getByTestId('unverified-badge');
-  expect(within(badge).getByText(shown())).toBeTruthy();
+  expect(within(screen.getByTestId('source-card')).getByText(shown())).toBeTruthy();
+  expect(screen.queryByText(ro.result.unverified)).toBeNull();
   expect(screen.queryByText(hidden())).toBeNull();
+});
+it('puts the product thumbnail before the name, and drops it when the photo fails to load', async () => {
+  const imageUrl = 'https://images.openfoodfacts.org/images/products/301/762/042/2003/front_en.879.400.jpg';
+  await render(<ResultView product={{ ...foundYogurt.product, imageUrl }} score={foundYogurt.score} />);
+  const thumb = screen.getByTestId('product-thumb', { includeHiddenElements: true });
+  expect(thumb.props.source).toEqual({ uri: imageUrl });
+  expect(inOrder().indexOf('product-thumb')).toBeLessThan(inOrder().indexOf(foundYogurt.product.name));
+  await fireEvent(thumb, 'error');
+  expect(screen.queryByTestId('product-thumb', { includeHiddenElements: true })).toBeNull();
+  expect(screen.queryByTestId('product-photo', { includeHiddenElements: true })).toBeNull();
 });

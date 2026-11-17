@@ -171,6 +171,8 @@ export const redesignEn: RedesignCopy = {
   search:'Search by name or brand', noMatches:'No products found.', remove:(name:string)=>`Delete ${name} from history`,
   removed:'Product removed from history.', undo:'Undo deletion', removeError:'Could not remove the product. Try again.',
   scoreUnavailable:'Score unavailable', restoreError:'Could not restore the product. Try undoing the deletion again.',
+  noScore:'no score',
+  when: { today:(time:string)=>`Today, ${time}`, yesterday:'Yesterday', weekdays:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'] },
   basket: { title:'Your basket', average:(n:number)=>`Average of ${plural(n,'product','products','en')} with a score`,
    count:(n:number, tier:string)=>`${n} ${tier}`, unscored:(n:number)=>`${n} without a score`, best:(name:string)=>`Your best choice: ${name}`,
    mixLabel:(mix:Record<string,number>)=>`Excellent ${mix.excellent}, Good ${mix.good}, Fair ${mix.fair}, Poor ${mix.poor}, Very poor ${mix.bad}` },
