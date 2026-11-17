@@ -7,7 +7,7 @@ export type { GuidedFlowState, GuidedFlowDependencies, GuidedFlowInitial, Guided
 export function createGuidedFlow(initial: GuidedFlowInitial, deps: GuidedFlowDependencies, restored?: GuidedFlowState) {
   let state: GuidedFlowState = {
     stage: initial.photoPath ? 'ingredients' : 'front', initial: { ...initial },
-    initialFrontRead: { brand: initial.brand, name: initial.name, quantity: initial.quantity, code: initial.code },
+    initialFrontRead: { brand: initial.brand, name: initial.name, quantity: initial.quantity, code: initial.code, ...(initial.isWater ? { isWater: true } : {}) },
     scannedCode: initial.code, remotePhotoPath: initial.photoPath,
     photos: { front: initial.frontPhotoId ?? null, ingredients: null, nutrition: null }, nutritionMode: null, label: null,
   };
@@ -68,12 +68,14 @@ export function createGuidedFlow(initial: GuidedFlowInitial, deps: GuidedFlowDep
     const response = parsed.data;
     const read = response.status === 'found' ? state.initialFrontRead : response.read;
     const { name, quantity, identityConfirmed } = state.initial;
+    const isWater = Boolean(read.isWater || state.initial.isWater || state.initial.categorySlug === 'apa');
     const nextInitial = { ...state.initial, brand: read.brand ?? state.initial.brand,
       name: identityConfirmed ? name : read.name ?? name,
       quantity: identityConfirmed ? quantity : read.quantity ?? quantity, code: state.scannedCode ?? read.code,
-      photoPath: response.photoPath, frontPhotoId: state.photos.front! };
+      photoPath: response.photoPath, frontPhotoId: state.photos.front!,
+      ...(isWater ? { isWater: true, categorySlug: state.initial.categorySlug ?? 'apa' } : {}) };
     const returnToReview = Boolean(state.label);
-    set({ initial: nextInitial, initialFrontRead: { brand: nextInitial.brand, name: nextInitial.name, quantity: nextInitial.quantity, code: nextInitial.code }, remotePhotoPath: response.photoPath,
+    set({ initial: nextInitial, initialFrontRead: { brand: nextInitial.brand, name: nextInitial.name, quantity: nextInitial.quantity, code: nextInitial.code, ...(isWater ? { isWater: true } : {}) }, remotePhotoPath: response.photoPath,
       stage: returnToReview ? 'review' : response.status === 'found' ? 'interrupted' : 'ingredients' });
     await persist();
     if (!active()) return;
@@ -100,7 +102,10 @@ export function createGuidedFlow(initial: GuidedFlowInitial, deps: GuidedFlowDep
       await persist();
       if (!active()) return;
       if (kind === 'front') await identifyFront(retained.base64);
-      else if (kind === 'ingredients' && (!state.nutritionMode || !state.label)) { set({ stage: 'nutrition_question' }); await persist(); }
+      else if (kind === 'ingredients' && (!state.nutritionMode || !state.label)) {
+        if (state.initial.isWater || state.initial.categorySlug === 'apa') { set({ nutritionMode: 'same_photo' }); await read(); }
+        else { set({ stage: 'nutrition_question' }); await persist(); }
+      }
       else await read();
     });
   }

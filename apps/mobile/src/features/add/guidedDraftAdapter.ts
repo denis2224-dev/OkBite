@@ -20,7 +20,7 @@ export function draftToGuided(snapshot: UnknownDraftSnapshot): GuidedFlowState {
   const stage = interrupted ? 'interrupted' : snapshot.stage === 'reading' ? 'interrupted' : snapshot.stage;
   return {
     stage, initial: snapshot.initial,
-    initialFrontRead: { code: snapshot.initial.code, name: snapshot.initial.name, brand: snapshot.initial.brand, quantity: snapshot.initial.quantity },
+    initialFrontRead: { code: snapshot.initial.code, name: snapshot.initial.name, brand: snapshot.initial.brand, quantity: snapshot.initial.quantity, ...(snapshot.initial.isWater ? { isWater: true } : {}) },
     scannedCode: snapshot.initial.code, remotePhotoPath: snapshot.stage === 'front' ? null : snapshot.initial.photoPath,
     photos: snapshot.photos, nutritionMode: snapshot.nutritionMode,
     label: parsed?.success ? parsed.data : null,

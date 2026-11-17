@@ -86,6 +86,7 @@ export function UnknownReviewScreen() {
         ingredientsText: proposal.ingredientsText,
         unit: proposal.unit,
         nutrients: proposal.nutrients,
+        water: proposal.water ?? null,
       }),
     };
     setDraft(updated);

@@ -72,6 +72,6 @@ describe('partial result', () => {
     expect(screen.queryByRole('button', { name: ro.result.water.addChemistry })).toBeNull();
     await view.rerender(<ResultView product={{ ...partialWater, water: null }} score={{ ...foundYogurt.score, score: 100, letter: 'A', grade: 'good' }} nutritionAdditionAvailable />);
     await fireEvent.press(screen.getByRole('button', { name: ro.result.water.addChemistry }));
-    expect(router.push).toHaveBeenCalledWith({ pathname: '/add/nutrition', params: { productId: partialWater.id } });
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/add/nutrition', params: { productId: partialWater.id, kind: 'water' } });
   });
 });

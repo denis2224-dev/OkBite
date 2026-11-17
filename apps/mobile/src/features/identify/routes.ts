@@ -24,6 +24,7 @@ export type AddRouteParams = {
   frontPhotoId?: string;
   unknownDraftId?: string;
   flow?: 'guided' | 'manual';
+  isWater?: '1';
 };
 
 // U1/U2a/U3 are integrated; keep an explicit rollback switch for older backends.
@@ -43,6 +44,8 @@ export type AddInitialValues = {
   photoPath: string | null;
   frontPhotoId?: string;
   unknownDraftId?: string;
+  isWater?: boolean;
+  categorySlug?: string;
 };
 
 export type IdentifyRouteState =
@@ -124,6 +127,7 @@ export function addProductRoute({
   if (cleanFrontPhotoId) params.frontPhotoId = cleanFrontPhotoId;
   if (cleanUnknownDraftId) params.unknownDraftId = cleanUnknownDraftId;
   if (resolvedFlow) params.flow = resolvedFlow;
+  if (read.isWater) params.isWater = '1';
   return { pathname: '/add', params };
 }
 
@@ -138,6 +142,7 @@ export function parseAddParams(
     ...(cleanParam(raw.queueId) ? { queueId: cleanParam(raw.queueId)! } : {}),
     ...(frontPhotoId ? { frontPhotoId } : {}),
     ...(unknownDraftId ? { unknownDraftId } : {}),
+    ...(raw.isWater === '1' ? { isWater: true, categorySlug: 'apa' } : {}),
     code: rawCode ? normalizeCode(rawCode) : null,
     brand: cleanParam(raw.brand),
     name: cleanParam(raw.name),

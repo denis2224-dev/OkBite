@@ -6,6 +6,7 @@ import {
   NUTRIENT_KEYS,
   Nutrients,
   detectAllergens,
+  emptyWaterProfile,
   normalizeCode,
   type AddProductRequest as AddProductRequestType,
   type Category,
@@ -13,6 +14,7 @@ import {
   type Nutrients as NutrientsType,
   type ReadLabelResponse,
   type Unit,
+  type WaterProfile,
 } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
@@ -24,6 +26,7 @@ import { CategoryPicker } from './CategoryPicker';
 import { NutritionFields, getCompleteNutrientLabels } from './NutritionFields';
 import { parseAmount, unitForNutrient } from './parseAmount';
 import { getUnclearLabelFields } from './labelWarnings';
+import { WaterFields } from './WaterFields';
 
 export interface ReviewFormProps {
   label: ReadLabelResponse;
@@ -55,12 +58,15 @@ function buildInitialNutrients(n: NutrientsType): Record<NutrientKey, string> {
 export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: ReviewFormProps) {
   const { colors } = useTheme();
   const styles = createStyles(colors);
+  const initialWater = Boolean(initial.isWater || initial.categorySlug === 'apa' || label.water != null);
   const [name, setName] = useState(initial.name ?? '');
   const [brand, setBrand] = useState(initial.brand ?? '');
   const [quantity, setQuantity] = useState(initial.quantity ?? '');
   const [code, setCode] = useState(initial.code ?? '');
-  const [unit, setUnit] = useState<Unit | null>(label.unit);
-  const [categorySlug, setCategorySlug] = useState<string | null>(null);
+  const [unit, setUnit] = useState<Unit | null>(label.unit ?? (initialWater ? 'ml' : null));
+  const [categorySlug, setCategorySlug] = useState<string | null>(initialWater ? (initial.categorySlug ?? 'apa') : (initial.categorySlug ?? null));
+  const [water, setWater] = useState<WaterProfile | null>(() => label.water ?? (initialWater ? emptyWaterProfile() : null));
+  const [waterInvalid, setWaterInvalid] = useState(false);
   const [ingredientsText, setIngredientsText] = useState(label.ingredientsText ?? '');
   const [nutrientInputs, setNutrientInputs] = useState<Record<NutrientKey, string>>(() =>
     buildInitialNutrients(label.nutrients),
@@ -70,17 +76,19 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
   const [submitting, setSubmitting] = useState(false);
   const inFlightRef = useRef(false);
 
+  const isWaterMode = categorySlug === 'apa' || water !== null;
   const detected = useMemo(() => detectAllergens(ingredientsText), [ingredientsText]);
   const nutrientLabels = getCompleteNutrientLabels();
-  const unclear = getUnclearLabelFields(label);
+  const unclear = isWaterMode ? [] : getUnclearLabelFields(label);
   const hasValidCategory = categorySlug === null || categories.some((c) => c.slug === categorySlug);
   const canSave =
     !submitting &&
     nutrientLabels !== null &&
+    !(isWaterMode && waterInvalid) &&
     unit !== null &&
     name.trim().length > 0 &&
     brand.trim().length <= 80 &&
-    ingredientsText.trim().length >= 3 &&
+    (isWaterMode || ingredientsText.trim().length >= 3) &&
     hasValidCategory;
 
   const setNutrientField = (key: NutrientKey, value: string) => {
@@ -102,6 +110,7 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
         quantity: quantity.trim() || null,
         photoPath: initial.photoPath ? initial.photoPath.trim() || null : null,
         ...(initial.queueId ? { queueId: initial.queueId } : {}),
+        ...(initial.isWater || isWaterMode ? { isWater: true } : {}),
       });
     }
     catch { setFormError(ro.add.draftSaveFailed); }
@@ -153,6 +162,7 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
       ...(categorySlug ? { categorySlug } : {}),
       ingredientsText: ingredientsText.trim(),
       nutrients: parsedNutrients,
+      ...(isWaterMode && water ? { water } : {}),
       photoPath: initial.photoPath ? initial.photoPath.trim() || null : null,
       ingredientsPhotoPath: cleanIngPhoto,
       nutritionPhotoPath: label.nutritionPhotoPath ? label.nutritionPhotoPath.trim() || null : null,
@@ -216,7 +226,12 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
           })}
         </View>
 
-        <CategoryPicker categories={categories} selectedSlug={categorySlug} onSelect={(slug) => { setCategorySlug(slug); setFormError(null); }} disabled={submitting} />
+        <CategoryPicker categories={categories} selectedSlug={categorySlug} onSelect={(slug) => {
+          setCategorySlug(slug);
+          setFormError(null);
+          if (slug === 'apa') { setWater(w => w ?? emptyWaterProfile()); setUnit(u => u ?? 'ml'); }
+          else { setWater(null); setWaterInvalid(false); }
+        }} disabled={submitting} />
       </View>
 
       <View style={styles.card}>
@@ -254,7 +269,16 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
         <Text style={styles.muted}>{ro.review.allergensHint}</Text>
       </View>
 
-      <NutritionFields values={nutrientInputs} unclear={unclear} invalid={invalidNutrients} onChange={setNutrientField} />
+      {isWaterMode ? (
+        <WaterFields
+          value={water ?? emptyWaterProfile()}
+          disabled={submitting}
+          onChange={next => { setWater(next); setFormError(null); }}
+          onInvalidChange={setWaterInvalid}
+        />
+      ) : (
+        <NutritionFields values={nutrientInputs} unclear={unclear} invalid={invalidNutrients} onChange={setNutrientField} />
+      )}
 
       {formError ? <Text accessibilityRole="alert" style={styles.errorBanner}>{formError}</Text> : null}
 

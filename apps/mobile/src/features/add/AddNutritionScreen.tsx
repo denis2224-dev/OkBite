@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { LookupResponse, NUTRIENT_KEYS, Nutrients, type Unit } from '@okbite/shared';
+import { emptyWaterProfile, LookupResponse, NUTRIENT_KEYS, Nutrients, type Unit, type WaterProfile } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
@@ -14,6 +14,7 @@ import { saveToHistory } from '../history/store';
 import { GuidedPhotoCapture } from './GuidedPhotoCapture';
 import { parseAmount, unitForNutrient } from './parseAmount';
 import { UnknownConfirmationField } from './UnknownConfirmationField';
+import { WaterFields } from './WaterFields';
 import { EnrichProductRequest, EnrichReadLabelRequest, EnrichReadLabelResponse, type EnrichReadLabelResponse as EnrichReadResult } from './unknownFlowContract';
 import { requestUnknownFlow } from './unknownFlowTransport';
 
@@ -25,6 +26,7 @@ export function AddNutritionScreen() {
   const activity = useScreenActivity();
   const rawParams = useLocalSearchParams<Record<string, string | string[] | undefined>>();
   const productId = typeof rawParams.productId === 'string' ? rawParams.productId.trim() : '';
+  const initialIsWater = rawParams.kind === 'water';
 
   const [reading, setReading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -35,8 +37,11 @@ export function AddNutritionScreen() {
   const [nutrients, setNutrients] = useState(
     () => Object.fromEntries(NUTRIENT_KEYS.map(key => [key, null])) as Record<(typeof NUTRIENT_KEYS)[number], number | null>,
   );
+  const [water, setWater] = useState<WaterProfile | null>(null);
+  const [waterInvalid, setWaterInvalid] = useState(false);
   const [invalid, setInvalid] = useState<Record<string, boolean>>({});
   const busy = useRef(false);
+  const isWater = initialIsWater || Boolean(readResult?.water);
 
   if (!productId) {
     return (
@@ -59,11 +64,14 @@ export function AddNutritionScreen() {
         ingredientsImage: null,
         nutritionImage: photo.base64,
         nutrition: 'separate',
+        ...(initialIsWater ? { kind: 'water' as const } : {}),
       });
       if (!activity.isCurrent(token)) return;
+      const waterRead = initialIsWater || Boolean(result.water);
       setReadResult(result);
-      setUnit(result.unit); // unread stays null: the shopper picks g/ml, we never guess
+      setUnit(result.unit ?? (waterRead ? 'ml' : null)); // unread stays null for non-water: the shopper picks g/ml
       setNutrients({ ...result.nutrients });
+      setWater(waterRead ? (result.water ?? emptyWaterProfile()) : null);
     } catch (err) {
       if (activity.isCurrent(token)) {
         setError((err as { code?: string })?.code ?? 'failed');
@@ -76,8 +84,11 @@ export function AddNutritionScreen() {
 
   const numericInvalid =
     Object.values(invalid).some(Boolean) ||
+    (isWater && waterInvalid) ||
     (nutrients.sat !== null && nutrients.fat !== null && nutrients.sat > nutrients.fat);
-  const hasAnyValue = NUTRIENT_KEYS.some(key => nutrients[key] !== null);
+  const hasAnyValue = isWater
+    ? water != null && Object.values(water).some(v => v !== null)
+    : NUTRIENT_KEYS.some(key => nutrients[key] !== null);
   const canSubmit = Boolean(readResult) && !saving && !numericInvalid && hasAnyValue && unit !== null;
 
   const handleConfirm = async () => {
@@ -91,6 +102,7 @@ export function AddNutritionScreen() {
         productId,
         unit,
         nutrients,
+        ...(isWater && water ? { water } : {}),
         nutritionPhotoPath: readResult.nutritionPhotoPath,
       });
       if (response.status !== 'found') throw Object.assign(new Error('invalid_response'), { code: 'invalid_response' });
@@ -110,7 +122,7 @@ export function AddNutritionScreen() {
 
   if (reading) {
     return (
-      <Screen title={ro.add.nutritionTitle}>
+      <Screen title={isWater ? ro.result.water.panelTitle : ro.add.nutritionTitle}>
         <View style={{ alignItems: 'center', gap: 12, paddingVertical: 24 }}>
           <ActivityIndicator size="large" color={colors.accent} />
           <Text style={{ color: colors.ink, fontSize: 16 }}>{ro.add.reading}</Text>
@@ -121,8 +133,8 @@ export function AddNutritionScreen() {
 
   if (!readResult) {
     return (
-      <Screen title={ro.add.nutritionTitle}>
-        <Text style={{ color: colors.muted, fontSize: 14 }}>{ro.add.nutritionHint}</Text>
+      <Screen title={isWater ? ro.result.water.panelTitle : ro.add.nutritionTitle}>
+        <Text style={{ color: colors.muted, fontSize: 14 }}>{isWater ? ro.result.water.panelHint : ro.add.nutritionHint}</Text>
         {error ? <Text accessibilityRole="alert" style={{ color: colors.low }}>{errorMessage(error)}</Text> : null}
         <GuidedPhotoCapture onCapture={handleCapture} />
       </Screen>
@@ -154,25 +166,34 @@ export function AddNutritionScreen() {
             />
           ))
         ) : null}
-        {NUTRIENT_KEYS.map(key => {
-          const amount = nutrients[key];
-          return (
-            <UnknownConfirmationField
-              key={key}
-              label={ro.review.nutrients[key]}
-              disabled={saving}
-              numeric
-              invalid={invalid[key]}
-              value={amount === null ? '' : `${String(amount).replace('.', ',')} ${unitForNutrient(key)}`}
-              onChange={text => {
-                const parsed = text.trim() ? parseAmount(text, unitForNutrient(key)) : null;
-                const valid = !text.trim() || (parsed !== null && Nutrients.shape[key].safeParse(parsed).success);
-                setInvalid(prev => ({ ...prev, [key]: !valid }));
-                if (valid) setNutrients(prev => ({ ...prev, [key]: parsed }));
-              }}
-            />
-          );
-        })}
+        {isWater ? (
+          <WaterFields
+            value={water ?? emptyWaterProfile()}
+            disabled={saving}
+            onChange={setWater}
+            onInvalidChange={setWaterInvalid}
+          />
+        ) : (
+          NUTRIENT_KEYS.map(key => {
+            const amount = nutrients[key];
+            return (
+              <UnknownConfirmationField
+                key={key}
+                label={ro.review.nutrients[key]}
+                disabled={saving}
+                numeric
+                invalid={invalid[key]}
+                value={amount === null ? '' : `${String(amount).replace('.', ',')} ${unitForNutrient(key)}`}
+                onChange={text => {
+                  const parsed = text.trim() ? parseAmount(text, unitForNutrient(key)) : null;
+                  const valid = !text.trim() || (parsed !== null && Nutrients.shape[key].safeParse(parsed).success);
+                  setInvalid(prev => ({ ...prev, [key]: !valid }));
+                  if (valid) setNutrients(prev => ({ ...prev, [key]: parsed }));
+                }}
+              />
+            );
+          })
+        )}
         <ActionButton
           label={ro.add.retakePhoto}
           disabled={saving}

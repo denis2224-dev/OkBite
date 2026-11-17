@@ -1,5 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { emptyWaterProfile } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { openPhoto } from '../offline/photos';
 import { UnknownProductConfirmation, type UnknownProductConfirmationProps } from './UnknownProductConfirmation';
@@ -202,4 +203,25 @@ it('restores an optional category correction without requiring another selection
   expect(screen.getByRole('button', { name: `${ro.add.categoryOptional}: Categorie test` })).toBeTruthy();
   await fireEvent.press(screen.getByRole('button', { name: ro.add.confirmSave }));
   expect(input.onConfirm).toHaveBeenCalledWith(expect.objectContaining({ categorySlug: 'test' }));
+});
+
+it('confirms bottled water with empty ingredients, Mineral Profile fields, and ml default', async () => {
+  const water = { ...emptyWaterProfile(), carbonation: 'still' as const, ph: 7.4, tdsMgL: 451 };
+  const input = props({
+    initial: { ...initial, categorySlug: 'apa', isWater: true },
+    categories: [{ slug: 'apa', name: 'Apă', scoreKind: 'water' }],
+    label: { ...label, unit: null, ingredientsText: null, water },
+  });
+  await render(<UnknownProductConfirmation {...input} />);
+  expect(screen.getByTestId('water-fields')).toBeTruthy();
+  expect(screen.getByRole('button', { name: ro.add.confirmSave })).toBeEnabled();
+  await fireEvent.changeText(screen.getByLabelText(ro.result.water.tdsLabel), '350-400');
+  await fireEvent.press(screen.getByRole('button', { name: ro.result.water.carbonation.sparkling }));
+  await act(async () => { await fireEvent.press(screen.getByRole('button', { name: ro.add.confirmSave })); });
+  expect(input.onConfirm).toHaveBeenCalledWith(expect.objectContaining({
+    categorySlug: 'apa',
+    unit: 'ml',
+    ingredientsText: '',
+    water: expect.objectContaining({ carbonation: 'sparkling', ph: 7.4, tdsMgL: 375 }),
+  }));
 });

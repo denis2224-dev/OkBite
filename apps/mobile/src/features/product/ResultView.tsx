@@ -99,7 +99,7 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
       {showPortion && <LinkRow label={ro.result.portionTile} last onPress={() => setPortion(true)} />}
     </Card>}
     {nutritionAdditionAvailable && product.status === 'unverified' && !hasNutrition && (!isWater || !product.water) &&
-      <Button variant="secondary" onPress={() => router.push({pathname: '/add/nutrition', params: {productId: product.id}})}>{isWater ? ro.result.water.addChemistry : ro.result.addNutrition}</Button>}
+      <Button variant="secondary" onPress={() => router.push({pathname: '/add/nutrition', params: isWater ? {productId: product.id, kind: 'water'} : {productId: product.id}})}>{isWater ? ro.result.water.addChemistry : ro.result.addNutrition}</Button>}
     <Card style={{ paddingVertical: 4, gap: 0 }}>
       <LinkRow icon="camera" label={ro.result.original} last onPress={() => router.push({ pathname: '/product/[id]/label', params: { id: product.id } })} />
     </Card>
