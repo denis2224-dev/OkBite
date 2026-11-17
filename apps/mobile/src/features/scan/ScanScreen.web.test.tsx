@@ -1,10 +1,12 @@
 import React from 'react';
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { render, fireEvent, screen } from '@testing-library/react-native';
+import { render, fireEvent, screen, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { api } from '../../lib/api';
 import { ro } from '../../copy/ro';
 import { light } from '../../theme/tokens';
 import ScanScreenWeb from './ScanScreen.web';
+import { cameraMessage } from '../capture/cameraSupport.web';
 import { CODE, lookupNotFound } from '../capture/__fixtures__/responses';
 import * as useScanLookupModule from './useScanLookup';
 
@@ -30,6 +32,37 @@ describe('ScanScreen (web)', () => {
     jest.resetAllMocks();
     mockFocused = true;
     mockLive.status = 'unsupported';
+  });
+
+  it.each([
+    ['denied', () => ro.scan.deniedText],
+    ['busy', () => cameraMessage('busy')],
+    ['unavailable', () => cameraMessage('unavailable')],
+  ] as const)('shows the %s camera state inside the dark frame with one retry', async (status, message) => {
+    mockLive.status = status;
+    await render(<ScanScreenWeb embedded />);
+    const blocked = within(screen.getByTestId('scan-preview')).getByTestId('camera-blocked');
+    expect(StyleSheet.flatten(within(blocked).getByText(message()).props.style).color).toBe(light.cameraInk);
+    expect(StyleSheet.flatten(blocked.props.style).backgroundColor).not.toBe(light.surface);
+    expect(within(blocked).getAllByRole('button', { name: ro.errors.retry })).toHaveLength(1);
+  });
+
+  it('keeps the manual-only note inside the frame with no buttons, and manual entry outside it', async () => {
+    mockLive.status = 'unsupported';
+    await render(<ScanScreenWeb embedded />);
+    const frame = screen.getByTestId('scan-preview');
+    expect(within(frame).getByText(ro.scan.webManualOnly)).toBeTruthy();
+    expect(within(frame).queryAllByRole('button')).toHaveLength(0);
+    expect(screen.getByRole('button', { name: ro.scan.manual })).toBeTruthy();
+  });
+
+  it('lets the blocked frame grow with large text instead of cutting it off', async () => {
+    mockLive.status = 'denied';
+    await render(<ScanScreenWeb embedded />);
+    const frame = StyleSheet.flatten(screen.getByTestId('scan-preview').props.style);
+    expect(frame.maxHeight).toBeUndefined();
+    expect(frame.aspectRatio).toBeUndefined();
+    expect(frame.minHeight).toBe(240);
   });
 
   it('releases the live preview on blur and restores it on focus', async () => {

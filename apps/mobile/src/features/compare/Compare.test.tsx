@@ -69,7 +69,8 @@ test('an unverified selection keeps its status visible', async () => {
   const selected = mockEntries[0]!;
   await render(<ProductPicker entries={mockEntries} selected={{ ...selected,
     product: { ...selected.product, status: 'unverified' } }} onSelect={() => {}} />);
-  expect(screen.getAllByText(ro.result.unverified)).toHaveLength(2);
+  expect(screen.getAllByText(ro.result.unverified)).toHaveLength(1); // the picker badge; the source card explains instead
+  expect(screen.getByText(ro.result.unverifiedNote)).toBeTruthy();
 });
 
 test('uses trace tone for mayContain and missingAllergenNote when unverified', async () => {
