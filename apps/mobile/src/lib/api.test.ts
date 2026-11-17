@@ -12,3 +12,22 @@ it('keeps invalid form and lookup requests as bad_request without sending them',
 const hang = (_url:unknown,options:RequestInit) => new Promise((_resolve,reject) => options.signal!.addEventListener('abort',()=>reject(new Error('Aborted'))));
 it('times out an unresponsive request', async () => { jest.useFakeTimers(); fetchMock.mockImplementation(hang); const result=expect(api.lookup({code:'4840001000014'})).rejects.toMatchObject({code:'offline'}); await jest.advanceTimersByTimeAsync(20001); await result; jest.useRealTimers(); });
 it('waits for the server AI deadline before giving up on photo analysis', async () => { jest.useFakeTimers(); fetchMock.mockImplementation(hang); let settled=false; const result=api.identify('aGVsbG8=').finally(()=>{settled=true;}); result.catch(()=>{}); await jest.advanceTimersByTimeAsync(40001); expect(settled).toBe(false); await jest.advanceTimersByTimeAsync(15000); await expect(result).rejects.toMatchObject({code:'offline'}); jest.useRealTimers(); });
+const shelf = { category: 'iaurt', products: [{ product: foundYogurt.product, score: foundYogurt.score }] };
+it('asks top-products for one shelf with GET, the limit and the usual headers', async () => {
+  fetchMock.mockResolvedValueOnce(response(shelf));
+  expect((await api.topProducts('iaurt')).products).toHaveLength(1);
+  const [url, options] = fetchMock.mock.calls[0];
+  expect(url).toBe('https://example.supabase.co/functions/v1/top-products?category=iaurt&limit=20');
+  expect(options.method).toBe('GET');
+  expect(options.headers).toMatchObject({ apikey: 'public-test-key', Authorization: 'Bearer public-test-key' });
+});
+it('rejects a top-products answer that breaks the shape or is for another shelf', async () => {
+  fetchMock.mockResolvedValueOnce(response({ category: 'iaurt', products: [{ product: foundYogurt.product }] }));
+  await expect(api.topProducts('iaurt')).rejects.toMatchObject({ code: 'invalid_response' });
+  fetchMock.mockResolvedValueOnce(response({ ...shelf, category: 'suc' }));
+  await expect(api.topProducts('iaurt')).rejects.toMatchObject({ code: 'invalid_response' });
+});
+it('does not send a top-products request for a malformed shelf slug', async () => {
+  await expect(api.topProducts('Iaurt & co')).rejects.toMatchObject({ code: 'bad_request' });
+  expect(fetchMock).not.toHaveBeenCalled();
+});

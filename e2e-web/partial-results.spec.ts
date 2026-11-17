@@ -27,7 +27,8 @@ for (const mode of ['light'] as const) {
     await expect(page.getByText(ro.score.title, {exact:true})).toHaveCount(0);
     await expect(page.getByText(ro.result.portion, {exact:true})).toHaveCount(0);
     await expect(page.getByRole('button', {name:ro.result.portionTile, exact:true})).toHaveCount(0);
-    await expect(page.getByText(product.ingredientsText, {exact:true})).toBeAttached();
+    // The label text opens from the Ingrediente row of the trimmed result.
+    await expect(page.getByRole('button', {name:ro.result.ingredientsTile, exact:true})).toBeAttached();
     await expect(page.getByText(ro.result.unverifiedNote, {exact:true})).toBeAttached();
     await expect(page.getByRole('button', {name:ro.result.addNutrition, exact:true})).toHaveCount(process.env.EXPO_PUBLIC_NUTRITION_ENRICHMENT === '1' ? 1 : 0);
     await expect(page.getByRole('progressbar', {name:ro.app.loading})).toHaveCount(0);

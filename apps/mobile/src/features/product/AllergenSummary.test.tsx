@@ -44,6 +44,6 @@ it('sits between the score tag and the reasons, and keeps one missing-allergen n
   await render(<ResultView product={yogurt({ status: 'verified' })} score={{ ...foundYogurt.score, letter: 'B' }} />);
   const order = inOrder();
   expect(order.indexOf('product-score')).toBeLessThan(order.indexOf('allergen-summary'));
-  expect(order.indexOf('allergen-summary')).toBeLessThan(order.indexOf(ro.result.whyLetter('B')));
+  expect(order.indexOf('allergen-summary')).toBeLessThan(order.indexOf('reason-tone-'));
   expect(screen.getAllByText(ro.result.missingAllergenNote)).toHaveLength(1);
 });

@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { HistoryScreen } from './HistoryScreen';
-import { clearHistory, listHistory, type HistoryEntry } from './store';
+import { clearHistory, listHistory, removeFromHistory, type HistoryEntry } from './store';
 import { foundYogurt } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
 import { productScoreFor } from '../product/productScoreFor';
@@ -19,7 +19,7 @@ jest.mock('expo-router', () => ({
     }, [effect]);
   },
 }));
-jest.mock('./store', () => ({ listHistory: jest.fn(), clearHistory: jest.fn() }));
+jest.mock('./store', () => ({ listHistory: jest.fn(), clearHistory: jest.fn(), removeFromHistory: jest.fn(), restoreToHistory: jest.fn() }));
 jest.mock('../offline/queue', () => ({ subscribeQueue: () => jest.fn() }));
 jest.mock('../../lib/storagePersistence', () => ({ showStorageWarning: true }));
 const entry: HistoryEntry = { ...foundYogurt, savedAt: '2026-11-05T09:00:00.000Z' };
@@ -37,14 +37,14 @@ beforeEach(() => {
   jest.mocked(listHistory).mockResolvedValue([entry]);
   jest.mocked(clearHistory).mockResolvedValue();
 });
-it.each(['verified', 'unverified'] as const)('keeps score context and %s status visible and announced', async (status) => {
+it.each(['verified', 'unverified'] as const)('keeps the row short and still announces score context and %s status', async (status) => {
   const product = { ...entry.product, status, verifiedAt: status === 'verified' ? '2026-11-06' : null };
   jest.mocked(listHistory).mockResolvedValue([{ ...entry, product }]);
   await render(<HistoryScreen />);
   await screen.findByText(product.name);
   const verification = status === 'verified' ? `${ro.result.checked}: 06.11.2026` : ro.result.unverified;
-  expect(screen.getByText(verification)).toBeTruthy();
-  expect(screen.getByText(ro.score.disclaimer)).toBeTruthy();
+  expect(screen.queryByText(verification)).toBeNull(); // kept short on screen, read aloud below
+  expect(screen.getAllByText(ro.score.disclaimer)).toHaveLength(1); // once, under the list
   const row = screen.getByRole('button', { name: new RegExp(ro.history.open(product.name)) });
   expect(row.props.accessibilityLabel).toContain(product.brand);
   expect(row.props.accessibilityLabel).toContain(ro.history.score(productScoreFor(entry.product, entry.score).score!));
@@ -134,12 +134,14 @@ it('retries storage failures and opens the saved record through the cached route
   await fireEvent.press(screen.getByRole('button', { name: new RegExp(ro.history.open(entry.product.name)) }));
   expect(router.push).toHaveBeenCalledWith({ pathname: '/product/[id]', params: { id: entry.product.id, cached: '1' } });
 });
-it('shows source dates and an unavailable score without inventing zero', async () => {
+it('announces source dates and marks an unavailable score as fără scor without inventing zero', async () => {
   jest.mocked(listHistory).mockResolvedValue([{ ...entry, score: { ...entry.score, score: null, grade: 'unavailable' } }]);
   await render(<HistoryScreen />);
-  await waitFor(() => expect(screen.getByText(entry.product.source)).toBeTruthy());
-  expect(screen.getByText(`${ro.result.added}: ${entry.product.addedAt.split('-').reverse().join('.')}`)).toBeTruthy();
-  expect(screen.getByText(ro.result.scoreUnavailable)).toBeTruthy();
+  const row = await screen.findByRole('button', { name: new RegExp(ro.history.open(entry.product.name)) });
+  expect(row.props.accessibilityLabel).toContain(entry.product.source);
+  expect(row.props.accessibilityLabel).toContain(`${ro.result.added}: ${entry.product.addedAt.split('-').reverse().join('.')}`);
+  expect(row.props.accessibilityLabel).toContain(ro.result.scoreUnavailable);
+  expect(screen.getByText(ro.history.noScore)).toBeTruthy();
   expect(screen.queryByText('0 din 100')).toBeNull();
 });
 it('keeps the list when deletion is canceled or fails, and clears only on confirmed success', async () => {
@@ -196,9 +198,10 @@ it('does not restore deleted rows when an earlier read finishes after clear', as
 it('withholds a cached score when required nutrition data is missing', async () => {
   jest.mocked(listHistory).mockResolvedValue([{ ...entry, product: { ...entry.product, nutrients: { ...entry.product.nutrients, salt: null } } }]);
   await render(<HistoryScreen />);
-  await waitFor(() => expect(screen.getByText(ro.result.scoreUnavailable)).toBeTruthy());
+  await waitFor(() => expect(screen.getByText(ro.history.noScore)).toBeTruthy());
+  expect(screen.getByRole('button', { name: new RegExp(ro.result.scoreUnavailable) })).toBeTruthy();
   expect(screen.queryByText(/^\d+ · /)).toBeNull();
-  expect(screen.getByText('—')).toBeTruthy();
+  expect(screen.queryByText(String(productScoreFor(entry.product, entry.score).score), { includeHiddenElements: true })).toBeNull();
 });
 
 it('renders the title and subtitle through the shared tab page header', async () => {
@@ -207,4 +210,40 @@ it('renders the title and subtitle through the shared tab page header', async ()
   const title = screen.getByRole('header', { name: ro.history.design.title });
   expect(StyleSheet.flatten(title.props.style).fontSize).toBe(22);
   expect(screen.getByText(ro.history.design.note)).toBeTruthy();
+});
+
+it('sums up the saved products in a "Coșul tău" card above the list', async () => {
+  await render(<HistoryScreen />);
+  await screen.findByText(entry.product.name);
+  expect(screen.getByRole('header', { name: ro.history.basket.title })).toBeTruthy();
+  const { score, tier } = productScoreFor(entry.product, entry.score);
+  expect(screen.getByLabelText(`${ro.history.score(score!)} · ${ro.tiers[tier!]}`)).toBeTruthy();
+});
+it('leaves the basket card out when history is empty', async () => {
+  jest.mocked(listHistory).mockResolvedValue([]);
+  await render(<HistoryScreen />);
+  await waitFor(() => expect(screen.queryByText(ro.app.loading)).toBeNull());
+  expect(screen.queryByRole('header', { name: ro.history.basket.title })).toBeNull();
+});
+
+it('draws history like the mockup: one card, a small score tag, the name and a short time', async () => {
+  const now = new Date();
+  jest.mocked(listHistory).mockResolvedValue([{ ...entry, savedAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 5).toISOString() }]);
+  await render(<HistoryScreen />);
+  await screen.findByText(entry.product.name);
+  expect(screen.getByTestId('history-list')).toBeTruthy();
+  expect(screen.getByText('Azi, 08:05')).toBeTruthy();
+  expect(screen.queryByText(entry.product.source)).toBeNull();
+  expect(screen.queryByText(entry.product.brand, { exact: false })).toBeNull(); // brand only in the spoken label
+  const { score } = productScoreFor(entry.product, entry.score);
+  expect(screen.getAllByText(String(score), { includeHiddenElements: true }).length).toBeGreaterThan(0);
+  expect(screen.queryByRole('button', { name: ro.history.remove(entry.product.name) })).toBeNull(); // no trash icons
+});
+it('still deletes a row through the screen-reader delete action', async () => {
+  jest.mocked(removeFromHistory).mockResolvedValue();
+  await render(<HistoryScreen />);
+  const row = await screen.findByRole('button', { name: new RegExp(ro.history.open(entry.product.name)) });
+  expect(row.props.accessibilityActions).toEqual(expect.arrayContaining([{ name: 'delete', label: ro.history.remove(entry.product.name) }]));
+  await fireEvent(row, 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
+  await waitFor(() => expect(removeFromHistory).toHaveBeenCalledWith(entry.product.id));
 });
