@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 import { PortionSheet } from './PortionSheet';
 import { foundYogurt } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
+import { softShadow } from '../../theme/tokens';
 
 it('has a drag handle at the top that takes vertical swipes', async () => {
   await render(<PortionSheet product={foundYogurt.product} onClose={jest.fn()} />);
@@ -35,5 +36,5 @@ it('keeps the sheet edge visible on the page with a border and a soft shadow', a
   await render(<PortionSheet product={foundYogurt.product} onClose={jest.fn()} />);
   const sheet = StyleSheet.flatten(screen.getByTestId('portion-sheet', { includeHiddenElements: true }).props.style);
   expect(sheet.borderTopWidth).toBeGreaterThan(0);
-  expect(sheet.elevation).toBeGreaterThan(0);
+  expect(sheet).toMatchObject(softShadow);
 });

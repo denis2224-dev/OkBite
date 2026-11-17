@@ -19,8 +19,8 @@ export function WhyScore({ score, sugar }: { score: ScoreResult; sugar: number |
   return <View>
     <Card style={{ paddingVertical: 4, gap: 0 }}>
       {reasons.map((reason, index) => {
-        const tone = reason.tone === 'good' ? { fg: colors.good, label: ro.score.positive }
-          : reason.tone === 'bad' ? { fg: colors.low, label: ro.score.negative } : { fg: colors.neutral, label: ro.score.neutral };
+        const tone = reason.tone === 'good' ? { fg: colors.primary, label: ro.score.positive }
+          : reason.tone === 'bad' ? { fg: colors.muted, label: ro.score.negative } : { fg: colors.muted, label: ro.score.neutral };
         const spoons = sugar !== null && isSugarProblem(reason) ? `≈ ${teaspoons(sugar)}` : null;
         // The +/- icon shows the tone; the word is only read aloud.
         return <View key={index} accessible accessibilityLabel={`${tone.label}: ${reason.title}. ${reason.detail}${spoons ? `. ${spoons}` : ''}`}

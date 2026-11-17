@@ -7,7 +7,7 @@ import { ro } from '../../copy/ro';
 import { api, ApiError } from '../../lib/api';
 import { router } from 'expo-router';
 import { StyleSheet } from 'react-native';
-import { light } from '../../theme/tokens';
+import { light, radii, softShadow, typeScale } from '../../theme/tokens';
 import type { Product, Profile, ScoreResult } from '@okbite/shared';
 import { displayScore } from './displayScore';
 import { productScoreFor } from './productScoreFor';
@@ -24,6 +24,14 @@ const productLine = (product: Product, score: ScoreResult) => {
   return `${ro.history.score(s.score!)} · ${ro.tiers[s.tier!]}`;
 };
 
+// The rendered subtree with this test ID, as JSON text (to read drawn colours).
+const drawn = (testID: string) => {
+  type Node = { props?: { testID?: string }; children?: (Node | string)[] | null };
+  const find = (node: Node | string | null): Node | undefined => !node || typeof node === 'string' ? undefined
+    : node.props?.testID === testID ? node : node.children?.map(find).find(Boolean);
+  const tree = screen.toJSON() as Node | Node[] | null;
+  return JSON.stringify((Array.isArray(tree) ? tree : [tree]).map(find).find(Boolean));
+};
 jest.mock('../../lib/api', () => ({ ...jest.requireActual('../../lib/api'), api: { report: jest.fn() } }));
 it('shows allergens, provenance only in the bottom source card, and the disclaimer', async () => {
   await render(<ResultView product={{ ...foundYogurt.product, status: 'unverified', allergens: ['Lapte'], mayContain: ['Soia'] }} score={foundYogurt.score} />);
@@ -188,14 +196,15 @@ it('re-scores Open Food Facts Coca-Cola Zero as a beverage (53/100) and analyzes
 
 
 
-it.each(['A', 'B', 'C', 'D', 'E'] as const)('shows the supplied Nutri-Score letter %s in the tile, on the bar and with the disclaimer under it', async letter => {
+it.each(['A', 'B', 'C', 'D', 'E'] as const)('shows the supplied Nutri-Score letter %s on the bar, below the disclaimer that sits under the score', async letter => {
   await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter }} />);
   expect(screen.getByText(letter, { includeHiddenElements: true })).toBeTruthy(); // drawn in the tile; the A-E bar announces it
   expect(screen.getByLabelText(productLine(foundYogurt.product, { ...foundYogurt.score, letter }))).toBeTruthy();
   expect(screen.getByLabelText(`Nutri-Score: ${letter}`)).toBeTruthy();
   const order = inOrder();
-  expect(order.indexOf(`Nutri-Score: ${letter}`)).toBeLessThan(order.indexOf(ro.score.disclaimer));
-  expect(order.indexOf(ro.score.disclaimer)).toBeLessThan(order.indexOf('reason-tone-'));
+  expect(order.indexOf('product-score')).toBeLessThan(order.indexOf(ro.score.disclaimer));
+  expect(order.indexOf(ro.score.disclaimer)).toBeLessThan(order.indexOf(`Nutri-Score: ${letter}`));
+  expect(order.indexOf(`Nutri-Score: ${letter}`)).toBeLessThan(order.indexOf('reason-tone-'));
 });
 it('does not present a stale letter when the nutrition score is unavailable', async () => {
   await render(<ResultView product={{ ...foundYogurt.product, nutrients: { ...foundYogurt.product.nutrients, salt: null } }} score={foundYogurt.score} />);
@@ -207,12 +216,12 @@ it('leaves an absent Nutri-Score letter unavailable without inventing one', asyn
   expect(screen.queryByLabelText(/Nutri-Score:/)).toBeNull();
   expect(screen.getByLabelText(productLine(foundYogurt.product, { ...foundYogurt.score, letter: null }))).toBeTruthy();
 });
-it('orders the profile alert, score, reasons, the detail buttons, the composition card, the original label and the source last', async () => {
+it('orders the header, profile alert, name, score, disclaimer, reasons, the detail rows, the composition card and the source last', async () => {
   mockProfile = { ...mockProfile, allergens: ['Lapte'] };
-  await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter: 'B' }} />);
+  await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter: 'B' }} onBack={jest.fn()} />);
   const order = inOrder();
-  const markers = [ro.result.profileAlertSub, productLine(foundYogurt.product, foundYogurt.score), 'reason-tone-',
-    ro.result.ingredientsTile, ro.result.composition, ro.result.original, ro.result.source].map(text => order.indexOf(text));
+  const markers = [ro.app.back, ro.result.report, ro.result.profileAlertSub, foundYogurt.product.name, productLine(foundYogurt.product, foundYogurt.score),
+    ro.score.disclaimer, 'reason-tone-', ro.result.ingredientsTile, ro.result.original, ro.result.composition, ro.result.source].map(text => order.indexOf(text));
   expect(markers.every(index => index >= 0)).toBe(true);
   expect([...markers].sort((a, b) => a - b)).toEqual(markers);
 });
@@ -275,25 +284,33 @@ it('makes "Compară cu alt produs" the primary action for this product', async (
   await fireEvent.press(compare);
   expect(router.push).toHaveBeenLastCalledWith({ pathname: '/compare', params: { id: foundYogurt.product.id } });
 });
-it('puts share and report in a top row of 44 pt icon buttons, with no back arrow', async () => {
-  await render(<ResultView {...foundYogurt} />);
+it('puts back on the left and share and report on the right, all as labelled shared icon buttons', async () => {
+  const onBack = jest.fn();
+  await render(<ResultView {...foundYogurt} onBack={onBack} />);
   expect(screen.queryByRole('button', { name: ro.result.closeSheet })).toBeNull();
-  for (const name of [ro.share.button, ro.result.report]) {
-    const style = StyleSheet.flatten(screen.getByRole('button', { name }).props.style);
+  for (const name of [ro.app.back, ro.share.button, ro.result.report]) {
+    const button = screen.getByRole('button', { name });
+    const style = StyleSheet.flatten(button.props.style);
     expect(style.minWidth).toBeGreaterThanOrEqual(44);
     expect(style.minHeight).toBeGreaterThanOrEqual(44);
+    expect(within(button).getByTestId('icon-button-face', { includeHiddenElements: true })).toHaveStyle({ backgroundColor: light.sageSoft });
   }
   const order = inOrder();
+  expect(order.indexOf(ro.app.back)).toBeLessThan(order.indexOf(ro.share.button));
+  expect(order.indexOf(ro.share.button)).toBeLessThan(order.indexOf(ro.result.report));
   expect(order.indexOf(ro.result.report)).toBeLessThan(order.indexOf(productLine(foundYogurt.product, foundYogurt.score)));
+  await fireEvent.press(screen.getByRole('button', { name: ro.app.back }));
+  expect(onBack).toHaveBeenCalledTimes(1);
   await fireEvent.press(screen.getByRole('button', { name: ro.result.report }));
   expect(screen.getByLabelText(ro.result.reportLabel)).toBeTruthy();
 });
-it('shows Ingrediente and Porție as full-width chevron rows in one card, and only Porție shows the portion table', async () => {
+it('shows Ingrediente, Porție and the original label as full-width chevron rows in one card, and only Porție shows the portion table', async () => {
   await render(<ResultView {...foundYogurt} />);
   const rows = screen.getByTestId('result-link-rows');
   expect(rows).not.toHaveStyle({ flexDirection: 'row' });
   const buttons = within(rows).getAllByRole('button');
-  expect(buttons.map(button => button.props.accessibilityLabel)).toEqual([ro.result.ingredientsTile, ro.result.portionTile]);
+  expect(buttons.map(button => button.props.accessibilityLabel)).toEqual([ro.result.ingredientsTile, ro.result.portionTile, ro.result.original]);
+  expect(screen.getAllByRole('button', { name: ro.result.original })).toHaveLength(1);
   for (const button of buttons) expect(StyleSheet.flatten(button.props.style).minHeight).toBeGreaterThanOrEqual(44);
   expect(within(rows).queryAllByTestId('link-row-icon')).toHaveLength(0);
   expect(screen.queryByText(ro.result.portionNote)).toBeNull(); // the table lives only in the sheet
@@ -359,4 +376,52 @@ it('puts the product thumbnail before the name, and drops it when the photo fail
   await fireEvent(thumb, 'error');
   expect(screen.queryByTestId('product-thumb', { includeHiddenElements: true })).toBeNull();
   expect(screen.queryByTestId('product-photo', { includeHiddenElements: true })).toBeNull();
+});
+
+it('shows the product name in the display style with brand and quantity on one muted line', async () => {
+  await render(<ResultView {...foundYogurt} />);
+  expect(StyleSheet.flatten(screen.getByRole('header', { name: foundYogurt.product.name }).props.style)).toMatchObject(typeScale.display);
+  expect(screen.getByText(`${foundYogurt.product.brand}, ${foundYogurt.product.quantity}`)).toHaveStyle({ color: light.muted });
+});
+it('puts the disclaimer directly under the score tag and the tier word in forest', async () => {
+  await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter: 'B' }} />);
+  const order = inOrder();
+  expect(order.indexOf('product-score')).toBeLessThan(order.indexOf(ro.score.disclaimer));
+  expect(order.indexOf(ro.score.disclaimer)).toBeLessThan(order.indexOf('nutri-score-A'));
+  const tier = productScoreFor(foundYogurt.product, foundYogurt.score).tier!;
+  expect(screen.getByText(ro.tiers[tier], { includeHiddenElements: true })).toHaveStyle({ color: light.primary });
+});
+it('draws good reasons with a forest icon and problems with a muted icon', async () => {
+  const score = { ...foundYogurt.score, reasons: [
+    { tone: 'good' as const, title: 'Bogat în fibre', detail: '6 g la 100 g' },
+    { tone: 'bad' as const, title: 'Mult zahăr', detail: '24 g la 100 g' },
+  ] };
+  await render(<ResultView product={foundYogurt.product} score={score} />);
+  expect(drawn('reason-tone-good')).toContain(light.primary);
+  expect(drawn('reason-tone-bad')).toContain(light.muted);
+  expect(drawn('reason-tone-bad')).not.toContain(light.primary);
+  expect(screen.getByText('6 g la 100 g')).toHaveStyle({ color: light.muted });
+});
+it('uses no shadow stronger than the shared soft shadow anywhere on the result', async () => {
+  await render(<ResultView {...foundYogurt} />);
+  await fireEvent.press(screen.getByRole('button', { name: ro.result.portionTile }));
+  type Node = { props?: { style?: unknown }; children?: (Node | string)[] | null };
+  const styles: Record<string, unknown>[] = [];
+  const walk = (node: Node | string | null) => {
+    if (!node || typeof node === 'string') return;
+    const style = StyleSheet.flatten(node.props?.style as never) as Record<string, unknown> | undefined;
+    if (style) styles.push(style);
+    node.children?.forEach(walk);
+  };
+  const tree = screen.toJSON();
+  (Array.isArray(tree) ? tree : [tree]).forEach(node => walk(node as Node));
+  const shadowed = styles.filter(style => style.shadowOpacity !== undefined || style.elevation !== undefined || style.boxShadow !== undefined);
+  expect(shadowed.length).toBeGreaterThan(0); // the portion sheet keeps its soft edge
+  for (const style of shadowed) {
+    expect(style.boxShadow).toBeUndefined();
+    expect(style.shadowOpacity ?? 0).toBeLessThanOrEqual(softShadow.shadowOpacity);
+    expect(style.shadowRadius ?? 0).toBeLessThanOrEqual(softShadow.shadowRadius);
+    expect(style.elevation ?? 0).toBeLessThanOrEqual(softShadow.elevation);
+  }
+  expect(radii.card).toBe(20);
 });

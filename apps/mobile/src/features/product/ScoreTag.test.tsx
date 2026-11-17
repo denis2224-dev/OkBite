@@ -2,7 +2,7 @@ import * as native from 'react-native';
 import { AccessibilityInfo, Animated, StyleSheet } from 'react-native';
 import { render, screen, waitFor } from '@testing-library/react-native';
 import { ScoreTag } from './ScoreTag';
-import { light } from '../../theme/tokens';
+import { light, radii } from '../../theme/tokens';
 import { ro } from '../../copy/ro';
 
 const flat = (testID: string) => StyleSheet.flatten(screen.getByTestId(testID, { includeHiddenElements: true }).props.style);
@@ -19,10 +19,11 @@ it('reads its label once and hides the drawn parts from screen readers', async (
   expect(screen.getByText(ro.score.outOf, { includeHiddenElements: true })).toBeTruthy();
 });
 
-it('fills the body with the tier colour and prints the number in white', async () => {
+it('is a flat forest rounded rectangle for every tier and prints the number in white', async () => {
   jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
   await render(<ScoreTag score={41} tier="poor" label="x" testID="tag" />);
-  expect(flat('tag-body').backgroundColor).toBe(light.low);
+  expect(flat('tag-body')).toMatchObject({ backgroundColor: light.primary, borderRadius: radii.card });
+  expect(flat('tag-body').shadowOpacity).toBeUndefined();
   expect(StyleSheet.flatten(screen.getByText('41', { includeHiddenElements: true }).props.style)).toMatchObject({ fontSize: 40, lineHeight: 44, color: light.onPrimary });
 });
 
@@ -63,10 +64,8 @@ it('stays still, without crashing, when the reduced-motion check is unavailable'
   expect(screen.getByTestId('tag')).toBeTruthy();
 });
 
-it('draws the point in an absolute layer so the drawing can never set the tag height on a phone', async () => {
+it('has no shelf-tag point or punched hole', async () => {
   jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
   await render(<ScoreTag score={86} tier="excellent" label="x" testID="tag" />);
-  expect(flat('tag-point')).toMatchObject({ width: 22, alignSelf: 'stretch' });
-  expect(flat('tag-point').height).toBeUndefined();
-  expect(flat('tag-point-art')).toMatchObject({ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 });
+  expect(screen.queryByTestId('tag-point', { includeHiddenElements: true })).toBeNull();
 });

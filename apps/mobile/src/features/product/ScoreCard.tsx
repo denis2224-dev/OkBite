@@ -1,17 +1,16 @@
 import { useState } from 'react';
 import { Image, View } from 'react-native';
 import { productScore, type Product, type ScoreResult } from '@okbite/shared';
-import { Body, Caption, Title } from '../../ui';
+import { Body, Caption, Heading, Title } from '../../ui';
 import { fonts, radii } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 import { letterTones } from '../../theme/letterTones';
-import { tierTone } from '../../theme/tierTones';
 import { ro } from '../../copy/ro';
 import { NutriScoreScale } from './NutriScoreScale';
 import { ScoreTag } from './ScoreTag';
 
-/** Result hero: photo thumbnail and name, the product score as a shelf tag with its tier, then the A–E bar
- * (naming the letter) with the disclaimer directly under it. Without a tier, and in Compare's picker
+/** Result hero: photo thumbnail, name (display) and a muted brand line, the product score as a flat forest tag with
+ * its tier word, the disclaimer directly under it, then the A–E bar naming the letter. Without a tier, and in Compare's picker
  * (`identity={false}`), it keeps the letter tile, name and tier lines. */
 export function ScoreCard({ product, score, identity = true }: { product?: Product; score: ScoreResult; identity?: boolean }) {
   const { colors } = useTheme();
@@ -38,18 +37,16 @@ export function ScoreCard({ product, score, identity = true }: { product?: Produ
           onError={() => setFailedUrl(thumbUrl)}
           style={{ width: 64, height: 64, borderRadius: radii.small, backgroundColor: colors.soft }} />}
         <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-          <Title numberOfLines={2}>{product.name}</Title>
+          <Heading>{product.name}</Heading>
           <Body style={{ color: colors.muted }}>{[product.brand, product.quantity].filter(Boolean).join(', ')}</Body>
         </View>
       </View>
       <View testID="score-row" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', rowGap: 14, columnGap: 18 }}>
         <ScoreTag testID="product-score" score={shown.value} tier={tier} label={productLine} />
-        <Title {...hidden} accessibilityRole={undefined} style={{ color: tierTone(tier).fg }}>{ro.tiers[tier]}</Title>
+        <Title {...hidden} accessibilityRole={undefined} style={{ color: colors.primary }}>{ro.tiers[tier]}</Title>
       </View>
-      <View style={{ gap: 12 }}>
-        <NutriScoreScale letter={score.letter} showLetter />
-        <Caption>{ro.score.disclaimer}</Caption>
-      </View>
+      <Caption style={{ marginTop: -8 }}>{ro.score.disclaimer}</Caption>
+      <NutriScoreScale letter={score.letter} showLetter />
     </View>;
   }
   return <View style={{ gap: 12 }}>

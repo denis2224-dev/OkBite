@@ -4,6 +4,7 @@ import { AllergenSummary } from './AllergenSummary';
 import { ResultView } from './ResultView';
 import { foundYogurt } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
+import { light, radii } from '../../theme/tokens';
 
 let mockProfile: Profile;
 jest.mock('../profile/useProfile', () => ({ useProfile: () => ({ profile: mockProfile, hydrated: true, error: null }) }));
@@ -46,4 +47,14 @@ it('sits between the score tag and the reasons, and keeps one missing-allergen n
   expect(order.indexOf('product-score')).toBeLessThan(order.indexOf('allergen-summary'));
   expect(order.indexOf('allergen-summary')).toBeLessThan(order.indexOf('reason-tone-'));
   expect(screen.getAllByText(ro.result.missingAllergenNote)).toHaveLength(1);
+});
+
+it('draws the info pill flat in sage soft with a forest icon and ink text', async () => {
+  mockProfile = profile([]);
+  await render(<AllergenSummary product={yogurt({ allergens: ['Lapte'] })} />);
+  expect(screen.getByTestId('allergen-summary')).toHaveStyle({ backgroundColor: light.sageSoft, borderRadius: radii.small });
+  const pill = JSON.stringify(screen.toJSON());
+  expect(pill).toContain(light.primary); // the icon stroke
+  expect(pill).not.toContain(light.neutral);
+  expect(screen.getByText(ro.result.containsAllergen('lapte'), { includeHiddenElements: true })).toHaveStyle({ color: light.ink });
 });

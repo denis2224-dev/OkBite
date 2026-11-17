@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Linking, Modal, ScrollView, View } from 'react-native';
 import type { Ingredient } from '@okbite/shared';
-import { Body, Button, Caption, Card, Heading, Icon } from '../../ui';
+import { Body, Button, Caption, Card, Heading, IconButton } from '../../ui';
 import { PressableOpacity } from '../../shared/PressableOpacity';
 import { useTheme } from '../../theme/useTheme';
 import { fonts } from '../../theme/tokens';
@@ -54,10 +54,7 @@ export function AdditiveSheet({ ingredient, productId, onClose }: { ingredient: 
               {!!top && <Body style={{ fontSize: 14, fontFamily: fonts.bold, color: colors.muted }}>{top}</Body>}
               <Heading>{ingredient.name}</Heading>
             </View>
-            <PressableOpacity accessibilityRole="button" accessibilityLabel={ro.app.close} onPress={onClose}
-              style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface }}>
-              <Icon name="close" size={18} color={colors.ink} />
-            </PressableOpacity>
+            <IconButton icon="close" label={ro.app.close} onPress={onClose} />
           </View>
           <RiskChip risk={ingredient.risk} />
           <Card>

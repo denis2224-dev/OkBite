@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import ProductPage from '../../../app/product/[id]/index';
 import { ro } from '../../copy/ro';
+import { router } from 'expo-router';
 
 jest.mock('expo-router', () => ({ useLocalSearchParams: () => ({ id: 'test' }), router: { push: jest.fn(), back: jest.fn(), replace: jest.fn(), canGoBack: () => true } }));
 jest.mock('../profile/useProfile', () => ({ useProfile: () => ({ profile: { goals: [], allergens: [], avoid: [], onboarded: true } }) }));
@@ -15,5 +16,9 @@ it('keeps "Compară cu alt produs" fixed below the scrolling result', async () =
   const scroll = find(screen.toJSON() as Node);
   expect(JSON.stringify(scroll)).toContain(ro.result.report);
   expect(JSON.stringify(scroll)).not.toContain(ro.result.compare);
-  expect(screen.queryAllByRole('button', { name: /înapoi|back|închide analiza|close product/i })).toHaveLength(0); // swipe goes back
+});
+it('goes back from the header back button', async () => {
+  await render(<ProductPage />);
+  await fireEvent.press(screen.getByRole('button', { name: ro.app.back }));
+  expect(router.back).toHaveBeenCalledTimes(1);
 });
