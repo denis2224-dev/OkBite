@@ -217,7 +217,7 @@ test('photographing another product is a quiet text button, not a filled one', a
 
 describe('Moss styling', () => {
   const { light, radii } = jest.requireActual<typeof import('../../theme/tokens')>('../../theme/tokens');
-  const flat = (node: { props: { style: unknown } }) => StyleSheet.flatten(node.props.style as never) as Record<string, unknown>;
+  const flat = (node: ReturnType<typeof screen.getByTestId>) => StyleSheet.flatten(node.props.style as never) as Record<string, unknown>;
   test('product slots are flat surface cards with a border and the winner outlined in forest', async () => {
     await render(<Compare />);
     await choose(0); await choose(1);
