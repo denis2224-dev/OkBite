@@ -19,7 +19,7 @@ export function AvoidSwitches({ selected, disabled, onToggle }: Props) {
         return (
           <Pressable key={key} accessibilityRole="switch" accessibilityLabel={ro.profile[key]}
             accessibilityState={{ checked: on, disabled }} disabled={disabled} onPress={() => onToggle(key)}
-            style={[styles.row, { borderTopWidth: index ? 1 : 0, borderTopColor: colors.divider, opacity: disabled ? 0.6 : 1 }]}>
+            style={[styles.row, { borderTopWidth: index ? 1 : 0, borderTopColor: colors.divider }]}>
             <Body style={{ flex: 1 }}>{ro.profile[key]}</Body>
             <View style={[styles.track, on
               ? { backgroundColor: colors.primary, borderColor: colors.primary, alignItems: 'flex-end' }
