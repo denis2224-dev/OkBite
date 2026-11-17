@@ -4,10 +4,11 @@ import { useRouter } from 'expo-router';
 import { ALLERGENS, type Allergen, type AvoidKey, type Goal, type Profile } from '@okbite/shared';
 import { getLanguage, languageSelectable, setLanguage as persistLanguage, type Language } from '../../copy/lang';
 import { ro } from '../../copy/ro';
-import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { ScreenSafeArea as SafeAreaView } from '../../shared/ScreenSafeArea';
 import { useTheme } from '../../theme/useTheme';
 import { Button } from '../../ui/Button';
+import { Card } from '../../ui/Card';
+import { IconButton } from '../../ui/IconButton';
 import { Body, Heading } from '../../ui/Typography';
 import { ToggleChip } from '../allergies/ToggleChip';
 import { useProfile } from '../profile/useProfile';
@@ -125,25 +126,18 @@ export function OnboardingScreen({
       <View style={styles.content}>
         <View style={styles.header}>
           {step > 0 ? (
-            <Pressable accessibilityRole="button" accessibilityLabel={ro.app.back}
-              disabled={blocked} onPress={() => setStep((step - 1) as Step)} style={styles.headerAction}>
-              <Body style={{ fontWeight: '700' }}>{ro.app.back}</Body>
-            </Pressable>
+            <IconButton icon="back" label={ro.app.back} disabled={blocked} onPress={() => setStep((step - 1) as Step)} />
           ) : <View style={{ minWidth: 44 }} />}
           <Body accessibilityRole="header" style={{ color: colors.muted, fontWeight: '700' }}>
             {ro.onboarding.step(step + 1)}
           </Body>
-          <Pressable accessibilityRole="button" accessibilityLabel={ro.onboarding.skip}
-            accessibilityState={{ disabled: blocked }} disabled={blocked} onPress={finish}
-            style={[styles.headerAction, { alignItems: 'flex-end', opacity: blocked ? 0.45 : 1 }]}>
-            <Body style={{ color: colors.muted, fontWeight: '700' }}>{ro.onboarding.skip}</Body>
-          </Pressable>
+          <Button variant="ghost" disabled={blocked} onPress={finish} style={styles.skip}>{ro.onboarding.skip}</Button>
         </View>
         {(readFailed || saveFailed || languageFailed) && (
-          <View style={[styles.error, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Card style={styles.error}>
             <Body style={{ color: colors.low, fontWeight: '600' }}>{ro.errors.generic}</Body>
             {readFailed && <Button variant="secondary" disabled={pending} onPress={retry}>{ro.errors.retry}</Button>}
-          </View>
+          </Card>
         )}
         <View style={styles.title}>
           <Heading style={{ fontSize: 24, lineHeight: 32 }}>{title}</Heading>
@@ -183,8 +177,8 @@ export function OnboardingScreen({
 const styles = StyleSheet.create({
   content: { flex: 1, width: '100%', maxWidth: 480, alignSelf: 'center', padding: 16 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
-  headerAction: { minWidth: 44, minHeight: 44, justifyContent: 'center' },
-  error: { marginTop: 12, padding: 12, borderRadius: 12, borderWidth: 1, gap: 8 },
+  skip: { minHeight: 44, paddingVertical: 8, paddingHorizontal: 12 },
+  error: { marginTop: 12, padding: 12, gap: 8 },
   title: { marginTop: 16, marginBottom: 20, gap: 6 },
   choices: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingBottom: 24 },
 });
