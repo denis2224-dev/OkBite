@@ -11,6 +11,7 @@ import { RecentScans } from './RecentScans';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), navigate: jest.fn() } }));
 jest.mock('../history/store', () => ({ listHistory: jest.fn() }));
+jest.mock('../shelf/ShelfPicks', () => ({ ShelfPicks: () => null })); // its own tests cover it; shelf names (Lapte) would mix with allergen names here
 const mockAllergens: { value: Allergen[] } = { value: [] };
 jest.mock('../profile', () => ({ useProfile: () => ({ profile: { goals: [], allergens: mockAllergens.value, avoid: [], onboarded: true } }) }));
 
