@@ -1,13 +1,28 @@
-import { IdentifyRequest, IdentifyResponse } from '@okbite/shared';
+import { IdentifyRequest, IdentifyResponse, inferFrontWaterMeta } from '@okbite/shared';
 import { NutritionMode, type GuidedReadLabelResponse } from './unknownFlowContract';
 import { hasUnreadableNutrition, ingredientsOnly, prepareGuidedPhoto, readGuidedLabel, validateBody } from './guidedReading';
 import type { GuidedFlowDependencies, GuidedFlowInitial, GuidedFlowState, GuidedPhotoKind } from './guidedFlowTypes';
 export type { GuidedFlowState, GuidedFlowDependencies, GuidedFlowInitial, GuidedPhotoKind } from './guidedFlowTypes';
 
 export function createGuidedFlow(initial: GuidedFlowInitial, deps: GuidedFlowDependencies, restored?: GuidedFlowState) {
+  const initialWaterMeta = inferFrontWaterMeta({
+    brand: initial.brand,
+    name: initial.name,
+    isWater: Boolean(initial.isWater || initial.categorySlug === 'apa'),
+    carbonation: initial.carbonation ?? null,
+  });
+  const seedInitial: GuidedFlowInitial = {
+    ...initial,
+    ...(initialWaterMeta.isWater ? { isWater: true, categorySlug: initial.categorySlug ?? 'apa' } : {}),
+    ...(initialWaterMeta.carbonation ? { carbonation: initialWaterMeta.carbonation } : {}),
+  };
   let state: GuidedFlowState = {
-    stage: initial.photoPath ? 'ingredients' : 'front', initial: { ...initial },
-    initialFrontRead: { brand: initial.brand, name: initial.name, quantity: initial.quantity, code: initial.code, ...(initial.isWater ? { isWater: true } : {}) },
+    stage: seedInitial.photoPath ? 'ingredients' : 'front', initial: seedInitial,
+    initialFrontRead: {
+      brand: seedInitial.brand, name: seedInitial.name, quantity: seedInitial.quantity, code: seedInitial.code,
+      ...(seedInitial.isWater ? { isWater: true } : {}),
+      ...(seedInitial.carbonation ? { carbonation: seedInitial.carbonation } : {}),
+    },
     scannedCode: initial.code, remotePhotoPath: initial.photoPath,
     photos: { front: initial.frontPhotoId ?? null, ingredients: null, nutrition: null }, nutritionMode: null, label: null,
   };
@@ -68,14 +83,22 @@ export function createGuidedFlow(initial: GuidedFlowInitial, deps: GuidedFlowDep
     const response = parsed.data;
     const read = response.status === 'found' ? state.initialFrontRead : response.read;
     const { name, quantity, identityConfirmed } = state.initial;
-    const isWater = Boolean(read.isWater || state.initial.isWater || state.initial.categorySlug === 'apa');
-    const nextInitial = { ...state.initial, brand: read.brand ?? state.initial.brand,
-      name: identityConfirmed ? name : read.name ?? name,
+    const nextBrand = read.brand ?? state.initial.brand;
+    const nextName = identityConfirmed ? name : read.name ?? name;
+    const waterMeta = inferFrontWaterMeta({
+      brand: nextBrand,
+      name: nextName,
+      isWater: Boolean(read.isWater || state.initial.isWater || state.initial.categorySlug === 'apa'),
+      carbonation: read.carbonation ?? state.initial.carbonation ?? null,
+    });
+    const nextInitial = { ...state.initial, brand: nextBrand,
+      name: nextName,
       quantity: identityConfirmed ? quantity : read.quantity ?? quantity, code: state.scannedCode ?? read.code,
       photoPath: response.photoPath, frontPhotoId: state.photos.front!,
-      ...(isWater ? { isWater: true, categorySlug: state.initial.categorySlug ?? 'apa' } : {}) };
+      ...(waterMeta.isWater ? { isWater: true, categorySlug: state.initial.categorySlug ?? 'apa' } : {}),
+      ...(waterMeta.carbonation ? { carbonation: waterMeta.carbonation } : {}) };
     const returnToReview = Boolean(state.label);
-    set({ initial: nextInitial, initialFrontRead: { brand: nextInitial.brand, name: nextInitial.name, quantity: nextInitial.quantity, code: nextInitial.code, ...(isWater ? { isWater: true } : {}) }, remotePhotoPath: response.photoPath,
+    set({ initial: nextInitial, initialFrontRead: { brand: nextInitial.brand, name: nextInitial.name, quantity: nextInitial.quantity, code: nextInitial.code, ...(waterMeta.isWater ? { isWater: true } : {}), ...(waterMeta.carbonation ? { carbonation: waterMeta.carbonation } : {}) }, remotePhotoPath: response.photoPath,
       stage: returnToReview ? 'review' : response.status === 'found' ? 'interrupted' : 'ingredients' });
     await persist();
     if (!active()) return;

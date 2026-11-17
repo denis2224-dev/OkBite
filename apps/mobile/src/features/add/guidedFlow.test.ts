@@ -328,3 +328,37 @@ test('detected water skips nutrition question, sends kind=water, and goes straig
   expect(flow.getState().stage).toBe('review');
   expect(flow.getState().label?.water).toEqual(waterProfile);
 });
+
+test('client infers water and carbonation when identify returns Apă potabilă without backend isWater flag', async () => {
+  const waterProfile = { ...emptyWaterProfile(), dryResidueMgL: 390, caMgL: 14, mgMgL: 42.6, no3MgL: 6.4 };
+  const waterLabel = {
+    ...label,
+    ingredientsText: null,
+    unit: 'ml' as const,
+    reasons: { ...reasons, kcal: 'not_printed', fat: 'not_printed', sat: 'not_printed', sugar: 'not_printed', salt: 'not_printed', protein: 'not_printed', fiber: 'not_printed', fruitVegPct: 'not_printed', ingredientsText: 'not_printed' },
+    water: waterProfile,
+  };
+  const deps = {
+    preparePhoto: jest.fn(async (uri: string) => ({ uri, base64: `jpeg:${uri}`, bytes: 100 })),
+    keepPhoto: jest.fn(async (uri: string) => `id:${uri}`),
+    openPhoto: jest.fn(async (id: string) => ({ uri: id.slice(3), release: jest.fn() })),
+    identify: jest.fn(async () => ({
+      status: 'not_found',
+      read: { brand: 'DAVIDAN', name: 'Apă potabilă Carbogazificată', quantity: '0,5L', code: null },
+      photoPath: 'uploads/davidan-front',
+    })),
+    readLabel: jest.fn(async () => waterLabel),
+    onIdentify: jest.fn(), onFound: jest.fn(), onReview: jest.fn(), persist: jest.fn(async () => {}),
+  };
+  const flow = createGuidedFlow({ code: null, brand: null, name: null, quantity: null, photoPath: null }, deps);
+  await flow.capturePhoto('front');
+  expect(flow.getState().initial).toMatchObject({ isWater: true, categorySlug: 'apa', carbonation: 'sparkling' });
+  await flow.capturePhoto('lab-report');
+  expect(deps.readLabel).toHaveBeenCalledWith({
+    ingredientsImage: 'jpeg:lab-report',
+    nutritionImage: null,
+    nutrition: 'same_photo',
+    kind: 'water',
+  });
+  expect(flow.getState().stage).toBe('review');
+});

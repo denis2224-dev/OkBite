@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Text, View } from 'react-native';
-import { detectAllergens, emptyWaterProfile, NUTRIENT_KEYS, Nutrients, type AddProductRequest, type Category, type ReadLabelResponse, type Unit, type WaterProfile } from '@okbite/shared';
+import { detectAllergens, emptyWaterProfile, inferFrontWaterMeta, NUTRIENT_KEYS, Nutrients, WATER_NUMERIC_KEYS, type AddProductRequest, type Category, type ReadLabelResponse, type Unit, type WaterProfile } from '@okbite/shared';
 import type { AddInitialValues } from '../identify/routes';
 import { useTheme } from '../../theme/useTheme';
 import { ro } from '../../copy/ro';
@@ -27,24 +27,44 @@ export interface UnknownProductConfirmationProps {
   onChange?(proposal: UnknownProductProposal): void;
   onRetake(kind: UnknownPhotoKind): void;
   onManual?(): void;
+  onReadWaterFromPhoto?(): Promise<WaterProfile | null | void>;
 }
 
-export function UnknownProductConfirmation({ initial, label, photos, categories, onConfirm, onChange, onRetake, onManual }: UnknownProductConfirmationProps) {
+const isWaterProfileEmpty = (w: WaterProfile | null | undefined): boolean =>
+  !w || WATER_NUMERIC_KEYS.every(key => w[key] === null || w[key] === undefined);
+
+export function UnknownProductConfirmation({ initial, label, photos, categories, onConfirm, onChange, onRetake, onManual, onReadWaterFromPhoto }: UnknownProductConfirmationProps) {
   const { colors } = useTheme();
-  const initialWater = Boolean(initial.isWater || initial.categorySlug === 'apa' || label.water != null);
-  const [value, setValue] = useState<UnknownProductProposal>(() => ({
-    ...(initial.categorySlug ? { categorySlug: initial.categorySlug } : initialWater ? { categorySlug: 'apa' } : {}),
-    code: initial.code, name: initial.name ?? '', brand: initial.brand ?? '', quantity: initial.quantity ?? '',
-    photoPath: initial.photoPath, ingredientsText: label.ingredientsText ?? '', unit: label.unit ?? (initialWater ? 'ml' : null),
-    nutrients: { ...label.nutrients },
-    ...(initialWater ? { water: label.water ?? emptyWaterProfile() } : {}),
-    ingredientsPhotoPath: label.ingredientsPhotoPath, nutritionPhotoPath: label.nutritionPhotoPath,
-  }));
+  const inferred = inferFrontWaterMeta({
+    brand: initial.brand,
+    name: initial.name,
+    isWater: Boolean(initial.isWater || initial.categorySlug === 'apa' || label.water != null),
+    carbonation: initial.carbonation ?? label.water?.carbonation ?? null,
+  });
+  const initialWater = initial.categorySlug ? initial.categorySlug === 'apa' || label.water != null : inferred.isWater;
+  const [value, setValue] = useState<UnknownProductProposal>(() => {
+    const baseWater = label.water ?? emptyWaterProfile();
+    const seededWater =
+      initialWater && baseWater.carbonation === null && inferred.carbonation
+        ? { ...baseWater, carbonation: inferred.carbonation }
+        : baseWater;
+    return {
+      ...(initial.categorySlug ? { categorySlug: initial.categorySlug } : initialWater ? { categorySlug: 'apa' } : {}),
+      code: initial.code, name: initial.name ?? '', brand: initial.brand ?? '', quantity: initial.quantity ?? '',
+      photoPath: initial.photoPath, ingredientsText: label.ingredientsText ?? '', unit: label.unit ?? (initialWater ? 'ml' : null),
+      nutrients: { ...label.nutrients },
+      ...(initialWater ? { water: seededWater } : {}),
+      ingredientsPhotoPath: label.ingredientsPhotoPath, nutritionPhotoPath: label.nutritionPhotoPath,
+    };
+  });
   const [invalid, setInvalid] = useState<Record<string, boolean>>({});
   const [waterInvalid, setWaterInvalid] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [unitOpen, setUnitOpen] = useState(false);
   const [pending, setPending] = useState(false);
+  const [waterReading, setWaterReading] = useState(false);
+  const [waterReadError, setWaterReadError] = useState(false);
+  const [waterVersion, setWaterVersion] = useState(0);
   const [error, setError] = useState(false);
   const busy = useRef(false);
   const change = (next: UnknownProductProposal) => { setValue(next); setError(false); onChange?.(next); };
@@ -92,10 +112,15 @@ export function UnknownProductConfirmation({ initial, label, photos, categories,
       {categoryOpen ? <CategoryPicker categories={categories} selectedSlug={value.categorySlug ?? null} disabled={pending}
         onSelect={categorySlug => {
           const nextIsWater = categorySlug === 'apa';
+          const baseNextWater = value.water ?? emptyWaterProfile();
+          const nextWater =
+            nextIsWater && baseNextWater.carbonation === null && inferred.carbonation
+              ? { ...baseNextWater, carbonation: inferred.carbonation }
+              : baseNextWater;
           change({
             ...value, categorySlug,
             unit: nextIsWater ? (value.unit ?? 'ml') : value.unit,
-            water: nextIsWater ? (value.water ?? emptyWaterProfile()) : undefined,
+            water: nextIsWater ? nextWater : undefined,
           });
           setCategoryOpen(false);
         }} /> : null}
@@ -123,12 +148,47 @@ export function UnknownProductConfirmation({ initial, label, photos, categories,
       <Text style={textStyle}>{ro.result.missingAllergenNote}</Text>
     </View>
     {isWaterMode ? (
-      <WaterFields
-        value={value.water ?? emptyWaterProfile()}
-        disabled={pending}
-        onChange={water => change({ ...value, water })}
-        onInvalidChange={setWaterInvalid}
-      />
+      <View style={{ gap: 12 }}>
+        {onReadWaterFromPhoto && photos.ingredients && isWaterProfileEmpty(value.water) ? (
+          <View style={card}>
+            <ActionButton
+              label={waterReading ? ro.add.reading : ro.add.readWaterFromPhoto}
+              disabled={pending || waterReading}
+              onPress={() => {
+                if (waterReading || pending) return;
+                setWaterReading(true);
+                setWaterReadError(false);
+                void onReadWaterFromPhoto()
+                  .then(extracted => {
+                    if (extracted) {
+                      const nextCarbonation =
+                        extracted.carbonation ?? value.water?.carbonation ?? inferred.carbonation ?? null;
+                      const mergedWater: WaterProfile = { ...extracted, carbonation: nextCarbonation };
+                      change({
+                        ...value,
+                        categorySlug: 'apa',
+                        unit: value.unit ?? 'ml',
+                        water: mergedWater,
+                      });
+                      setWaterInvalid(false);
+                      setWaterVersion(v => v + 1);
+                    }
+                  })
+                  .catch(() => setWaterReadError(true))
+                  .finally(() => setWaterReading(false));
+              }}
+            />
+            {waterReadError ? <Text accessibilityRole="alert" style={{ color: colors.low }}>{ro.add.processingFailed}</Text> : null}
+          </View>
+        ) : null}
+        <WaterFields
+          key={`water-${waterVersion}`}
+          value={value.water ?? emptyWaterProfile()}
+          disabled={pending || waterReading}
+          onChange={water => change({ ...value, water })}
+          onInvalidChange={setWaterInvalid}
+        />
+      </View>
     ) : (
       <View style={card}>
         <Text accessibilityRole="header" style={textStyle}>{ro.review.nutritionTitle}</Text>

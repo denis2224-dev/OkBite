@@ -149,7 +149,7 @@ const legacyRu = {
     manualEntry: 'Ввести текст вручную', draftRestored: 'Восстановлен черновик товара с этого телефона.',
     draftInterrupted: 'Предыдущее чтение не завершилось. Фото не отправлялись повторно.',
     resumeDraft: 'Продолжить начатый товар', discardDraft: 'Удалить черновик', confirmSave: 'Проанализировать и добавить',
-    retryRead: 'Повторить чтение', categoryOptional: 'Категория (необязательно)', unknownCategory: 'Категория не подтверждена',
+    retryRead: 'Повторить чтение', readWaterFromPhoto: 'Считать состав воды с фото', categoryOptional: 'Категория (необязательно)', unknownCategory: 'Категория не подтверждена',
     nutritionLater: 'Добавить таблицу ценности', nutritionSuccess: 'Данные о пищевой ценности добавлены к товару.',
     readingFront: 'Читаем данные с упаковки…', ingredientsOnly: 'Анализ по списку ингредиентов',
     nutritionUnavailable: 'Данные о пищевой ценности недоступны.', notPrinted: 'Информация не напечатана на упаковке.',

@@ -32,6 +32,9 @@ jest.mock('./completeUnknownDraft', () => ({ completeUnknownDraft: jest.fn() }))
 jest.mock('../offline/photos', () => ({
   openPhoto: jest.fn(async (id: string) => ({ uri: `blob:${id}`, release: jest.fn() })),
 }));
+jest.mock('../capture/compressPhoto', () => ({
+  compressPhoto: jest.fn(async (uri: string) => ({ uri, base64: `jpeg:${uri}`, bytes: 120 })),
+}));
 
 const emptyNutrients = Object.fromEntries(NUTRIENT_KEYS.map(key => [key, null])) as UnknownDraftSnapshot['label'] extends { nutrients: infer N } ? N : never;
 const storedDraft: UnknownDraftSnapshot = {
@@ -276,5 +279,67 @@ test('recalculates multilingual allergens and traces live before save and preser
   expect(screen.queryByLabelText('Arahide')).toBeNull();
   expect(screen.getByText(ro.result.missingAllergenNote)).toBeTruthy();
   expect(screen.queryByText(ro.result.noAllergens)).toBeNull();
+});
+
+test('UnknownReviewScreen re-reads saved back photo with kind=water when user switches category to Apă', async () => {
+  jest.mocked(loadUnknownDraft).mockResolvedValueOnce({
+    ...storedDraft,
+    initial: { ...storedDraft.initial, code: null, name: 'Sticlă test', brand: 'Producător' },
+    label: {
+      ...storedDraft.label!,
+      ingredientsText: null,
+      unit: null,
+      unclear: ['ingredientsText'],
+      reasons: { ...storedDraft.label!.reasons!, ingredientsText: 'unreadable' },
+    },
+  });
+  jest.mocked(requestUnknownFlow).mockResolvedValueOnce({
+    ingredientsText: null,
+    unit: 'ml',
+    nutrients: emptyNutrients,
+    water: {
+      tdsMgL: null, dryResidueMgL: 390, ph: null, carbonation: 'sparkling', classification: 'drinking',
+      caMgL: 14, mgMgL: 42.6, naMgL: null, kMgL: null, naPlusKMgL: null,
+      hco3MgL: null, so4MgL: null, clMgL: null, fMgL: null, no3MgL: 6.4,
+      bMgL: null, h3bo3MgL: null, iUgL: null,
+    },
+    unclear: [],
+    reasons: Object.fromEntries([...NUTRIENT_KEYS, 'ingredientsText'].map(k => [k, 'not_printed'])),
+    ingredientsPhotoPath: 'uploads/water-lab.jpg',
+    nutritionPhotoPath: null,
+  });
+
+  await render(<UnknownReviewScreen />);
+  await act(async () => {});
+
+  await fireEvent.press(screen.getByRole('button', { name: `${ro.add.categoryOptional}: ${ro.add.unknownCategory}` }));
+  await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Apă` }));
+  await act(async () => {
+    await fireEvent.press(screen.getByRole('button', { name: 'Citește compoziția apei din fotografie' }));
+  });
+
+  expect(requestUnknownFlow).toHaveBeenCalledWith(
+    'read-label',
+    expect.anything(),
+    expect.anything(),
+    expect.objectContaining({
+      ingredientsImage: 'jpeg:blob:kept-ing',
+      nutritionImage: null,
+      nutrition: 'same_photo',
+      kind: 'water',
+    }),
+  );
+  expect(screen.getByTestId('water-dryResidueMgL').props.value).toBe('390');
+  expect(screen.getByTestId('water-caMgL').props.value).toBe('14');
+  expect(screen.getByTestId('water-mgMgL').props.value).toBe('42,6');
+  expect(screen.getByTestId('water-no3MgL').props.value).toBe('6,4');
+  expect(saveUnknownDraftIfCurrent).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      initial: expect.objectContaining({ categorySlug: 'apa' }),
+      label: expect.objectContaining({
+        water: expect.objectContaining({ dryResidueMgL: 390, caMgL: 14, mgMgL: 42.6, no3MgL: 6.4 }),
+      }),
+    }),
+  );
 });
 

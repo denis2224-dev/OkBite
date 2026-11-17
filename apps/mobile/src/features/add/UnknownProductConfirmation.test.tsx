@@ -225,3 +225,43 @@ it('confirms bottled water with empty ingredients, Mineral Profile fields, and m
     water: expect.objectContaining({ carbonation: 'sparkling', ph: 7.4, tdsMgL: 375 }),
   }));
 });
+
+it('auto-detects water mode and carbonation from Apă potabilă front title even when backend missed isWater', async () => {
+  const input = props({
+    initial: { ...initial, brand: 'DAVIDAN', name: 'Apă potabilă Carbogazificată', quantity: '0,5L' },
+    categories: [{ slug: 'apa', name: 'Apă', scoreKind: 'water' }],
+    label: { ...label, ingredientsText: null, unit: null, reasons: { ingredientsText: 'unreadable' } },
+  });
+  await render(<UnknownProductConfirmation {...input} />);
+  expect(screen.getByTestId('water-fields')).toBeTruthy();
+  expect(screen.getByRole('button', { name: ro.result.water.carbonation.sparkling }).props.accessibilityState?.selected).toBe(true);
+  expect(screen.getByRole('button', { name: ro.add.confirmSave })).toBeEnabled();
+});
+
+it('offers one-tap photo water extraction when switched manually to Apă with empty WaterFields', async () => {
+  const extracted = {
+    ...emptyWaterProfile(),
+    dryResidueMgL: 390,
+    caMgL: 14,
+    mgMgL: 42.6,
+    no3MgL: 6.4,
+    carbonation: 'sparkling' as const,
+  };
+  const onReadWaterFromPhoto = jest.fn(async () => extracted);
+  const input = props({
+    initial: { ...initial, brand: 'Brand necunoscut', name: 'Produs nou' },
+    categories: [{ slug: 'apa', name: 'Apă', scoreKind: 'water' }],
+    label: { ...label, ingredientsText: null, unit: null, reasons: { ingredientsText: 'unreadable' } },
+    onReadWaterFromPhoto,
+  });
+  await render(<UnknownProductConfirmation {...input} />);
+  await fireEvent.press(screen.getByRole('button', { name: `${ro.add.categoryOptional}: ${ro.add.unknownCategory}` }));
+  await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Apă` }));
+  const readBtn = screen.getByRole('button', { name: 'Citește compoziția apei din fotografie' });
+  await act(async () => { await fireEvent.press(readBtn); });
+  expect(onReadWaterFromPhoto).toHaveBeenCalledTimes(1);
+  expect(screen.getByTestId('water-dryResidueMgL').props.value).toBe('390');
+  expect(screen.getByTestId('water-caMgL').props.value).toBe('14');
+  expect(screen.getByTestId('water-mgMgL').props.value).toBe('42,6');
+  expect(screen.getByTestId('water-no3MgL').props.value).toBe('6,4');
+});
