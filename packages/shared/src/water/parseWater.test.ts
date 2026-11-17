@@ -150,6 +150,31 @@ describe('parseWaterValue & normalizeWaterObject', () => {
     expect(davidan.ranges).toBeUndefined();
   });
 
+  it('leaves a reading unknown when its ion prefix disagrees with the profile field', () => {
+    const water = normalizeWaterObject({
+      caMgL: 'Mg2+42,6',
+      mgMgL: 'Mg²⁺42,6',
+      no3MgL: 'SO₄²⁻ 4-8 mg/l',
+      so4MgL: 'SO₄²⁻ 4-8 mg/l',
+      ph: 'Na+7',
+      tdsMgL: 'Ca: 250',
+      naPlusKMgL: 'Na+20',
+      kMgL: '0',
+    });
+
+    expect(water).toMatchObject({
+      caMgL: null,
+      mgMgL: 42.6,
+      no3MgL: null,
+      so4MgL: 6,
+      ph: null,
+      tdsMgL: null,
+      naPlusKMgL: null,
+      kMgL: 0,
+    });
+    expect(water.ranges).toEqual({ so4MgL: { min: 4, max: 8 } });
+  });
+
   it('infers water flag and carbonation consistently from front reads even without backend isWater', () => {
     expect(inferFrontWaterMeta({ brand: 'DAVIDAN', name: 'Apă potabilă Carbogazificată' })).toEqual({
       isWater: true,

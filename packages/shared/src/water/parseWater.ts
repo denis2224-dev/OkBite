@@ -46,12 +46,31 @@ export function emptyWaterProfile(): WaterProfileType {
 const NUM = '(\\d+(?:[.,]\\d+)?)';
 const UNIT_CLASS = '[a-zа-яµμ/%³0-9]*';
 const ION_PREFIX_RE =
-  /^(?:(?:Ca|Mg)(?:\s*2|\s*²)?\s*[+⁺]|(?:Na|K)\s*[+⁺]|(?:HCO\s*[3₃]|SO\s*[4₄]\s*(?:2|²)?|NO\s*[3₃]|Cl|F|I)\s*[-⁻]|(?:Ca|Mg|Na|K|HCO\s*[3₃]|SO\s*[4₄]|NO\s*[3₃]|Cl|F|I)\s*(?:=|:|\s))\s*/iu;
+  /^(?:(Ca|Mg)(?:\s*[2²])?\s*[+⁺]|(Na|K)\s*[+⁺]|(HCO\s*[3₃]|NO\s*[3₃]|Cl|F|I)\s*[-⁻]|(SO\s*[4₄])(?:\s*[2²])?\s*[-⁻]|(Ca|Mg|Na|K|HCO\s*[3₃]|SO\s*[4₄]|NO\s*[3₃]|Cl|F|I)\s*(?:=|:|\s))\s*/iu;
+const ION_BY_FIELD: Partial<Record<WaterNumericKey, string>> = {
+  caMgL: 'ca',
+  mgMgL: 'mg',
+  naMgL: 'na',
+  kMgL: 'k',
+  hco3MgL: 'hco3',
+  so4MgL: 'so4',
+  clMgL: 'cl',
+  fMgL: 'f',
+  no3MgL: 'no3',
+  iUgL: 'i',
+};
 const RANGE_RE = new RegExp(`^\\s*${NUM}\\s*[-–—]{1,2}\\s*${NUM}\\s*(${UNIT_CLASS})\\s*$`, 'iu');
 const LIMIT_RE = new RegExp(`^\\s*([<>≤≥]?)\\s*${NUM}\\s*(${UNIT_CLASS})\\s*$`, 'iu');
 
-function stripIonPrefix(raw: string): string {
-  return raw.replace(ION_PREFIX_RE, '').trim();
+function stripIonPrefix(raw: string, field?: WaterNumericKey): string | null {
+  const match = ION_PREFIX_RE.exec(raw);
+  if (!match) return raw;
+
+  if (field !== undefined) {
+    const ion = match.slice(1).find(Boolean)?.normalize('NFKC').toLowerCase().replace(/\s/g, '');
+    if (!ion || ion !== ION_BY_FIELD[field]) return null;
+  }
+  return raw.slice(match[0].length).trim();
 }
 
 const toNum = (s: string) => Number(s.replace(',', '.'));
@@ -79,14 +98,18 @@ function scaleUnit(value: number, rawUnit: string, kind: WaterValueKind): number
 }
 
 /** Parses scalar or min–max mineral declarations while retaining bounds (`ranges` / `<X` upper caps). */
-export function parseWaterValueWithRange(raw: unknown, kind: WaterValueKind = 'mg'): ParsedWaterValue {
+export function parseWaterValueWithRange(
+  raw: unknown,
+  kind: WaterValueKind = 'mg',
+  field?: WaterNumericKey,
+): ParsedWaterValue {
   if (typeof raw === 'number') {
     if (!Number.isFinite(raw) || raw < 0) return { value: null };
     const v = kind === 'ph' ? (raw <= 14 ? round3(raw) : null) : round3(raw);
     return { value: v };
   }
   if (typeof raw !== 'string') return { value: null };
-  const text = stripIonPrefix(raw.trim());
+  const text = stripIonPrefix(raw.trim(), field);
   if (!text) return { value: null };
 
   const rangeMatch = RANGE_RE.exec(text);
@@ -171,7 +194,7 @@ export function normalizeWaterObject(raw: Record<string, unknown>): WaterProfile
 
   for (const [key, kind] of numKeys) {
     const cap = key === 'ph' ? 14 : 50_000;
-    const { value, range } = parseWaterValueWithRange(raw[key], kind);
+    const { value, range } = parseWaterValueWithRange(raw[key], kind, key);
     out[key] = value !== null && value <= cap ? value : null;
     if (out[key] !== null) {
       if (range && range.max <= cap) {
