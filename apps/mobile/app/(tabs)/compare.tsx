@@ -6,7 +6,6 @@ import { TabPageHeader } from '../../src/shared/TabPageHeader';
 import { Body, Button, Card, Heading } from '../../src/ui';
 import { ro } from '../../src/copy/ro';
 import { listHistory, type HistoryEntry } from '../../src/features/history/store';
-import { displayScore } from '../../src/features/product/displayScore';
 import { productScoreFor, tierGrade } from '../../src/features/product/productScoreFor';
 import { ProductPicker } from '../../src/features/compare/ProductPicker';
 import { betterOverall, compareRows } from '../../src/features/compare/compare';
@@ -56,32 +55,19 @@ export default function Compare() {
           {error && <Body accessibilityLiveRegion="polite">{ro.history.storageError}</Body>}
           <View style={styles.products}>{products.map(({ entry, label, side }) => {
             const { product } = entry;
-            const score = displayScore(product, entry.score);
             const scored = productScoreFor(product, entry.score);
             const grade = tierGrade(scored.tier);
+            // Minimal card: what the table below cannot say. No numbers, no reasons, no footer.
             return <HomeCard key={label} testID="compare-card" style={styles.productCard}>
               <Text style={styles.label}>{label}</Text>
-              <View style={styles.identity}>
-                <Text style={styles.productName}>{product.name}</Text>
-                <Text style={styles.subtitle}>{product.brand}</Text>
-                {product.status === 'unverified' && <Text style={styles.subtitle}>{ro.result.unverified}</Text>}
-              </View>
+              <Text style={styles.productName}>{product.name}</Text>
+              <View style={styles.score}>{scored.score !== null && scored.tier
+                ? <HomeChip background={theme.colors[`${grade}Bg`]} color={theme.colors[grade]}>{ro.tiers[scored.tier]}</HomeChip>
+                : <HomeChip background={theme.colors.neutralBg} color={theme.colors.muted}>{ro.history.noScore}</HomeChip>}</View>
               <CompareVerdict better={winner === side} allergens={product.allergens} />
-              {scored.score !== null && scored.tier && <View style={styles.score}><HomeChip background={theme.colors[`${grade}Bg`]} color={theme.colors[grade]}>{`${formatAmount(scored.score)} · ${ro.tiers[scored.tier]}`}</HomeChip></View>}
-              <View testID="compare-card-reasons" style={styles.reasons}>
-                {score.score === null ? <>
-                  <Text style={styles.reasonTitle}>{ro.result.scoreUnavailable}</Text>
-                  <Text style={styles.reasonDetail}>{ro.result.insufficient}</Text>
-                  <Text style={styles.reasonDetail}>{ro.result.missing}</Text>
-                  {score.missing.map(key => <Text key={key} style={styles.reasonDetail}>{ro.result.nutrients[key]}</Text>)}
-                </> : score.reasons.map((reason, index) => <View key={index} style={styles.reason}>
-                  <Text style={styles.reasonTitle}>{reason.title}</Text>
-                  <Text style={styles.reasonDetail}>{reason.detail}</Text>
-                </View>)}
-              </View>
-              <View testID="compare-card-footer" style={styles.footer}><Text style={styles.disclaimer}>{ro.score.disclaimer}</Text></View>
             </HomeCard>;
           })}</View>
+          <Text style={styles.footnote}>{ro.score.disclaimer}</Text>
           <View style={styles.actions}>
             <HomePressable label={copy.swap} onPress={() => setPicker('b')} style={styles.secondary}><HomeIcon name="swap" size={18} /><Text style={styles.secondaryText}>{copy.swap}</Text></HomePressable>
             <HomePressable label={copy.category} onPress={() => setPicker('a')} style={styles.secondary}><Text style={styles.secondaryText}>{copy.category}</Text></HomePressable>

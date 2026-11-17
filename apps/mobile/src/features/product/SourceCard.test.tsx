@@ -8,9 +8,10 @@ it('formats contract dates in Romanian order without timezone conversion', async
   expect(screen.getByText(`${ro.result.added}: 05.11.2026`)).toBeTruthy();
   expect(screen.getByText(`${ro.result.checked}: 06.11.2026`)).toBeTruthy();
 });
-it('preserves the unverified text when no verification date is known', async () => {
+it('explains a shopper row with no verification date, without an "Unverified" badge', async () => {
   await render(<SourceCard product={{ ...foundYogurt.product, verifiedAt: null }} />);
-  expect(screen.getByText(ro.result.unverified)).toBeTruthy();
+  expect(screen.getByText(ro.result.unverifiedNote)).toBeTruthy();
+  expect(screen.queryByText(ro.result.unverified)).toBeNull();
   expect(screen.queryByText(new RegExp(ro.result.checked))).toBeNull();
 });
 it.each([
