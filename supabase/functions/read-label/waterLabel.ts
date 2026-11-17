@@ -6,6 +6,7 @@ export const WATER_PROMPT = [
   'Photo: the mineral, physicochemical composition, source, or HG Nr. 934/2007 laboratory report panel on a bottled or delivered water from Moldova (RO/RU/UA/EN).',
   'Values may appear either in a table OR in prose under a shared unit header such as "(mg/l)" (for example "reziduu sec solubil 390, NO2-0,23, NO3-6,4, Ca2 + 14,0, Mg2 + 42,6").',
   'Copy the numeric measurement, any inequality marker, and its printed or shared-header unit (e.g. "350-400 mg/l", "<0,05 mg/l", "80 µg/l"). Preserve adjoining printed identifiers for Ca, Mg, Na, K, HCO3, SO4, Cl, F, NO3 and I (e.g. "Ca2 + 14,0", "Mg2 + 42,6", "NO3-6,4") so the receiving field can be validated. For a combined Na + K entry, copy only the measurement and unit into naPlusKMgL.',
+  'A unit printed next to the value overrides the shared header, especially for iodine in µg/l. If the unit for iodine cannot be determined, return "?" for iUgL.',
   'Fields: tdsMgL (Total mineralization), dryResidueMgL (Dry residue / "reziduu sec" / "reziduu sec solubil" / "сухой остаток"), ph,',
   'carbonation ("still" | "lightly_sparkling" | "sparkling"), classification ("drinking" | "natural_mineral" | "table_mineral" | "therapeutic" — use "drinking" when label states apă potabilă / HG 934),',
   'caMgL (Ca2+), mgMgL (Mg2+), naMgL (Na+), kMgL (K+), naPlusKMgL (Na+ + K+ if combined),',

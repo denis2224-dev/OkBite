@@ -104,7 +104,7 @@
     "name": "Apă minerală gazată mediu",
     "quantity": "1,5 L",
     "code": null,
-    "water": { "tdsMgL": 1299, "carbonation": "lightly_sparkling", "classification": "natural_mineral" },
+    "water": { "carbonation": "lightly_sparkling", "classification": "natural_mineral" },
     "source": "Gelibert SRL",
     "sourceUrl": "https://aquauniqa.md/ro/products/apa-minerala-roua-argintie-1-5l-gazata-mediu",
     "ingredientsText": "Mineralizare > 1299 mg/l"
