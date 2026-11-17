@@ -58,4 +58,12 @@ Deno.test('parseFront flags water bottles from model field or text while ignorin
     parseFront('{"brand":"Coca-Cola","name":"Băutură răcoritoare","quantity":"500 ml","barcodeDigits":"","isWater":false}').isWater,
     undefined,
   );
+  assert.equal(
+    parseFront('{"brand":"OM","name":"Apă potabilă carbogazoasă","quantity":"1,5 L","barcodeDigits":"","isWater":true,"carbonation":"sparkling"}').carbonation,
+    'sparkling',
+  );
+  assert.equal(
+    parseFront('{"brand":"Dorna","name":"Izvorul Alb necarbogazoasă","quantity":"500 ml","barcodeDigits":"","isWater":true}').carbonation,
+    'still',
+  );
 });

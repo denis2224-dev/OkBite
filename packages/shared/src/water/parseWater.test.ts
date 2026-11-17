@@ -5,6 +5,7 @@ import {
   parseWaterCarbonation,
   parseWaterClassification,
   parseWaterValue,
+  parseWaterValueWithRange,
 } from './parseWater';
 
 describe('parseWaterValue & normalizeWaterObject', () => {
@@ -87,5 +88,33 @@ describe('parseWaterValue & normalizeWaterObject', () => {
     expect(detectWaterFrontHint('Ессентуки', 'Вода минеральная №4')).toBe(true);
     expect(detectWaterFrontHint('Coca-Cola', 'Băutură răcoritoare carbogazoasă')).toBe(false);
     expect(detectWaterFrontHint('Zorel', 'Iaurt cu căpșuni')).toBe(false);
+  });
+
+  it('preserves explicit 0, retains printed min-max intervals and <X upper bounds, and omits range for ?/blank', () => {
+    expect(parseWaterValueWithRange('0 mg/l')).toEqual({ value: 0 });
+    expect(parseWaterValueWithRange(0)).toEqual({ value: 0 });
+    expect(parseWaterValueWithRange('0', 'ph')).toEqual({ value: 0 });
+    expect(parseWaterValueWithRange('350-400 mg/l')).toEqual({ value: 375, range: { min: 350, max: 400 } });
+    expect(parseWaterValueWithRange('< 70 mg/l')).toEqual({ value: 35, range: { min: 0, max: 70 } });
+    expect(parseWaterValueWithRange('?')).toEqual({ value: null });
+    expect(parseWaterValueWithRange('')).toEqual({ value: null });
+
+    const om = normalizeWaterObject({
+      tdsMgL: '350-400 mg/l',
+      no3MgL: '0',
+      fMgL: '< 0,05 mg/l',
+      ph: '?',
+      caMgL: '30-35',
+      naPlusKMgL: '70-75',
+    });
+    expect(om.tdsMgL).toBe(375);
+    expect(om.no3MgL).toBe(0);
+    expect(om.ph).toBeNull();
+    expect(om.ranges?.tdsMgL).toEqual({ min: 350, max: 400 });
+    expect(om.ranges?.caMgL).toEqual({ min: 30, max: 35 });
+    expect(om.ranges?.naPlusKMgL).toEqual({ min: 70, max: 75 });
+    expect(om.ranges?.fMgL).toEqual({ min: 0, max: 0.05 });
+    expect(om.ranges?.no3MgL).toBeUndefined();
+    expect(om.ranges?.ph).toBeUndefined();
   });
 });

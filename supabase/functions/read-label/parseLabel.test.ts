@@ -291,10 +291,14 @@ Deno.test('parseLabel extracts RO/RU/UA mineral profiles and ranges when kind is
   assert.equal(read.water?.classification, 'drinking');
 
   const enrichWater = parseLabel(
-    JSON.stringify({ tdsMgL: '6,5-12 g/l', h3bo3MgL: '100-250 mg/l', naMgL: '1500-3000' }),
+    JSON.stringify({ tdsMgL: '6,5-12 g/l', h3bo3MgL: '100-250 mg/l', naMgL: '1500-3000', no3MgL: '0' }),
     { ingredients: false, nutrition: 'separate', kind: 'water' },
   );
   assert.equal(enrichWater.reasons.ingredientsText, 'not_photographed');
   assert.equal(enrichWater.water?.tdsMgL, 9250);
   assert.equal(enrichWater.water?.h3bo3MgL, 175);
+  assert.equal(enrichWater.water?.no3MgL, 0);
+  assert.deepEqual(enrichWater.water?.ranges?.h3bo3MgL, { min: 100, max: 250 });
+  assert.deepEqual(enrichWater.water?.ranges?.naMgL, { min: 1500, max: 3000 });
+  assert.deepEqual(read.water?.ranges?.tdsMgL, { min: 350, max: 400 });
 });

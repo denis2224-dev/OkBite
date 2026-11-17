@@ -1,4 +1,4 @@
-import { NUTRIENT_KEYS, type Letter, type NutrientKey, type Nutrients, type ScoreKind, type ScoreResult, type WaterProfile } from '../contract';
+import { NUTRIENT_KEYS, type Letter, type NutrientKey, type Nutrients, type ProductStatus, type ScoreKind, type ScoreResult, type WaterProfile } from '../contract';
 import { nutriScorePoints } from './nutriscore';
 import { scoreReasons } from './reasons';
 import { hasNonNutritiveSweetener } from './sweeteners';
@@ -37,7 +37,8 @@ export function scoreProductNutrition(p: {
   nutrients: Nutrients;
   ingredientsText: string;
   water?: WaterProfile | null;
+  status?: ProductStatus;
 }): ScoreResult {
-  if (p.category.scoreKind === 'water') return computeWaterScore(p.water);
+  if (p.category.scoreKind === 'water') return computeWaterScore(p.water, p.status);
   return computeScore(p.nutrients, p.category.scoreKind, p.ingredientsText);
 }

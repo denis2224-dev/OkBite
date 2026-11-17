@@ -335,7 +335,7 @@ it('scores daily Moldovan water from its mineral profile without food macros or 
     unit: 'ml',
     category: { slug: 'apa', name: 'Apă', scoreKind: 'water' },
     nutrients: emptyNutrients,
-    water: { ...emptyWaterProfile(), carbonation: 'still', classification: 'natural_mineral', ph: 6.56, tdsMgL: 375, dryResidueMgL: 260, hco3MgL: 140, so4MgL: 115, naPlusKMgL: 72.5, caMgL: 32.5, mgMgL: 12.5 },
+    water: { ...emptyWaterProfile(), carbonation: 'still', classification: 'natural_mineral', ph: 6.56, tdsMgL: 375, dryResidueMgL: 260, hco3MgL: 140, so4MgL: 115, naMgL: 55, caMgL: 32.5, mgMgL: 12.5, fMgL: 0.1, no3MgL: 1.5, h3bo3MgL: 0 },
     ingredientsText: '',
     ingredients: [],
     allergens: [],
