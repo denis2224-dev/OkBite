@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import childProcess from 'node:child_process';
 import { syncBuiltinESMExports } from 'node:module';
-import { cp, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -57,4 +57,12 @@ test('does not rewrite an already configured gateway', async (t) => {
   const { calls, error } = await runFixture(t, 'project_id = "okbite-c3-cd37"\n', configured);
   assert.equal(error, undefined);
   assert.equal(calls.length, 1);
+});
+
+test('registers top-products with the shared import map and public gateway access', async () => {
+  const config = await readFile(new URL('../config.toml', import.meta.url), 'utf8');
+  const block = config.split(/^\[/m).find((section) => section.startsWith('functions.top-products]'));
+  assert.ok(block, 'Missing functions.top-products configuration');
+  assert.match(block, /^verify_jwt\s*=\s*false\s*$/m);
+  assert.match(block, /^import_map\s*=\s*"\.\/functions\/deno\.json"\s*$/m);
 });
