@@ -4,7 +4,7 @@ import { ro } from '../copy/ro';
 import { INSTALL_AFTER_RESULTS, useInstallDismissal, useInstallPrompt, useResultsOpened } from '../lib/installPrompt';
 import { PressableOpacity as Pressable } from '../shared/PressableOpacity';
 import { useTheme } from '../theme/useTheme';
-import { fonts, spacing } from '../theme/tokens';
+import { fonts, softShadow, spacing } from '../theme/tokens';
 import { Card } from './Card';
 import { Body, Heading } from './Typography';
 import { Button } from './Button';
@@ -19,7 +19,7 @@ export function InstallPrompt() {
   const close = () => { dismiss(); closeSheet(); };
   const startInstall = async () => { if ((await install()) === null) openSheet(); else closeSheet(); };
   if (isStandalone || (!sheetOpen && (dismissed || opened < INSTALL_AFTER_RESULTS || (!canInstall && !isIos && !failed)))) return null;
-  if (!sheetOpen) return <View testID="install-banner" style={[s.banner, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+  if (!sheetOpen) return <View testID="install-banner" style={[s.banner, softShadow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
     <View style={s.row}>
       <Body style={[s.bannerTitle, { color: colors.ink }]}>{ro.pwa.install.title}</Body>
       {(canInstall || isIos) && <Button disabled={installing} onPress={isIos ? openSheet : startInstall} style={s.action}>{ro.pwa.install.action}</Button>}
@@ -30,9 +30,9 @@ export function InstallPrompt() {
   return <Modal accessibilityLabel={ro.pwa.install.title} transparent animationType="none" onRequestClose={close}>
     <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={[s.overlay, { backgroundColor: colors.scrim }]}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.scroll}>
-        <Card testID="install-sheet" accessibilityViewIsModal style={s.sheet}>
+        <Card testID="install-sheet" accessibilityViewIsModal style={[s.sheet, softShadow]}>
           <View style={[s.handle, { backgroundColor: colors.border }]} />
-          <View style={[s.icon, { backgroundColor: colors.mint }]}><Icon name="home" size={30} color={colors.primary} /></View>
+          <View style={[s.icon, { backgroundColor: colors.sageSoft }]}><Icon name="home" size={30} color={colors.primary} /></View>
           <Heading style={s.title}>{ro.pwa.install.title}</Heading>
           {isIos && <View style={[s.steps, { backgroundColor: colors.ground, borderColor: colors.border }]}>
             <View style={s.stepIcons}><Icon name="share" color={colors.primary} /><Icon name="arrow" color={colors.muted} /><Icon name="home" color={colors.primary} /></View>

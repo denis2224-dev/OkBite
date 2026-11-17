@@ -2,12 +2,16 @@ import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { spacing } from '../theme/tokens';
 import { useHomeTheme } from '../theme/home';
+import { IconButton } from '../ui/IconButton';
+import { ro } from '../copy/ro';
 
-export function TabPageHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
+/** `onBack` adds a back icon button left of the title (pages outside the tab bar); tab roots leave it out. */
+export function TabPageHeader({ title, subtitle, action, onBack }: { title: string; subtitle?: string; action?: ReactNode; onBack?: () => void }) {
  const t = useHomeTheme();
  // Without a subtitle, a little more room keeps the first card off the title row (and its action pill).
  return <View style={[styles.header, !subtitle && styles.titleOnly]}>
   <View style={styles.row}>
+   {onBack ? <IconButton icon="back" label={ro.app.back} onPress={onBack} /> : null}
    <Text accessibilityRole="header" style={[styles.title, {fontFamily:t.fonts.heading,color:t.colors.ink}]}>{title}</Text>
    {action}
   </View>

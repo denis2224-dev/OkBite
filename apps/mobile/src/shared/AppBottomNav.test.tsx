@@ -1,6 +1,6 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { Keyboard, StyleSheet } from 'react-native';
-import { light } from '../theme/tokens';
+import { light, softShadow } from '../theme/tokens';
 import type { ComponentProps } from 'react';
 import { AppBottomNav } from './AppBottomNav';
 
@@ -42,18 +42,18 @@ it.each([[5, 'settings'], [6, 'about']])('selects no tab while %s (route %s) is 
  expect(ui.getAllByRole('tab')).toHaveLength(5);
  expect(ui.getAllByRole('tab').every(tab => !tab.props.accessibilityState.selected)).toBe(true);
 });
-it('draws the bar as a floating white pill with a thin border and a soft shadow', async () => {
+it('draws the bar as a floating ivory pill with a thin border and only the shared soft shadow', async () => {
  const ui = await render(<AppBottomNav {...makeProps()} />);
  const pill = style(ui, 'nav-pill');
  expect(pill).toMatchObject({ backgroundColor: light.surface, borderWidth: 1, borderColor: light.border, borderRadius: 999, flexDirection: 'row' });
- expect(pill.shadowOpacity).toBeGreaterThan(0);
- expect(pill.elevation).toBeGreaterThan(0);
+ expect(pill).toMatchObject(softShadow);
  expect(style(ui, 'nav-bar').paddingHorizontal).toBeGreaterThanOrEqual(16); // floats off the screen edges
  expect(pill.marginHorizontal).toBeUndefined(); // no width overflow
 });
-it.each([[0, 'history'], [1, 'compare'], [2, 'index'], [3, 'allergies'], [4, 'profile']] as const)('fills only the current tab with a dark circle (route %i)', async (index, current) => {
+it.each([[0, 'history'], [1, 'compare'], [2, 'index'], [3, 'allergies'], [4, 'profile']] as const)('fills only the current tab with a sage-soft circle and a forest icon (route %i)', async (index, current) => {
  const ui = await render(<AppBottomNav {...makeProps(index)} />);
- for (const name of tabs) expect(style(ui, `nav-icon-${name}`).backgroundColor).toBe(name === current ? light.primary : light.transparent);
+ for (const name of tabs) expect(style(ui, `nav-icon-${name}`).backgroundColor).toBe(name === current ? light.sageSoft : light.transparent);
+ expect(JSON.stringify(ui.getByTestId(`nav-icon-${current}`).children)).toContain(light.primary);
  const dot = style(ui, `nav-icon-${current}`);
  expect([dot.width, dot.height, dot.borderRadius]).toEqual([52, 52, 26]);
 });
@@ -65,7 +65,7 @@ it('gives every tab the same size; Scan is no longer raised', async () => {
 it('tints a tab the pointer hovers so it reads as clickable', async () => {
  const ui = await render(<AppBottomNav {...makeProps(2)} />);
  await fireEvent(ui.getByRole('tab', { name: 'Profil' }), 'hoverIn', {});
- expect(style(ui, 'nav-icon-profile').backgroundColor).toBe(light.soft);
+ expect(style(ui, 'nav-icon-profile').backgroundColor).toBe(light.highlightBg);
  await fireEvent(ui.getByRole('tab', { name: 'Profil' }), 'hoverOut', {});
  expect(style(ui, 'nav-icon-profile').backgroundColor).toBe(light.transparent);
 });

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { ToastProvider, useToast } from './Toast';
+import { light, softShadow } from '../theme/tokens';
 
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -32,4 +33,12 @@ it('shows its action as a full-size button that dismisses the toast', async () =
 it('still renders above the navigation bar outside a safe-area provider', async () => {
   await render(<ToastProvider><Trigger /></ToastProvider>);
   expect(StyleSheet.flatten(screen.getByTestId('toast').props.style).bottom).toBe(84);
+});
+
+it('draws the toast as an ivory card with a border, the soft shadow and a forest action', async () => {
+  await render(<ToastProvider><Trigger action={() => {}} /></ToastProvider>);
+  const card = StyleSheet.flatten(screen.getByTestId('toast-card').props.style);
+  expect(card).toMatchObject({ backgroundColor: light.surface, borderWidth: 1, borderColor: light.border, ...softShadow });
+  expect(screen.getByText('Șters')).toHaveStyle({ color: light.ink });
+  expect(screen.getByText('Anulează')).toHaveStyle({ color: light.primary });
 });

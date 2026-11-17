@@ -8,3 +8,4 @@ export * from './Screen';
 export * from './Toast';
 export * from './Icon';
 export * from './LinkRow';
+export * from './IconButton';
