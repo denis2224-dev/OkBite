@@ -6,6 +6,7 @@ import {
   ErrorCode, ErrorBody, IngredientEntry, IdentifyRequest, LABEL_FIELDS, FieldReason, EnrichReadLabelRequest,
   EnrichReadLabelResponse, EnrichProductRequest, ProductInput, Ingredient,
   WaterProfile, Carbonation, WaterClassification, LabelKind, FrontRead,
+  WATER_NUMERIC_KEYS, WATER_FIELD_KEYS, WaterRange, WaterFieldEvidence, WaterSubmission,
 } from './contract';
 
 const emptyWater = {
@@ -317,5 +318,73 @@ describe('water contract', () => {
     const { photoPath: _p, ingredientsPhotoPath: _i, nutritionPhotoPath: _n, ...waterMod } = baseWaterAdd;
     expect(ProductInput.safeParse(waterMod).success).toBe(true);
     expect(ProductInput.safeParse({ ...waterMod, categorySlug: 'biscuiti', water: null }).success).toBe(false);
+  });
+
+  it('validates per-field water ranges, zero preservation, and provenance evidence', () => {
+    expect(WATER_NUMERIC_KEYS.length).toBe(16);
+    expect(WATER_FIELD_KEYS.length).toBe(18);
+    expect(WaterRange.parse({ min: 350, max: 400 })).toEqual({ min: 350, max: 400 });
+    expect(WaterRange.parse({ min: 0, max: 0.05 }).min).toBe(0);
+    expect(WaterRange.safeParse({ min: 400, max: 350 }).success).toBe(false);
+    expect(WaterRange.safeParse({ min: -1, max: 10 }).success).toBe(false);
+
+    const ev = WaterFieldEvidence.parse({ status: 'unverified', source: 'Fotografie utilizator', addedAt: '2026-11-17' });
+    expect(ev.status).toBe('unverified');
+    expect(WaterFieldEvidence.safeParse({ status: 'pending', source: 'x' }).success).toBe(false);
+
+    const parsedWater = WaterProfile.parse({
+      ...omWater,
+      no3MgL: 0,
+      ranges: { tdsMgL: { min: 350, max: 400 } },
+      evidence: {
+        tdsMgL: { status: 'verified', source: 'apaom.md' },
+        no3MgL: { status: 'unverified', source: 'Fotografie utilizator', addedAt: '2026-11-17' },
+      },
+    });
+    expect(parsedWater.no3MgL).toBe(0);
+    expect(parsedWater.ranges?.tdsMgL).toEqual({ min: 350, max: 400 });
+    expect(parsedWater.evidence?.no3MgL?.status).toBe('unverified');
+  });
+
+  it('supports adaptive score ranges, FrontRead carbonation, and water submission moderation', () => {
+    expect(FrontRead.parse({ ...read, isWater: true, carbonation: 'sparkling' }).carbonation).toBe('sparkling');
+
+    const adaptive = ScoreResult.parse({
+      score: null,
+      letter: null,
+      grade: 'medium',
+      reasons: [],
+      missing: [],
+      range: { min: 70, max: 96 },
+      waterMissing: ['naMgL', 'so4MgL'],
+      unverifiedUsed: true,
+    });
+    expect(adaptive.range).toEqual({ min: 70, max: 96 });
+    expect(adaptive.waterMissing).toEqual(['naMgL', 'so4MgL']);
+    expect(adaptive.unverifiedUsed).toBe(true);
+    expect(ScoreResult.safeParse({ ...adaptive, range: { min: 90, max: 70 } }).success).toBe(false);
+
+    const sub = WaterSubmission.parse({
+      id,
+      productId: id,
+      productName: 'OM Plată',
+      productBrand: 'OM',
+      productQuantity: '1,5 L',
+      currentWater: omWater,
+      proposedWater: { caMgL: 35 },
+      photoPath: `${id}/nutrition-abc.jpg`,
+      photoUrl: null,
+      kind: 'conflict',
+      status: 'pending',
+      createdAt: '2026-11-17',
+    });
+    expect(sub.kind).toBe('conflict');
+
+    expect(ModerateRequest.parse({ action: 'resolve_water_submission', submissionId: id, decision: 'accept' }).action)
+      .toBe('resolve_water_submission');
+    expect(ModerateRequest.safeParse({ action: 'resolve_water_submission', submissionId: id, decision: 'maybe' }).success)
+      .toBe(false);
+    expect(LookupResponse.parse({ status: 'found', product, score: adaptive, waterSubmissionStatus: 'partial' }))
+      .toMatchObject({ waterSubmissionStatus: 'partial' });
   });
 });

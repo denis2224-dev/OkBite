@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
-import { parseWaterValue, WaterProfile, type Carbonation, type WaterProfile as WaterProfileType } from '@okbite/shared';
+import { parseWaterValue, WaterProfile, type Carbonation, type WaterNumericKey as SharedWaterNumericKey, type WaterProfile as WaterProfileType } from '@okbite/shared';
 import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import type { Palette } from '../../theme/tokens';
 
-export type WaterNumericKey = Exclude<keyof WaterProfileType, 'carbonation' | 'classification' | 'bMgL'>;
+export type WaterNumericKey = Exclude<SharedWaterNumericKey, 'bMgL'>;
 
 const CARBONATION_OPTIONS: readonly Carbonation[] = ['still', 'lightly_sparkling', 'sparkling'];
 const PRIMARY_KEYS: readonly WaterNumericKey[] = [

@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import { ErrorBody, ModerateRequest, OFF_IMAGE_URL, ProductInput, Uuid } from '@okbite/shared';
+import { ErrorBody, ModerateRequest, OFF_IMAGE_URL, ProductInput, Uuid, WaterSubmission } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 
 let instance: SupabaseClient | undefined;
@@ -76,4 +76,39 @@ export async function readAdminProduct(id: string) {
       : [],
   );
   return { input, photos };
+}
+
+/** Loads pending shopper water submissions (conflicts and verified edits) for moderator resolution. */
+export async function readWaterSubmissions(): Promise<WaterSubmission[]> {
+  const db = getAdminClient();
+  const { data, error } = await db
+    .from('water_submissions')
+    .select(
+      'id,product_id,photo_path,proposed_water,kind,status,created_at,product:products(name,brand,quantity,water)',
+    )
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (error) throw new Error(ro.app.admin.failed);
+  return (data ?? []).map((row) => {
+    const product = Array.isArray(row.product) ? row.product[0] : row.product;
+    const photoPath = String(row.photo_path ?? '');
+    const photoUrl = photoPath
+      ? db.storage.from('products').getPublicUrl(photoPath).data.publicUrl || null
+      : null;
+    return WaterSubmission.parse({
+      id: row.id,
+      productId: row.product_id,
+      productName: product?.name ?? '',
+      productBrand: product?.brand ?? '',
+      productQuantity: product?.quantity ?? '',
+      currentWater: product?.water ?? null,
+      proposedWater: row.proposed_water,
+      photoPath,
+      photoUrl,
+      kind: row.kind,
+      status: row.status,
+      createdAt: new Date(String(row.created_at)).toISOString().slice(0, 10),
+    });
+  });
 }

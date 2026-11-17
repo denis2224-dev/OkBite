@@ -112,3 +112,39 @@ Deno.test('verify rejects a bad barcode check digit before invoking the mutation
   assert.equal((await handler(request(null))).status, 200);
   assert.equal(writes, 2);
 });
+
+Deno.test('resolve_water_submission forwards accept/reject decisions and rejects malformed choices', async () => {
+  const actor = crypto.randomUUID();
+  const submissionId = crypto.randomUUID();
+  const calls: { actor: string; input: unknown }[] = [];
+  const handler = createHandler({
+    authorize: async () => actor,
+    moderate: async (input, identity) => {
+      calls.push({ input, actor: identity });
+    },
+  });
+  const post = (body: unknown) =>
+    handler(
+      new Request('http://local/moderate', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    );
+
+  assert.equal(
+    (await post({ action: 'resolve_water_submission', submissionId, decision: 'invalid' })).status,
+    400,
+  );
+  assert.equal(
+    (await post({ action: 'resolve_water_submission', submissionId, decision: 'accept' })).status,
+    200,
+  );
+  assert.equal(
+    (await post({ action: 'resolve_water_submission', submissionId, decision: 'reject' })).status,
+    200,
+  );
+  assert.deepEqual(calls, [
+    { actor, input: { action: 'resolve_water_submission', submissionId, decision: 'accept' } },
+    { actor, input: { action: 'resolve_water_submission', submissionId, decision: 'reject' } },
+  ]);
+});
