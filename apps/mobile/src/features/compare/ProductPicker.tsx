@@ -4,7 +4,7 @@ import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import type { HistoryEntry } from '../history/store';
 import { AllergenChip, Badge, Body, Button, Card } from '../../ui';
 import { ro } from '../../copy/ro';
-import { fonts } from '../../theme/tokens';
+import { fonts, radii } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 import { ScoreCard } from '../product/ScoreCard';
 import { SourceCard } from '../product/SourceCard';
@@ -21,7 +21,7 @@ export function ProductPicker({ entries, selected, category, excluded, slot, onS
     {slot && <Body style={{ fontFamily: fonts.bold }}>{slot}</Body>}
     <Pressable accessibilityRole="button" accessibilityLabel={selected?.product.name ?? (slot ? `${slot}: ${ro.compare.choose}` : ro.compare.choose)}
       accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)}
-      style={{ minHeight: 52, padding: 12, borderRadius: 16, backgroundColor: colors.soft, justifyContent: 'center' }}>
+      style={{ minHeight: 52, paddingVertical: 12, paddingHorizontal: 20, borderRadius: radii.pill, backgroundColor: colors.sageSoft, justifyContent: 'center' }}>
       <Body>{selected?.product.name ?? ro.compare.choose}</Body>
     </Pressable>
     {selected && <Body>{selected.product.brand} · {selected.product.quantity}</Body>}

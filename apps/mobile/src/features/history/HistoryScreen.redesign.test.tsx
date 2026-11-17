@@ -108,3 +108,35 @@ it('keeps clear failure visible when a queued refresh completes', async () => {
   await screen.findByText(queued.product.name);
   expect(screen.getByText(ro.history.clearError)).toBeTruthy();
 });
+
+describe('Moss styling', () => {
+  const { light, radii } = jest.requireActual<typeof import('../../theme/tokens')>('../../theme/tokens');
+  const { StyleSheet } = jest.requireActual<typeof import('react-native')>('react-native');
+  it('draws the search as a flat surface field with a leading icon and a forest focus ring', async () => {
+    await render(<HistoryScreen/>);
+    await screen.findByText(entry.product.name);
+    expect(screen.getByTestId('history-search-icon', { includeHiddenElements: true })).toBeTruthy();
+    const box = () => StyleSheet.flatten(screen.getByTestId('history-search').props.style);
+    expect(box()).toEqual(expect.objectContaining({ backgroundColor: light.surface, borderWidth: 1, borderColor: light.border, borderRadius: radii.small }));
+    expect(box().shadowOpacity).toBeUndefined();
+    await fireEvent(screen.getByLabelText(ro.history.search), 'focus');
+    expect(box().borderColor).toBe(light.focus);
+    await fireEvent(screen.getByLabelText(ro.history.search), 'blur');
+    expect(box().borderColor).toBe(light.border);
+  });
+  it('keeps rows in one flat card with dividers and muted meta', async () => {
+    await render(<HistoryScreen/>);
+    await screen.findByText(entry.product.name);
+    const card = StyleSheet.flatten(screen.getByTestId('history-list').props.style);
+    expect(card).toEqual(expect.objectContaining({ backgroundColor: light.surface, borderWidth: 1 }));
+    expect(card.shadowOpacity).toBeUndefined();
+    const rows = screen.getAllByRole('button', { name: /Deschide/ });
+    expect(StyleSheet.flatten(rows[1]!.props.style)).toEqual(expect.objectContaining({ borderTopWidth: 1, borderColor: light.divider }));
+  });
+  it('shows the empty state with a forest primary button', async () => {
+    jest.mocked(listHistory).mockResolvedValue([]);
+    await render(<HistoryScreen/>);
+    const scan = await screen.findByRole('button', { name: ro.history.design.scan });
+    expect(StyleSheet.flatten(scan.props.style).backgroundColor).toBe(light.primary);
+  });
+});

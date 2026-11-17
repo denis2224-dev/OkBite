@@ -5,6 +5,7 @@ import Svg, { Path } from 'react-native-svg';
 import { ro } from '../../copy/ro';
 import { useHomeTheme, type HomeTheme } from '../../theme/home';
 import { Icon } from '../../ui/Icon';
+import { radii } from '../../theme/tokens';
 import { useProfile } from '../profile';
 
 const copy = ro.compare.design;
@@ -22,7 +23,7 @@ export function CompareVerdict({ better, allergens }: { better: boolean; allerge
   const { profile } = useProfile();
   const matches = allergens.filter(name => (profile.allergens as readonly string[]).includes(name));
   if (!better && !matches.length) return null;
-  return <>{better && <View style={s.outline} />}<View style={s.lines}>
+  return <>{better && <View testID="compare-better-outline" style={s.outline} />}<View style={s.lines}>
     {better && <View style={s.line}>
       <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={theme.colors.good} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <Path d={THUMBS_UP} />
@@ -37,7 +38,7 @@ export function CompareVerdict({ better, allergens }: { better: boolean; allerge
 }
 
 const createStyles = (t: HomeTheme) => StyleSheet.create({
-  outline: { position: 'absolute', top: -1, right: -1, bottom: -1, left: -1, borderRadius: 20, borderWidth: 2, borderColor: t.colors.ink, pointerEvents: 'none' },
+  outline: { position: 'absolute', top: -1, right: -1, bottom: -1, left: -1, borderRadius: radii.card, borderWidth: 2, borderColor: t.colors.primary, pointerEvents: 'none' },
   lines: { marginTop: 8, gap: 4 },
   line: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
   text: { flex: 1, minWidth: 0, fontFamily: t.fonts.bold, fontSize: 13, lineHeight: 18.85 },

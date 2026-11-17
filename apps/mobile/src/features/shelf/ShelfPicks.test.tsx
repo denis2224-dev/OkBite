@@ -129,3 +129,23 @@ describe('motion', () => {
     await waitFor(() => expect(timing).toHaveBeenCalledTimes(2));
   });
 });
+
+describe('Moss styling', () => {
+  const { light } = jest.requireActual<typeof import('../../theme/tokens')>('../../theme/tokens');
+  const { StyleSheet } = jest.requireActual<typeof import('react-native')>('react-native');
+  it('draws rows on surface with a border, the best pick on highlightBg with a forest border, no shadow', async () => {
+    await render(<ShelfPicks />);
+    const best = StyleSheet.flatten((await screen.findByRole('button', { name: rowLabel(yogurts[0]!) })).props.style);
+    expect(best).toEqual(expect.objectContaining({ backgroundColor: light.highlightBg, borderColor: light.primary, borderWidth: 1 }));
+    const other = StyleSheet.flatten(screen.getByRole('button', { name: rowLabel(yogurts[1]!) }).props.style);
+    expect(other).toEqual(expect.objectContaining({ backgroundColor: light.surface, borderColor: light.border, borderWidth: 1 }));
+    expect(other.shadowOpacity).toBeUndefined();
+  });
+  it('offers retry as a secondary sageSoft pill with a full touch target', async () => {
+    jest.mocked(api.topProducts).mockRejectedValue(new Error('offline'));
+    await render(<ShelfPicks />);
+    const retry = StyleSheet.flatten((await screen.findByRole('button', { name: ro.errors.retry })).props.style);
+    expect(retry.backgroundColor).toBe(light.sageSoft);
+    expect(retry.minHeight).toBeGreaterThanOrEqual(44);
+  });
+});

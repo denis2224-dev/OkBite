@@ -214,3 +214,32 @@ test('photographing another product is a quiet text button, not a filled one', a
   expect(StyleSheet.flatten(photo.props.style).backgroundColor).toBe('transparent');
   expect(StyleSheet.flatten(photo.props.style).borderWidth).toBe(0);
 });
+
+describe('Moss styling', () => {
+  const { light, radii } = jest.requireActual<typeof import('../../theme/tokens')>('../../theme/tokens');
+  const flat = (node: { props: { style: unknown } }) => StyleSheet.flatten(node.props.style as never) as Record<string, unknown>;
+  test('product slots are flat surface cards with a border and the winner outlined in forest', async () => {
+    await render(<Compare />);
+    await choose(0); await choose(1);
+    for (const card of screen.getAllByTestId('compare-card')) {
+      expect(flat(card)).toEqual(expect.objectContaining({ backgroundColor: light.surface, borderWidth: 1, borderColor: light.border, borderRadius: radii.card }));
+      expect(flat(card).shadowOpacity).toBeUndefined();
+    }
+    expect(flat(screen.getByTestId('compare-better-outline'))).toEqual(expect.objectContaining({ borderColor: light.primary, borderRadius: radii.card }));
+    expect(flat(screen.getByTestId('compare-cell-sugar-a'))).toEqual(expect.objectContaining({ backgroundColor: light.favorableBg }));
+  });
+  test('the swap and category buttons are flat sageSoft pills', async () => {
+    await render(<Compare />);
+    await choose(0); await choose(1);
+    for (const name of [design.swap, design.category]) {
+      const style = flat(screen.getByRole('button', { name }));
+      expect(style).toEqual(expect.objectContaining({ backgroundColor: light.sageSoft, borderRadius: radii.pill }));
+      expect(style.shadowOpacity).toBeUndefined();
+    }
+  });
+  test('the pick buttons in the empty slots are sageSoft pills', async () => {
+    await render(<Compare />);
+    const pick = screen.getByRole('button', { name: `${design.productA}: ${ro.compare.choose}` });
+    expect(flat(pick)).toEqual(expect.objectContaining({ backgroundColor: light.sageSoft, borderRadius: radii.pill }));
+  });
+});

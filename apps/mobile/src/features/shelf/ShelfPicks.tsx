@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { ro } from '../../copy/ro';
+import { Button } from '../../ui/Button';
 import { useTheme } from '../../theme/useTheme';
 import { fonts, typeScale } from '../../theme/tokens';
 import { homeTheme } from '../../theme/home';
@@ -54,13 +55,11 @@ export function ShelfPicks() {
     </View>
     <Animated.View style={[styles.list, { opacity: rise, transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}>
       {status === 'loading' ? <View accessible accessibilityRole="progressbar" accessibilityLabel={ro.app.loading} style={styles.list}>
-        {[0, 1, 2].map(row => <View key={row} style={[styles.placeholder, { backgroundColor: colors.soft }]} />)}
+        {[0, 1, 2].map(row => <View key={row} style={[styles.placeholder, { backgroundColor: colors.sageSoft }]} />)}
       </View>
         : status === 'error' ? <View style={styles.message}>
           <Text accessibilityRole="alert" style={[styles.body, { color: colors.ink }]}>{ro.scan.shelf.error}</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel={ro.errors.retry} onPress={retry} style={[styles.retry, { borderColor: colors.primary }]}>
-            <Text style={[styles.retryText, { color: colors.primary }]}>{ro.errors.retry}</Text>
-          </Pressable>
+          <Button variant="secondary" onPress={retry} style={styles.retry}>{ro.errors.retry}</Button>
         </View>
           : picks.length === 0 ? <View style={styles.message}>
             <Text style={[styles.body, { color: colors.ink }]}>{ro.scan.shelf.empty}</Text>
@@ -95,6 +94,5 @@ const styles = StyleSheet.create({
   message: { gap: 4, alignItems: 'flex-start', paddingVertical: 4 },
   body: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 21 },
   note: { fontFamily: fonts.body, ...typeScale.caption },
-  retry: { justifyContent: 'center', borderWidth: 1, borderRadius: 999, paddingHorizontal: 16, marginTop: 4 },
-  retryText: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 21 },
+  retry: { marginTop: 4 },
 });

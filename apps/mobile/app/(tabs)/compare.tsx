@@ -13,10 +13,10 @@ import { CompareCell } from '../../src/features/compare/CompareCell';
 import { CompareVerdict } from '../../src/features/compare/CompareVerdict';
 import { isPreview } from '../../src/lib/preview';
 import { formatAmount } from '../../src/lib/format';
-import { useTheme } from '../../src/theme/useTheme';
 import { useHomeTheme } from '../../src/theme/home';
 import { type ComparisonTheme } from '../../src/theme/comparison';
-import { HomeCard, HomeChip, HomeIcon, HomePressable } from '../../src/shared/HomeChrome';
+import { radii } from '../../src/theme/tokens';
+import { HomeChip, HomeIcon, HomePressable } from '../../src/shared/HomeChrome';
 
 const copy = ro.compare.design;
 
@@ -29,7 +29,6 @@ export default function Compare() {
   const [selection, select] = useState<{ id: string | undefined; a?: HistoryEntry; b?: HistoryEntry }>({ id });
   const a = selection.id === id ? selection.a : undefined, b = selection.id === id ? selection.b : undefined;
   const [error, setError] = useState(false);
-  const { colors } = useTheme();
   useFocusEffect(useCallback(() => {
     let active = true;
     void listHistory().then(items => {
@@ -58,21 +57,21 @@ export default function Compare() {
             const scored = productScoreFor(product, entry.score);
             const grade = tierGrade(scored.tier);
             // Minimal card: what the table below cannot say. No numbers, no reasons, no footer.
-            return <HomeCard key={label} testID="compare-card" style={styles.productCard}>
+            return <Card key={label} testID="compare-card" style={styles.productCard}>
               <Text style={styles.label}>{label}</Text>
               <Text style={styles.productName}>{product.name}</Text>
               <View style={styles.score}>{scored.score !== null && scored.tier
                 ? <HomeChip background={theme.colors[`${grade}Bg`]} color={theme.colors[grade]}>{ro.tiers[scored.tier]}</HomeChip>
                 : <HomeChip background={theme.colors.neutralBg} color={theme.colors.muted}>{ro.history.noScore}</HomeChip>}</View>
               <CompareVerdict better={winner === side} allergens={product.allergens} />
-            </HomeCard>;
+            </Card>;
           })}</View>
           <Text style={styles.footnote}>{ro.score.disclaimer}</Text>
           <View style={styles.actions}>
             <HomePressable label={copy.swap} onPress={() => setPicker('b')} style={styles.secondary}><HomeIcon name="swap" size={18} /><Text style={styles.secondaryText}>{copy.swap}</Text></HomePressable>
             <HomePressable label={copy.category} onPress={() => setPicker('a')} style={styles.secondary}><Text style={styles.secondaryText}>{copy.category}</Text></HomePressable>
           </View>
-          <HomeCard accessibilityRole="table" accessibilityLabel={copy.table(a.product.unit)} style={styles.table}>
+          <Card accessibilityRole="table" accessibilityLabel={copy.table(a.product.unit)} style={styles.table}>
             <View accessibilityRole="row" style={styles.tableHeader}><Text accessibilityRole="columnheader" style={[styles.label, styles.nutrientColumn]}>{ro.compare.per100(a.product.unit)}</Text><Text accessibilityRole="columnheader" style={[styles.label, styles.valueColumn]}>A</Text><Text accessibilityRole="columnheader" style={[styles.label, styles.valueColumn]}>B</Text></View>
             {rows.map(row => {
               const unit = row.key === 'kcal' ? 'kcal' : 'g';
@@ -83,8 +82,8 @@ export default function Compare() {
               </View>;
             })}
             <View style={styles.legend}><View style={styles.swatch} /><Text style={styles.legendText}>{copy.favorable}</Text></View>
-          </HomeCard>
-          <HomeCard style={styles.allergens}><Text accessibilityRole="header" style={styles.allergenTitle}>{ro.result.allergens}</Text><Text style={styles.allergenText}><Text style={styles.bold}>A:</Text> <Text>{a.product.allergens.join(', ') || copy.none}</Text></Text><Text style={[styles.allergenText, styles.allergenB]}><Text style={styles.bold}>B:</Text> <Text>{b.product.allergens.join(', ') || copy.none}</Text></Text></HomeCard>
+          </Card>
+          <Card style={styles.allergens}><Text accessibilityRole="header" style={styles.allergenTitle}>{ro.result.allergens}</Text><Text style={styles.allergenText}><Text style={styles.bold}>A:</Text> <Text>{a.product.allergens.join(', ') || copy.none}</Text></Text><Text style={[styles.allergenText, styles.allergenB]}><Text style={styles.bold}>B:</Text> <Text>{b.product.allergens.join(', ') || copy.none}</Text></Text></Card>
           {products.map(({entry,label}) => entry.product.mayContain.length > 0 && <View key={label}><Text style={styles.allergenText}>{label} · <Text>{ro.result.mayContain}</Text></Text><Text style={styles.allergenText}>{entry.product.mayContain.join(', ')}</Text></View>)}
           <Text style={styles.footnote}>{ro.result.missingAllergenNote}</Text>
           {isPreview && <Text style={styles.footnote}>{copy.footnote}</Text>}
@@ -111,11 +110,10 @@ export default function Compare() {
       {rows.map(row => <Card key={row.key}>
         <Heading style={{ fontSize: 18 }}>{ro.result.nutrients[row.key]}</Heading>
         <View style={{ flexDirection: 'row', gap: 12 }}>
-          {(['a', 'b'] as const).map(side => <View key={side} style={{ flex: 1, padding: 8, borderRadius: 12,
-            backgroundColor: row.better === side ? colors.goodBg : colors.soft }}>
+          {(['a', 'b'] as const).map(side => <View key={side} style={[styles.value, row.better === side && styles.favorable]}>
             <Body>{side === 'a' ? a.product.name : b.product.name}</Body>
-            <Body>{row[side] === null ? ro.result.undeclared : `${formatAmount(row[side])} ${row.key === 'kcal' ? 'kcal' : 'g'}`}</Body>
-            {row.better === side && <Body>{ro.score.positive}</Body>}
+            <Body style={row.better === side ? styles.favorableText : undefined}>{row[side] === null ? ro.result.undeclared : `${formatAmount(row[side])} ${row.key === 'kcal' ? 'kcal' : 'g'}`}</Body>
+            {row.better === side && <Body style={styles.favorableText}>{ro.score.positive}</Body>}
           </View>)}
         </View>
       </Card>)}
@@ -131,7 +129,7 @@ const createStyles = (t: ComparisonTheme) => StyleSheet.create({
   frame: { flex: 1, width: '100%', maxWidth: 430, alignSelf: 'center' },
   subtitle: { fontFamily: t.fonts.body, fontSize: 13, lineHeight: 18.85, color: t.colors.muted },
   scroll: { flex: 1 }, body: { paddingHorizontal: 16, paddingBottom: 24 },
-  products: { flexDirection: 'row', alignItems: 'stretch', gap: 12 }, productCard: { flex: 1, minWidth: 0, padding: 16 },
+  products: { flexDirection: 'row', alignItems: 'stretch', gap: 12 }, productCard: { flex: 1, minWidth: 0, gap: 0 },
   identity: { marginTop: 10, gap: 2 },
   reasons: { marginTop: 16, gap: 16 }, reason: { gap: 4 },
   reasonTitle: { fontFamily: t.fonts.extra, fontSize: 15, lineHeight: 20, color: t.colors.ink },
@@ -140,21 +138,24 @@ const createStyles = (t: ComparisonTheme) => StyleSheet.create({
   disclaimer: { fontFamily: t.fonts.body, fontSize: 12, lineHeight: 17.4, color: t.colors.muted, paddingTop: 12, borderTopWidth: 1, borderTopColor: t.colors.separator },
   label: { fontFamily: t.fonts.extra, fontSize: 12, lineHeight: 17.4, letterSpacing: 0.84, textTransform: 'uppercase', color: t.colors.muted },
   productName: { fontFamily: t.fonts.extra, fontSize: 16, lineHeight: 21, color: t.colors.ink }, score: { marginTop: 12, alignSelf: 'flex-start' },
-  actions: { flexDirection: 'row', gap: 8, marginTop: 10 },
-  secondary: { flex: 1, minWidth: 0, minHeight: 44, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 16, gap: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.mint },
+  // Stacked full width so each pill keeps one line at normal size and stays a pill at 200% text.
+  actions: { gap: 8, marginTop: 10 },
+  secondary: { minHeight: 44, paddingVertical: 10, paddingHorizontal: 10, borderRadius: radii.pill, gap: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.sageSoft },
   secondaryText: { flexShrink: 1, fontFamily: t.fonts.bold, fontSize: 14, lineHeight: 20.3, color: t.colors.primary, textAlign: 'center' },
-  table: { marginTop: 12, paddingTop: 8, paddingHorizontal: 14, paddingBottom: 12 },
+  table: { gap: 0, marginTop: 12, paddingTop: 8, paddingHorizontal: 14, paddingBottom: 12 },
   tableHeader: { flexDirection: 'row', gap: 6, alignItems: 'center', paddingVertical: 8 },
   tableRow: { flexDirection: 'row', gap: 6, alignItems: 'center', paddingVertical: 9, borderTopWidth: 1, borderTopColor: t.colors.separator },
   nutrientColumn: { flex: 1.25, minWidth: 0 }, valueColumn: { flex: 1, textAlign: 'center' },
   nutrientName: { fontFamily: t.fonts.bold, fontSize: 14, lineHeight: 20.3, color: t.colors.ink },
   difference: { fontFamily: t.fonts.body, fontSize: 12, lineHeight: 17.4, color: t.colors.muted },
+  value: { flex: 1, padding: 8, borderRadius: radii.small, borderWidth: 1, borderColor: t.colors.border },
+  favorable: { backgroundColor: t.colors.favorableBg, borderColor: t.colors.favorableBg }, favorableText: { color: t.colors.favorable, fontFamily: t.fonts.bold },
   legend: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }, swatch: { width: 18, height: 14, borderRadius: 4, backgroundColor: t.colors.favorableBg },
   legendText: { flex: 1, fontFamily: t.fonts.body, fontSize: 12, lineHeight: 17.4, color: t.colors.muted },
-  allergens: { marginTop: 12, backgroundColor: t.colors.warningBg, borderColor: t.colors.warningBorder },
+  allergens: { gap: 0, marginTop: 12, backgroundColor: t.colors.warningBg, borderColor: t.colors.warningBorder },
   allergenTitle: { fontFamily: t.fonts.heading, fontSize: 16, lineHeight: 23.2, letterSpacing: -0.16, color: t.colors.warning, marginBottom: 8 },
   allergenText: { fontFamily: t.fonts.body, fontSize: 14, lineHeight: 20.3, color: t.colors.warning }, allergenB: { marginTop: 4 }, bold: { fontFamily: t.fonts.bold },
   footnote: { marginTop: 12, marginHorizontal: 4, fontFamily: t.fonts.body, fontSize: 12, lineHeight: 17.4, color: t.colors.muted },
   modal: { flex: 1, backgroundColor: t.colors.scrim, justifyContent: 'flex-end', alignItems: 'center' }, dismiss: { flex: 1, width: '100%' },
-  pickerSheet: { width: '100%', maxWidth: 430, maxHeight: '85%', backgroundColor: t.colors.ground, borderTopLeftRadius: 20, borderTopRightRadius: 20 }, pickerContent: { padding: 16, gap: 12 },
+  pickerSheet: { width: '100%', maxWidth: 430, maxHeight: '85%', backgroundColor: t.colors.ground, borderTopLeftRadius: radii.card, borderTopRightRadius: radii.card }, pickerContent: { padding: 16, gap: 12 },
 });

@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
+import { radii } from '../../theme/tokens';
 import { ScreenSafeArea as SafeAreaView } from '../../shared/ScreenSafeArea';
 import { useHomeTheme, type HomeTheme } from '../../theme/home';
 import { HomeIcon, HomePressable } from '../../shared/HomeChrome';
@@ -22,6 +24,7 @@ export function HistoryScreen() {
   const copy = ro.history.design;
   const toast = useToast();
   const [query, setQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
   const mutation = useRef(0);
   const styles = useMemo(() => createStyles(t), [t]);
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
@@ -113,7 +116,11 @@ export function HistoryScreen() {
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         {!loading && !error && basket && <BasketCard basket={basket} />}
-        {entries.length > 0 && <TextInput accessibilityLabel={ro.history.search} placeholder={ro.history.search} placeholderTextColor={t.colors.muted} value={query} onChangeText={setQuery} style={styles.search}/>}
+        {entries.length > 0 && <View testID="history-search" style={[styles.search, searchFocused && styles.searchFocused]}>
+          <View testID="history-search-icon" accessibilityElementsHidden importantForAccessibility="no-hide-descendants"><Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={t.colors.muted} strokeWidth={2} strokeLinecap="round" aria-hidden><Circle cx={11} cy={11} r={7}/><Path d="M20 20l-4-4"/></Svg></View>
+          <TextInput accessibilityLabel={ro.history.search} placeholder={ro.history.search} placeholderTextColor={t.colors.muted} value={query} onChangeText={setQuery}
+            onFocus={() => setSearchFocused(true)} onBlur={() => setSearchFocused(false)} style={styles.searchInput}/>
+        </View>}
         {loading && <Body accessibilityLiveRegion="polite">{ro.app.loading}</Body>}
         {error && !confirming && <Card><Body accessibilityRole="alert">{error === 'load' ? ro.history.loadError : ro.history.clearError}</Body>{error === 'load' && <Button variant="secondary" onPress={() => void load()}>{ro.app.retry}</Button>}</Card>}
         {!loading && !error && entries.length === 0 && <View style={styles.empty}>
@@ -168,10 +175,13 @@ const createStyles=(t:HomeTheme)=>StyleSheet.create({
  confirmation:{flex:1,backgroundColor:t.colors.scrim},confirmationContent:{flexGrow:1,justifyContent:'center',padding:16,width:'100%',maxWidth:430,alignSelf:'center'},
  clear:{minHeight:44,paddingVertical:4,paddingHorizontal:12,borderRadius:999,backgroundColor:t.colors.lowBg,flexDirection:'row',alignItems:'center',gap:6},clearText:{fontFamily:t.fonts.bold,fontSize:13,lineHeight:18.85,color:t.colors.low,flexShrink:1},
  body:{paddingHorizontal:16,paddingBottom:24,gap:12},
- empty:{paddingVertical:56,paddingHorizontal:16,alignItems:'stretch'},emptyIcon:{width:72,height:72,borderRadius:36,alignSelf:'center',backgroundColor:t.colors.mint,alignItems:'center',justifyContent:'center',marginBottom:14},
+ empty:{paddingVertical:56,paddingHorizontal:16,alignItems:'stretch'},emptyIcon:{width:72,height:72,borderRadius:36,alignSelf:'center',backgroundColor:t.colors.sageSoft,alignItems:'center',justifyContent:'center',marginBottom:14},
  emptyTitle:{fontFamily:t.fonts.heading,fontSize:21,lineHeight:30.45,letterSpacing:-0.21,color:t.colors.ink,textAlign:'center',marginBottom:6},
  emptyText:{fontFamily:t.fonts.body,fontSize:14,lineHeight:20.3,color:t.colors.muted,textAlign:'center',marginBottom:18},
- search:{minHeight:48,padding:12,borderWidth:1,borderColor:t.colors.border,borderRadius:14,color:t.colors.ink,fontFamily:t.fonts.body,fontSize:16},
+ // Flat field: surface fill, 1 px border; focus turns the border forest (and the web outline is drawn by the border, not the input).
+ search:{minHeight:48,flexDirection:'row',alignItems:'center',gap:8,paddingHorizontal:12,backgroundColor:t.colors.surface,borderWidth:1,borderColor:t.colors.border,borderRadius:radii.small},
+ searchFocused:{borderColor:t.colors.focus,outlineWidth:2,outlineColor:t.colors.focus,outlineStyle:'solid'},
+ searchInput:{flex:1,minWidth:0,minHeight:46,paddingVertical:10,color:t.colors.ink,fontFamily:t.fonts.body,fontSize:16,outlineWidth:0},
  list:{paddingVertical:2,paddingHorizontal:14,gap:0},row:{minHeight:64,paddingVertical:10,gap:14,flexDirection:'row',alignItems:'center'},
  noScore:{minWidth:56,paddingVertical:7,paddingHorizontal:8,borderRadius:9,backgroundColor:t.colors.soft,alignItems:'center'},noScoreText:{fontFamily:t.fonts.bold,fontSize:12,lineHeight:16,color:t.colors.muted},product:{flex:1,minWidth:0},
  name:{fontFamily:t.fonts.bold,fontSize:15,lineHeight:21.75,color:t.colors.ink},meta:{fontFamily:t.fonts.body,fontSize:13,lineHeight:18.85,color:t.colors.muted},
