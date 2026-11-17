@@ -48,6 +48,16 @@ export const LookupResponse = z.discriminatedUnion('status', [
   z.object({ status: z.literal('not_found') }),
 ]);
 
+const TOP_PRODUCTS_LIMIT = 20;
+export const TopProductsQuery = z.object({
+  category: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/).max(64),
+  limit: z.number().int().min(1).max(TOP_PRODUCTS_LIMIT).default(TOP_PRODUCTS_LIMIT),
+}).strict();
+export const TopProductsResponse = z.object({
+  category: z.string().min(1),
+  products: z.array(z.object({ product: Product, score: ScoreResult })).max(TOP_PRODUCTS_LIMIT),
+});
+
 export const FrontRead = z.object({
   brand: z.string().nullable(), name: z.string().nullable(), quantity: z.string().nullable(), code: Code.nullable(),
 });
@@ -157,6 +167,8 @@ export type Grade = z.infer<typeof Grade>;
 export type Letter = z.infer<typeof Letter>;
 export type ScoreResult = z.infer<typeof ScoreResult>;
 export type LookupResponse = z.infer<typeof LookupResponse>;
+export type TopProductsQuery = z.infer<typeof TopProductsQuery>;
+export type TopProductsResponse = z.infer<typeof TopProductsResponse>;
 export type FrontRead = z.infer<typeof FrontRead>;
 export type Candidate = z.infer<typeof Candidate>;
 export type IdentifyRequest = z.infer<typeof IdentifyRequest>;
