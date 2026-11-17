@@ -188,3 +188,47 @@ Deno.test('lookup telemetry diagnostics exclude exception details and device ide
     console.warn = original;
   }
 });
+
+Deno.test('lookup accepts adaptive water scores with range, missing keys, and provenance flags', async () => {
+  const records = JSON.parse(
+    await Deno.readTextFile(
+      new URL('../../../apps/mobile/src/test/preview-data.json', import.meta.url),
+    ),
+  );
+  const base = LookupResponse.parse({ status: 'found', ...records[0] });
+  if (base.status !== 'found') throw new Error('Expected found fixture');
+  const partialWaterProduct: Product = {
+    ...base.product,
+    category: { slug: 'apa', name: 'Apă', scoreKind: 'water' },
+    unit: 'ml',
+    water: {
+      tdsMgL: 350, dryResidueMgL: null, ph: null, carbonation: 'still', classification: 'drinking',
+      caMgL: null, mgMgL: null, naMgL: null, kMgL: null, naPlusKMgL: null,
+      hco3MgL: null, so4MgL: null, clMgL: null, fMgL: null, no3MgL: null, bMgL: null, h3bo3MgL: null, iUgL: null,
+      ranges: { tdsMgL: { min: 300, max: 400 } },
+      evidence: { tdsMgL: { status: 'unverified', source: 'Fotografie utilizator', addedAt: '2026-11-17' } },
+    },
+  };
+  const partialScore = {
+    score: null,
+    letter: null,
+    grade: 'medium' as const,
+    reasons: [],
+    missing: [],
+    range: { min: 52, max: 96 },
+    waterMissing: ['ph', 'naMgL', 'so4MgL'] as const,
+    unverifiedUsed: true,
+  };
+  const res = await createHandler({
+    loadProduct: async () => ({ product: partialWaterProduct, score: { ...partialScore, waterMissing: [...partialScore.waterMissing] } }),
+    logEvent: async () => {},
+  })(req());
+  assert.equal(res.status, 200);
+  const parsed = LookupResponse.parse(await res.json());
+  assert.equal(parsed.status, 'found');
+  if (parsed.status === 'found') {
+    assert.deepEqual(parsed.score.range, { min: 52, max: 96 });
+    assert.equal(parsed.score.unverifiedUsed, true);
+    assert.equal(parsed.product.water?.evidence?.tdsMgL?.status, 'unverified');
+  }
+});

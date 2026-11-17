@@ -65,9 +65,11 @@ export function useAddFlow() {
       const ingPhoto = await compressPhoto(ingredientsUri, budget);
       const nutPhoto = nutritionUri ? await compressPhoto(nutritionUri, budget) : null;
 
+      const parsedParams = parseAddParams(rawParams);
       const reqCandidate = {
         ingredientsImage: ingPhoto.base64,
         nutritionImage: nutPhoto ? nutPhoto.base64 : null,
+        ...(parsedParams.isWater ? { kind: 'water' as const } : {}),
       };
       const parsedReq = ReadLabelRequest.safeParse(reqCandidate);
       if (

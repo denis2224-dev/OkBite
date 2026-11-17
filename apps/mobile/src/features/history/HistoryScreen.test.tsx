@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { router } from 'expo-router';
+import { emptyWaterProfile } from '@okbite/shared';
 import { HistoryScreen } from './HistoryScreen';
 import { clearHistory, listHistory, removeFromHistory, type HistoryEntry } from './store';
 import { foundYogurt } from '../../test/fixtures';
@@ -211,4 +212,39 @@ it('still deletes a row through the screen-reader delete action', async () => {
   expect(row.props.accessibilityActions).toEqual(expect.arrayContaining([{ name: 'delete', label: ro.history.remove(entry.product.name) }]));
   await fireEvent(row, 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
   await waitFor(() => expect(removeFromHistory).toHaveBeenCalledWith(entry.product.id));
+});
+
+it('shows estimated range for partial waters and rejects legacy cached 100/A waters missing water profile', async () => {
+  const emptyNutrients = Object.fromEntries(Object.keys(entry.product.nutrients).map(k => [k, null])) as typeof entry.product.nutrients;
+  const { water: _w, ...withoutWater } = entry.product;
+  const legacyWaterEntry: HistoryEntry = {
+    ...entry,
+    product: {
+      ...withoutWater,
+      id: 'legacy-water-1',
+      name: 'Legacy Apă',
+      unit: 'ml',
+      category: { slug: 'apa', name: 'Apă', scoreKind: 'water' },
+      nutrients: emptyNutrients,
+      ingredientsText: '',
+      ingredients: [],
+    },
+    score: { score: 100, letter: 'A', grade: 'good', reasons: [], missing: [] },
+  };
+  const partialWaterEntry: HistoryEntry = {
+    ...entry,
+    product: {
+      ...legacyWaterEntry.product,
+      id: 'nordica-partial',
+      name: 'Nordica Plată',
+      water: { ...emptyWaterProfile(), tdsMgL: 350, ph: 7.5, carbonation: 'still', classification: 'drinking' },
+    },
+    score: { score: 100, letter: null, grade: 'good', reasons: [], missing: [] },
+  };
+  jest.mocked(listHistory).mockResolvedValue([legacyWaterEntry, partialWaterEntry]);
+  await render(<HistoryScreen />);
+  await screen.findByText('Nordica Plată');
+  expect(screen.queryByText(/100 · /)).toBeNull();
+  expect(screen.getByText('60–100')).toBeTruthy();
+  expect(screen.getByText(ro.result.scoreUnavailable)).toBeTruthy();
 });

@@ -1,0 +1,342 @@
+[
+  {
+    "brand": "OM",
+    "name": "Apă potabilă plată",
+    "quantity": "500 ml",
+    "code": null,
+    "water": { "tdsMgL": 375, "dryResidueMgL": 305, "carbonation": "still", "classification": "drinking", "caMgL": 32.5, "mgMgL": 12.5, "naPlusKMgL": 72.5, "hco3MgL": 140, "clMgL": 15.5 },
+    "source": "Rusnac-MoldAqua SRL",
+    "sourceUrl": "https://rusnac.md/ro/branduri/",
+    "ingredientsText": "Apă potabilă purificată arteziană, Gura Căinarului, Florești"
+  },
+  {
+    "brand": "OM",
+    "name": "Apă potabilă carbogazoasă",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "tdsMgL": 375, "dryResidueMgL": 305, "carbonation": "sparkling", "classification": "drinking", "caMgL": 32.5, "mgMgL": 12.5, "naPlusKMgL": 72.5, "hco3MgL": 140, "clMgL": 15.5 },
+    "source": "Rusnac-MoldAqua SRL",
+    "sourceUrl": "https://metro.zakaz.md/ro/products/apa-om-1500ml-moldova--04840237001625/",
+    "ingredientsText": "Apă potabilă carbogazoasă purificată"
+  },
+  {
+    "brand": "OM",
+    "name": "Sport plată",
+    "quantity": "750 ml",
+    "code": null,
+    "water": { "tdsMgL": 375, "dryResidueMgL": 305, "carbonation": "still", "classification": "drinking", "caMgL": 32.5, "mgMgL": 12.5, "naPlusKMgL": 72.5, "hco3MgL": 140, "clMgL": 15.5 },
+    "source": "Rusnac-MoldAqua SRL",
+    "sourceUrl": "https://dev.pelican.md/shop/apa/om/apa-om-075-sport-cup",
+    "ingredientsText": "Apă potabilă plată, capac sport"
+  },
+  {
+    "brand": "Gura Căinarului",
+    "name": "Apă minerală plată",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "ph": 5.84, "carbonation": "still", "classification": "natural_mineral", "caMgL": 230, "mgMgL": 113, "naMgL": 395, "kMgL": 20, "hco3MgL": 680, "so4MgL": 1140 },
+    "source": "Rusnac-MoldAqua SRL / Pelican",
+    "sourceUrl": "https://dev.pelican.md/shop/apa/gura-cainarului/gura-cainarului-plata-15-l-6-buc",
+    "ingredientsText": "Sursa Gura Căinarului, Florești"
+  },
+  {
+    "brand": "Gura Căinarului",
+    "name": "Apă minerală slab carbogazificată",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "ph": 5.84, "carbonation": "lightly_sparkling", "classification": "natural_mineral", "caMgL": 230, "mgMgL": 113, "naMgL": 395, "kMgL": 20, "hco3MgL": 680, "so4MgL": 1140 },
+    "source": "Rusnac-MoldAqua SRL / Pelican",
+    "sourceUrl": "https://dev.pelican.md/shop/apa/gura-cainarului/gura-cainarului-slab-carb-15-l-6-buc",
+    "ingredientsText": "Sursa Gura Căinarului, Florești"
+  },
+  {
+    "brand": "Gura Căinarului",
+    "name": "Apă minerală carbogazificată",
+    "quantity": "330 ml",
+    "code": null,
+    "water": { "tdsMgL": 2775, "dryResidueMgL": 2550, "carbonation": "sparkling", "classification": "natural_mineral", "caMgL": 245, "mgMgL": 107.5, "naMgL": 410, "kMgL": 18.5, "hco3MgL": 660, "so4MgL": 1100, "clMgL": 95 },
+    "source": "Rusnac-MoldAqua SRL / Pelican",
+    "sourceUrl": "https://dev.pelican.md/shop/apa/gura-cainarului/gura-cainarului-gazata-can-033l",
+    "ingredientsText": "Sursa Gura Căinarului, Florești"
+  },
+  {
+    "brand": "Nordica",
+    "name": "Apă potabilă plată",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "tdsMgL": 350, "ph": 7.9, "carbonation": "still", "classification": "drinking" },
+    "source": "Rusnac-MoldAqua SRL",
+    "sourceUrl": "https://storage.mtender.gov.md/get/b3e7644e-d69e-48fc-a094-0f8ffa7a5696-1769409499538",
+    "ingredientsText": "Izvorul nr. 3, Gura Căinarului, Florești"
+  },
+  {
+    "brand": "Familia Fericită",
+    "name": "Iodată plată",
+    "quantity": "19 L",
+    "code": null,
+    "water": { "ph": 7.3, "carbonation": "still", "classification": "drinking", "iUgL": 60 },
+    "source": "Rusnac-MoldAqua SRL",
+    "sourceUrl": "https://dev.pelican.md/shop/apa/familia-fericita/apa-familia-fericita-19-l-iodata",
+    "ingredientsText": "Izvorul nr. 4, Gura Căinarului, iodată 50–80 µg/l"
+  },
+  {
+    "brand": "Aqua unIQa",
+    "name": "Iodată plată",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "tdsMgL": 475, "carbonation": "still", "classification": "drinking", "iUgL": 125 },
+    "source": "Gelibert SRL",
+    "sourceUrl": "https://gelibert.md/ro/catalog/aqua-uniqa-iodata",
+    "ingredientsText": "Apă arteziană iodată"
+  },
+  {
+    "brand": "Aqua unIQa",
+    "name": "Sport Ella (Ca, Mg) plată",
+    "quantity": "750 ml",
+    "code": null,
+    "water": { "tdsMgL": 850, "carbonation": "still", "classification": "drinking" },
+    "source": "Gelibert SRL",
+    "sourceUrl": "https://aquauniqa.md/ro/products/AQUA-UNIQA-sport-ella-0-75-necarbogazoasa",
+    "ingredientsText": "Apă arteziană îmbogățită cu calciu și magneziu"
+  },
+  {
+    "brand": "Roua Argintie",
+    "name": "Apă minerală gazată mediu",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "tdsMgL": 1299, "carbonation": "lightly_sparkling", "classification": "natural_mineral" },
+    "source": "Gelibert SRL",
+    "sourceUrl": "https://aquauniqa.md/ro/products/apa-minerala-roua-argintie-1-5l-gazata-mediu",
+    "ingredientsText": "Mineralizare > 1299 mg/l"
+  },
+  {
+    "brand": "Apă Bună",
+    "name": "Apă potabilă plată 19 L",
+    "quantity": "19 L",
+    "code": null,
+    "water": { "tdsMgL": 451, "ph": 7.4, "carbonation": "still", "classification": "drinking", "caMgL": 75.1, "mgMgL": 8.4, "naMgL": 25.9, "kMgL": 3.4, "hco3MgL": 246, "so4MgL": 67, "clMgL": 7.7, "fMgL": 0.47, "no3MgL": 1.5 },
+    "source": "Apă Bună",
+    "sourceUrl": "https://apabuna.md/ro/catalog/apa-19l/apa-buna-19l/",
+    "ingredientsText": "Sondă arteziană 120 m, Orheiul Vechi"
+  },
+  {
+    "brand": "RESAN",
+    "name": "Natural minerală de masă",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "tdsMgL": 1260, "ph": 7.9, "classification": "table_mineral", "caMgL": 56.8, "mgMgL": 114, "naPlusKMgL": 113.4, "hco3MgL": 510, "so4MgL": 349, "clMgL": 58.2 },
+    "source": "ÎM RESAN SRL",
+    "sourceUrl": "https://resan.md/production_ro.htm",
+    "ingredientsText": "Apă minerală naturală de masă, Chișinău"
+  },
+  {
+    "brand": "Aqua Carpatica",
+    "name": "Naturală minerală plată",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "tdsMgL": 200, "ph": 8.2, "carbonation": "still", "classification": "natural_mineral", "caMgL": 52, "mgMgL": 17, "hco3MgL": 220, "no3MgL": 0.9 },
+    "source": "Carpathian Springs",
+    "sourceUrl": "https://aquacarpatica.com/products/",
+    "ingredientsText": "Izvorul Băjenaru, Carpați"
+  },
+  {
+    "brand": "Aqua Carpatica",
+    "name": "Kids plată",
+    "quantity": "250 ml",
+    "code": "5942326400674",
+    "water": { "carbonation": "still", "classification": "natural_mineral" },
+    "source": "METRO / Profi",
+    "sourceUrl": "https://metro.zakaz.md/ro/products/apa-aqua-carpatica-250ml-romania--05942326400674/",
+    "ingredientsText": ""
+  },
+  {
+    "brand": "Borsec",
+    "name": "Apă minerală natural carbogazoasă",
+    "quantity": "750 ml",
+    "code": "5942219116590",
+    "water": { "carbonation": "sparkling", "classification": "natural_mineral" },
+    "source": "Romaqua Group S.A.",
+    "sourceUrl": "https://romaqua-group.ro/wp-content/uploads/2026/04/Borsec-HoReCa-Brosura-2026-03.pdf",
+    "ingredientsText": "Borsec, Harghita"
+  },
+  {
+    "brand": "Bucovina",
+    "name": "Apă minerală naturală plată",
+    "quantity": "1 L",
+    "code": null,
+    "water": { "dryResidueMgL": 78, "carbonation": "still", "classification": "natural_mineral", "caMgL": 9.85, "mgMgL": 2.55, "naMgL": 2.84, "kMgL": 1.18, "hco3MgL": 48.8, "so4MgL": 5.89, "clMgL": 3.55, "fMgL": 0.048, "no3MgL": 5.01 },
+    "source": "Maspex / Linella",
+    "sourceUrl": "https://linella.md/bauturi/apa-minerala/apa-minerala-plata-1l-bucovina/",
+    "ingredientsText": "Apă minerală naturală oligominerală plată"
+  },
+  {
+    "brand": "Dorna",
+    "name": "Izvorul Alb necarbogazoasă",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "dryResidueMgL": 196, "ph": 7.8, "carbonation": "still", "classification": "natural_mineral", "caMgL": 63.24, "mgMgL": 2.1, "naMgL": 0.95, "kMgL": 0.4, "clMgL": 4.8, "no3MgL": 3.9 },
+    "source": "Coca-Cola HBC România",
+    "sourceUrl": "https://www.coca-cola.com/md/ro/brands/dorna",
+    "ingredientsText": "Izvorul Alb, Dealul Floreni, Suceava"
+  },
+  {
+    "brand": "Dorna",
+    "name": "Apă minerală carbogazoasă",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "dryResidueMgL": 886.5, "ph": 5.64, "carbonation": "sparkling", "classification": "natural_mineral", "caMgL": 297, "mgMgL": 9.7, "naMgL": 21.9, "hco3MgL": 960, "clMgL": 5.6, "no3MgL": 0.6 },
+    "source": "Coca-Cola HBC România",
+    "sourceUrl": "https://www.coca-cola.com/md/ro/brands/dorna",
+    "ingredientsText": "Dealul Floreni și Poiana Vinului, Suceava"
+  },
+  {
+    "brand": "Izvorul Minunilor",
+    "name": "Apă minerală plată",
+    "quantity": "2 L",
+    "code": null,
+    "water": { "dryResidueMgL": 78, "ph": 8, "carbonation": "still", "classification": "natural_mineral", "fMgL": 0.025, "no3MgL": 2.5 },
+    "source": "ANSP test report",
+    "sourceUrl": "https://storage.mtender.gov.md/get/afd6b97c-3645-4e9d-b685-102741458e1f-1741771660887",
+    "ingredientsText": ""
+  },
+  {
+    "brand": "Morshynska",
+    "name": "Apă minerală plată",
+    "quantity": "6 L",
+    "code": "4820017000277",
+    "water": { "tdsMgL": 250, "carbonation": "still", "classification": "natural_mineral", "caMgL": 42.5, "mgMgL": 50, "naPlusKMgL": 70, "hco3MgL": 115, "so4MgL": 100, "clMgL": 60 },
+    "source": "Oscar / Listex",
+    "sourceUrl": "https://morshynska.ua/about/",
+    "ingredientsText": "Morshyn, Munții Carpați"
+  },
+  {
+    "brand": "Morshynska",
+    "name": "Apă minerală slab carbogazoasă",
+    "quantity": "1,5 L",
+    "code": "4820017000253",
+    "water": { "tdsMgL": 250, "carbonation": "lightly_sparkling", "classification": "natural_mineral", "caMgL": 42.5, "mgMgL": 50, "naPlusKMgL": 70, "hco3MgL": 115, "so4MgL": 100, "clMgL": 60 },
+    "source": "Oscar / Listex",
+    "sourceUrl": "https://listex.info/uk/product/voda-morshinskaya-slabogaz-pet-15l",
+    "ingredientsText": "Morshyn, Munții Carpați"
+  },
+  {
+    "brand": "Polyana Kvasova",
+    "name": "No. 8 intens gazată",
+    "quantity": "1 L",
+    "code": null,
+    "water": { "carbonation": "sparkling", "classification": "therapeutic", "caMgL": 110, "mgMgL": 50, "naMgL": 2250, "hco3MgL": 6250, "so4MgL": 25, "clMgL": 450, "h3bo3MgL": 175 },
+    "source": "Svalyavski Mineralni Vody",
+    "sourceUrl": "https://polyana-kvasova.com.ua/polyana-kvasova/",
+    "ingredientsText": "Apă minerală medicinal-de masă cu acid boric"
+  },
+  {
+    "brand": "Nabeghlavi",
+    "name": "Apă minerală carbogazoasă",
+    "quantity": "1 L",
+    "code": "4865602000027",
+    "water": { "tdsMgL": 3900, "carbonation": "sparkling", "classification": "table_mineral", "caMgL": 58, "mgMgL": 65.5, "naMgL": 834, "fMgL": 0.44 },
+    "source": "Healthy Water / ZGruzie",
+    "sourceUrl": "https://nabeghlavi.ge/en_GB/products",
+    "ingredientsText": "Nabeghlavi, Georgia"
+  },
+  {
+    "brand": "Essentuki",
+    "name": "No. 4",
+    "quantity": "1 L",
+    "code": null,
+    "water": { "tdsMgL": 8500, "carbonation": "sparkling", "classification": "therapeutic", "caMgL": 80, "mgMgL": 35, "naPlusKMgL": 2500, "hco3MgL": 4125, "so4MgL": 15.25, "clMgL": 1650, "h3bo3MgL": 45 },
+    "source": "Holding Aqua",
+    "sourceUrl": "https://www.holdingaqua.ru/essentuki",
+    "ingredientsText": "Apă minerală medicinal-de masă"
+  },
+  {
+    "brand": "Essentuki",
+    "name": "No. 17",
+    "quantity": "450 ml",
+    "code": null,
+    "water": { "tdsMgL": 12000, "carbonation": "sparkling", "classification": "therapeutic", "caMgL": 100, "mgMgL": 62.5, "naPlusKMgL": 3350, "hco3MgL": 5675, "so4MgL": 35.25, "clMgL": 2250, "h3bo3MgL": 55 },
+    "source": "Holding Aqua",
+    "sourceUrl": "https://www.holdingaqua.ru/essentuki",
+    "ingredientsText": "Apă minerală medicinală"
+  },
+  {
+    "brand": "Magnesia",
+    "name": "Apă minerală necarbogazoasă",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "tdsMgL": 736, "carbonation": "still", "classification": "natural_mineral", "mgMgL": 172, "naMgL": 5.2 },
+    "source": "Magnesia CZ",
+    "sourceUrl": "https://www.magnesia.cz/produkty",
+    "ingredientsText": "Bogată natural în magneziu"
+  },
+  {
+    "brand": "Alcalia",
+    "name": "Velingrad plată",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "ph": 9.37, "carbonation": "still", "classification": "natural_mineral" },
+    "source": "Alcalia",
+    "sourceUrl": "https://alcalia.ro/",
+    "ingredientsText": "Velingrad, Munții Rodopi"
+  },
+  {
+    "brand": "Jana",
+    "name": "Apă minerală naturală plată",
+    "quantity": "500 ml",
+    "code": null,
+    "water": { "tdsMgL": 500, "ph": 7.1, "carbonation": "still", "classification": "natural_mineral" },
+    "source": "Jamnica plus d.o.o.",
+    "sourceUrl": "https://www.jana-water.com/en/the-source/the-mineral-composition-of-jana",
+    "ingredientsText": "Izvorul Jana, Croația"
+  },
+  {
+    "brand": "Donat",
+    "name": "Donat Mg",
+    "quantity": "1 L",
+    "code": null,
+    "water": { "carbonation": "sparkling", "classification": "natural_mineral", "caMgL": 430, "mgMgL": 1000, "naMgL": 1700, "hco3MgL": 7400, "so4MgL": 2200, "clMgL": 100 },
+    "source": "Donat Sustainability Report",
+    "sourceUrl": "https://www.donat.com/wp-content/uploads/2022/08/DONAT_SUSTAINABILITY_REPORT.pdf",
+    "ingredientsText": "Rogaška Slatina, Slovenia"
+  },
+  {
+    "brand": "Evian",
+    "name": "Apă minerală naturală plată",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "dryResidueMgL": 345, "ph": 7.2, "carbonation": "still", "classification": "natural_mineral", "caMgL": 80, "mgMgL": 26, "naMgL": 6.5, "kMgL": 1, "hco3MgL": 360, "so4MgL": 14, "clMgL": 10, "no3MgL": 3.8 },
+    "source": "SAEME Evian",
+    "sourceUrl": "https://www.evian.com/en_gb/our-water/water-attributes",
+    "ingredientsText": "Alpii Francezi, Évian-les-Bains"
+  },
+  {
+    "brand": "S.Pellegrino",
+    "name": "Sparkling Natural Mineral Water",
+    "quantity": "750 ml",
+    "code": null,
+    "water": { "dryResidueMgL": 860, "ph": 7.6, "carbonation": "sparkling", "classification": "natural_mineral", "caMgL": 169, "mgMgL": 49.2, "naMgL": 31.2, "kMgL": 2.4, "hco3MgL": 249, "so4MgL": 403, "clMgL": 49.8, "fMgL": 0.5, "no3MgL": 3 },
+    "source": "Sanpellegrino",
+    "sourceUrl": "https://www.sanpellegrino.com/uk/water/50-cl-glass-bottle?_wrapper_format=html",
+    "ingredientsText": "San Pellegrino Terme, Italia"
+  },
+  {
+    "brand": "Acqua Panna",
+    "name": "Apă minerală naturală plată",
+    "quantity": "500 ml",
+    "code": null,
+    "water": { "tdsMgL": 140, "ph": 8.1, "carbonation": "still", "classification": "natural_mineral", "caMgL": 32, "mgMgL": 6.7, "naMgL": 7, "kMgL": 0.89, "so4MgL": 20, "clMgL": 7.9 },
+    "source": "Acqua Panna Analytical Report",
+    "sourceUrl": "https://www.acquapanna.com/us/sites/g/files/xknfdk971/files/2026-04/AcquaPanna_EN_2025_April_6_2026.pdf",
+    "ingredientsText": "Toscana, Italia"
+  },
+  {
+    "brand": "Davidan",
+    "name": "Apă potabilă Carbogazificată",
+    "quantity": "500 ml",
+    "code": null,
+    "water": { "dryResidueMgL": 390, "carbonation": "sparkling", "classification": "drinking", "caMgL": 14, "mgMgL": 42.6, "no3MgL": 6.4 },
+    "source": "SRL „Glacial Empire” — etichetă / Raport lab. Nr. 3629 (HG Nr. 934/2, 20.07.2018)",
+    "sourceUrl": "https://davidanwater.md/",
+    "ingredientsText": "Apă potabilă carbogazificată; sursa: sonda arteziană Nr. 3, s. Mășcăuți, r-nul Criuleni"
+  }
+]

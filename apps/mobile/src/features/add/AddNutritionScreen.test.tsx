@@ -1,6 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { NUTRIENT_KEYS } from '@okbite/shared';
+import { emptyWaterProfile, NUTRIENT_KEYS } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { lookupFound } from '../capture/__fixtures__/responses';
 import { saveToHistory } from '../history/store';
@@ -127,4 +127,75 @@ test('an unread unit is never guessed: save waits for one g/ml tap', async () =>
     fireEvent.press(screen.getByRole('button', { name: ro.add.confirmSave }));
   });
   expect(jest.mocked(requestUnknownFlow).mock.calls[1]?.[3]).toMatchObject({ unit: 'ml' });
+});
+
+test('enriches a water product with kind=water and saves mineral profile', async () => {
+  mockParams.value = { productId: foundProductId, kind: 'water' };
+  const water = { ...emptyWaterProfile(), carbonation: 'still' as const, ph: 7.2, tdsMgL: 310 };
+  jest.mocked(requestUnknownFlow)
+    .mockResolvedValueOnce({
+      ingredientsText: null,
+      unit: 'ml',
+      nutrients: { kcal: null, fat: null, sat: null, sugar: null, salt: null, protein: null, fiber: null, fruitVegPct: null },
+      water,
+      unclear: [],
+      ingredientsPhotoPath: null,
+      nutritionPhotoPath: 'uploads/dev-1/water-panel.jpg',
+      reasons: Object.fromEntries([...NUTRIENT_KEYS, 'ingredientsText'].map(k => [k, 'not_printed'])),
+    })
+    .mockResolvedValueOnce(lookupFound);
+
+  await render(<AddNutritionScreen />);
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
+  });
+  expect(jest.mocked(requestUnknownFlow).mock.calls[0]?.[3]).toEqual({
+    ingredientsImage: null,
+    nutritionImage: 'jpeg:table-shot',
+    nutrition: 'separate',
+    kind: 'water',
+  });
+  expect(screen.getByTestId('water-fields')).toBeTruthy();
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: ro.add.confirmSave }));
+  });
+  expect(jest.mocked(requestUnknownFlow).mock.calls[1]?.[3]).toEqual({
+    productId: foundProductId,
+    unit: 'ml',
+    nutrients: { kcal: null, fat: null, sat: null, sugar: null, salt: null, protein: null, fiber: null, fruitVegPct: null },
+    water,
+    nutritionPhotoPath: 'uploads/dev-1/water-panel.jpg',
+  });
+});
+
+test('informs the shopper when water submission is queued for moderation instead of mutating verified data silently', async () => {
+  mockParams.value = { productId: foundProductId, kind: 'water' };
+  const water = { ...emptyWaterProfile(), carbonation: 'still' as const, tdsMgL: 390 };
+  jest.mocked(requestUnknownFlow)
+    .mockResolvedValueOnce({
+      ingredientsText: null,
+      unit: 'ml',
+      nutrients: { kcal: null, fat: null, sat: null, sugar: null, salt: null, protein: null, fiber: null, fruitVegPct: null },
+      water,
+      unclear: [],
+      ingredientsPhotoPath: null,
+      nutritionPhotoPath: 'uploads/dev-1/water-conflict.jpg',
+      reasons: Object.fromEntries([...NUTRIENT_KEYS, 'ingredientsText'].map(k => [k, 'not_printed'])),
+    })
+    .mockResolvedValueOnce({ ...lookupFound, waterSubmissionStatus: 'queued_for_review' });
+
+  await render(<AddNutritionScreen />);
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
+  });
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: ro.add.confirmSave }));
+  });
+
+  expect(screen.getByText(ro.result.water.submissionQueued)).toBeTruthy();
+  expect(mockReplace).not.toHaveBeenCalled();
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: ro.result.water.viewProductAfterSubmit }));
+  });
+  expect(mockReplace).toHaveBeenCalledWith(`/product/${foundProductId}`);
 });
