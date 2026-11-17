@@ -81,16 +81,17 @@ it('moves forward and back through all four onboarding steps', async () => {
   expect(screen.getByText(ro.onboarding.step(2))).toBeTruthy();
 });
 
-it('shows the saved-locally note only on the last step, above the finish button', async () => {
+it('shows no saved-locally note on any step, and the finish button on the last', async () => {
+  const savedLocally = 'Preferințele sunt salvate doar pe acest telefon.';
   const screen = await render(<OnboardingScreen />);
   await screen.findByText(ro.settings.romanian);
-  expect(screen.queryByText(ro.onboarding.savedLocally)).toBeNull();
+  expect(screen.queryByText(savedLocally)).toBeNull();
   await fireEvent.press(screen.getByRole('button', { name: ro.onboarding.continue }));
-  expect(screen.queryByText(ro.onboarding.savedLocally)).toBeNull();
+  expect(screen.queryByText(savedLocally)).toBeNull();
   await fireEvent.press(screen.getByRole('button', { name: ro.onboarding.continue }));
-  expect(screen.queryByText(ro.onboarding.savedLocally)).toBeNull();
+  expect(screen.queryByText(savedLocally)).toBeNull();
   await fireEvent.press(screen.getByRole('button', { name: ro.onboarding.continue }));
-  expect(screen.getByText(ro.onboarding.savedLocally)).toBeTruthy();
+  expect(screen.queryByText(savedLocally)).toBeNull();
   expect(screen.getByRole('button', { name: ro.onboarding.done })).toBeTruthy();
 });
 

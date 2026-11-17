@@ -14,17 +14,14 @@ import { useToast } from '../../ui/Toast';
 import { productScoreFor } from '../product/productScoreFor';
 import { ScoreTagSmall } from '../shelf/ScoreTagSmall';
 import { savedWhen } from './when';
-import { showStorageWarning } from '../../lib/storagePersistence';
 import { summarizeBasket } from './basket';
 import { BasketCard } from './BasketCard';
-import { useStorageNoticeDismissal } from '../../lib/storageNotice';
 
 export function HistoryScreen() {
   const t = useHomeTheme();
   const copy = ro.history.design;
   const toast = useToast();
   const [query, setQuery] = useState('');
-  const [noticeDismissed, dismissNotice] = useStorageNoticeDismissal();
   const mutation = useRef(0);
   const styles = useMemo(() => createStyles(t), [t]);
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
@@ -112,12 +109,11 @@ export function HistoryScreen() {
 
   return <SafeAreaView edges={['top','left','right']} style={styles.safe}>
     <View style={styles.frame}>
-      <TabPageHeader title={copy.title} subtitle={copy.note} action={entries.length > 0 ? <HomePressable label={ro.history.clear} disabled={clearing} onPress={() => setConfirming(true)} style={styles.clear}><HomeIcon name="trash" size={18} color={t.colors.low}/><Text style={styles.clearText}>{ro.history.clear}</Text></HomePressable> : null} />
+      <TabPageHeader title={copy.title} action={entries.length > 0 ? <HomePressable label={ro.history.clear} disabled={clearing} onPress={() => setConfirming(true)} style={styles.clear}><HomeIcon name="trash" size={18} color={t.colors.low}/><Text style={styles.clearText}>{ro.history.clear}</Text></HomePressable> : null} />
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         {!loading && !error && basket && <BasketCard basket={basket} />}
         {entries.length > 0 && <TextInput accessibilityLabel={ro.history.search} placeholder={ro.history.search} placeholderTextColor={t.colors.muted} value={query} onChangeText={setQuery} style={styles.search}/>}
-        {showStorageWarning && !noticeDismissed && entries.length > 0 ? <View style={styles.notice}><Text style={styles.noticeText}>{copy.storageNotice}</Text><HomePressable label={copy.dismissNotice} onPress={dismissNotice} style={styles.noticeClose}><HomeIcon name="close" size={18} color={t.colors.muted}/></HomePressable></View> : null}
         {loading && <Body accessibilityLiveRegion="polite">{ro.app.loading}</Body>}
         {error && !confirming && <Card><Body accessibilityRole="alert">{error === 'load' ? ro.history.loadError : ro.history.clearError}</Body>{error === 'load' && <Button variant="secondary" onPress={() => void load()}>{ro.app.retry}</Button>}</Card>}
         {!loading && !error && entries.length === 0 && <View style={styles.empty}>
@@ -175,7 +171,6 @@ const createStyles=(t:HomeTheme)=>StyleSheet.create({
  empty:{paddingVertical:56,paddingHorizontal:16,alignItems:'stretch'},emptyIcon:{width:72,height:72,borderRadius:36,alignSelf:'center',backgroundColor:t.colors.mint,alignItems:'center',justifyContent:'center',marginBottom:14},
  emptyTitle:{fontFamily:t.fonts.heading,fontSize:21,lineHeight:30.45,letterSpacing:-0.21,color:t.colors.ink,textAlign:'center',marginBottom:6},
  emptyText:{fontFamily:t.fonts.body,fontSize:14,lineHeight:20.3,color:t.colors.muted,textAlign:'center',marginBottom:18},
- notice:{flexDirection:'row',alignItems:'center',gap:8},noticeText:{flex:1,fontFamily:t.fonts.body,fontSize:13,lineHeight:18.85,color:t.colors.muted},noticeClose:{minWidth:44,minHeight:44,alignItems:'center',justifyContent:'center'},
  search:{minHeight:48,padding:12,borderWidth:1,borderColor:t.colors.border,borderRadius:14,color:t.colors.ink,fontFamily:t.fonts.body,fontSize:16},
  list:{paddingVertical:2,paddingHorizontal:14,gap:0},row:{minHeight:64,paddingVertical:10,gap:14,flexDirection:'row',alignItems:'center'},
  noScore:{minWidth:56,paddingVertical:7,paddingHorizontal:8,borderRadius:9,backgroundColor:t.colors.soft,alignItems:'center'},noScoreText:{fontFamily:t.fonts.bold,fontSize:12,lineHeight:16,color:t.colors.muted},product:{flex:1,minWidth:0},

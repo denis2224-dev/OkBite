@@ -44,14 +44,15 @@ beforeEach(async () => {
   resetProfileHookState();
 });
 
-it('shows the local privacy note, edits goals only and persists them', async () => {
+it('shows no "saved on this phone" line, edits goals only and persists them', async () => {
   await store.saveProfile(existing);
   const labels = [ro.profile.health, ro.profile.family] as const;
   const press = capturePress(...labels);
   const screen = await render(<ProfileScreen />);
-  for (const text of [ro.profile.title, ro.profile.savedLocally, ro.profile.goalTitle]) {
+  for (const text of [ro.profile.title, ro.profile.goalTitle]) {
     expect(screen.getByText(text)).toBeTruthy();
   }
+  expect(screen.queryByText('Salvat doar pe acest telefon')).toBeNull();
   // Allergens and avoid keys moved to the Allergies tab, so they are edited in one place.
   for (const text of [ro.profile.allergensTitle, ro.profile.avoidTitle, ro.allergens.Lapte, ro.profile.palm_oil]) {
     expect(screen.queryByText(text)).toBeNull();
