@@ -6,11 +6,13 @@ import { Screen, Body, Button } from '../../../src/ui';
 import { ro } from '../../../src/copy/ro';
 import { useTheme } from '../../../src/theme/useTheme';
 import { radii } from '../../../src/theme/tokens';
+import { depth } from '../../../src/theme/depth';
 import { AdminGate } from '../../../src/features/admin/AdminGate';
 import { ProductEditor } from '../../../src/features/admin/ProductEditor';
 import { readAdminProduct, sendModeration } from '../../../src/features/admin/client';
 function Editor({ id }: { id: string }) {
   const { colors } = useTheme();
+  const [focused, setFocused] = useState(false);
   const [product, setProduct] = useState<ProductInput | null>(null);
   const [photos, setPhotos] = useState<{ label: string; url: string }[]>([]);
   const [reason, setReason] = useState('');
@@ -69,11 +71,14 @@ function Editor({ id }: { id: string }) {
       )}
       <TextInput
         accessibilityLabel={ro.app.admin.reason}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         value={reason}
         onChangeText={setReason}
         style={{
           color: colors.ink,
-          borderColor: colors.border,
+          borderColor: focused ? colors.focus : colors.transparent,
+          ...depth.well,
           backgroundColor: colors.surface,
           borderRadius: radii.small,
           minHeight: 48,

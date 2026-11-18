@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { NUTRIENT_KEYS, type NutrientKey, type ReadLabelResponse } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { radii, type Palette } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
 import { unitForNutrient } from './parseAmount';
 
 export interface NutritionFieldsProps {
@@ -35,6 +36,7 @@ export function NutritionFields({
   invalid,
   onChange,
 }: NutritionFieldsProps) {
+  const [focused, setFocused] = useState<NutrientKey | null>(null);
   const { colors } = useTheme();
   const styles = createStyles(colors);
   const labels = getCompleteNutrientLabels();
@@ -84,7 +86,9 @@ export function NutritionFields({
                 value={values[key]}
                 onChangeText={(v) => onChange(key, v)}
                 keyboardType="decimal-pad"
-                style={[styles.input, isInvalid && styles.inputInvalid]}
+                onFocus={() => setFocused(key)}
+                onBlur={() => setFocused(f => (f === key ? null : f))}
+                style={[styles.input, focused === key && styles.inputFocused, isInvalid && styles.inputInvalid]}
               />
               <Text style={styles.unitSuffix}>{expectedUnit}</Text>
             </View>
@@ -96,11 +100,11 @@ export function NutritionFields({
 }
 
 const createStyles = (colors: Palette) => StyleSheet.create({
-  card: { padding: 16, borderRadius: radii.card, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, gap: 8 },
+  card: { padding: 18, borderRadius: radii.card, backgroundColor: colors.surface, gap: 8, ...depth.raised },
   header: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between', alignItems: 'center' },
   title: { fontSize: 15, fontWeight: '700', color: colors.ink },
   muted: { fontSize: 13, color: colors.muted },
-  unavailableBox: { padding: 12, borderRadius: radii.small, backgroundColor: colors.highlightBg, gap: 4 },
+  unavailableBox: { padding: 12, borderRadius: radii.small, backgroundColor: colors.ground, gap: 4, ...depth.well },
   row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
   labelCol: { flexGrow: 1, flexShrink: 1, flexBasis: 160, minWidth: 0 },
   labelText: { fontSize: 14, fontWeight: '600', color: colors.ink },
@@ -115,12 +119,14 @@ const createStyles = (colors: Palette) => StyleSheet.create({
     paddingVertical: 10,
     borderRadius: radii.small,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.transparent,
+    ...depth.well,
     backgroundColor: colors.surface,
     textAlign: 'right',
     fontSize: 15,
     color: colors.ink,
   },
+  inputFocused: { borderColor: colors.focus },
   inputInvalid: { borderColor: colors.low },
   unitSuffix: { minWidth: 36, fontSize: 13, color: colors.muted },
 });

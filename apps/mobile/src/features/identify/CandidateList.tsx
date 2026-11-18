@@ -5,6 +5,7 @@ import type { Candidate } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { fonts, radii, typeScale, type Palette } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
 import { ActionButton } from '../capture/StatusPanel';
 
 export function CandidateList({
@@ -53,9 +54,9 @@ const createStyles = (colors: Palette) => StyleSheet.create({
     minHeight: 44,
     padding: 14,
     borderRadius: radii.card,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 0,
     backgroundColor: colors.surface,
+    ...depth.raised,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,

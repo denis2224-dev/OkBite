@@ -7,12 +7,14 @@ import { Button, Body } from '../../ui';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { radii } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
 import { getAdminClient } from './client';
 import { sessionFromUrl } from './session';
 import { consumeInitialAuthUrl } from './callback';
 
 export function AdminGate({ children }: PropsWithChildren) {
   const { colors } = useTheme();
+  const [focused, setFocused] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [client] = useState(() => {
     try {
@@ -144,6 +146,8 @@ export function AdminGate({ children }: PropsWithChildren) {
               <Body>{ro.app.admin.signIn}</Body>
               <TextInput
                 accessibilityLabel={ro.app.admin.email}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
@@ -151,7 +155,8 @@ export function AdminGate({ children }: PropsWithChildren) {
                 autoComplete="email"
                 style={{
                   color: colors.ink,
-                  borderColor: colors.border,
+                  borderColor: focused ? colors.focus : colors.transparent,
+          ...depth.well,
           backgroundColor: colors.surface,
           borderRadius: radii.small,
                   borderWidth: 1,

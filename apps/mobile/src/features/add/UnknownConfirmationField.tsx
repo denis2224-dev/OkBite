@@ -4,6 +4,7 @@ import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { useTheme } from '../../theme/useTheme';
 import { ro } from '../../copy/ro';
 import { radii } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
 
 export function UnknownConfirmationField({ label, value, onChange, disabled, multiline, numeric, invalid }: {
   label: string; value: string; onChange(value: string): void; disabled: boolean;
@@ -14,7 +15,7 @@ export function UnknownConfirmationField({ label, value, onChange, disabled, mul
   const [text, setText] = useState(value);
   // While editing the input has focus, so its border turns forest (terracotta stays when invalid).
   const style = { minHeight: 44, padding: 12, borderRadius: radii.small, color: colors.ink, backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: invalid ? colors.low : editing ? colors.focus : colors.border };
+    borderWidth: 1, borderColor: invalid ? colors.low : editing ? colors.focus : colors.transparent, ...depth.well };
   return <View style={{ gap: 4 }}>
     <Text style={{ color: colors.muted, fontSize: 14 }}>{label}</Text>
     {editing ? <TextInput accessibilityLabel={label} value={text} editable={!disabled}

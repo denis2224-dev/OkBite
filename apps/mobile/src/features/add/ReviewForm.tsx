@@ -17,6 +17,7 @@ import {
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { radii, type Palette } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
 import { AllergenChip } from '../../ui/AllergenChip';
 import { ActionButton, errorMessage } from '../capture/StatusPanel';
 import type { AddInitialValues } from '../identify/routes';
@@ -55,6 +56,8 @@ function buildInitialNutrients(n: NutrientsType): Record<NutrientKey, string> {
 export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: ReviewFormProps) {
   const { colors } = useTheme();
   const styles = createStyles(colors);
+  const [focused, setFocused] = useState<string | null>(null);
+  const ring = (key: string) => ({ onFocus: () => setFocused(key), onBlur: () => setFocused(f => (f === key ? null : f)) });
   const [name, setName] = useState(initial.name ?? '');
   const [brand, setBrand] = useState(initial.brand ?? '');
   const [quantity, setQuantity] = useState(initial.quantity ?? '');
@@ -194,16 +197,16 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
 
       <View style={styles.card}>
         <Text style={styles.fieldLabel}>{ro.review.name}</Text>
-        <TextInput accessibilityLabel={ro.review.name} value={name} onChangeText={(v) => { setName(v); setFormError(null); }} style={styles.input} />
+        <TextInput accessibilityLabel={ro.review.name} value={name} onChangeText={(v) => { setName(v); setFormError(null); }} {...ring('name')} style={[styles.input, focused === 'name' && styles.inputFocused]} />
 
         <Text style={styles.fieldLabel}>{ro.review.brand}</Text>
-        <TextInput accessibilityLabel={ro.review.brand} value={brand} onChangeText={(v) => { setBrand(v); setFormError(null); }} style={styles.input} />
+        <TextInput accessibilityLabel={ro.review.brand} value={brand} onChangeText={(v) => { setBrand(v); setFormError(null); }} {...ring('brand')} style={[styles.input, focused === 'brand' && styles.inputFocused]} />
 
         <Text style={styles.fieldLabel}>{ro.review.quantity}</Text>
-        <TextInput accessibilityLabel={ro.review.quantity} value={quantity} onChangeText={(v) => { setQuantity(v); setFormError(null); }} style={styles.input} />
+        <TextInput accessibilityLabel={ro.review.quantity} value={quantity} onChangeText={(v) => { setQuantity(v); setFormError(null); }} {...ring('quantity')} style={[styles.input, focused === 'quantity' && styles.inputFocused]} />
 
         <Text style={styles.fieldLabel}>{ro.scan.manualTitle}</Text>
-        <TextInput testID="input-code" accessibilityLabel={ro.scan.manualTitle} value={code} onChangeText={(v) => { setCode(v); setFormError(null); }} keyboardType="number-pad" style={styles.input} />
+        <TextInput testID="input-code" accessibilityLabel={ro.scan.manualTitle} value={code} onChangeText={(v) => { setCode(v); setFormError(null); }} keyboardType="number-pad" {...ring('code')} style={[styles.input, focused === 'code' && styles.inputFocused]} />
 
         <View style={styles.unitRow}>
           {UNITS.map((u) => {
@@ -227,7 +230,7 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
             <Text style={styles.unclearMark}>{ro.review.unreadMark}</Text>
           </View>
         ) : null}
-        <TextInput accessibilityLabel={ro.review.ingredients} multiline value={ingredientsText} onChangeText={(v) => { setIngredientsText(v); setFormError(null); }} style={[styles.input, styles.multiline]} />
+        <TextInput accessibilityLabel={ro.review.ingredients} multiline value={ingredientsText} onChangeText={(v) => { setIngredientsText(v); setFormError(null); }} {...ring('ingredients')} style={[styles.input, styles.multiline, focused === 'ingredients' && styles.inputFocused]} />
 
         <View testID="detected-allergens" style={styles.allergensSection}>
           <Text style={styles.subLabel}>{ro.review.allergensDetected}</Text>
@@ -271,15 +274,16 @@ const createStyles = (colors: Palette) => StyleSheet.create({
   unclearBanner: { padding: 14, borderRadius: radii.small, backgroundColor: colors.warningBg, borderWidth: 1, borderColor: colors.warningBorder, gap: 6 },
   unclearBannerTitle: { fontSize: 15, fontWeight: '800', color: colors.medium },
   unclearBannerText: { fontSize: 14, color: colors.medium },
-  card: { padding: 16, borderRadius: radii.card, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, gap: 8 },
+  card: { padding: 18, borderRadius: radii.card, backgroundColor: colors.surface, gap: 8, ...depth.raised },
   fieldLabel: { fontSize: 15, fontWeight: '700', color: colors.ink },
   subLabel: { fontSize: 13, fontWeight: '700', color: colors.muted, marginTop: 4 },
   unclearMark: { fontSize: 12, fontWeight: '800', color: colors.medium },
-  input: { minHeight: 46, paddingHorizontal: 12, paddingVertical: 10, borderRadius: radii.small, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, color: colors.ink, fontSize: 15 },
+  input: { minHeight: 46, paddingHorizontal: 12, paddingVertical: 10, borderRadius: radii.small, borderWidth: 1, borderColor: colors.transparent, ...depth.well, backgroundColor: colors.surface, color: colors.ink, fontSize: 15 },
   multiline: { minHeight: 96, textAlignVertical: 'top' },
   unitRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  unitButton: { minHeight: 44, paddingHorizontal: 16, paddingVertical: 8, borderRadius: radii.pill, borderWidth: 0, backgroundColor: colors.sageSoft, justifyContent: 'center' },
-  unitButtonSelected: { backgroundColor: colors.primary },
+  unitButton: { minHeight: 44, paddingHorizontal: 16, paddingVertical: 8, borderRadius: radii.pill, borderWidth: 0, backgroundColor: colors.surface, ...depth.raisedSmall, justifyContent: 'center' },
+  unitButtonSelected: depth.forest,
+  inputFocused: { borderColor: colors.focus },
   unitText: { fontSize: 14, fontWeight: '600', color: colors.primary },
   unitTextSelected: { color: colors.onPrimary },
   allergensSection: { gap: 6 },

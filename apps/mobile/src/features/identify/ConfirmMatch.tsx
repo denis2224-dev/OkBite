@@ -4,6 +4,7 @@ import type { Candidate } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { fonts, radii, typeScale, type Palette } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
 import { ActionButton } from '../capture/StatusPanel';
 
 export function ConfirmMatch({
@@ -45,7 +46,7 @@ export function ConfirmMatch({
 const createStyles = (colors: Palette) => StyleSheet.create({
   container: { flexGrow: 1, padding: 16, gap: 16, backgroundColor: colors.ground },
   title: { fontFamily: fonts.heading, ...typeScale.title, color: colors.ink },
-  card: { padding: 20, borderRadius: radii.card, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', gap: 8 },
+  card: { padding: 20, borderRadius: radii.card, borderWidth: 0, backgroundColor: colors.surface, alignItems: 'center', gap: 8, ...depth.raised },
   hero: { width: 160, height: 160, borderRadius: radii.small },
   name: { maxWidth: '100%', fontSize: 20, fontWeight: '700', color: colors.ink, textAlign: 'center' },
   meta: { maxWidth: '100%', fontSize: 15, color: colors.muted, textAlign: 'center' },

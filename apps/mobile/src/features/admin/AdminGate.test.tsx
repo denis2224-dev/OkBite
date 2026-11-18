@@ -114,7 +114,7 @@ it.each(['revoked', 'unavailable'])(
     }
   },
 );
-it('draws the sign-in email input with a surface fill, 1 px border and small radius', async () => {
+it('draws the sign-in email input as a well with a small radius', async () => {
   const { StyleSheet } = jest.requireActual<typeof import('react-native')>('react-native');
   const { light, radii } = jest.requireActual<typeof import('../../theme/tokens')>('../../theme/tokens');
   (getAdminClient as jest.Mock).mockReturnValue({
@@ -126,5 +126,5 @@ it('draws the sign-in email input with a surface fill, 1 px border and small rad
   (consumeInitialAuthUrl as jest.Mock).mockResolvedValue(null);
   await render(<AdminGate><Text>Private admin data</Text></AdminGate>);
   const input = await screen.findByLabelText(ro.app.admin.email);
-  expect(StyleSheet.flatten(input.props.style)).toMatchObject({ backgroundColor: light.surface, borderWidth: 1, borderColor: light.border, borderRadius: radii.small });
+  expect(StyleSheet.flatten(input.props.style)).toMatchObject({ backgroundColor: light.surface, borderWidth: 1, borderColor: light.transparent, borderRadius: radii.small, ...jest.requireActual<typeof import('../../theme/depth')>('../../theme/depth').depth.well });
 });

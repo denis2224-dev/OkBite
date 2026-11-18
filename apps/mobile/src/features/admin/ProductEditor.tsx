@@ -5,6 +5,7 @@ import { Body, Button } from '../../ui';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { radii } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
 
 export function ProductEditor({
   initial,
@@ -14,6 +15,7 @@ export function ProductEditor({
   onSave: (value: ProductInput) => Promise<void>;
 }) {
   const { colors } = useTheme();
+  const [focused, setFocused] = useState<string | null>(null);
   const [draft, setDraft] = useState(initial);
   const [code, setCode] = useState(initial.code ?? '');
   const [values, setValues] = useState(
@@ -32,11 +34,14 @@ export function ProductEditor({
         onChangeText={change}
         keyboardType={numeric ? 'decimal-pad' : 'default'}
         editable={!busy}
+        onFocus={() => setFocused(label)}
+        onBlur={() => setFocused(f => (f === label ? null : f))}
         style={{
           minHeight: 48,
           padding: 12,
           borderWidth: 1,
-          borderColor: colors.border,
+          borderColor: focused === label ? colors.focus : colors.transparent,
+          ...depth.well,
           backgroundColor: colors.surface,
           borderRadius: radii.small,
           color: colors.ink,

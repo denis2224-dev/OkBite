@@ -59,9 +59,11 @@ it('makes the moderator name a brand left blank by the shopper before verifying'
   await fireEvent.press(screen.getByText('Verifică și salvează'));
   await waitFor(() => expect(save).toHaveBeenCalledWith({ ...initial, brand: 'Zorel' }));
 });
-it('draws editor inputs with a surface fill, 1 px border and small radius', async () => {
+it('draws editor inputs as a well with a small radius', async () => {
   const { StyleSheet } = jest.requireActual<typeof import('react-native')>('react-native');
   const { light, radii } = jest.requireActual<typeof import('../../theme/tokens')>('../../theme/tokens');
   await render(<ProductEditor initial={initial} onSave={jest.fn()} />);
-  expect(StyleSheet.flatten(screen.getByLabelText(ro.review.name).props.style)).toMatchObject({ backgroundColor: light.surface, borderWidth: 1, borderColor: light.border, borderRadius: radii.small });
+  expect(StyleSheet.flatten(screen.getByLabelText(ro.review.name).props.style)).toMatchObject({ backgroundColor: light.surface, borderWidth: 1, borderColor: light.transparent, borderRadius: radii.small, ...jest.requireActual<typeof import('../../theme/depth')>('../../theme/depth').depth.well });
+  await fireEvent(screen.getByLabelText(ro.review.name), 'focus');
+  expect(StyleSheet.flatten(screen.getByLabelText(ro.review.name).props.style).borderColor).toBe(light.focus);
 });

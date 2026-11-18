@@ -5,6 +5,7 @@ import type { Category } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { radii, type Palette } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
 
 export interface CategoryPickerProps {
   categories: readonly Category[];
@@ -66,10 +67,11 @@ const createStyles = (colors: Palette) => StyleSheet.create({
     paddingVertical: 10,
     borderRadius: radii.pill,
     borderWidth: 0,
-    backgroundColor: colors.sageSoft,
+    backgroundColor: colors.surface,
+    ...depth.raisedSmall,
     justifyContent: 'center',
   },
-  chipSelected: { backgroundColor: colors.primary },
+  chipSelected: depth.forest,
   chipDisabled: { opacity: 0.55 },
   chipText: { flexShrink: 1, fontSize: 14, fontWeight: '600', color: colors.primary },
   chipTextSelected: { color: colors.onPrimary },
