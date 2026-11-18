@@ -20,4 +20,7 @@ describe('soft depth', () => {
     expect(depth.forest.experimental_backgroundImage).toContain(light.primaryLight);
     expect(depth.forestPressed.boxShadow.startsWith('inset')).toBe(true);
   });
+  it.each(['raisedOnDark', 'forestOnDark', 'sageTileOnDark'] as const)('%s has no white lift, so it does not halo on the dark camera view', key => {
+    for (const layer of layers(depth[key].boxShadow)) expect(layer.startsWith('inset') || !/255,255,255/.test(layer)).toBe(true);
+  });
 });

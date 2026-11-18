@@ -25,3 +25,8 @@ it('reports a disabled state and ignores presses', async () => {
   await fireEvent.press(button);
   expect(onPress).not.toHaveBeenCalled();
 });
+
+it('drops the white lift on the dark camera view', async () => {
+  await render(<IconButton icon="close" label="Închide" onDark onPress={() => {}} />);
+  expect(StyleSheet.flatten(screen.getByTestId('icon-button-face').props.style)).toMatchObject(depth.sageTileOnDark);
+});
