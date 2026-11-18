@@ -36,7 +36,7 @@ export function ProductPicker({ entries, selected, category, excluded, slot, onS
         {selected.product.mayContain.map(name => <AllergenChip key={name} name={name} tone="trace" />)}</View></>}
       <Body>{ro.result.missingAllergenNote}</Body><SourceCard product={selected.product} />
     </>}
-    {open && (!options.length ? <Body>{ro.history.empty}</Body> : options.map(entry => <Button key={entry.product.id} variant="ghost"
+    {open && (!options.length ? <Body>{ro.history.design.emptyTitle}</Body> : options.map(entry => <Button key={entry.product.id} variant="ghost"
       onPress={() => { onSelect(entry); setOpen(false); }}>{`${entry.product.name} · ${entry.product.brand}`}</Button>))}
   </Card>;
 }
