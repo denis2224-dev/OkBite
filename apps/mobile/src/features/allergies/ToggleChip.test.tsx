@@ -1,24 +1,26 @@
 import { render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { depth } from '../../theme/depth';
-import { light } from '../../theme/tokens';
+import { fonts, light } from '../../theme/tokens';
 import { ToggleChip } from './ToggleChip';
 
 const chipStyle = (name: string) => StyleSheet.flatten(screen.getByRole('checkbox', { name }).props.style);
 
-it('draws an unselected chip as a raised ivory pill with a forest label', async () => {
+it('draws an unselected chip as a roomy raised cream pill with a forest medium label', async () => {
   await render(<ToggleChip text="Lapte" selected={false} disabled={false} onPress={jest.fn()} />);
-  expect(chipStyle('Lapte')).toMatchObject({ backgroundColor: light.surface, boxShadow: depth.raisedSmall.boxShadow, borderWidth: 0 });
-  expect(screen.getByText('Lapte')).toHaveStyle({ color: light.primary });
+  expect(chipStyle('Lapte')).toMatchObject({ backgroundColor: light.cream, boxShadow: depth.raisedSmall.boxShadow, borderWidth: 0,
+    minHeight: 48, paddingVertical: 12, paddingHorizontal: 24 });
+  expect(screen.getByText('Lapte')).toHaveStyle({ color: light.primary, fontFamily: fonts.medium });
   expect(screen.getByRole('checkbox', { name: 'Lapte' }).props.accessibilityState.selected).toBe(false);
   expect(screen.getByRole('checkbox', { name: 'Lapte' }).children).toHaveLength(1);
 });
 
-it('draws a selected chip pressed in on sage, with a forest label, a check icon and the selected state', async () => {
+it('draws a selected chip pressed in on cream (no sage, no forest fill), with a forest label, a check icon and the selected state', async () => {
   await render(<ToggleChip text="Soia" selected disabled={false} onPress={jest.fn()} />);
   const chip = screen.getByRole('checkbox', { name: 'Soia' });
   expect(chipStyle('Soia')).toMatchObject({ backgroundColor: depth.pressed.backgroundColor, boxShadow: depth.pressed.boxShadow, borderWidth: 0 });
-  expect(screen.getByText('Soia')).toHaveStyle({ color: light.primary });
+  expect(chipStyle('Soia').backgroundColor).toBe(light.cream);
+  expect(screen.getByText('Soia')).toHaveStyle({ color: light.primary, fontFamily: fonts.medium });
   expect(chip.props.accessibilityState.selected).toBe(true);
   expect(chip.children).toHaveLength(2);
 });
