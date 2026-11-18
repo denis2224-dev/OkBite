@@ -22,6 +22,6 @@ export function CompareCell({ value, unit, better, testID }: { value: number | n
 const createStyles = (t: HomeTheme) => StyleSheet.create({
   cell: { flex: 1, minWidth: 0, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 6, paddingHorizontal: 4, borderRadius: 10, overflow: 'hidden' },
   value: { flexShrink: 1, textAlign: 'center', fontFamily: t.fonts.semibold, fontSize: 15, lineHeight: 21.75, color: t.colors.ink },
-  favorable: depth.pressed,
+  favorable: { ...depth.pressed, backgroundColor: t.colors.goodBg },
   favorableText: { color: t.colors.favorable, fontFamily: t.fonts.extra },
 });

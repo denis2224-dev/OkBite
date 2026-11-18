@@ -137,6 +137,12 @@ describe('Moss depth', () => {
     const { tier } = productScoreFor(entry.product, entry.score);
     expect(StyleSheet.flatten(tiles[0]!.props.style)).toEqual(expect.objectContaining({ backgroundColor: tierTone(tier!).fg, boxShadow: depth.raisedSmall.boxShadow }));
   });
+  it('shows "fără scor" on a cream chip, not sage', async () => {
+    jest.mocked(listHistory).mockResolvedValue([{ ...entry, score: { ...entry.score, score: null, grade: 'unavailable' } }]);
+    await render(<HistoryScreen/>);
+    const chip = (await screen.findByText(ro.history.noScore)).parent!;
+    expect(StyleSheet.flatten(chip.props.style).backgroundColor).toBe(light.cream);
+  });
   it('shows the empty state on a sage tile with a forest primary button', async () => {
     jest.mocked(listHistory).mockResolvedValue([]);
     await render(<HistoryScreen/>);

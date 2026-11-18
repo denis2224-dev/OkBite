@@ -56,7 +56,7 @@ export function ShelfPicks() {
     </View>
     <Animated.View style={[styles.list, { opacity: rise, transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}>
       {status === 'loading' ? <View accessible accessibilityRole="progressbar" accessibilityLabel={ro.app.loading} style={styles.list}>
-        {[0, 1, 2].map(row => <View key={row} style={[styles.placeholder, { backgroundColor: colors.sageSoft }]} />)}
+        {[0, 1, 2].map(row => <View key={row} style={[styles.placeholder, { backgroundColor: colors.cream }]} />)}
       </View>
         : status === 'error' ? <View style={styles.message}>
           <Text accessibilityRole="alert" style={[styles.body, { color: colors.ink }]}>{ro.scan.shelf.error}</Text>

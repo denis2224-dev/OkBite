@@ -184,6 +184,6 @@ const createStyles=(t:HomeTheme)=>StyleSheet.create({
  searchFocused:{outlineWidth:2,outlineColor:t.colors.focus,outlineStyle:'solid',outlineOffset:2},
  searchInput:{flex:1,minWidth:0,minHeight:46,paddingVertical:10,color:t.colors.ink,fontFamily:t.fonts.body,fontSize:16,outlineWidth:0},
  list:{paddingVertical:2,paddingHorizontal:14,gap:0},row:{minHeight:64,paddingVertical:10,gap:14,flexDirection:'row',alignItems:'center'},
- noScore:{minWidth:56,paddingVertical:7,paddingHorizontal:8,borderRadius:radii.small,backgroundColor:t.colors.sageSoft,alignItems:'center'},noScoreText:{fontFamily:t.fonts.bold,fontSize:12,lineHeight:16,color:t.colors.muted},product:{flex:1,minWidth:0},
+ noScore:{minWidth:56,paddingVertical:7,paddingHorizontal:8,borderRadius:radii.small,backgroundColor:t.colors.cream,alignItems:'center'},noScoreText:{fontFamily:t.fonts.bold,fontSize:12,lineHeight:16,color:t.colors.muted},product:{flex:1,minWidth:0},
  name:{fontFamily:t.fonts.bold,fontSize:15,lineHeight:21.75,color:t.colors.ink},meta:{fontFamily:t.fonts.body,fontSize:13,lineHeight:18.85,color:t.colors.muted},
 });

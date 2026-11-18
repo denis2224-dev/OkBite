@@ -22,8 +22,8 @@ export function ProductPicker({ entries, selected, category, excluded, slot, onS
     {slot && <Body style={{ fontFamily: fonts.bold }}>{slot}</Body>}
     <Pressable accessibilityRole="button" accessibilityLabel={selected?.product.name ?? (slot ? `${slot}: ${ro.compare.choose}` : ro.compare.choose)}
       accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)}
-      style={{ minHeight: 52, paddingVertical: 12, paddingHorizontal: 20, borderRadius: radii.pill, justifyContent: 'center', ...(open ? depth.pressed : { backgroundColor: colors.surface, ...depth.raisedSmall }) }}>
-      <Body>{selected?.product.name ?? ro.compare.choose}</Body>
+      style={{ minHeight: 52, paddingVertical: 12, paddingHorizontal: 20, borderRadius: radii.pill, justifyContent: 'center', ...(open ? depth.pressed : { backgroundColor: colors.cream, ...depth.raisedSmall }) }}>
+      <Body style={{ color: colors.primary, fontFamily: fonts.medium }}>{selected?.product.name ?? ro.compare.choose}</Body>
     </Pressable>
     {selected && <Body>{selected.product.brand} · {selected.product.quantity}</Body>}
     {selected?.product.status === 'unverified' && <Badge tone="unverified">{ro.result.unverified}</Badge>}

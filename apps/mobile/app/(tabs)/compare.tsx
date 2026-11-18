@@ -141,7 +141,7 @@ const createStyles = (t: ComparisonTheme) => StyleSheet.create({
   productName: { fontFamily: t.fonts.extra, fontSize: 16, lineHeight: 21, color: t.colors.ink }, score: { marginTop: 12, alignSelf: 'flex-start' },
   // Stacked full width so each pill keeps one line at normal size and stays a pill at 200% text.
   actions: { gap: 8, marginTop: 10 },
-  secondary: { minHeight: 44, paddingVertical: 10, paddingHorizontal: 10, borderRadius: radii.pill, gap: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.surface, ...depth.raisedSmall },
+  secondary: { minHeight: 44, paddingVertical: 10, paddingHorizontal: 10, borderRadius: radii.pill, gap: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.cream, ...depth.raisedSmall },
   secondaryText: { flexShrink: 1, fontFamily: t.fonts.bold, fontSize: 14, lineHeight: 20.3, color: t.colors.primary, textAlign: 'center' },
   table: { gap: 0, marginTop: 12, paddingTop: 8, paddingHorizontal: 14, paddingBottom: 12 },
   tableHeader: { flexDirection: 'row', gap: 6, alignItems: 'center', paddingVertical: 8 },
@@ -150,7 +150,7 @@ const createStyles = (t: ComparisonTheme) => StyleSheet.create({
   nutrientName: { fontFamily: t.fonts.bold, fontSize: 14, lineHeight: 20.3, color: t.colors.ink },
   difference: { fontFamily: t.fonts.body, fontSize: 12, lineHeight: 17.4, color: t.colors.muted },
   value: { flex: 1, padding: 8, borderRadius: radii.small },
-  favorable: depth.pressed, favorableText: { color: t.colors.favorable, fontFamily: t.fonts.bold },
+  favorable: { ...depth.pressed, backgroundColor: t.colors.goodBg }, favorableText: { color: t.colors.favorable, fontFamily: t.fonts.bold },
   legend: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }, swatch: { width: 18, height: 14, borderRadius: 4, backgroundColor: t.colors.favorableBg },
   legendText: { flex: 1, fontFamily: t.fonts.body, fontSize: 12, lineHeight: 17.4, color: t.colors.muted },
   allergens: { gap: 0, marginTop: 12, backgroundColor: t.colors.warningBg, borderWidth: 1, borderColor: t.colors.warningBorder },
