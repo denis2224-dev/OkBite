@@ -1,9 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { ro } from '../apps/mobile/src/copy/ro';
 import { light } from '../apps/mobile/src/theme/tokens';
-
-/** The page colour as the browser reports it, so the test follows the theme token. */
-const groundRgb = `rgb(${[1, 3, 5].map((i) => parseInt(light.ground.slice(i, i + 2), 16)).join(', ')})`;
+// The startup screen is drawn on the page ground; compare in the rgb() form CSS reports.
+const rgb = (hex: string) => `rgb(${[1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)).join(', ')})`;
 const sizes = [
   {name:'small-phone', width:360, height:640},
   {name:'phone-landscape', width:844, height:390},
@@ -37,7 +36,7 @@ for (const mode of ['light'] as const) for (const size of sizes) {
       expect(bounds.width).toBeCloseTo(size.width, 0);
       expect(bounds.height).toBeCloseTo(size.height, 0);
     }
-    await expect(screen).toHaveCSS('background-color', groundRgb);
+    await expect(screen).toHaveCSS('background-color', rgb(light.ground));
     await page.screenshot({path:test.info().outputPath(`${mode}-${size.name}.png`)});
     await page.evaluate(() => (window as unknown as {__okbiteReleaseStartup: () => void}).__okbiteReleaseStartup());
     await expect(screen).toHaveCount(0);
