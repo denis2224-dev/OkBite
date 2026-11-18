@@ -9,7 +9,7 @@ export const depth = {
   /** Chips, secondary buttons, small tiles. */
   raisedSmall: { boxShadow: `4px 4px 9px ${shade}, -4px -4px 9px ${lift}` },
   /** A selected chip, the current tab or a pressed secondary button: cream, pushed in. */
-  pressed: { backgroundColor: light.cream, boxShadow: 'inset 3px 3px 6px rgba(166,150,120,0.40), inset -3px -3px 6px rgba(255,255,255,0.8)' },
+  pressed: { backgroundColor: light.cream, boxShadow: 'inset 3px 3px 6px rgba(166,160,142,0.35), inset -3px -3px 6px rgba(255,255,255,0.9)' },
   /** Wells: the camera frame, switch tracks, inputs. */
   well: { boxShadow: `inset 2px 2px 5px ${shade}, inset -2px -2px 5px ${lift}` },
   /** The forest primary surface: buttons, the score tag, the scan button. */

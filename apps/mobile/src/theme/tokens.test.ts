@@ -30,7 +30,7 @@ describe('Moss palette (Forest, Sage, Ivory, Ink, soft depth)', () => {
     for (const key of ['hero', 'favorable', 'themeSelected', 'good', 'focus'] as const) expect(colors[key]).toBe(colors.primary);
   });
   it('puts every fill behind text on cream, not sage', () => {
-    expect(colors.cream).toBe('#EFE9DB');
+    expect(colors.cream).toBe('#F7F6F1');
     for (const key of ['soft', 'mint', 'neutralBg', 'themeButton'] as const) expect(colors[key]).toBe(colors.cream);
   });
   it('draws cards in nearly the page ivory, so the soft shadows (not a colour jump) lift them', () => {
