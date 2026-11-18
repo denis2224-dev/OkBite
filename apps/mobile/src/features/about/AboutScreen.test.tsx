@@ -5,6 +5,7 @@ import { AboutScreen } from './AboutScreen';
 import { ro } from '../../copy/ro';
 import { light } from '../../theme/tokens';
 import { tierTone } from '../../theme/tierTones';
+import { depth } from '../../theme/depth';
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), back: jest.fn(), canGoBack: () => true } }));
 it('has exactly three blocks, the disclaimer once and no duplicate sources heading', async () => {
   await render(<AboutScreen />);
@@ -36,11 +37,10 @@ it('goes back to Profile from the header back button', async () => {
   await fireEvent.press(screen.getByRole('button', { name: ro.app.back }));
   expect(router.back).toHaveBeenCalledTimes(1);
 });
-it('keeps the forest feature card flat and draws each tier swatch in its tier tone', async () => {
+it('draws the feature card as the forest depth surface and each tier swatch in its tier tone', async () => {
   await render(<AboutScreen />);
-  const feature = StyleSheet.flatten(screen.getByTestId('about-feature').props.style);
-  expect(feature).toMatchObject({ backgroundColor: light.hero, borderColor: light.hero });
-  for (const key of ['shadowOpacity', 'elevation', 'boxShadow', 'experimental_backgroundImage']) expect(feature[key as keyof typeof feature]).toBeUndefined();
+  expect(StyleSheet.flatten(screen.getByTestId('about-feature').props.style)).toMatchObject({ ...depth.forest, borderWidth: 0 });
+  expect(light.hero).toBe(depth.forest.backgroundColor);
   for (const tier of ['excellent', 'good', 'fair', 'poor', 'bad'] as const) {
     expect(StyleSheet.flatten(screen.getByTestId(`tier-swatch-${tier}`).props.style)).toMatchObject({ backgroundColor: tierTone(tier).fg });
   }

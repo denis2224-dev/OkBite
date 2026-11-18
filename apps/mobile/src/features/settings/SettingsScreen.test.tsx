@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { light, radii } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
 import { router } from 'expo-router';
 import { SettingsScreen } from './SettingsScreen';
 import { ThemeProvider } from '../../theme/useTheme';
@@ -97,18 +98,19 @@ it('goes back to Profile from the header back button', async () => {
   await fireEvent.press(screen.getByRole('button', { name: ro.app.back }));
   expect(router.back).toHaveBeenCalledTimes(1);
 });
-it('draws the language choice as a segmented pill: forest fill and white label when selected', async () => {
+it('draws the language choice as a raised ivory track with the selected option on the forest surface', async () => {
   await render(<SettingsScreen currentLanguage="en" setLanguage={jest.fn()} />);
-  expect(StyleSheet.flatten(screen.getByTestId('language-segments').props.style)).toMatchObject({ borderRadius: radii.hero, backgroundColor: light.sageSoft });
+  expect(StyleSheet.flatten(screen.getByTestId('language-segments').props.style)).toMatchObject({ borderRadius: radii.hero, backgroundColor: light.surface, ...depth.raised });
   const style = (name: string) => StyleSheet.flatten(screen.getByRole('button', { name }).props.style);
-  expect(style(ro.settings.english)).toMatchObject({ backgroundColor: light.primary, borderRadius: radii.pill });
+  expect(style(ro.settings.english)).toMatchObject({ ...depth.forest, borderRadius: radii.pill });
   expect(screen.getByText(ro.settings.english)).toHaveStyle({ color: light.onPrimary });
-  expect(style(ro.settings.russian).backgroundColor).toBe(light.transparent);
+  expect(style(ro.settings.russian)).toMatchObject({ backgroundColor: light.transparent });
+  expect(style(ro.settings.russian).boxShadow).toBeUndefined();
   expect(screen.getByText(ro.settings.russian)).toHaveStyle({ color: light.primary });
 });
-it('groups the rows in flat cards and draws clear history in the terracotta tone', async () => {
+it('groups the rows in raised cards and draws clear history in the terracotta tone', async () => {
   await render(<SettingsScreen />);
   expect(screen.getByText(ro.settings.clearHistory)).toHaveStyle({ color: light.low });
-  expect(StyleSheet.flatten(screen.getByTestId('clear-history-icon').props.style)).toMatchObject({ backgroundColor: light.lowBg });
+  expect(StyleSheet.flatten(screen.getByTestId('clear-history-icon').props.style)).toMatchObject({ backgroundColor: light.lowBg, ...depth.raisedSmall });
   expect(screen.getAllByTestId('link-row-icon').length).toBeGreaterThanOrEqual(4);
 });

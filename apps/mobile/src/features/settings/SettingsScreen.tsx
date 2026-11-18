@@ -10,6 +10,7 @@ import { HomePressable } from '../../shared/HomeChrome';
 import { TabPageHeader } from '../../shared/TabPageHeader';
 import { goBack } from '../../shared/EdgeSwipeBack';
 import { fonts, radii } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
 import { Body, Button, Caption, Card, Icon, LinkRow, Screen, Section } from '../../ui';
 import { useInstallPrompt } from '../../lib/installPrompt';
 import { clearHistory } from '../history/store';
@@ -69,10 +70,10 @@ export function SettingsScreen({ currentLanguage = 'ro', setLanguage, resetOnboa
       {alert ? <Body accessibilityRole="alert" style={{ color: colors.low }}>{alert}</Body> : null}
       <Card>
         <Section>{ro.settings.language}</Section>
-        <View testID="language-segments" style={[styles.segments, { backgroundColor: colors.sageSoft, opacity: setLanguage ? 1 : 0.55 }]}>
+        <View testID="language-segments" style={[styles.segments, { backgroundColor: colors.surface, opacity: setLanguage ? 1 : 0.55 }, depth.raised]}>
           {languages.map(language => {
             const selected = currentLanguage === language;
-            return <HomePressable key={language} label={languageNames[language]} disabled={!setLanguage} aria-pressed={selected} accessibilityState={{ disabled: !setLanguage, selected }} onPress={() => chooseLanguage(language)} style={[styles.segment, { backgroundColor: selected ? colors.primary : colors.transparent }]}><Body style={[styles.segmentLabel, { color: selected ? colors.onPrimary : colors.primary }]}>{languageNames[language]}</Body></HomePressable>;
+            return <HomePressable key={language} label={languageNames[language]} disabled={!setLanguage} aria-pressed={selected} accessibilityState={{ disabled: !setLanguage, selected }} onPress={() => chooseLanguage(language)} style={[styles.segment, selected ? depth.forest : { backgroundColor: colors.transparent }]}><Body style={[styles.segmentLabel, { color: selected ? colors.onPrimary : colors.primary }]}>{languageNames[language]}</Body></HomePressable>;
           })}
         </View>
         {(!setLanguage || languageError) && <Caption accessibilityLiveRegion="polite">{ro.settings.pending}</Caption>}
@@ -84,8 +85,8 @@ export function SettingsScreen({ currentLanguage = 'ro', setLanguage, resetOnboa
           {installMessage ? <Body accessibilityLiveRegion="polite">{installMessage}</Body> : null}
           {resetOnboarding ? <LinkRow label={ro.settings.resetOnboarding} icon="history" onPress={resetOnboarding} /> : null}
           <HomePressable label={ro.settings.clearHistory} onPress={() => { setMessage(''); setConfirming(true); }} style={styles.row}>
-            <View testID="clear-history-icon" style={[styles.rowIcon, { backgroundColor: colors.lowBg }]}><Icon name="trash" size={20} color={colors.low} /></View>
-            <Body style={[styles.label, { fontFamily: fonts.medium, color: colors.low }]}>{ro.settings.clearHistory}</Body>
+            <View testID="clear-history-icon" style={[styles.rowIcon, { backgroundColor: colors.lowBg }, depth.raisedSmall]}><Icon name="trash" size={20} color={colors.low} /></View>
+            <Body style={[styles.label, { fontFamily: fonts.heading, fontSize: 21, lineHeight: 27, color: colors.low }]}>{ro.settings.clearHistory}</Body>
           </HomePressable>
           {message ? <Body accessibilityLiveRegion="polite">{message}</Body> : null}
         </View>
@@ -118,8 +119,8 @@ const styles = StyleSheet.create({
   segment: { flexGrow: 1, minHeight: 44, paddingHorizontal: 14, paddingVertical: 10, borderRadius: radii.pill, justifyContent: 'center' },
   segmentLabel: { textAlign: 'center' },
   group: { gap: 4 },
-  row: { minHeight: 56, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  rowIcon: { width: 40, height: 40, borderRadius: radii.small, alignItems: 'center', justifyContent: 'center' },
+  row: { minHeight: 64, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  rowIcon: { width: 44, height: 44, borderRadius: radii.small, alignItems: 'center', justifyContent: 'center' },
   label: { flex: 1, minWidth: 0 },
   confirmation: { flexGrow: 1, justifyContent: 'center', padding: 16, width: '100%', maxWidth: 480, alignSelf: 'center' },
 });

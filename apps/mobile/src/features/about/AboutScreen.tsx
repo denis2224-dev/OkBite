@@ -8,6 +8,7 @@ import { LinkRow } from '../../ui/LinkRow';
 import { TabPageHeader } from '../../shared/TabPageHeader';
 import { goBack } from '../../shared/EdgeSwipeBack';
 import { tierTone } from '../../theme/tierTones';
+import { depth } from '../../theme/depth';
 import { AdminEntry } from '../admin/AdminEntry';
 
 const tiers = ['excellent', 'good', 'fair', 'poor', 'bad'] as const;
@@ -22,7 +23,7 @@ export function AboutScreen({ children }: AboutScreenProps = {}) {
   }
   return <Screen>
     <View style={styles.header}><TabPageHeader title={ro.about.title} onBack={goBack} /></View>
-    <Card testID="about-feature" style={{ backgroundColor: colors.hero, borderColor: colors.hero }}><Section style={{ color: colors.heroText }}>{ro.about.whatTitle}</Section><Body style={{ color: colors.heroText }}>{ro.about.whatBody}</Body></Card>
+    <Card testID="about-feature" style={[depth.forest, { borderWidth: 0 }]}><Section style={{ color: colors.heroText }}>{ro.about.whatTitle}</Section><Body style={{ color: colors.heroText }}>{ro.about.whatBody}</Body></Card>
     <Card>
       <Section>{ro.about.scoreTitle}</Section>
       <View style={styles.tiers}>
