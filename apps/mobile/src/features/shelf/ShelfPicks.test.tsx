@@ -130,22 +130,22 @@ describe('motion', () => {
   });
 });
 
-describe('Moss styling', () => {
+describe('Moss depth', () => {
   const { light } = jest.requireActual<typeof import('../../theme/tokens')>('../../theme/tokens');
+  const { depth } = jest.requireActual<typeof import('../../theme/depth')>('../../theme/depth');
   const { StyleSheet } = jest.requireActual<typeof import('react-native')>('react-native');
-  it('draws rows on surface with a border, the best pick on highlightBg with a forest border, no shadow', async () => {
+  it('raises every row; the best pick sits on highlightBg with a forest border', async () => {
     await render(<ShelfPicks />);
     const best = StyleSheet.flatten((await screen.findByRole('button', { name: rowLabel(yogurts[0]!) })).props.style);
-    expect(best).toEqual(expect.objectContaining({ backgroundColor: light.highlightBg, borderColor: light.primary, borderWidth: 1 }));
+    expect(best).toEqual(expect.objectContaining({ backgroundColor: light.highlightBg, borderColor: light.primary, borderWidth: 1, boxShadow: depth.raised.boxShadow }));
     const other = StyleSheet.flatten(screen.getByRole('button', { name: rowLabel(yogurts[1]!) }).props.style);
-    expect(other).toEqual(expect.objectContaining({ backgroundColor: light.surface, borderColor: light.border, borderWidth: 1 }));
-    expect(other.shadowOpacity).toBeUndefined();
+    expect(other).toEqual(expect.objectContaining({ backgroundColor: light.surface, borderWidth: 0, boxShadow: depth.raised.boxShadow }));
   });
-  it('offers retry as a secondary sageSoft pill with a full touch target', async () => {
+  it('offers retry as the shared raised secondary button with a full touch target', async () => {
     jest.mocked(api.topProducts).mockRejectedValue(new Error('offline'));
     await render(<ShelfPicks />);
     const retry = StyleSheet.flatten((await screen.findByRole('button', { name: ro.errors.retry })).props.style);
-    expect(retry.backgroundColor).toBe(light.sageSoft);
+    expect(retry).toEqual(expect.objectContaining({ backgroundColor: light.surface, boxShadow: depth.raisedSmall.boxShadow }));
     expect(retry.minHeight).toBeGreaterThanOrEqual(44);
   });
 });

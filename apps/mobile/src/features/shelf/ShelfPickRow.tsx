@@ -3,7 +3,8 @@ import { router } from 'expo-router';
 import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
-import { fonts } from '../../theme/tokens';
+import { fonts, radii } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
 import { tierTone } from '../../theme/tierTones';
 import { ScoreTagSmall } from './ScoreTagSmall';
 import type { ShelfPick } from './topProducts';
@@ -17,7 +18,7 @@ export function ShelfPickRow({ pick, best }: { pick: ShelfPick; best: boolean })
   const label = [best ? ro.scan.shelf.best : null, [product.name, product.brand].filter(Boolean).join(', '), `${ro.history.score(score)} · ${ro.tiers[tier]}`].filter(Boolean).join('. ');
   return <Pressable accessibilityRole="button" accessibilityLabel={label}
     onPress={() => router.push({ pathname: '/product/[id]', params: { id: product.id } })}
-    style={[styles.row, { borderColor: best ? colors.primary : colors.border, backgroundColor: best ? colors.highlightBg : colors.surface }]}>
+    style={[styles.row, best ? { borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.highlightBg } : { borderWidth: 0, backgroundColor: colors.surface }]}>
     <ScoreTagSmall score={score} tier={tier} />
     <View style={styles.text}>
       {best ? <Text style={[styles.pill, { backgroundColor: colors.primary, color: colors.onPrimary }]}>{ro.scan.shelf.best}</Text> : null}
@@ -29,7 +30,7 @@ export function ShelfPickRow({ pick, best }: { pick: ShelfPick; best: boolean })
 }
 
 const styles = StyleSheet.create({
-  row: { minHeight: 64, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 12, padding: 12, borderWidth: 1, borderRadius: 16 },
+  row: { minHeight: 64, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 12, padding: 12, borderRadius: radii.card, ...depth.raised },
   text: { flex: 1, minWidth: 120, gap: 2 },
   pill: { alignSelf: 'flex-start', overflow: 'hidden', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, marginBottom: 2, fontFamily: fonts.bold, fontSize: 12, lineHeight: 17 },
   name: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 22 },

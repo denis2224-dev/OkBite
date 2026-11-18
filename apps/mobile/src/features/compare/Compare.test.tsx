@@ -215,31 +215,32 @@ test('photographing another product is a quiet text button, not a filled one', a
   expect(StyleSheet.flatten(photo.props.style).borderWidth).toBe(0);
 });
 
-describe('Moss styling', () => {
+describe('Moss depth', () => {
   const { light, radii } = jest.requireActual<typeof import('../../theme/tokens')>('../../theme/tokens');
+  const { depth } = jest.requireActual<typeof import('../../theme/depth')>('../../theme/depth');
   const flat = (node: ReturnType<typeof screen.getByTestId>) => StyleSheet.flatten(node.props.style as never) as Record<string, unknown>;
-  test('product slots are flat surface cards with a border and the winner outlined in forest', async () => {
+  test('product slots are raised cards, the winner outlined in forest, the better value on a pressed sage chip', async () => {
     await render(<Compare />);
     await choose(0); await choose(1);
     for (const card of screen.getAllByTestId('compare-card')) {
-      expect(flat(card)).toEqual(expect.objectContaining({ backgroundColor: light.surface, borderWidth: 1, borderColor: light.border, borderRadius: radii.card }));
-      expect(flat(card).shadowOpacity).toBeUndefined();
+      expect(flat(card)).toEqual(expect.objectContaining({ backgroundColor: light.surface, borderRadius: radii.card, boxShadow: depth.raised.boxShadow }));
     }
     expect(flat(screen.getByTestId('compare-better-outline'))).toEqual(expect.objectContaining({ borderColor: light.primary, borderRadius: radii.card }));
-    expect(flat(screen.getByTestId('compare-cell-sugar-a'))).toEqual(expect.objectContaining({ backgroundColor: light.favorableBg }));
+    expect(flat(screen.getByTestId('compare-cell-sugar-a'))).toEqual(expect.objectContaining(depth.pressed));
+    expect(flat(screen.getByTestId('compare-cell-sugar-b')).boxShadow).toBeUndefined();
   });
-  test('the swap and category buttons are flat sageSoft pills', async () => {
+  test('the swap and category buttons are raised ivory pills', async () => {
     await render(<Compare />);
     await choose(0); await choose(1);
     for (const name of [design.swap, design.category]) {
-      const style = flat(screen.getByRole('button', { name }));
-      expect(style).toEqual(expect.objectContaining({ backgroundColor: light.sageSoft, borderRadius: radii.pill }));
-      expect(style.shadowOpacity).toBeUndefined();
+      expect(flat(screen.getByRole('button', { name }))).toEqual(expect.objectContaining({ backgroundColor: light.surface, borderRadius: radii.pill, boxShadow: depth.raisedSmall.boxShadow }));
     }
   });
-  test('the pick buttons in the empty slots are sageSoft pills', async () => {
+  test('the pick buttons are raised pills that press in while their list is open', async () => {
     await render(<Compare />);
-    const pick = screen.getByRole('button', { name: `${design.productA}: ${ro.compare.choose}` });
-    expect(flat(pick)).toEqual(expect.objectContaining({ backgroundColor: light.sageSoft, borderRadius: radii.pill }));
+    const pick = () => screen.getByRole('button', { name: `${design.productA}: ${ro.compare.choose}` });
+    expect(flat(pick())).toEqual(expect.objectContaining({ borderRadius: radii.pill, boxShadow: depth.raisedSmall.boxShadow }));
+    await fireEvent.press(pick());
+    expect(flat(pick())).toEqual(expect.objectContaining(depth.pressed));
   });
 });

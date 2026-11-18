@@ -109,34 +109,39 @@ it('keeps clear failure visible when a queued refresh completes', async () => {
   expect(screen.getByText(ro.history.clearError)).toBeTruthy();
 });
 
-describe('Moss styling', () => {
-  const { light, radii } = jest.requireActual<typeof import('../../theme/tokens')>('../../theme/tokens');
+describe('Moss depth', () => {
+  const { light } = jest.requireActual<typeof import('../../theme/tokens')>('../../theme/tokens');
+  const { depth } = jest.requireActual<typeof import('../../theme/depth')>('../../theme/depth');
   const { StyleSheet } = jest.requireActual<typeof import('react-native')>('react-native');
-  it('draws the search as a flat surface field with a leading icon and a forest focus ring', async () => {
+  it('draws the search as an inset well with a leading icon and a forest focus ring', async () => {
     await render(<HistoryScreen/>);
     await screen.findByText(entry.product.name);
     expect(screen.getByTestId('history-search-icon', { includeHiddenElements: true })).toBeTruthy();
     const box = () => StyleSheet.flatten(screen.getByTestId('history-search').props.style);
-    expect(box()).toEqual(expect.objectContaining({ backgroundColor: light.surface, borderWidth: 1, borderColor: light.border, borderRadius: radii.small }));
-    expect(box().shadowOpacity).toBeUndefined();
+    expect(box()).toEqual(expect.objectContaining({ boxShadow: depth.well.boxShadow, borderWidth: 0 }));
     await fireEvent(screen.getByLabelText(ro.history.search), 'focus');
-    expect(box().borderColor).toBe(light.focus);
+    expect(box()).toEqual(expect.objectContaining({ outlineColor: light.focus, outlineWidth: 2 }));
     await fireEvent(screen.getByLabelText(ro.history.search), 'blur');
-    expect(box().borderColor).toBe(light.border);
+    expect(box().outlineWidth ?? 0).toBe(0);
   });
-  it('keeps rows in one flat card with dividers and muted meta', async () => {
+  it('keeps rows in one raised card with dividers, each with a raised score tile in its tier tone', async () => {
     await render(<HistoryScreen/>);
     await screen.findByText(entry.product.name);
-    const card = StyleSheet.flatten(screen.getByTestId('history-list').props.style);
-    expect(card).toEqual(expect.objectContaining({ backgroundColor: light.surface, borderWidth: 1 }));
-    expect(card.shadowOpacity).toBeUndefined();
+    expect(StyleSheet.flatten(screen.getByTestId('history-list').props.style).boxShadow).toBe(depth.raised.boxShadow);
     const rows = screen.getAllByRole('button', { name: /Deschide/ });
     expect(StyleSheet.flatten(rows[1]!.props.style)).toEqual(expect.objectContaining({ borderTopWidth: 1, borderColor: light.divider }));
+    const tiles = screen.getAllByTestId('score-tile', { includeHiddenElements: true });
+    expect(tiles).toHaveLength(2);
+    const { tierTone } = jest.requireActual<typeof import('../../theme/tierTones')>('../../theme/tierTones');
+    const { productScoreFor } = jest.requireActual<typeof import('../product/productScoreFor')>('../product/productScoreFor');
+    const { tier } = productScoreFor(entry.product, entry.score);
+    expect(StyleSheet.flatten(tiles[0]!.props.style)).toEqual(expect.objectContaining({ backgroundColor: tierTone(tier!).fg, boxShadow: depth.raisedSmall.boxShadow }));
   });
-  it('shows the empty state with a forest primary button', async () => {
+  it('shows the empty state on a sage tile with a forest primary button', async () => {
     jest.mocked(listHistory).mockResolvedValue([]);
     await render(<HistoryScreen/>);
     const scan = await screen.findByRole('button', { name: ro.history.design.scan });
     expect(StyleSheet.flatten(scan.props.style).backgroundColor).toBe(light.primary);
+    expect(StyleSheet.flatten(screen.getByTestId('history-empty-icon').props.style).boxShadow).toBe(depth.sageTile.boxShadow);
   });
 });

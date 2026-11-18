@@ -14,7 +14,7 @@ const THUMBS_UP = 'M7 10v12M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0
 
 /**
  * Card lines under the product name: the better-choice verdict and a warning for the user's own allergens.
- * Render it as a direct child of the card: the winner's 2 pt outline is drawn over the card's own border,
+ * Render it as a direct child of the card: the winner's 2 pt outline is drawn inside the card's edge,
  * so both cards keep the same size and layout.
  */
 export function CompareVerdict({ better, allergens }: { better: boolean; allergens: readonly string[] }) {
@@ -38,7 +38,7 @@ export function CompareVerdict({ better, allergens }: { better: boolean; allerge
 }
 
 const createStyles = (t: HomeTheme) => StyleSheet.create({
-  outline: { position: 'absolute', top: -1, right: -1, bottom: -1, left: -1, borderRadius: radii.card, borderWidth: 2, borderColor: t.colors.primary, pointerEvents: 'none' },
+  outline: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, borderRadius: radii.card, borderWidth: 2, borderColor: t.colors.primary, pointerEvents: 'none' },
   lines: { marginTop: 8, gap: 4 },
   line: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
   text: { flex: 1, minWidth: 0, fontFamily: t.fonts.bold, fontSize: 13, lineHeight: 18.85 },

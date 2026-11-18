@@ -6,6 +6,7 @@ import { Button } from '../../ui/Button';
 import { useTheme } from '../../theme/useTheme';
 import { fonts, typeScale } from '../../theme/tokens';
 import { homeTheme } from '../../theme/home';
+import { depth } from '../../theme/depth';
 import { shelves, type ShelfSlug } from './shelves';
 import { ShelfIcon } from './ShelfIcon';
 import { ShelfPickRow } from './ShelfPickRow';
@@ -83,13 +84,13 @@ const styles = StyleSheet.create({
   title: { fontFamily: fonts.heading, ...typeScale.title },
   // The strip runs to the sheet's edges (its 20 px side padding) so shelves scroll off-screen, not into a margin.
   strip: { marginHorizontal: -20 },
-  shelves: { paddingHorizontal: 20, gap: 12, alignItems: 'flex-start' },
+  shelves: { paddingHorizontal: 20, paddingVertical: 10, gap: 12, alignItems: 'flex-start' },
   shelf: { width: 84, alignItems: 'center', gap: 6, paddingVertical: 2 },
-  circle: { width: 64, height: 64, borderRadius: 32, borderWidth: 3, alignItems: 'center', justifyContent: 'center' },
+  circle: { width: 64, height: 64, borderRadius: 32, borderWidth: 3, alignItems: 'center', justifyContent: 'center', ...depth.raisedSmall },
   shelfName: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 17, textAlign: 'center' },
   header: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', columnGap: 8 },
   top: { fontFamily: fonts.heading, ...typeScale.section, flexShrink: 1 },
-  list: { gap: 8 },
+  list: { gap: 12 },
   placeholder: { minHeight: 64, borderRadius: 16 },
   message: { gap: 4, alignItems: 'flex-start', paddingVertical: 4 },
   body: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 21 },

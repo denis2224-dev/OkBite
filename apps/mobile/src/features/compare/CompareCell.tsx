@@ -4,6 +4,7 @@ import { ro } from '../../copy/ro';
 import { formatAmount } from '../../lib/format';
 import { useHomeTheme, type HomeTheme } from '../../theme/home';
 import { Icon } from '../../ui/Icon';
+import { depth } from '../../theme/depth';
 
 /** One nutrient value in the comparison table. The better value gets a check icon, not colour alone. */
 export function CompareCell({ value, unit, better, testID }: { value: number | null; unit: string; better: boolean; testID?: string }) {
@@ -21,6 +22,6 @@ export function CompareCell({ value, unit, better, testID }: { value: number | n
 const createStyles = (t: HomeTheme) => StyleSheet.create({
   cell: { flex: 1, minWidth: 0, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 6, paddingHorizontal: 4, borderRadius: 10, overflow: 'hidden' },
   value: { flexShrink: 1, textAlign: 'center', fontFamily: t.fonts.semibold, fontSize: 15, lineHeight: 21.75, color: t.colors.ink },
-  favorable: { backgroundColor: t.colors.favorableBg },
+  favorable: depth.pressed,
   favorableText: { color: t.colors.favorable, fontFamily: t.fonts.extra },
 });

@@ -16,6 +16,7 @@ import { formatAmount } from '../../src/lib/format';
 import { useHomeTheme } from '../../src/theme/home';
 import { type ComparisonTheme } from '../../src/theme/comparison';
 import { radii } from '../../src/theme/tokens';
+import { depth } from '../../src/theme/depth';
 import { HomeChip, HomeIcon, HomePressable } from '../../src/shared/HomeChrome';
 
 const copy = ro.compare.design;
@@ -128,7 +129,7 @@ const createStyles = (t: ComparisonTheme) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: t.colors.ground },
   frame: { flex: 1, width: '100%', maxWidth: 430, alignSelf: 'center' },
   subtitle: { fontFamily: t.fonts.body, fontSize: 13, lineHeight: 18.85, color: t.colors.muted },
-  scroll: { flex: 1 }, body: { paddingHorizontal: 16, paddingBottom: 24 },
+  scroll: { flex: 1 }, body: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 24 },
   products: { flexDirection: 'row', alignItems: 'stretch', gap: 12 }, productCard: { flex: 1, minWidth: 0, gap: 0 },
   identity: { marginTop: 10, gap: 2 },
   reasons: { marginTop: 16, gap: 16 }, reason: { gap: 4 },
@@ -140,7 +141,7 @@ const createStyles = (t: ComparisonTheme) => StyleSheet.create({
   productName: { fontFamily: t.fonts.extra, fontSize: 16, lineHeight: 21, color: t.colors.ink }, score: { marginTop: 12, alignSelf: 'flex-start' },
   // Stacked full width so each pill keeps one line at normal size and stays a pill at 200% text.
   actions: { gap: 8, marginTop: 10 },
-  secondary: { minHeight: 44, paddingVertical: 10, paddingHorizontal: 10, borderRadius: radii.pill, gap: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.sageSoft },
+  secondary: { minHeight: 44, paddingVertical: 10, paddingHorizontal: 10, borderRadius: radii.pill, gap: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.surface, ...depth.raisedSmall },
   secondaryText: { flexShrink: 1, fontFamily: t.fonts.bold, fontSize: 14, lineHeight: 20.3, color: t.colors.primary, textAlign: 'center' },
   table: { gap: 0, marginTop: 12, paddingTop: 8, paddingHorizontal: 14, paddingBottom: 12 },
   tableHeader: { flexDirection: 'row', gap: 6, alignItems: 'center', paddingVertical: 8 },
@@ -148,14 +149,14 @@ const createStyles = (t: ComparisonTheme) => StyleSheet.create({
   nutrientColumn: { flex: 1.25, minWidth: 0 }, valueColumn: { flex: 1, textAlign: 'center' },
   nutrientName: { fontFamily: t.fonts.bold, fontSize: 14, lineHeight: 20.3, color: t.colors.ink },
   difference: { fontFamily: t.fonts.body, fontSize: 12, lineHeight: 17.4, color: t.colors.muted },
-  value: { flex: 1, padding: 8, borderRadius: radii.small, borderWidth: 1, borderColor: t.colors.border },
-  favorable: { backgroundColor: t.colors.favorableBg, borderColor: t.colors.favorableBg }, favorableText: { color: t.colors.favorable, fontFamily: t.fonts.bold },
+  value: { flex: 1, padding: 8, borderRadius: radii.small },
+  favorable: depth.pressed, favorableText: { color: t.colors.favorable, fontFamily: t.fonts.bold },
   legend: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }, swatch: { width: 18, height: 14, borderRadius: 4, backgroundColor: t.colors.favorableBg },
   legendText: { flex: 1, fontFamily: t.fonts.body, fontSize: 12, lineHeight: 17.4, color: t.colors.muted },
-  allergens: { gap: 0, marginTop: 12, backgroundColor: t.colors.warningBg, borderColor: t.colors.warningBorder },
+  allergens: { gap: 0, marginTop: 12, backgroundColor: t.colors.warningBg, borderWidth: 1, borderColor: t.colors.warningBorder },
   allergenTitle: { fontFamily: t.fonts.heading, fontSize: 16, lineHeight: 23.2, letterSpacing: -0.16, color: t.colors.warning, marginBottom: 8 },
   allergenText: { fontFamily: t.fonts.body, fontSize: 14, lineHeight: 20.3, color: t.colors.warning }, allergenB: { marginTop: 4 }, bold: { fontFamily: t.fonts.bold },
   footnote: { marginTop: 12, marginHorizontal: 4, fontFamily: t.fonts.body, fontSize: 12, lineHeight: 17.4, color: t.colors.muted },
   modal: { flex: 1, backgroundColor: t.colors.scrim, justifyContent: 'flex-end', alignItems: 'center' }, dismiss: { flex: 1, width: '100%' },
-  pickerSheet: { width: '100%', maxWidth: 430, maxHeight: '85%', backgroundColor: t.colors.ground, borderTopLeftRadius: radii.card, borderTopRightRadius: radii.card }, pickerContent: { padding: 16, gap: 12 },
+  pickerSheet: { width: '100%', maxWidth: 430, maxHeight: '85%', backgroundColor: t.colors.ground, borderTopLeftRadius: radii.card, borderTopRightRadius: radii.card, ...depth.raised }, pickerContent: { padding: 16, gap: 12 },
 });
