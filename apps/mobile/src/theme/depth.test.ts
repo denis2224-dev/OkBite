@@ -12,8 +12,8 @@ describe('soft depth', () => {
   it.each(['pressed', 'well'] as const)('%s is pushed in (every layer inset)', key => {
     for (const layer of layers(depth[key].boxShadow)) expect(layer.startsWith('inset')).toBe(true);
   });
-  it('fills pressed chips with sage', () => {
-    expect(depth.pressed.backgroundColor).toBe(light.sageSoft);
+  it('fills pressed chips and the current tab with cream', () => {
+    expect(depth.pressed.backgroundColor).toBe(light.cream);
   });
   it('keeps a solid forest fallback under the forest gradient', () => {
     expect(depth.forest.backgroundColor).toBe(light.primary);

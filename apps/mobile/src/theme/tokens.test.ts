@@ -29,8 +29,9 @@ describe('Moss palette (Forest, Sage, Ivory, Ink, soft depth)', () => {
   it('keeps every Forest role on the one primary green', () => {
     for (const key of ['hero', 'favorable', 'themeSelected', 'good', 'focus'] as const) expect(colors[key]).toBe(colors.primary);
   });
-  it('keeps every soft-fill role on sage soft', () => {
-    for (const key of ['soft', 'mint', 'neutralBg', 'themeButton'] as const) expect(colors[key]).toBe(colors.sageSoft);
+  it('puts every fill behind text on cream, not sage', () => {
+    expect(colors.cream).toBe('#EFE9DB');
+    for (const key of ['soft', 'mint', 'neutralBg', 'themeButton'] as const) expect(colors[key]).toBe(colors.cream);
   });
   it('draws cards in nearly the page ivory, so the soft shadows (not a colour jump) lift them', () => {
     expect(contrast(colors.surface, colors.ground)).toBeLessThan(1.05);
@@ -44,7 +45,7 @@ describe('Moss palette (Forest, Sage, Ivory, Ink, soft depth)', () => {
     ['ink on ground', 'ink', 'ground'], ['ink on surface', 'ink', 'surface'], ['ink on sageSoft', 'ink', 'sageSoft'],
     ['muted on ground', 'muted', 'ground'], ['muted on surface', 'muted', 'surface'], ['muted on sageSoft', 'muted', 'sageSoft'],
     ['onPrimary on primary', 'onPrimary', 'primary'], ['onPrimary on primaryPressed', 'onPrimary', 'primaryPressed'], ['onPrimary on primaryLight', 'onPrimary', 'primaryLight'],
-    ['primary on sageSoft', 'primary', 'sageSoft'], ['primary on ground', 'primary', 'ground'], ['primary on goodBg', 'primary', 'goodBg'],
+    ['primary on sageSoft', 'primary', 'sageSoft'], ['primary on cream', 'primary', 'cream'], ['ink on cream', 'ink', 'cream'], ['muted on cream', 'muted', 'cream'], ['primary on ground', 'primary', 'ground'], ['primary on goodBg', 'primary', 'goodBg'],
     ['onAccent on accent', 'onAccent', 'accent'], ['heroMuted on hero', 'heroMuted', 'hero'],
     ['neutral on neutralBg', 'neutral', 'neutralBg'], ['medium on mediumBg', 'medium', 'mediumBg'], ['low on lowBg', 'low', 'lowBg'],
     ['warning on warningBg', 'warning', 'warningBg'], ['muted on highlightBg', 'muted', 'highlightBg'],
