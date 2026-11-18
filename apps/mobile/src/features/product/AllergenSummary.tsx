@@ -7,7 +7,7 @@ import { ro } from '../../copy/ro';
 import { useProfile } from '../profile';
 import { depth } from '../../theme/depth';
 
-/** A pressed sage info pill under the score answering "is this OK for me?". It says the label is clear only for a
+/** A pressed (depth.pressed) info pill under the score answering "is this OK for me?". It says the label is clear only for a
  * team-verified product, and stays quiet when ProfileAllergenAlert already warns at the top. */
 export function AllergenSummary({ product }: { product: Product }) {
   const { profile } = useProfile();

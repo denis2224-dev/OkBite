@@ -50,7 +50,7 @@ it('sits between the score tag and the reasons, and keeps one missing-allergen n
   expect(screen.getAllByText(ro.result.missingAllergenNote)).toHaveLength(1);
 });
 
-it('draws the info pill as a pressed sage pill with forest icon and text', async () => {
+it('draws the info pill as a pressed pill with forest icon and text', async () => {
   mockProfile = profile([]);
   await render(<AllergenSummary product={yogurt({ allergens: ['Lapte'] })} />);
   expect(screen.getByTestId('allergen-summary')).toHaveStyle({ ...depth.pressed, borderRadius: radii.small });
