@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { ro } from '../../copy/ro';
+import { depth } from '../../theme/depth';
 import { light } from '../../theme/tokens';
 import { AvoidSwitches } from './AvoidSwitches';
 
@@ -10,28 +11,21 @@ beforeEach(async () => {
   await render(<AvoidSwitches selected={['sweeteners']} disabled={false} onToggle={jest.fn()} />);
 });
 
-it('draws an on switch as a forest track with a white thumb', () => {
+it('draws an on switch as a raised forest track with a white thumb', () => {
   expect(screen.getByRole('switch', { name: ro.profile.sweeteners }).props.accessibilityState.checked).toBe(true);
-  expect(flat('avoid-track-sweeteners')).toMatchObject({ backgroundColor: light.primary, borderColor: light.primary });
+  expect(flat('avoid-track-sweeteners')).toMatchObject({ backgroundColor: depth.forest.backgroundColor, boxShadow: depth.forest.boxShadow });
   expect(flat('avoid-thumb-sweeteners').backgroundColor).toBe(light.onPrimary);
 });
 
-it('draws an off switch as a sage-soft track with a border and a white thumb', () => {
-  expect(flat('avoid-track-palm_oil')).toMatchObject({ backgroundColor: light.sageSoft, borderColor: light.border, borderWidth: 1 });
+it('draws an off switch as an ivory well with a white thumb', () => {
+  expect(flat('avoid-track-palm_oil')).toMatchObject({ backgroundColor: light.surface, boxShadow: depth.well.boxShadow });
   expect(flat('avoid-thumb-palm_oil').backgroundColor).toBe(light.onPrimary);
 });
 
-it('keeps tracks and thumbs flat, with at most the shared soft shadow on the thumb', () => {
-  for (const id of ['avoid-track-palm_oil', 'avoid-track-sweeteners']) {
-    expect(flat(id).shadowOpacity).toBeUndefined();
-    expect(flat(id).elevation).toBeUndefined();
-  }
-  for (const id of ['avoid-thumb-palm_oil', 'avoid-thumb-sweeteners']) {
-    expect(flat(id).shadowOpacity ?? 0.05).toBe(0.05);
-    expect(flat(id).elevation ?? 1).toBeLessThanOrEqual(1);
-  }
+it('gives the thumb a small drop shadow in both states', () => {
+  for (const id of ['avoid-thumb-palm_oil', 'avoid-thumb-sweeteners']) expect(flat(id).boxShadow).toMatch(/^\d+px \d+px \d+px rgba/);
 });
 
-it('sits in a flat card with a 1 px border', () => {
-  expect(flat('avoid-card')).toMatchObject({ backgroundColor: light.surface, borderWidth: 1, borderColor: light.border });
+it('sits in the shared raised card', () => {
+  expect(flat('avoid-card')).toMatchObject({ backgroundColor: light.surface, boxShadow: depth.raised.boxShadow });
 });

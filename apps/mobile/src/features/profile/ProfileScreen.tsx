@@ -1,6 +1,7 @@
 import type { PropsWithChildren } from 'react';
 import { View } from 'react-native';
 import type { Goal } from '@okbite/shared';
+import { TabPageHeader } from '../../shared/TabPageHeader';
 import { Screen } from '../../ui/Screen';
 import { Section } from '../../ui/Typography';
 import { Card } from '../../ui/Card';
@@ -16,7 +17,10 @@ export function ProfileScreen({ children }: PropsWithChildren) {
   const { profile, toggle, disabled, errorMessage, retry } = useProfileEditor();
 
   return (
-    <Screen title={ro.profile.title}>
+    <Screen>
+      <View style={{ marginHorizontal: -16, marginTop: -12 }}>
+        <TabPageHeader title={ro.profile.title} />
+      </View>
       <ProfileSaveError message={errorMessage} retry={retry} />
       <Card style={{ gap: 12 }}>
         <Section>{ro.profile.goalTitle}</Section>

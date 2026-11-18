@@ -1,8 +1,9 @@
 import 'fake-indexeddb/auto';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import type { Profile } from '@okbite/shared';
-import type { GestureResponderEvent } from 'react-native';
+import { StyleSheet, type GestureResponderEvent } from 'react-native';
 import { ro } from '../../copy/ro';
+import { light } from '../../theme/tokens';
 import * as pressable from '../../shared/PressableOpacity';
 import { ProfileScreen } from './ProfileScreen';
 import * as store from './store';
@@ -138,4 +139,11 @@ it('retries a failed goal edit without overwriting a newer onboarding reset', as
   expect(await store.loadProfile()).toEqual({
     ...existing, goals: ['weight', 'health'], onboarded: false,
   });
+});
+
+it('shows the title as the shared 44 pt forest page header', async () => {
+  await store.saveProfile(existing);
+  const screen = await render(<ProfileScreen />);
+  const style = StyleSheet.flatten((await screen.findByRole('header', { name: ro.profile.title })).props.style);
+  expect(style).toMatchObject({ fontSize: 44, lineHeight: 50, color: light.primary });
 });

@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto';
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { ro } from '../../copy/ro';
+import { depth } from '../../theme/depth';
 import { light, radii } from '../../theme/tokens';
 import * as store from '../profile/store';
 import { resetProfileHookState } from '../profile/useProfile';
@@ -24,9 +25,8 @@ it('draws skip as a ghost button with a forest label', () => {
   expect(screen.getByText(ro.onboarding.skip)).toHaveStyle({ color: light.primary });
 });
 
-it('draws the footer action as the flat forest pill', () => {
-  expect(flat(ro.onboarding.continue)).toMatchObject({ backgroundColor: light.primary, borderRadius: radii.pill });
-  expect(flat(ro.onboarding.continue).shadowOpacity).toBeUndefined();
+it('draws the footer action as the raised forest pill', () => {
+  expect(flat(ro.onboarding.continue)).toMatchObject({ borderRadius: radii.pill, boxShadow: depth.forest.boxShadow });
 });
 
 it('uses the shared icon button for back from step 2 on', async () => {
