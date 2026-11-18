@@ -5,6 +5,7 @@ import type { Product, ScoreResult } from '@okbite/shared';
 import { Button, IconButton } from '../../ui';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
+import { depth } from '../../theme/depth';
 import { ResultView } from './ResultView';
 
 export function ResultSheet({ product, score, onClose }: { product: Product; score: ScoreResult; onClose: () => void }) {
@@ -41,6 +42,6 @@ export function ResultSheet({ product, score, onClose }: { product: Product; sco
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
   scroll: { flexGrow: 1, justifyContent: 'flex-end' },
-  sheet: { width: '100%', maxWidth: 480, alignSelf: 'center', gap: 16, padding: 20, paddingBottom: 28, borderTopLeftRadius: 28, borderTopRightRadius: 28 },
+  sheet: { width: '100%', maxWidth: 480, alignSelf: 'center', gap: 16, padding: 20, paddingBottom: 28, borderTopLeftRadius: 28, borderTopRightRadius: 28, ...depth.raised },
   actions: { alignItems: 'flex-end' },
 });

@@ -5,6 +5,7 @@ import { fonts } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 import { ro } from '../../copy/ro';
 import { useProfile } from '../profile';
+import { depth } from '../../theme/depth';
 
 type Row = { key: 'contains' | 'trace' | 'avoid'; title: string; sub: string; trace: boolean; icon: IconName };
 
@@ -25,7 +26,7 @@ export function ProfileAllergenAlert({ product }: { product: Product }) {
       {rows.map(row => {
         const color = row.trace ? colors.warning : colors.low;
         return <View key={row.key} testID={`profile-alert-${row.key}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 16,
-          backgroundColor: row.trace ? colors.warningBg : colors.lowBg, borderWidth: 1, borderColor: row.trace ? colors.warningBorder : colors.lowBg }}>
+          backgroundColor: row.trace ? colors.warningBg : colors.lowBg, borderWidth: 1, borderColor: row.trace ? colors.warningBorder : colors.lowBg, ...depth.raised }}>
           <Icon name={row.icon} size={26} color={color} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Body style={{ color, fontFamily: fonts.bold, fontSize: 17, lineHeight: 24 }}>{row.title}</Body>

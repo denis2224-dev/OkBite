@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { foundYogurt } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
+import { depth } from '../../theme/depth';
 import { ResultSheet } from './ResultSheet';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), back: jest.fn(), replace: jest.fn(), canGoBack: () => false } }));
@@ -30,4 +31,9 @@ it('keeps report and additive sheets usable above the result sheet', async () =>
   expect(screen.queryByText('Explicație de test.')).toBeNull(); // not inline any more
   await fireEvent.press(screen.getByRole('button', { name: 'colorant caramel, Risc moderat' }));
   expect(screen.getAllByText('Explicație de test.')).toHaveLength(1); // in the additive sheet
+});
+
+it('raises the sheet with the soft-depth shadow', async () => {
+  await render(<ResultSheet {...foundYogurt} onClose={jest.fn()} />);
+  expect(screen.getByTestId('result-sheet')).toHaveStyle(depth.raised);
 });

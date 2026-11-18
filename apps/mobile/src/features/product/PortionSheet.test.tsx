@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 import { PortionSheet } from './PortionSheet';
 import { foundYogurt } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
-import { softShadow } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
 
 it('has a drag handle at the top that takes vertical swipes', async () => {
   await render(<PortionSheet product={foundYogurt.product} onClose={jest.fn()} />);
@@ -32,9 +32,9 @@ it('opens over the page without darkening it', async () => {
   expect(StyleSheet.flatten(overlay.props.style).backgroundColor ?? 'transparent').toBe('transparent');
 });
 
-it('keeps the sheet edge visible on the page with a border and a soft shadow', async () => {
+it('lifts the sheet off the page with the raised soft-depth shadow', async () => {
   await render(<PortionSheet product={foundYogurt.product} onClose={jest.fn()} />);
   const sheet = StyleSheet.flatten(screen.getByTestId('portion-sheet', { includeHiddenElements: true }).props.style);
-  expect(sheet.borderTopWidth).toBeGreaterThan(0);
-  expect(sheet).toMatchObject(softShadow);
+  expect(sheet).toMatchObject(depth.raised);
+  expect(sheet.shadowOpacity).toBeUndefined();
 });

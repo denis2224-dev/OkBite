@@ -3,9 +3,10 @@ import { AccessibilityInfo, Animated, Text, View } from 'react-native';
 import type { Tier } from '@okbite/shared';
 import { fonts, radii, typeScale } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
+import { depth } from '../../theme/depth';
 import { ro } from '../../copy/ro';
 
-/** The product score as a flat forest tag: the number large, "din 100" small. Every tier uses forest; the tier word
+/** The product score as a raised forest block: the number large, "din 100" small. Every tier uses forest; the tier word
  * beside the tag names it (`tier` stays in the props for callers). It sizes to its text and fades in once unless motion is reduced. */
 export function ScoreTag({ score, label, testID }: { score: number; tier: Tier; label: string; testID?: string }) {
   const { colors } = useTheme();
@@ -24,7 +25,7 @@ export function ScoreTag({ score, label, testID }: { score: number; tier: Tier; 
   return <Animated.View testID={testID} accessible accessibilityRole="image" accessibilityLabel={label}
     style={[{ alignSelf: 'flex-start' }, motion]}>
     <View testID={testID ? `${testID}-body` : undefined} accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-      style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, backgroundColor: colors.primary, borderRadius: radii.card,
+      style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, borderRadius: radii.card, ...depth.forest,
         paddingTop: 8, paddingHorizontal: 16, paddingBottom: 9 }}>
       <Text allowFontScaling style={{ fontFamily: fonts.headingExtra, ...typeScale.score, color: colors.onPrimary }}>{score}</Text>
       <Text allowFontScaling style={{ fontFamily: fonts.medium, ...typeScale.caption, color: colors.onPrimary }}>{ro.score.outOf}</Text>

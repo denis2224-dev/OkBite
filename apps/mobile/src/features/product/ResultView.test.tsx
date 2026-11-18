@@ -7,7 +7,8 @@ import { ro } from '../../copy/ro';
 import { api, ApiError } from '../../lib/api';
 import { router } from 'expo-router';
 import { StyleSheet } from 'react-native';
-import { light, radii, softShadow, typeScale } from '../../theme/tokens';
+import { light, typeScale } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
 import type { Product, Profile, ScoreResult } from '@okbite/shared';
 import { displayScore } from './displayScore';
 import { productScoreFor } from './productScoreFor';
@@ -402,7 +403,8 @@ it('draws good reasons with a forest icon and problems with a muted icon', async
   expect(drawn('reason-tone-bad')).not.toContain(light.primary);
   expect(screen.getByText('6 g la 100 g')).toHaveStyle({ color: light.muted });
 });
-it('uses no shadow stronger than the shared soft shadow anywhere on the result', async () => {
+it('draws every shadow on the result from the soft-depth set, with the reasons, link rows and sheets raised', async () => {
+  mockProfile = { ...mockProfile, allergens: ['Lapte'] };
   await render(<ResultView {...foundYogurt} />);
   await fireEvent.press(screen.getByRole('button', { name: ro.result.portionTile }));
   type Node = { props?: { style?: unknown }; children?: (Node | string)[] | null };
@@ -415,13 +417,14 @@ it('uses no shadow stronger than the shared soft shadow anywhere on the result',
   };
   const tree = screen.toJSON();
   (Array.isArray(tree) ? tree : [tree]).forEach(node => walk(node as Node));
-  const shadowed = styles.filter(style => style.shadowOpacity !== undefined || style.elevation !== undefined || style.boxShadow !== undefined);
-  expect(shadowed.length).toBeGreaterThan(0); // the portion sheet keeps its soft edge
-  for (const style of shadowed) {
-    expect(style.boxShadow).toBeUndefined();
-    expect(style.shadowOpacity ?? 0).toBeLessThanOrEqual(softShadow.shadowOpacity);
-    expect(style.shadowRadius ?? 0).toBeLessThanOrEqual(softShadow.shadowRadius);
-    expect(style.elevation ?? 0).toBeLessThanOrEqual(softShadow.elevation);
+  const allowed = Object.values(depth).map(layer => layer.boxShadow);
+  for (const style of styles) {
+    expect(style.shadowOpacity ?? 0).toBe(0); // no legacy shadows
+    expect(style.elevation ?? 0).toBe(0);
+    if (style.boxShadow !== undefined) expect(allowed).toContain(style.boxShadow);
   }
-  expect(radii.card).toBe(20);
+  expect(screen.getByTestId('result-link-rows')).toHaveStyle(depth.raised);
+  expect(screen.getByTestId('reasons-card')).toHaveStyle(depth.raised);
+  expect(screen.getByTestId('portion-sheet', { includeHiddenElements: true })).toHaveStyle(depth.raised);
+  expect(screen.getByTestId('profile-alert-contains')).toHaveStyle({ backgroundColor: light.lowBg, ...depth.raised });
 });

@@ -17,7 +17,7 @@ export function WhyScore({ score, sugar }: { score: ScoreResult; sugar: number |
   const reasons = [...score.reasons].sort((a, b) => rank[a.tone] - rank[b.tone]).slice(0, 3);
   if (!reasons.length) return null;
   return <View>
-    <Card style={{ paddingVertical: 4, gap: 0 }}>
+    <Card testID="reasons-card" style={{ paddingVertical: 4, gap: 0 }}>
       {reasons.map((reason, index) => {
         const tone = reason.tone === 'good' ? { fg: colors.primary, label: ro.score.positive }
           : reason.tone === 'bad' ? { fg: colors.muted, label: ro.score.negative } : { fg: colors.muted, label: ro.score.neutral };

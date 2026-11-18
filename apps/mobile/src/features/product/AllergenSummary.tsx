@@ -5,8 +5,9 @@ import { fonts, radii } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 import { ro } from '../../copy/ro';
 import { useProfile } from '../profile';
+import { depth } from '../../theme/depth';
 
-/** A flat sage-soft info pill under the score answering "is this OK for me?". It says the label is clear only for a
+/** A pressed sage info pill under the score answering "is this OK for me?". It says the label is clear only for a
  * team-verified product, and stays quiet when ProfileAllergenAlert already warns at the top. */
 export function AllergenSummary({ product }: { product: Product }) {
   const { profile } = useProfile();
@@ -22,8 +23,8 @@ export function AllergenSummary({ product }: { product: Product }) {
   }
   if (!row) return null;
   return <View testID="allergen-summary" accessible accessibilityRole="text" accessibilityLabel={row.text}
-    style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 14, borderRadius: radii.small, backgroundColor: colors.sageSoft }}>
+    style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 14, borderRadius: radii.small, ...depth.pressed }}>
     <Icon name={row.icon} size={22} color={colors.primary} />
-    <Body style={{ flex: 1, color: colors.ink, fontFamily: fonts.bold }}>{row.text}</Body>
+    <Body style={{ flex: 1, color: colors.primary, fontFamily: fonts.bold }}>{row.text}</Body>
   </View>;
 }

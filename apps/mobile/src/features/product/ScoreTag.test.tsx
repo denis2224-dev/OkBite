@@ -3,6 +3,7 @@ import { AccessibilityInfo, Animated, StyleSheet } from 'react-native';
 import { render, screen, waitFor } from '@testing-library/react-native';
 import { ScoreTag } from './ScoreTag';
 import { light, radii } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
 import { ro } from '../../copy/ro';
 
 const flat = (testID: string) => StyleSheet.flatten(screen.getByTestId(testID, { includeHiddenElements: true }).props.style);
@@ -19,11 +20,10 @@ it('reads its label once and hides the drawn parts from screen readers', async (
   expect(screen.getByText(ro.score.outOf, { includeHiddenElements: true })).toBeTruthy();
 });
 
-it('is a flat forest rounded rectangle for every tier and prints the number in white', async () => {
+it('is a raised forest block for every tier and prints the number in white', async () => {
   jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
   await render(<ScoreTag score={41} tier="poor" label="x" testID="tag" />);
-  expect(flat('tag-body')).toMatchObject({ backgroundColor: light.primary, borderRadius: radii.card });
-  expect(flat('tag-body').shadowOpacity).toBeUndefined();
+  expect(flat('tag-body')).toMatchObject({ ...depth.forest, borderRadius: radii.card });
   expect(StyleSheet.flatten(screen.getByText('41', { includeHiddenElements: true }).props.style)).toMatchObject({ fontSize: 40, lineHeight: 44, color: light.onPrimary });
 });
 

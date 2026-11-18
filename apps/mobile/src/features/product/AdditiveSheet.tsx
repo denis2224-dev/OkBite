@@ -5,6 +5,7 @@ import { Body, Button, Caption, Card, Heading, IconButton } from '../../ui';
 import { PressableOpacity } from '../../shared/PressableOpacity';
 import { useTheme } from '../../theme/useTheme';
 import { fonts } from '../../theme/tokens';
+import { depth } from '../../theme/depth';
 import { ro } from '../../copy/ro';
 import { getLanguage } from '../../copy/lang';
 import { ReportSheet } from './ReportSheet';
@@ -48,7 +49,7 @@ export function AdditiveSheet({ ingredient, productId, onClose }: { ingredient: 
   return <Modal transparent animationType="none" onRequestClose={onClose}>
     <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: colors.scrim }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}>
-        <View accessibilityViewIsModal style={{ width: '100%', maxWidth: 480, alignSelf: 'center', gap: 16, padding: 20, paddingBottom: 28, backgroundColor: colors.ground, borderTopLeftRadius: 28, borderTopRightRadius: 28 }}>
+        <View testID="additive-sheet" accessibilityViewIsModal style={{ width: '100%', maxWidth: 480, alignSelf: 'center', gap: 16, padding: 20, paddingBottom: 28, backgroundColor: colors.ground, borderTopLeftRadius: 28, borderTopRightRadius: 28, ...depth.raised }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
             <View style={{ flex: 1, gap: 6 }}>
               {!!top && <Body style={{ fontSize: 14, fontFamily: fonts.bold, color: colors.muted }}>{top}</Body>}

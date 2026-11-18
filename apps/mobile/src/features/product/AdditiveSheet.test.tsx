@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import type { Ingredient } from '@okbite/shared';
 import { AdditiveSheet } from './AdditiveSheet';
 import { ro } from '../../copy/ro';
+import { depth } from '../../theme/depth';
 
 const caramel: Ingredient = {
   slug: 'colorant-caramel-e150d', name: 'Caramel cu sulfit de amoniu', group: 'add', role: 'Colorant sintetic',
@@ -56,4 +57,9 @@ it('opens the report sheet and closes', async () => {
   expect(onClose).not.toHaveBeenCalled();
   await fireEvent.press(screen.getByRole('button', { name: ro.app.close }));
   expect(onClose).toHaveBeenCalled();
+});
+
+it('raises the sheet with the soft-depth shadow', async () => {
+  await sheet(caramel);
+  expect(screen.getByTestId('additive-sheet')).toHaveStyle(depth.raised);
 });
