@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ro } from '../copy/ro';
 import { useSwUpdate } from '../lib/useSwUpdate';
 import { useTheme } from '../theme/useTheme';
-import { softShadow } from '../theme/tokens';
+import { depth } from '../theme/depth';
 import { Button } from './Button';
 import { Card } from './Card';
 import { Body } from './Typography';
@@ -15,7 +15,7 @@ export function UpdateBanner() {
   const { colors } = useTheme();
   if (!pending || !allowed) return null;
   return <SafeAreaView edges={['bottom', 'left', 'right']} style={{ backgroundColor: colors.ground, padding: 16 }}>
-    <Card style={{ width: '100%', maxWidth: 448, alignSelf: 'center', ...softShadow }}>
+    <Card style={{ width: '100%', maxWidth: 448, alignSelf: 'center', ...depth.raised }}>
       <Body accessibilityLiveRegion="polite">{ro.pwa.update.title}</Body>
       <Button onPress={apply}>{ro.pwa.update.apply}</Button>
     </Card>

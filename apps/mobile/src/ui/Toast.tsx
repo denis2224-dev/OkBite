@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useRef, useEffect, useCallback, type PropsWithChildren } from 'react';
 import { View } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
-import { fonts, softShadow } from '../theme/tokens';
+import { fonts } from '../theme/tokens';
+import { depth } from '../theme/depth';
 import { PressableOpacity as Pressable } from '../shared/PressableOpacity';
 import { Body } from './Typography';
 import { useTheme } from '../theme/useTheme';
@@ -21,7 +22,7 @@ export function ToastProvider({ children }: PropsWithChildren) {
   }, []);
   return <Context.Provider value={show}>{children}{notice &&
     <View testID="toast" pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: 84 + bottom, paddingHorizontal: 16, alignItems: 'center' }}>
-     <View testID="toast-card" accessibilityLiveRegion="polite" style={{ width: '100%', maxWidth: 440, borderRadius: 16, paddingVertical: 8, paddingLeft: 16, paddingRight: 8, minHeight: 56, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, ...softShadow }}>
+     <View testID="toast-card" accessibilityLiveRegion="polite" style={{ width: '100%', maxWidth: 440, borderRadius: 16, paddingVertical: 8, paddingLeft: 16, paddingRight: 8, minHeight: 56, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, backgroundColor: colors.surface, ...depth.raised }}>
       <Body style={{ flex: 1, minWidth: 160, paddingVertical: 8, color: colors.ink }}>{notice.message}</Body>
       {notice.action && <Pressable accessibilityRole="button" accessibilityLabel={notice.action.label} onPress={() => { setNotice(undefined); notice.action?.onPress(); }} style={{ minHeight: 44, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12, justifyContent: 'center', backgroundColor: colors.transparent }}>
         <Body style={{ color: colors.primary, fontFamily: fonts.bold }}>{notice.action.label}</Body>

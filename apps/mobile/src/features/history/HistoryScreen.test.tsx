@@ -172,7 +172,7 @@ it('renders only the title in the shared tab page header, with no filler subtitl
   await render(<HistoryScreen />);
   await screen.findByText(entry.product.name);
   const title = screen.getByRole('header', { name: ro.history.design.title });
-  expect(StyleSheet.flatten(title.props.style).fontSize).toBe(22);
+  expect(StyleSheet.flatten(title.props.style).fontSize).toBe(44);
   expect(screen.queryByText('Disponibil și fără internet.')).toBeNull();
   expect(screen.queryByTestId('tab-page-subtitle')).toBeNull();
 });

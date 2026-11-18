@@ -13,5 +13,5 @@ it('draws the icon circle in a solid colour that shows on the black camera frame
 it('makes the first action the accent button and the rest secondary', async () => {
   await render(<CameraBlocked message="m" actions={[{ label: 'Unu', onPress: jest.fn() }, { label: 'Doi', onPress: jest.fn() }]} />);
   expect(StyleSheet.flatten(screen.getByRole('button', { name: 'Unu' }).props.style).backgroundColor).toBe(light.accent);
-  expect(StyleSheet.flatten(screen.getByRole('button', { name: 'Doi' }).props.style).backgroundColor).toBe(light.soft);
+  expect(StyleSheet.flatten(screen.getByRole('button', { name: 'Doi' }).props.style).backgroundColor).toBe(light.surface);
 });

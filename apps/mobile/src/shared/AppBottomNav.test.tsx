@@ -1,6 +1,7 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { Keyboard, StyleSheet } from 'react-native';
-import { light, softShadow } from '../theme/tokens';
+import { light } from '../theme/tokens';
+import { depth } from '../theme/depth';
 import type { ComponentProps } from 'react';
 import { AppBottomNav } from './AppBottomNav';
 
@@ -42,24 +43,30 @@ it.each([[5, 'settings'], [6, 'about']])('selects no tab while %s (route %s) is 
  expect(ui.getAllByRole('tab')).toHaveLength(5);
  expect(ui.getAllByRole('tab').every(tab => !tab.props.accessibilityState.selected)).toBe(true);
 });
-it('draws the bar as a floating ivory pill with a thin border and only the shared soft shadow', async () => {
+it('draws the bar as a raised ivory pill with no border', async () => {
  const ui = await render(<AppBottomNav {...makeProps()} />);
  const pill = style(ui, 'nav-pill');
- expect(pill).toMatchObject({ backgroundColor: light.surface, borderWidth: 1, borderColor: light.border, borderRadius: 999, flexDirection: 'row' });
- expect(pill).toMatchObject(softShadow);
+ expect(pill).toMatchObject({ backgroundColor: light.surface, borderRadius: 30, flexDirection: 'row', ...depth.raised });
+ expect(pill.borderWidth ?? 0).toBe(0);
  expect(style(ui, 'nav-bar').paddingHorizontal).toBeGreaterThanOrEqual(16); // floats off the screen edges
  expect(pill.marginHorizontal).toBeUndefined(); // no width overflow
 });
-it.each([[0, 'history'], [1, 'compare'], [2, 'index'], [3, 'allergies'], [4, 'profile']] as const)('fills only the current tab with a sage-soft circle and a forest icon (route %i)', async (index, current) => {
- const ui = await render(<AppBottomNav {...makeProps(index)} />);
- for (const name of tabs) expect(style(ui, `nav-icon-${name}`).backgroundColor).toBe(name === current ? light.sageSoft : light.transparent);
- expect(JSON.stringify(ui.getByTestId(`nav-icon-${current}`).children)).toContain(light.primary);
- const dot = style(ui, `nav-icon-${current}`);
- expect([dot.width, dot.height, dot.borderRadius]).toEqual([52, 52, 26]);
+it('raises Scan as a forest button above the bar, on every route', async () => {
+ for (const index of [0, 2, 4]) {
+  const ui = await render(<AppBottomNav {...makeProps(index)} />);
+  const scan = style(ui, 'nav-icon-index');
+  expect(scan).toMatchObject({ width: 58, height: 58, borderRadius: 29, ...depth.forest });
+  expect(scan.marginTop).toBeLessThan(0);
+ }
 });
-it('gives every tab the same size; Scan is no longer raised', async () => {
- const ui = await render(<AppBottomNav {...makeProps(0)} />);
- expect(new Set(tabs.map(name => { const { width, height } = style(ui, `nav-icon-${name}`); return `${width}x${height}`; }))).toEqual(new Set(['52x52']));
+it.each([[0, 'history'], [1, 'compare'], [3, 'allergies'], [4, 'profile']] as const)('presses only the current tab into a sage pill with a forest icon (route %i)', async (index, current) => {
+ const ui = await render(<AppBottomNav {...makeProps(index)} />);
+ for (const name of tabs.filter(name => name !== 'index')) {
+  const icon = style(ui, `nav-icon-${name}`);
+  if (name === current) expect(icon).toMatchObject(depth.pressed);
+  else expect(icon.backgroundColor).toBe(light.transparent);
+ }
+ expect(JSON.stringify(ui.getByTestId(`nav-icon-${current}`).children)).toContain(light.primary);
  for (const tab of ui.getAllByRole('tab')) expect(StyleSheet.flatten(tab.props.style).minHeight).toBeGreaterThanOrEqual(44);
 });
 it('tints a tab the pointer hovers so it reads as clickable', async () => {
@@ -69,10 +76,9 @@ it('tints a tab the pointer hovers so it reads as clickable', async () => {
  await fireEvent(ui.getByRole('tab', { name: 'Profil' }), 'hoverOut', {});
  expect(style(ui, 'nav-icon-profile').backgroundColor).toBe(light.transparent);
 });
-it('shows icons only, while screen readers still hear each tab name', async () => {
- const ui = await render(<AppBottomNav {...makeProps()} />);
- for (const label of ['Istoric', 'Compară', 'Scanează', 'Alergii', 'Profil']) {
-  expect(ui.queryByText(label)).toBeNull();
-  expect(ui.getByRole('tab', { name: label })).toBeTruthy();
- }
+it('shows each tab name under its icon, forest for the current tab', async () => {
+ const ui = await render(<AppBottomNav {...makeProps(4)} />);
+ for (const label of ['Istoric', 'Compară', 'Scanează', 'Alergii', 'Profil']) expect(ui.getByText(label)).toBeTruthy();
+ expect(ui.getByText('Profil')).toHaveStyle({ color: light.primary });
+ expect(ui.getByText('Istoric')).toHaveStyle({ color: light.muted });
 });

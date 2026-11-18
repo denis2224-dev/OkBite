@@ -37,11 +37,11 @@ it('renders the title, the 14 allergens, the avoid switches and the allergen not
   expect(screen.queryByText(ro.profile.goalTitle)).toBeNull();
 });
 
-it('renders the title like the Compare page title (22px) with no subtitle under it', async () => {
+it('renders the title like the Compare page title (44px serif) with no subtitle under it', async () => {
   const screen = await renderReady();
   const style = StyleSheet.flatten(screen.getByRole('header', { name: ro.allergies.title }).props.style);
-  expect(style.fontSize).toBe(22);
-  expect(style.lineHeight).toBe(31.9);
+  expect(style.fontSize).toBe(44);
+  expect(style.lineHeight).toBe(50);
   expect(screen.queryByTestId('tab-page-subtitle')).toBeNull();
 });
 

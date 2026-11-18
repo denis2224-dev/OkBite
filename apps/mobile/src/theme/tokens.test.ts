@@ -14,15 +14,16 @@ const contrast = (a: string, b: string) => {
 };
 const tiers = ['excellent', 'good', 'fair', 'poor', 'bad'] as const;
 
-describe('Moss palette (Forest, Sage, Ivory, Ink)', () => {
+describe('Moss palette (Forest, Sage, Ivory, Ink, soft depth)', () => {
   const colors = light;
   it('uses the Moss base colours', () => {
-    expect(colors.primary).toBe('#2F5136');
-    expect(colors.primaryPressed).toBe('#25412B');
-    expect(colors.sage).toBe('#A9BEA0');
-    expect(colors.sageSoft).toBe('#DDE5D6');
-    expect(colors.ground).toBe('#F2EFE8');
-    expect(colors.surface).toBe('#F8F6F1');
+    expect(colors.primary).toBe('#1E5B3E');
+    expect(colors.primaryPressed).toBe('#174A32');
+    expect(colors.primaryLight).toBe('#2C7350');
+    expect(colors.sage).toBe('#BBDCC7');
+    expect(colors.sageSoft).toBe('#D3E8DA');
+    expect(colors.ground).toBe('#F6F5F0');
+    expect(colors.surface).toBe('#F3F2EC');
     expect(colors.ink).toBe('#2A2B29');
   });
   it('keeps every Forest role on the one primary green', () => {
@@ -31,8 +32,8 @@ describe('Moss palette (Forest, Sage, Ivory, Ink)', () => {
   it('keeps every soft-fill role on sage soft', () => {
     for (const key of ['soft', 'mint', 'neutralBg', 'themeButton'] as const) expect(colors[key]).toBe(colors.sageSoft);
   });
-  it('draws cards a lighter ivory than the page so they still stand apart', () => {
-    expect(luminance(colors.surface)).toBeGreaterThan(luminance(colors.ground));
+  it('draws cards in nearly the page ivory, so the soft shadows (not a colour jump) lift them', () => {
+    expect(contrast(colors.surface, colors.ground)).toBeLessThan(1.05);
   });
   it('draws the keyboard focus ring with at least 3:1 contrast on every page surface', () => {
     for (const background of [colors.ground, colors.surface, colors.sageSoft]) {
@@ -42,7 +43,7 @@ describe('Moss palette (Forest, Sage, Ivory, Ink)', () => {
   it.each([
     ['ink on ground', 'ink', 'ground'], ['ink on surface', 'ink', 'surface'], ['ink on sageSoft', 'ink', 'sageSoft'],
     ['muted on ground', 'muted', 'ground'], ['muted on surface', 'muted', 'surface'], ['muted on sageSoft', 'muted', 'sageSoft'],
-    ['onPrimary on primary', 'onPrimary', 'primary'], ['onPrimary on primaryPressed', 'onPrimary', 'primaryPressed'],
+    ['onPrimary on primary', 'onPrimary', 'primary'], ['onPrimary on primaryPressed', 'onPrimary', 'primaryPressed'], ['onPrimary on primaryLight', 'onPrimary', 'primaryLight'],
     ['primary on sageSoft', 'primary', 'sageSoft'], ['primary on ground', 'primary', 'ground'], ['primary on goodBg', 'primary', 'goodBg'],
     ['onAccent on accent', 'onAccent', 'accent'], ['heroMuted on hero', 'heroMuted', 'hero'],
     ['neutral on neutralBg', 'neutral', 'neutralBg'], ['medium on mediumBg', 'medium', 'mediumBg'], ['low on lowBg', 'low', 'lowBg'],

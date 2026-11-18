@@ -12,7 +12,7 @@ export function TabPageHeader({ title, subtitle, action, onBack }: { title: stri
  return <View style={[styles.header, !subtitle && styles.titleOnly]}>
   <View style={styles.row}>
    {onBack ? <IconButton icon="back" label={ro.app.back} onPress={onBack} /> : null}
-   <Text accessibilityRole="header" style={[styles.title, {fontFamily:t.fonts.heading,color:t.colors.ink}]}>{title}</Text>
+   <Text accessibilityRole="header" style={[styles.title, {fontFamily:t.fonts.heading,color:t.colors.primary}]}>{title}</Text>
    {action}
   </View>
   {subtitle ? <Text testID="tab-page-subtitle" style={[styles.subtitle, {fontFamily:t.fonts.body,color:t.colors.muted}]}>{subtitle}</Text> : null}
@@ -22,6 +22,6 @@ const styles=StyleSheet.create({
  header:{paddingTop:spacing.headerTop,paddingHorizontal:16,paddingBottom:8},
  titleOnly:{paddingBottom:16},
  row:{minHeight:44,flexDirection:'row',alignItems:'center',gap:8},
- title:{flex:1,minWidth:0,fontSize:22,lineHeight:31.9,letterSpacing:-0.22},
- subtitle:{minHeight:18.85,fontSize:13,lineHeight:18.85},
+ title:{flex:1,minWidth:0,fontSize:44,lineHeight:50},
+ subtitle:{minHeight:20,fontSize:15,lineHeight:21,marginTop:4},
 });

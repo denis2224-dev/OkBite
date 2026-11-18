@@ -1,7 +1,7 @@
 import { light, fonts } from './tokens';
 export const homeTheme = {
   colors: { ...light, cardBorder: light.border, separator: light.divider },
-  fonts: { ...fonts, body: 'Manrope_400Regular', semibold: fonts.medium, extra: 'Manrope_800ExtraBold', headingExtra: 'BricolageGrotesque_800ExtraBold' },
+  fonts: { ...fonts, body: 'DMSans_400Regular', semibold: fonts.medium, extra: 'DMSans_700Bold', headingExtra: fonts.headingExtra },
   tiles: [
     { background: light.goodBg, foreground: light.primary },
     { background: light.mediumBg, foreground: light.medium },

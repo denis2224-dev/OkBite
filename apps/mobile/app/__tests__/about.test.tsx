@@ -9,7 +9,7 @@ jest.mock('expo-router', () => ({ router: { push: jest.fn(), back: jest.fn() } }
 beforeEach(() => jest.clearAllMocks());
 
 it('shows the About content and the five light tier colours', async () => {
-  const colours = ['#2F5136', '#4A7343', '#7D5410', '#9A4A2C', '#7E3322'];
+  const colours = ['#1E5B3E', '#4A7343', '#7D5410', '#9A4A2C', '#7E3322'];
   await render(<ThemeProvider><AboutPage /></ThemeProvider>);
   expect(screen.getByText(ro.about.whatBody)).toBeTruthy();
   expect(screen.getByText(ro.score.disclaimer)).toBeTruthy();

@@ -5,18 +5,18 @@ import { fonts, light, typeScale } from '../theme/tokens';
 
 const styleOf = (text: string) => StyleSheet.flatten(screen.getByText(text).props.style);
 
-it('steps the scale by about 1.2 from caption to display, with the score numeral above it', () => {
+it('sizes the serif headings up (Cormorant has a small x-height) and keeps the body scale', () => {
   expect(typeScale).toEqual({
-    score: { fontSize: 40, lineHeight: 44 }, display: { fontSize: 26, lineHeight: 32 }, title: { fontSize: 22, lineHeight: 28 },
-    section: { fontSize: 18, lineHeight: 24 }, body: { fontSize: 15, lineHeight: 23 }, caption: { fontSize: 13, lineHeight: 19 },
+    score: { fontSize: 40, lineHeight: 44 }, display: { fontSize: 34, lineHeight: 40 }, title: { fontSize: 30, lineHeight: 36 },
+    section: { fontSize: 22, lineHeight: 28 }, body: { fontSize: 15, lineHeight: 23 }, caption: { fontSize: 13, lineHeight: 19 },
   });
-  expect(fonts.headingExtra).toBe('BricolageGrotesque_800ExtraBold');
+  expect(fonts).toMatchObject({ heading: 'CormorantGaramond_600SemiBold', headingExtra: 'CormorantGaramond_700Bold', body: 'DMSans_400Regular' });
 });
 
 it.each([
-  ['Heading', Heading, 26, 32],
-  ['Title', Title, 22, 28],
-  ['Section', Section, 18, 24],
+  ['Heading', Heading, 34, 40],
+  ['Title', Title, 30, 36],
+  ['Section', Section, 22, 28],
 ] as const)('%s is a scalable header at %i/%i in the heading font', async (_, Component, fontSize, lineHeight) => {
   await render(<Component>Alergeni</Component>);
   const header = screen.getByRole('header', { name: 'Alergeni' });
