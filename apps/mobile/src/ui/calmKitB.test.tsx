@@ -47,7 +47,7 @@ describe('selection changes colour only', () => {
     const on = flat(screen.getByRole('checkbox', { name: 'Alergii alimentare' }));
     expect(shape(on)).toEqual(shape(off));
     expect(on).toMatchObject({ backgroundColor: light.primary, borderColor: light.primary, minHeight: 46 });
-    expect(off).toMatchObject({ backgroundColor: light.surface, borderColor: light.sand, borderWidth: 1.5 });
+    expect(off).toMatchObject({ backgroundColor: light.surface, borderColor: light.divider, borderWidth: 1.5 });
   });
   it('SegmentedTabs keeps every tab the same size and weight; only the selected one is primary', async () => {
     const onChange = jest.fn();
