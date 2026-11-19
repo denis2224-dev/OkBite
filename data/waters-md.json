@@ -293,7 +293,7 @@
     "brand": "Donat",
     "name": "Donat Mg",
     "quantity": "1 L",
-    "code": null,
+    "code": "3838600022750",
     "water": { "carbonation": "sparkling", "classification": "natural_mineral", "caMgL": 430, "mgMgL": 1000, "naMgL": 1700, "hco3MgL": 7400, "so4MgL": 2200, "clMgL": 100 },
     "source": "Donat Sustainability Report",
     "sourceUrl": "https://www.donat.com/wp-content/uploads/2022/08/DONAT_SUSTAINABILITY_REPORT.pdf",
@@ -303,7 +303,7 @@
     "brand": "Evian",
     "name": "Apă minerală naturală plată",
     "quantity": "1,5 L",
-    "code": null,
+    "code": "3068320120256",
     "water": { "dryResidueMgL": 345, "ph": 7.2, "carbonation": "still", "classification": "natural_mineral", "caMgL": 80, "mgMgL": 26, "naMgL": 6.5, "kMgL": 1, "hco3MgL": 360, "so4MgL": 14, "clMgL": 10, "no3MgL": 3.8 },
     "source": "SAEME Evian",
     "sourceUrl": "https://www.evian.com/en_gb/our-water/water-attributes",
@@ -328,5 +328,220 @@
     "source": "Acqua Panna Analytical Report",
     "sourceUrl": "https://www.acquapanna.com/us/sites/g/files/xknfdk971/files/2026-04/AcquaPanna_EN_2025_April_6_2026.pdf",
     "ingredientsText": "Toscana, Italia"
+  },
+  {
+    "brand": "OM",
+    "name": "Apă potabilă plată",
+    "quantity": "9 L",
+    "code": "4841257001275",
+    "water": { "tdsMgL": 375, "dryResidueMgL": 305, "carbonation": "still", "classification": "drinking", "caMgL": 32.5, "mgMgL": 12.5, "naPlusKMgL": 72.5, "hco3MgL": 140, "clMgL": 15.5 },
+    "source": "Rusnac-MoldAqua SRL / Open Food Facts",
+    "sourceUrl": "https://world.openfoodfacts.org/product/4841257001275",
+    "ingredientsText": ""
+  },
+  {
+    "brand": "Borsec",
+    "name": "Apă minerală natural carbogazoasă",
+    "quantity": "1,5 L",
+    "code": "5942219000059",
+    "water": { "dryResidueMgL": 1324, "ph": 5.6, "carbonation": "sparkling", "classification": "natural_mineral", "caMgL": 308, "mgMgL": 107, "naMgL": 72, "hco3MgL": 1600 },
+    "source": "Romaqua Group S.A. / Open Food Facts",
+    "sourceUrl": "https://world.openfoodfacts.org/product/5942219000059",
+    "ingredientsText": ""
+  },
+  {
+    "brand": "Borsec",
+    "name": "Apă minerală naturală plată",
+    "quantity": "500 ml",
+    "code": "5942219111137",
+    "water": { "dryResidueMgL": 279, "ph": 7.4, "carbonation": "still", "classification": "natural_mineral", "caMgL": 53, "mgMgL": 27, "naMgL": 2.1, "hco3MgL": 292 },
+    "source": "Romaqua Group S.A. / Open Food Facts",
+    "sourceUrl": "https://world.openfoodfacts.org/product/5942219111137",
+    "ingredientsText": ""
+  },
+  {
+    "brand": "Borjomi",
+    "name": "Apă minerală naturală carbogazoasă",
+    "quantity": "500 ml",
+    "code": "4860019001629",
+    "water": {
+      "tdsMgL": 6250,
+      "carbonation": "sparkling",
+      "classification": "therapeutic",
+      "caMgL": 85,
+      "mgMgL": 85,
+      "naMgL": 1500,
+      "hco3MgL": 4250,
+      "clMgL": 375,
+      "ranges": {
+        "tdsMgL": { "min": 5000, "max": 7500 },
+        "caMgL": { "min": 20, "max": 150 },
+        "mgMgL": { "min": 20, "max": 150 },
+        "naMgL": { "min": 1000, "max": 2000 },
+        "hco3MgL": { "min": 3500, "max": 5000 },
+        "clMgL": { "min": 250, "max": 500 }
+      }
+    },
+    "source": "IDS Borjomi Georgia / Open Food Facts",
+    "sourceUrl": "https://world.openfoodfacts.org/product/4860019001629",
+    "ingredientsText": ""
+  },
+  {
+    "brand": "Vittel",
+    "name": "Apă minerală naturală plată",
+    "quantity": "1,5 L",
+    "code": "7613036249928",
+    "water": { "dryResidueMgL": 1084, "ph": 7.2, "carbonation": "still", "classification": "natural_mineral", "caMgL": 240, "mgMgL": 42, "naMgL": 5.2, "hco3MgL": 384, "so4MgL": 400, "no3MgL": 4.4 },
+    "source": "Nestlé Waters / Open Food Facts",
+    "sourceUrl": "https://world.openfoodfacts.org/product/7613036249928",
+    "ingredientsText": ""
+  },
+  {
+    "brand": "Perrier",
+    "name": "Apă minerală naturală carbogazoasă",
+    "quantity": "750 ml",
+    "code": "3179730013134",
+    "water": { "dryResidueMgL": 475, "ph": 5.5, "carbonation": "sparkling", "classification": "natural_mineral", "caMgL": 155, "mgMgL": 6.8, "naMgL": 9.5, "hco3MgL": 430, "so4MgL": 33, "clMgL": 22, "no3MgL": 7.8 },
+    "source": "Nestlé Waters / Open Food Facts",
+    "sourceUrl": "https://world.openfoodfacts.org/product/3179730013134",
+    "ingredientsText": ""
+  },
+  {
+    "brand": "San Benedetto",
+    "name": "Apă minerală naturală carbogazoasă",
+    "quantity": "1,5 L",
+    "code": "8020458000386",
+    "water": { "dryResidueMgL": 313, "carbonation": "sparkling", "classification": "natural_mineral", "caMgL": 49.8, "mgMgL": 30.8, "naMgL": 6, "hco3MgL": 313, "so4MgL": 4.5, "clMgL": 2.2 },
+    "source": "Acqua Minerale San Benedetto / Open Food Facts",
+    "sourceUrl": "https://world.openfoodfacts.org/product/8020458000386",
+    "ingredientsText": ""
+  },
+  {
+    "brand": "Aqua Carpatica",
+    "name": "Naturală minerală carbogazoasă",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "dryResidueMgL": 1068, "carbonation": "sparkling", "classification": "natural_mineral", "caMgL": 286, "mgMgL": 85, "naMgL": 4.8, "no3MgL": 0.5 },
+    "source": "Carpathian Springs",
+    "sourceUrl": "https://aquacarpatica.com/products/",
+    "ingredientsText": ""
+  },
+  {
+    "brand": "Perla Harghitei",
+    "name": "Apă minerală naturală plată",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "dryResidueMgL": 374, "ph": 7.3, "carbonation": "still", "classification": "natural_mineral", "caMgL": 105, "mgMgL": 10, "naMgL": 6.9, "kMgL": 1.55, "hco3MgL": 318, "so4MgL": 10.2, "clMgL": 19 },
+    "source": "Perla Harghitei S.A.",
+    "sourceUrl": "https://perlaharghitei.ro/",
+    "ingredientsText": ""
+  },
+  {
+    "brand": "Perla Harghitei",
+    "name": "Apă minerală naturală carbogazificată",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "dryResidueMgL": 684, "ph": 5.55, "carbonation": "sparkling", "classification": "natural_mineral", "caMgL": 102, "mgMgL": 41.7, "naMgL": 60.5, "kMgL": 8.8, "hco3MgL": 668 },
+    "source": "Perla Harghitei S.A.",
+    "sourceUrl": "https://perlaharghitei.ro/",
+    "ingredientsText": ""
+  },
+  {
+    "brand": "Zizin",
+    "name": "Apă minerală naturală plată",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "dryResidueMgL": 182, "ph": 7.45, "carbonation": "still", "classification": "natural_mineral", "caMgL": 74.4, "mgMgL": 3.2, "naMgL": 3.3, "kMgL": 0.59, "hco3MgL": 231.8, "clMgL": 14.97 },
+    "source": "Apemin Zizin S.A.",
+    "sourceUrl": "https://zizin.ro/",
+    "ingredientsText": ""
+  },
+  {
+    "brand": "Tușnad",
+    "name": "Apă minerală naturală carbogazificată",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "dryResidueMgL": 1405, "ph": 5.59, "carbonation": "sparkling", "classification": "natural_mineral", "caMgL": 223, "mgMgL": 72, "naMgL": 167, "kMgL": 12.3, "hco3MgL": 1262 },
+    "source": "Apemin Tușnad S.A.",
+    "sourceUrl": "https://tusnad.com/",
+    "ingredientsText": ""
+  },
+  {
+    "brand": "Biborțeni",
+    "name": "Apă minerală naturală carbogazificată",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "dryResidueMgL": 391, "ph": 6.28, "carbonation": "sparkling", "classification": "natural_mineral", "caMgL": 69.81, "mgMgL": 18.75, "naMgL": 21.58, "kMgL": 10.75, "so4MgL": 41.77, "clMgL": 2.5, "ranges": { "clMgL": { "min": 0, "max": 5 } } },
+    "source": "Biborțeni Aqua",
+    "sourceUrl": "https://biborteniaqua.com/",
+    "ingredientsText": ""
+  },
+  {
+    "brand": "Aqua Via",
+    "name": "Apă naturală alcalină plată",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": { "dryResidueMgL": 160, "ph": 9.4, "carbonation": "still", "classification": "natural_mineral", "caMgL": 2.8, "naMgL": 65.7, "hco3MgL": 158, "clMgL": 0.5, "ranges": { "clMgL": { "min": 0, "max": 1 } } },
+    "source": "Aqua Via",
+    "sourceUrl": "https://aquavia.ro/",
+    "ingredientsText": ""
+  },
+  {
+    "brand": "Myrhorodska",
+    "name": "Apă minerală naturală carbogazoasă",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": {
+      "tdsMgL": 3000,
+      "carbonation": "sparkling",
+      "classification": "table_mineral",
+      "caMgL": 115,
+      "mgMgL": 25,
+      "naPlusKMgL": 900,
+      "hco3MgL": 300,
+      "so4MgL": 150,
+      "clMgL": 1750,
+      "ranges": {
+        "tdsMgL": { "min": 2500, "max": 3500 },
+        "caMgL": { "min": 30, "max": 200 },
+        "mgMgL": { "min": 0, "max": 50 },
+        "naPlusKMgL": { "min": 600, "max": 1200 },
+        "hco3MgL": { "min": 150, "max": 450 },
+        "so4MgL": { "min": 50, "max": 250 },
+        "clMgL": { "min": 1000, "max": 2500 }
+      }
+    },
+    "source": "IDS Ukraine / Myrhorodska",
+    "sourceUrl": "https://mirgorodska.ua/",
+    "ingredientsText": ""
+  },
+  {
+    "brand": "Karpatska Dzherelna",
+    "name": "Apă minerală naturală plată",
+    "quantity": "1,5 L",
+    "code": null,
+    "water": {
+      "tdsMgL": 550,
+      "carbonation": "still",
+      "classification": "natural_mineral",
+      "caMgL": 125,
+      "mgMgL": 25,
+      "naPlusKMgL": 25,
+      "hco3MgL": 275,
+      "so4MgL": 50,
+      "clMgL": 25,
+      "ranges": {
+        "tdsMgL": { "min": 300, "max": 800 },
+        "caMgL": { "min": 50, "max": 200 },
+        "mgMgL": { "min": 0, "max": 50 },
+        "naPlusKMgL": { "min": 0, "max": 50 },
+        "hco3MgL": { "min": 100, "max": 450 },
+        "so4MgL": { "min": 0, "max": 100 },
+        "clMgL": { "min": 0, "max": 50 }
+      }
+    },
+    "source": "Karpatski Mineralni Vody / Molodo",
+    "sourceUrl": "https://molodo.com.ua/",
+    "ingredientsText": ""
   }
 ]

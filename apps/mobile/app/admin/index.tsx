@@ -63,6 +63,7 @@ function Dashboard() {
   return (
     <>
       {!!error && <Body accessibilityRole="alert">{error}</Body>}
+      <Button onPress={() => router.push('/admin/add-water')}>{ro.app.admin.addWater}</Button>
       <Button variant="ghost" onPress={() => void reload()}>
         {ro.app.admin.reload}
       </Button>

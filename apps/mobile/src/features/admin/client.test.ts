@@ -1,4 +1,6 @@
-import { getAdminClient, readAdminProduct, readWaterSubmissions, sendModeration } from './client';
+import { createAdminWater, getAdminClient, readAdminProduct, readWaterSubmissions, sendModeration } from './client';
+import { emptyWaterProfile } from '@okbite/shared';
+import { ro } from '../../copy/ro';
 
 const row: Record<string, unknown> & { id: string } = {
   id: '0b6f3c1e-2d4a-4c8e-9f10-1a2b3c4d5e6f',
@@ -22,7 +24,8 @@ const row: Record<string, unknown> & { id: string } = {
   nutrition_photo_path: null,
 };
 let mockSubmissionRows: Record<string, unknown>[] = [];
-const mockInvoke = jest.fn(async () => ({ data: { status: 'ok' }, error: null }));
+let mockInvokeReply: { data: unknown; error: unknown } | null = null;
+const mockInvoke = jest.fn(async () => mockInvokeReply ?? { data: { status: 'ok' }, error: null });
 jest.mock('@supabase/supabase-js', () => ({
   createClient: () => {
     const query: Record<string, unknown> = {
@@ -99,4 +102,39 @@ it('loads pending water submissions with resolved photo URLs and sends resolutio
     body: { action: 'resolve_water_submission', submissionId: sid, decision: 'accept' },
   });
   void getAdminClient;
+});
+
+it('creates a catalog water via moderate add_water and maps duplicate 409 errors', async () => {
+  process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = 'public-anon-key';
+  const pid = '2b6f3c1e-2d4a-4c8e-9f10-1a2b3c4d5e6f';
+  const payload = {
+    code: '4840001000014',
+    brand: 'OM',
+    name: 'Apă potabilă plată',
+    quantity: '1,5 L',
+    status: 'verified' as const,
+    source: 'Rusnac-MoldAqua SRL',
+    sourceUrl: 'https://apaom.md/',
+    ingredientsText: '',
+    water: { ...emptyWaterProfile(), tdsMgL: 375, ph: 7.4, carbonation: 'still' as const },
+  };
+
+  mockInvokeReply = { data: { status: 'ok', productId: pid }, error: null };
+  await expect(createAdminWater(payload)).resolves.toBe(pid);
+  expect(mockInvoke).toHaveBeenLastCalledWith('moderate', {
+    body: { action: 'add_water', product: payload },
+  });
+
+  mockInvokeReply = {
+    data: null,
+    error: {
+      context: new Response(JSON.stringify({ error: 'duplicate', message: 'Cod duplicat' }), {
+        status: 409,
+        headers: { 'content-type': 'application/json' },
+      }),
+    },
+  };
+  await expect(createAdminWater(payload)).rejects.toThrow(ro.errors.duplicate);
+  mockInvokeReply = null;
 });

@@ -148,3 +148,68 @@ Deno.test('resolve_water_submission forwards accept/reject decisions and rejects
     { actor, input: { action: 'resolve_water_submission', submissionId, decision: 'reject' } },
   ]);
 });
+
+Deno.test('add_water validates barcode check digits and returns created productId', async () => {
+  const actor = crypto.randomUUID();
+  const createdId = crypto.randomUUID();
+  const calls: { actor: string; input: unknown }[] = [];
+  const handler = createHandler({
+    authorize: async () => actor,
+    moderate: async (input, identity) => {
+      calls.push({ input, actor: identity });
+      return createdId;
+    },
+  });
+  const water = {
+    tdsMgL: 375,
+    dryResidueMgL: null,
+    ph: 7.4,
+    carbonation: 'still',
+    classification: 'drinking',
+    caMgL: 32.5,
+    mgMgL: 12.5,
+    naMgL: null,
+    kMgL: null,
+    naPlusKMgL: 30,
+    hco3MgL: 140,
+    so4MgL: null,
+    clMgL: 15.5,
+    fMgL: null,
+    no3MgL: null,
+    bMgL: null,
+    h3bo3MgL: null,
+    iUgL: null,
+  };
+  const postWater = (code: string | null) =>
+    handler(
+      new Request('http://local/moderate', {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'add_water',
+          product: {
+            code,
+            brand: 'OM',
+            name: 'Apă potabilă plată',
+            quantity: '1,5 L',
+            status: 'verified',
+            source: 'Rusnac-MoldAqua SRL',
+            sourceUrl: 'https://apaom.md/',
+            ingredientsText: '',
+            water,
+          },
+        }),
+      }),
+    );
+
+  assert.equal((await postWater('4840001000015')).status, 400);
+  assert.equal(calls.length, 0);
+
+  const codedRes = await postWater('4840001000014');
+  assert.equal(codedRes.status, 200);
+  assert.deepEqual(await codedRes.json(), { status: 'ok', productId: createdId });
+
+  const uncodedRes = await postWater(null);
+  assert.equal(uncodedRes.status, 200);
+  assert.deepEqual(await uncodedRes.json(), { status: 'ok', productId: createdId });
+  assert.equal(calls.length, 2);
+});
