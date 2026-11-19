@@ -55,8 +55,8 @@ export async function unknownStub(req, res, url, example, categories) {
               source: 'Nordica Moldova',
             },
             score: {
-              score: null, letter: null, grade: 'medium', reasons: [], missing: [],
-              range: { min: 60, max: 100 }, waterMissing: ['naMgL', 'so4MgL'], unverifiedUsed: true,
+              score: 100, letter: null, grade: 'good', reasons: [], missing: [],
+              range: null, waterMissing: [], unverifiedUsed: true,
             },
           });
         }

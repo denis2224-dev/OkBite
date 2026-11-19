@@ -214,7 +214,7 @@ it('still deletes a row through the screen-reader delete action', async () => {
   await waitFor(() => expect(removeFromHistory).toHaveBeenCalledWith(entry.product.id));
 });
 
-it('shows estimated range for partial waters and rejects legacy cached 100/A waters missing water profile', async () => {
+it('shows direct water score for partial waters and rejects legacy cached 100/A waters missing water profile', async () => {
   const emptyNutrients = Object.fromEntries(Object.keys(entry.product.nutrients).map(k => [k, null])) as typeof entry.product.nutrients;
   const { water: _w, ...withoutWater } = entry.product;
   const legacyWaterEntry: HistoryEntry = {
@@ -244,7 +244,7 @@ it('shows estimated range for partial waters and rejects legacy cached 100/A wat
   jest.mocked(listHistory).mockResolvedValue([legacyWaterEntry, partialWaterEntry]);
   await render(<HistoryScreen />);
   await screen.findByText('Nordica Plată');
-  expect(screen.queryByText(/100 · /)).toBeNull();
-  expect(screen.getByText('60–100')).toBeTruthy();
+  expect(screen.getAllByText('100', { includeHiddenElements: true }).length).toBeGreaterThan(0);
+  expect(screen.queryByText('60–100')).toBeNull();
   expect(screen.getByText(ro.result.scoreUnavailable)).toBeTruthy();
 });

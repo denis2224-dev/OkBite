@@ -1,9 +1,19 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import { ErrorBody, ModerateRequest, OFF_IMAGE_URL, ProductInput, Uuid, WaterSubmission } from '@okbite/shared';
+import {
+  type AdminAddWaterInput,
+  ErrorBody,
+  ModerateRequest,
+  OFF_IMAGE_URL,
+  ProductInput,
+  Uuid,
+  WaterSubmission,
+} from '@okbite/shared';
 import { ro } from '../../copy/ro';
 
 let instance: SupabaseClient | undefined;
+const ModerationResponse = z.object({ status: z.literal('ok'), productId: Uuid.optional() });
+
 export function getAdminClient(): SupabaseClient {
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
   const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -16,7 +26,8 @@ export function getAdminClient(): SupabaseClient {
     },
   }));
 }
-export async function sendModeration(value: ModerateRequest) {
+
+async function invokeModeration(value: ModerateRequest) {
   const { data, error } = await getAdminClient().functions.invoke('moderate', {
     body: ModerateRequest.parse(value),
   });
@@ -27,7 +38,16 @@ export async function sendModeration(value: ModerateRequest) {
     }
     throw new Error(ro.app.admin.failed);
   }
-  z.object({ status: z.literal('ok') }).parse(data);
+  return ModerationResponse.parse(data);
+}
+
+export async function sendModeration(value: ModerateRequest) {
+  await invokeModeration(value);
+}
+
+export async function createAdminWater(product: AdminAddWaterInput): Promise<string | null> {
+  const res = await invokeModeration({ action: 'add_water', product });
+  return res.productId ?? null;
 }
 export async function readAdminProduct(id: string) {
   const db = getAdminClient();

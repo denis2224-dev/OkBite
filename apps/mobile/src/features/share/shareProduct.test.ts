@@ -62,6 +62,6 @@ it('shares adaptive water ranges and withholds legacy 100/A scores when water ch
     water: { ...emptyWaterProfile(), tdsMgL: 350, ph: 7.5, carbonation: 'still' as const },
   };
   const shared = productShareText(partialWater, { score: 100, letter: null, grade: 'good', reasons: [], missing: [] });
-  expect(shared).toContain('60–100');
+  expect(shared).toContain('100 din 100');
   expect(shared).toContain(ro.result.water.unverifiedNote);
 });

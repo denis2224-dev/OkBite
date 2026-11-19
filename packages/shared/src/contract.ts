@@ -203,6 +203,24 @@ export const WaterSubmission = z.object({
   status: WaterSubmissionStatus,
   createdAt: IsoDate,
 });
+export const AdminAddWaterInput = z.object({
+  code: Code.nullable(),
+  brand: z.string().trim().min(1).max(80),
+  name: z.string().trim().min(1).max(120),
+  quantity: z.string().trim().min(1).max(30),
+  status: z.enum(['verified', 'unverified']),
+  source: z.string().trim().min(1).max(200),
+  sourceUrl: z
+    .string()
+    .trim()
+    .max(300)
+    .url()
+    .refine((u) => /^https?:\/\//i.test(u), 'expected http/https URL')
+    .nullable()
+    .optional(),
+  ingredientsText: z.string().max(3000),
+  water: WaterProfile,
+});
 export const ModerateRequest = z.discriminatedUnion('action', [
   z.object({ action: z.literal('verify'), productId: Uuid, product: ProductInput }),
   z.object({ action: z.literal('hide'), productId: Uuid, reason: z.string().min(3) }),
@@ -212,6 +230,7 @@ export const ModerateRequest = z.discriminatedUnion('action', [
     submissionId: Uuid,
     decision: z.enum(['accept', 'reject']),
   }),
+  z.object({ action: z.literal('add_water'), product: AdminAddWaterInput }),
 ]);
 export const ErrorCode = z.enum(['bad_request', 'rate_limited', 'not_found', 'unauthorized', 'upstream_failed', 'duplicate']);
 export const ErrorBody = z.object({ error: ErrorCode, message: z.string() });
@@ -283,6 +302,7 @@ export type ProductInput = z.infer<typeof ProductInput>;
 export type WaterSubmissionKind = z.infer<typeof WaterSubmissionKind>;
 export type WaterSubmissionStatus = z.infer<typeof WaterSubmissionStatus>;
 export type WaterSubmission = z.infer<typeof WaterSubmission>;
+export type AdminAddWaterInput = z.infer<typeof AdminAddWaterInput>;
 export type ModerateRequest = z.infer<typeof ModerateRequest>;
 export type ErrorCode = z.infer<typeof ErrorCode>;
 export type ErrorBody = z.infer<typeof ErrorBody>;

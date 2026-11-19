@@ -483,8 +483,8 @@ it('renders adaptive score range, missing inputs, unverified notice, Na+K label,
     mayContain: [],
   };
   await render(<ResultView product={omPartial} score={{ score: 100, letter: 'A', grade: 'good', reasons: [], missing: [] }} nutritionAdditionAvailable />);
-  expect(screen.queryByText(/^100 din 100/)).toBeNull();
-  expect(screen.getByTestId('product-score-range')).toHaveTextContent(/–.*din 100/);
+  expect(screen.getByTestId('product-score')).toHaveTextContent(/96 din 100/);
+  expect(screen.queryByTestId('product-score-range')).toBeNull();
   expect(screen.getByTestId('water-unverified-note')).toBeTruthy();
   expect(screen.queryByText(ro.result.water.missingInputs)).toBeNull();
   expect(within(screen.getByTestId('water-card')).getByText(ro.result.water.ions.naPlusKMgL)).toBeTruthy();
@@ -493,5 +493,5 @@ it('renders adaptive score range, missing inputs, unverified notice, Na+K label,
   expect(within(screen.getByTestId('water-card')).getByText('0 mg/l')).toBeTruthy();
   expect(within(screen.getByTestId('water-card')).getByText(/apaom\.md/)).toBeTruthy();
   expect(within(screen.getByTestId('water-card')).getByText(/Fotografie utilizator/)).toBeTruthy();
-  expect(screen.queryByText(ro.result.water.tiers.daily)).toBeNull();
+  expect(screen.getByTestId('water-tier-insight')).toHaveTextContent(ro.result.water.tiers.daily);
 });

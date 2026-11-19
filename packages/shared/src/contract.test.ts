@@ -6,7 +6,7 @@ import {
   ErrorCode, ErrorBody, IngredientEntry, IdentifyRequest, LABEL_FIELDS, FieldReason, EnrichReadLabelRequest,
   EnrichReadLabelResponse, EnrichProductRequest, ProductInput, Ingredient,
   WaterProfile, Carbonation, WaterClassification, LabelKind, FrontRead,
-  WATER_NUMERIC_KEYS, WATER_FIELD_KEYS, WaterRange, WaterFieldEvidence, WaterSubmission,
+  WATER_NUMERIC_KEYS, WATER_FIELD_KEYS, WaterRange, WaterFieldEvidence, WaterSubmission, AdminAddWaterInput,
 } from './contract';
 
 const emptyWater = {
@@ -386,5 +386,49 @@ describe('water contract', () => {
       .toBe(false);
     expect(LookupResponse.parse({ status: 'found', product, score: adaptive, waterSubmissionStatus: 'partial' }))
       .toMatchObject({ waterSubmissionStatus: 'partial' });
+  });
+
+  it('validates AdminAddWaterInput and add_water moderation payloads', () => {
+    const valid = AdminAddWaterInput.parse({
+      code: '4840001000014',
+      brand: '  OM  ',
+      name: '  Apă potabilă plată  ',
+      quantity: '1,5 L',
+      status: 'verified',
+      source: 'Rusnac-MoldAqua SRL',
+      sourceUrl: 'https://apaom.md/',
+      ingredientsText: '',
+      water: omWater,
+    });
+    expect(valid).toMatchObject({
+      code: '4840001000014',
+      brand: 'OM',
+      name: 'Apă potabilă plată',
+      quantity: '1,5 L',
+      status: 'verified',
+      ingredientsText: '',
+      sourceUrl: 'https://apaom.md/',
+    });
+
+    const uncoded = ModerateRequest.parse({
+      action: 'add_water',
+      product: { ...valid, code: null, sourceUrl: null, status: 'unverified' },
+    });
+    expect(uncoded.action).toBe('add_water');
+    if (uncoded.action === 'add_water') {
+      expect(uncoded.product.code).toBeNull();
+      expect(uncoded.product.status).toBe('unverified');
+    }
+
+    for (const bad of [
+      { ...valid, brand: '   ' },
+      { ...valid, name: '' },
+      { ...valid, quantity: '' },
+      { ...valid, source: '  ' },
+      { ...valid, sourceUrl: 'javascript:alert(1)' },
+      { ...valid, sourceUrl: 'ftp://example.com' },
+    ]) {
+      expect(AdminAddWaterInput.safeParse(bad).success).toBe(false);
+    }
   });
 });
