@@ -26,6 +26,6 @@ export function ScanModeSwitch({ onLabel }: { onLabel: () => void }) {
 
 const styles = StyleSheet.create({
   track: { flexDirection: 'row', padding: 5, gap: 4, borderRadius: radii.segment, boxShadow: shadows.raisedSm },
-  segment: { flex: 1, minHeight: 46, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radii.segmentTab },
+  segment: { flex: 1, minHeight: 46, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', alignContent: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radii.segmentTab },
   text: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 20, textAlign: 'center', flexShrink: 1 },
 });
