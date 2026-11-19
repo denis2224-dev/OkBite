@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { LookupResponse, type AddProductRequest } from '@okbite/shared';
+import { LookupResponse, type AddProductRequest, type WaterProfile } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
+import { compressPhoto } from '../capture/compressPhoto';
 import { StatusPanel } from '../capture/StatusPanel';
 import { useScreenActivity } from '../capture/useScreenActivity';
+import { openPhoto } from '../offline/photos';
 import { productRoute, type AddInitialValues } from '../identify/routes';
 import { completeUnknownDraft } from './completeUnknownDraft';
 import { getAvailableCategories, initializeAvailableCategories } from './draftStore';
 import { ReviewForm } from './ReviewForm';
 import { loadUnknownDraft, saveUnknownDraftIfCurrent, type UnknownDraftSnapshot } from './unknownDraft';
-import { UnknownAddProductRequest } from './unknownFlowContract';
+import { GuidedReadLabelRequest, GuidedReadLabelResponse, UnknownAddProductRequest } from './unknownFlowContract';
 import { requestUnknownFlow } from './unknownFlowTransport';
 import { reconcileLabelReasons } from './labelWarnings';
 import { UnknownProductConfirmation, type UnknownPhotoKind, type UnknownProductProposal } from './UnknownProductConfirmation';
@@ -86,6 +88,7 @@ export function UnknownReviewScreen() {
         ingredientsText: proposal.ingredientsText,
         unit: proposal.unit,
         nutrients: proposal.nutrients,
+        water: proposal.water ?? null,
       }),
     };
     setDraft(updated);
@@ -118,6 +121,44 @@ export function UnknownReviewScreen() {
     handleRetake('ingredients');
   };
 
+  const handleReadWaterFromPhoto = async (): Promise<WaterProfile | null> => {
+    if (!draft.photos.ingredients || !draft.label) return null;
+    const token = activity.start();
+    const photoHandle = await openPhoto(draft.photos.ingredients);
+    let compressedBase64: string;
+    try {
+      const prepared = await compressPhoto(photoHandle.uri, 1_450_000);
+      compressedBase64 = prepared.base64;
+    } finally {
+      photoHandle.release();
+    }
+    const read = await requestUnknownFlow(
+      'read-label',
+      GuidedReadLabelRequest,
+      GuidedReadLabelResponse,
+      {
+        ingredientsImage: compressedBase64,
+        nutritionImage: null,
+        nutrition: 'same_photo',
+        kind: 'water',
+      },
+    );
+    if (!activity.isCurrent(token)) return null;
+    const updated: UnknownDraftSnapshot = {
+      ...draft,
+      initial: { ...draft.initial, isWater: true, categorySlug: 'apa' },
+      label: {
+        ...draft.label,
+        ingredientsText: draft.label.ingredientsText ?? read.ingredientsText,
+        unit: 'ml',
+        water: read.water ?? null,
+      },
+    };
+    setDraft(updated);
+    await saveUnknownDraftIfCurrent(updated).catch(() => {});
+    return read.water ?? null;
+  };
+
   if (manual) {
     return (
       <ReviewForm
@@ -140,6 +181,7 @@ export function UnknownReviewScreen() {
       onConfirm={handleConfirm}
       onRetake={handleRetake}
       onManual={() => setManual(true)}
+      onReadWaterFromPhoto={draft.photos.ingredients ? handleReadWaterFromPhoto : undefined}
     />
   );
 }

@@ -36,6 +36,7 @@ export async function moderate(input: ModerateRequest, actor: string): Promise<v
       unit: p.unit,
       ...nutrients,
       fruit_veg_pct: fruitVegPct,
+      ...(p.water !== undefined ? { water: p.water } : {}),
       ingredients_text: p.ingredientsText,
       allergens: allergens.allergens,
       may_contain: allergens.mayContain,
@@ -45,10 +46,18 @@ export async function moderate(input: ModerateRequest, actor: string): Promise<v
   const { error } = await db.rpc('moderate_product', {
     p_actor: actor,
     p_action: input.action,
-    p_id: input.action === 'close_report' ? input.reportId : input.productId,
+    p_id: input.action === 'close_report'
+      ? input.reportId
+      : input.action === 'resolve_water_submission'
+      ? input.submissionId
+      : input.productId,
     p_product: product,
     p_links: links,
-    p_reason: input.action === 'hide' ? input.reason : null,
+    p_reason: input.action === 'hide'
+      ? input.reason
+      : input.action === 'resolve_water_submission'
+      ? input.decision
+      : null,
   });
   if (error?.code === '42501') throw new HttpError(401, 'Acces neautorizat.', 'unauthorized');
   if (error?.code === 'P0002') throw new HttpError(404, 'Înregistrare negăsită.', 'not_found');

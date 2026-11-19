@@ -16,6 +16,7 @@ import { ScoreTagSmall } from '../shelf/ScoreTagSmall';
 import { savedWhen } from './when';
 import { summarizeBasket } from './basket';
 import { BasketCard } from './BasketCard';
+import { displayScore } from '../product/displayScore';
 
 export function HistoryScreen() {
   const t = useHomeTheme();
@@ -128,24 +129,30 @@ export function HistoryScreen() {
             {visible.map((entry, index) => {
               const {product,score:storedScore,savedAt}=entry;
               const { score: value, tier } = productScoreFor(product, storedScore);
+              const isWater = product.category.scoreKind === 'water';
+              const assessed = isWater ? displayScore(product, storedScore) : null;
+              const range = assessed?.range;
+              const disclaimer = isWater ? ro.result.water.disclaimer : ro.score.disclaimer;
               const verification = product.status === 'verified' && product.verifiedAt
                 ? `${ro.result.checked}: ${roDate(product.verifiedAt)}` : ro.result.unverified;
-              const scoreLabel = value === null || !tier ? ro.result.scoreUnavailable : `${ro.history.score(value)} · ${ro.tiers[tier]}`;
+              const scoreLabel = range ? ro.result.water.estimatedRange(range.min, range.max)
+                : value === null || !tier ? ro.result.scoreUnavailable : `${ro.history.score(value)} · ${ro.tiers[tier]}`;
               const when = savedWhen(savedAt);
-              const label = [ro.history.open(product.name), product.brand, scoreLabel, ro.score.disclaimer, product.source, `${ro.result.added}: ${roDate(product.addedAt)}`, verification, when].join('. ');
+              const label = [ro.history.open(product.name), product.brand, scoreLabel, disclaimer, product.source, `${ro.result.added}: ${roDate(product.addedAt)}`, verification, when].join('. ');
               return <HomePressable key={product.id} label={label} disabled={clearing}
                 accessibilityActions={[{ name: 'delete', label: ro.history.remove(product.name) }]}
                 onAccessibilityAction={event => { if (event.nativeEvent.actionName === 'delete') void remove(entry); }}
                 onLongPress={() => void remove(entry)} onPress={() => router.push({pathname:'/product/[id]',params:{id:product.id,cached:'1'}})}
                 style={[styles.row, index > 0 && { borderTopWidth: 1, borderColor: t.colors.separator }]}>
-                {value === null || !tier
-                  ? <View style={styles.noScore}><Text style={styles.noScoreText}>{ro.history.noScore}</Text></View>
+                {range || value === null || !tier
+                  ? <View style={styles.noScore}><Text style={styles.noScoreText}>{range ? ro.result.water.rangeChip(range.min, range.max) : isWater ? ro.result.scoreUnavailable : ro.history.noScore}</Text></View>
                   : <ScoreTagSmall score={value} tier={tier} />}
                 <View style={styles.product}><Text style={styles.name}>{product.name}</Text><Text style={styles.meta}>{when}</Text></View>
               </HomePressable>;
             })}
           </Card>
-          <Caption>{ro.score.disclaimer}</Caption>
+          {visible.some(({ product }) => product.category.scoreKind !== 'water') && <Caption>{ro.score.disclaimer}</Caption>}
+          {visible.some(({ product }) => product.category.scoreKind === 'water') && <Caption>{ro.result.water.disclaimer}</Caption>}
         </>}
         <Button variant="ghost" onPress={() => router.push('/offline')}>{ro.offline.queueTitle}</Button>
       </ScrollView>
