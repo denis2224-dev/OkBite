@@ -5,18 +5,18 @@ import { fonts, light, typeScale } from '../theme/tokens';
 
 const styleOf = (text: string) => StyleSheet.flatten(screen.getByText(text).props.style);
 
-it('steps the scale by about 1.2 from caption to display, with the score numeral above it', () => {
+it('uses the CALM type scale in Inter only', () => {
   expect(typeScale).toEqual({
-    score: { fontSize: 40, lineHeight: 44 }, display: { fontSize: 26, lineHeight: 32 }, title: { fontSize: 22, lineHeight: 28 },
-    section: { fontSize: 18, lineHeight: 24 }, body: { fontSize: 15, lineHeight: 23 }, caption: { fontSize: 13, lineHeight: 19 },
+    score: { fontSize: 38, lineHeight: 44 }, display: { fontSize: 30, lineHeight: 36 }, title: { fontSize: 20, lineHeight: 26 },
+    section: { fontSize: 19, lineHeight: 25 }, body: { fontSize: 16, lineHeight: 24 }, caption: { fontSize: 13, lineHeight: 18 },
   });
-  expect(fonts.headingExtra).toBe('BricolageGrotesque_800ExtraBold');
+  for (const face of Object.values(fonts)) expect(face).toMatch(/^Inter_/);
 });
 
 it.each([
-  ['Heading', Heading, 26, 32],
-  ['Title', Title, 22, 28],
-  ['Section', Section, 18, 24],
+  ['Heading', Heading, 30, 36],
+  ['Title', Title, 20, 26],
+  ['Section', Section, 19, 25],
 ] as const)('%s is a scalable header at %i/%i in the heading font', async (_, Component, fontSize, lineHeight) => {
   await render(<Component>Alergeni</Component>);
   const header = screen.getByRole('header', { name: 'Alergeni' });
@@ -27,7 +27,7 @@ it.each([
 it('Caption is muted, scalable 13/19 body text and not a header', async () => {
   await render(<Caption>Notă</Caption>);
   expect(screen.queryByRole('header')).toBeNull();
-  expect(styleOf('Notă')).toMatchObject({ fontSize: 13, lineHeight: 19, fontFamily: fonts.body, color: light.muted });
+  expect(styleOf('Notă')).toMatchObject({ fontSize: 13, lineHeight: 18, fontFamily: fonts.body, color: light.muted });
   expect(screen.getByText('Notă').props.allowFontScaling).toBe(true);
 });
 

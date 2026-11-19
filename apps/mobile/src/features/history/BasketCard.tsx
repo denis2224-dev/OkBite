@@ -3,7 +3,6 @@ import type { Tier } from '@okbite/shared';
 import { Body, Caption, Card, Section } from '../../ui';
 import { fonts } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
-import { letterTones } from '../../theme/letterTones';
 import { tierTone } from '../../theme/tierTones';
 import { ro } from '../../copy/ro';
 import { ScoreTag } from '../product/ScoreTag';
@@ -11,7 +10,7 @@ import type { Basket } from './basket';
 
 const order: Tier[] = ['excellent', 'good', 'fair', 'poor', 'bad'];
 // Tier colours from the palette; "Foarte slab" borrows the E red so it stays apart from "Slab".
-const barColor: Record<Tier, string> = { excellent: tierTone('excellent').fg, good: tierTone('good').fg, fair: tierTone('fair').fg, poor: tierTone('poor').fg, bad: letterTones.E.fg };
+const barColor: Record<Tier, string> = { excellent: tierTone('excellent').fill, good: tierTone('good').fill, fair: tierTone('fair').fill, poor: tierTone('poor').fill, bad: tierTone('bad').fill };
 
 export function BasketCard({ basket }: { basket: Basket }) {
   const { colors } = useTheme();
@@ -22,7 +21,7 @@ export function BasketCard({ basket }: { basket: Basket }) {
       {/* The number is the average straight away; only the tag swings in, as on the product page. */}
       <ScoreTag score={basket.average} tier={basket.tier} label={`${ro.history.score(basket.average)} · ${ro.tiers[basket.tier]}`} />
       <View style={{ flex: 1, minWidth: 140 }}>
-        <Body style={{ fontFamily: fonts.heading, fontSize: 22, lineHeight: 28, color: tierTone(basket.tier).fg }}>{ro.tiers[basket.tier]}</Body>
+        <Body style={{ fontFamily: fonts.heading, fontSize: 22, lineHeight: 28, color: tierTone(basket.tier).word }}>{ro.tiers[basket.tier]}</Body>
         <Caption>{ro.history.basket.average(basket.scored)}</Caption>
       </View>
     </View>

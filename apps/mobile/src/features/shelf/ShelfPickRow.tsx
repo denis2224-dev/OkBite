@@ -15,7 +15,7 @@ const BEST_FILL = '#F1F6EE';
 export function ShelfPickRow({ pick, best }: { pick: ShelfPick; best: boolean }) {
   const { colors } = useTheme();
   const { product, score, tier } = pick;
-  const tone = tierTone(tier).fg;
+  const tone = tierTone(tier).word;
   const detail = [product.brand, product.quantity].filter(Boolean).join(', ');
   const label = [best ? ro.scan.shelf.best : null, [product.name, product.brand].filter(Boolean).join(', '), `${ro.history.score(score)} · ${ro.tiers[tier]}`].filter(Boolean).join('. ');
   return <Pressable accessibilityRole="button" accessibilityLabel={label}

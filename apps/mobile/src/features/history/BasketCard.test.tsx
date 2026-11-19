@@ -40,9 +40,9 @@ it('shows the average straight away and keeps the text still; only the tag swing
   expect(screen.getAllByText('69', { includeHiddenElements: true }).length).toBeGreaterThan(0);
 });
 
-it('colours the tier bar like the mockup: Excelent dark green, Bun lighter green, Moderat amber', async () => {
+it('colours the tier bar with the CALM grade fills: Excelent primary, Bun light green, Mediu sand', async () => {
   jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
   await render(<BasketCard basket={basket} />);
   const colours = ['excellent', 'good', 'fair'].map(t => StyleSheet.flatten(screen.getByTestId(`basket-bar-${t}`, { includeHiddenElements: true }).props.style).backgroundColor);
-  expect(colours).toEqual([light.good, light.goodTier, light.medium]);
+  expect(colours).toEqual([light.primary, light.greenLight, light.sand]);
 });
