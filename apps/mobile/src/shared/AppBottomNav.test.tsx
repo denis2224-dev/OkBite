@@ -52,12 +52,12 @@ it('raises Scanează as a 60 pt primary circle with the green glow, whichever ta
  const ui = await render(<AppBottomNav {...makeProps(0)} />);
  expect(style(ui, 'nav-icon-index')).toMatchObject({ width: 60, height: 60, borderRadius: 30, backgroundColor: light.primary, boxShadow: shadows.primaryGlow, marginTop: -30 });
 });
-it.each([[0, 'history'], [1, 'compare'], [3, 'allergies'], [4, 'profile']] as const)('marks the current tab (route %i) by colour only: the dot is always there', async (index, current) => {
+it.each([[0, 'history'], [1, 'compare'], [3, 'allergies'], [4, 'profile']] as const)('marks the current tab (route %i) by icon colour only, with no dot', async (index, current) => {
  const ui = await render(<AppBottomNav {...makeProps(index)} />);
  const flatTabs = tabs.filter(name => name !== 'index');
- for (const name of flatTabs) {
-  expect(style(ui, `nav-dot-${name}`)).toMatchObject({ width: 4, height: 4, backgroundColor: name === current ? light.primary : light.transparent });
- }
+ for (const name of tabs) expect(ui.queryByTestId(`nav-dot-${name}`, { includeHiddenElements: true })).toBeNull();
+ expect(ui.getByRole('tab', { name: ui.getByRole('tab', { selected: true }).props.accessibilityLabel }).props.accessibilityState.selected).toBe(true);
+ void current;
  const shapes = flatTabs.map(name => { const { backgroundColor: _b, ...rest } = style(ui, `nav-icon-${name}`); return JSON.stringify(rest); });
  expect(new Set(shapes).size).toBe(1); // same size and layout for every flat tab
 });
