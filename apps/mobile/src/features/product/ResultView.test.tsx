@@ -486,7 +486,7 @@ it('renders adaptive score range, missing inputs, unverified notice, Na+K label,
   expect(screen.queryByText(/^100 din 100/)).toBeNull();
   expect(screen.getByTestId('product-score-range')).toHaveTextContent(/–.*din 100/);
   expect(screen.getByTestId('water-unverified-note')).toBeTruthy();
-  expect(screen.getByText(ro.result.water.missingInputs)).toBeTruthy();
+  expect(screen.queryByText(ro.result.water.missingInputs)).toBeNull();
   expect(within(screen.getByTestId('water-card')).getByText(ro.result.water.ions.naPlusKMgL)).toBeTruthy();
   expect(within(screen.getByTestId('water-card')).getByText('350–400 mg/l')).toBeTruthy();
   expect(within(screen.getByTestId('water-card')).getByText('70–75 mg/l')).toBeTruthy();

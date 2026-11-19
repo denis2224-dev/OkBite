@@ -328,15 +328,5 @@
     "source": "Acqua Panna Analytical Report",
     "sourceUrl": "https://www.acquapanna.com/us/sites/g/files/xknfdk971/files/2026-04/AcquaPanna_EN_2025_April_6_2026.pdf",
     "ingredientsText": "Toscana, Italia"
-  },
-  {
-    "brand": "Davidan",
-    "name": "Apă potabilă Carbogazificată",
-    "quantity": "500 ml",
-    "code": null,
-    "water": { "dryResidueMgL": 390, "carbonation": "sparkling", "classification": "drinking", "caMgL": 14, "mgMgL": 42.6, "no3MgL": 6.4 },
-    "source": "SRL „Glacial Empire” — etichetă / Raport lab. Nr. 3629 (HG Nr. 934/2, 20.07.2018)",
-    "sourceUrl": "https://davidanwater.md/",
-    "ingredientsText": "Apă potabilă carbogazificată; sursa: sonda arteziană Nr. 3, s. Mășcăuți, r-nul Criuleni"
   }
 ]

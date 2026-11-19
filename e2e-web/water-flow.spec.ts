@@ -38,7 +38,7 @@ test('water flow: partial bottle shows estimated range, second device fills miss
   // Device A opens partial Nordica-like water: sees estimated range (not 100/100) + enrichment CTA.
   await pageA.goto(`/product/${sharedWaterId}`);
   await expect(pageA.getByTestId('product-score-range')).toHaveText(/60–100/);
-  await expect(pageA.getByText(ro.result.water.missingInputs, { exact: true })).toBeVisible();
+  await expect(pageA.getByText(ro.result.water.missingInputs, { exact: true })).toHaveCount(0);
   await pageA.getByRole('button', { name: ro.result.water.addOrUpdateChemistry, exact: true }).click();
 
   // Device A scans clearer label and saves filled calcium + explicit 0 nitrate.

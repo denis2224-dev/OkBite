@@ -9,7 +9,6 @@ import { tierTone } from '../../theme/tierTones';
 import { ro } from '../../copy/ro';
 import { NutriScoreScale } from './NutriScoreScale';
 import { ScoreTag } from './ScoreTag';
-import { waterFieldLabel } from './waterFormat';
 
 /** Result hero: photo thumbnail and name, the product score as a shelf tag with its tier, then the A–E bar
  * (naming the letter) with the disclaimer directly under it. Without a tier, and in Compare's picker
@@ -84,10 +83,6 @@ export function ScoreCard({ product, score, identity = true }: { product?: Produ
         </Body>
       </View>
     </View>
-    {hasRange && score.waterMissing && score.waterMissing.length > 0 && <View style={{ gap: 2 }}>
-      <Body style={{ fontFamily: fonts.bold, fontSize: 13 }}>{wCopy.missingInputs}</Body>
-      <Body style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>{score.waterMissing.map(waterFieldLabel).join(', ')}</Body>
-    </View>}
     {isWater && score.unverifiedUsed && (
       <Body testID="water-unverified-note" style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>{wCopy.unverifiedNote}</Body>
     )}
