@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { describe, it, expect, jest } from '@jest/globals';
 import { render, fireEvent, screen } from '@testing-library/react-native';
+import { StyleSheet, Text } from 'react-native';
 import { ManualCode } from './ManualCode';
+import { light } from '../../theme/tokens';
 import { ro } from '../../copy/ro';
 
 function Harness({ onSubmit, disabled }: { onSubmit: (code: string) => void; disabled?: boolean }) {
@@ -28,6 +30,12 @@ describe('ManualCode', () => {
     const input = screen.getByLabelText(ro.scan.manualTitle);
     expect(input.props.placeholder).toBe('8 sau 13 cifre');
     expect(screen.queryByText('Cifrele de sub codul de bare: 8 sau 13.')).toBeNull();
+  });
+
+  it('is a secondary pill with the trailing control beside it', async () => {
+    await render(<ManualCode open={false} onToggle={jest.fn()} onSubmit={jest.fn()} trailing={<Text>T</Text>} />);
+    expect(StyleSheet.flatten(screen.getByRole('button', { name: ro.scan.manual }).props.style)).toMatchObject({ minHeight: 54, backgroundColor: light.surface, borderColor: light.sand });
+    expect(screen.getByText('T')).toBeTruthy();
   });
 
   it.each([['too short', '12345'], ['letters', 'abc']])('shows ro.scan.manualInvalid and does not submit: %s', async (_name, text) => {
