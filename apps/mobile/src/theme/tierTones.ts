@@ -1,14 +1,15 @@
 import type { Tier } from '@okbite/shared';
 import { light } from './tokens';
 
-type Tone = { fg: string; bg: string };
-const good: Tone = { fg: light.good, bg: light.goodBg };
-const medium: Tone = { fg: light.medium, bg: light.mediumBg };
-const low: Tone = { fg: light.low, bg: light.lowBg };
-// Excelent and Bun get two greens so they read apart (as in the mockup palette).
-const tones: Record<Tier, Tone> = { excellent: good, good: { fg: light.goodTier, bg: light.goodBg }, fair: medium, poor: low, bad: low };
+/** `fill` for badges and bars, `onFill` for text on that fill, `word` for the tier name on the page. */
+export type Tone = { fill: string; onFill: string; word: string };
+const excellent: Tone = { fill: light.primary, onFill: light.onPrimary, word: light.primary };
+const good: Tone = { fill: light.greenLight, onFill: light.ink, word: light.primaryDark };
+const fair: Tone = { fill: light.sand, onFill: light.ink, word: light.textSecondary };
+const weak: Tone = { fill: light.dangerBg, onFill: light.dangerText, word: light.dangerText };
+const tones: Record<Tier, Tone> = { excellent, good, fair, poor: weak, bad: weak };
 
-/** The product-score tier drawn in the grade colours. Light only. */
+/** CALM grades: Excelent = primary, Bun = greenLight, Mediu = sand, Slab and Foarte slab = danger. Light only. */
 export function tierTone(tier: Tier): Tone {
   return tones[tier];
 }

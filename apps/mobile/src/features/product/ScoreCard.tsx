@@ -44,7 +44,7 @@ export function ScoreCard({ product, score, identity = true }: { product?: Produ
       </View>
       <View testID="score-row" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', rowGap: 14, columnGap: 18 }}>
         <ScoreTag testID="product-score" score={shown.value} tier={tier} label={productLine} />
-        <Title {...hidden} accessibilityRole={undefined} style={{ color: tierTone(tier).fg }}>{ro.tiers[tier]}</Title>
+        <Title {...hidden} accessibilityRole={undefined} style={{ color: tierTone(tier).word }}>{ro.tiers[tier]}</Title>
       </View>
       <View style={{ gap: 12 }}>
         <NutriScoreScale letter={score.letter} showLetter />

@@ -2,8 +2,11 @@ import { light } from './tokens';
 import { tierTone } from './tierTones';
 
 it.each([
-  ['excellent', light.good, light.goodBg], ['good', light.goodTier, light.goodBg], ['fair', light.medium, light.mediumBg],
-  ['poor', light.low, light.lowBg], ['bad', light.low, light.lowBg],
-] as const)('colours the %s tier with its grade tone', (tier, fg, bg) => {
-  expect(tierTone(tier)).toEqual({ fg, bg });
+  ['excellent', light.primary, light.onPrimary, light.primary],
+  ['good', light.greenLight, light.ink, light.primaryDark],
+  ['fair', light.sand, light.ink, light.textSecondary],
+  ['poor', light.dangerBg, light.dangerText, light.dangerText],
+  ['bad', light.dangerBg, light.dangerText, light.dangerText],
+] as const)('colours the %s tier like the CALM grades', (tier, fill, onFill, word) => {
+  expect(tierTone(tier)).toEqual({ fill, onFill, word });
 });
