@@ -83,13 +83,10 @@ export function ScoreCard({ product, score, identity = true }: { product?: Produ
         </Body>
       </View>
     </View>
-    {isWater && score.unverifiedUsed && (
-      <Body testID="water-unverified-note" style={{ fontSize: 13, lineHeight: 19, color: colors.muted }}>{wCopy.unverifiedNote}</Body>
-    )}
     {!isWater && (shown ? <NutriScoreScale letter={score.letter} /> : <>
       <Body>{ro.result.insufficient}</Body><Body>{ro.result.missing}</Body>
       {score.missing.map(key => <Body key={key}>{ro.result.nutrients[key]}</Body>)}
     </>)}
-    <Caption>{isWater ? wCopy.disclaimer : ro.score.disclaimer}</Caption>
+    {!isWater && <Caption>{ro.score.disclaimer}</Caption>}
   </View>;
 }

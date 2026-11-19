@@ -4,7 +4,7 @@
     "name": "Apă potabilă plată",
     "quantity": "500 ml",
     "code": null,
-    "water": { "tdsMgL": 375, "dryResidueMgL": 305, "carbonation": "still", "classification": "drinking", "caMgL": 32.5, "mgMgL": 12.5, "naPlusKMgL": 72.5, "hco3MgL": 140, "clMgL": 15.5 },
+    "water": { "tdsMgL": 375, "dryResidueMgL": 305, "ph": 7.4, "carbonation": "still", "classification": "drinking", "caMgL": 32.5, "mgMgL": 12.5, "naPlusKMgL": 72.5, "hco3MgL": 140, "clMgL": 15.5 },
     "source": "Rusnac-MoldAqua SRL",
     "sourceUrl": "https://rusnac.md/ro/branduri/",
     "ingredientsText": "Apă potabilă purificată arteziană, Gura Căinarului, Florești"
@@ -24,7 +24,7 @@
     "name": "Sport plată",
     "quantity": "750 ml",
     "code": null,
-    "water": { "tdsMgL": 375, "dryResidueMgL": 305, "carbonation": "still", "classification": "drinking", "caMgL": 32.5, "mgMgL": 12.5, "naPlusKMgL": 72.5, "hco3MgL": 140, "clMgL": 15.5 },
+    "water": { "tdsMgL": 375, "dryResidueMgL": 305, "ph": 7.4, "carbonation": "still", "classification": "drinking", "caMgL": 32.5, "mgMgL": 12.5, "naPlusKMgL": 72.5, "hco3MgL": 140, "clMgL": 15.5 },
     "source": "Rusnac-MoldAqua SRL",
     "sourceUrl": "https://dev.pelican.md/shop/apa/om/apa-om-075-sport-cup",
     "ingredientsText": "Apă potabilă plată, capac sport"
@@ -144,7 +144,7 @@
     "name": "Kids plată",
     "quantity": "250 ml",
     "code": "5942326400674",
-    "water": { "carbonation": "still", "classification": "natural_mineral" },
+    "water": { "ph": 8.2, "carbonation": "still", "classification": "natural_mineral" },
     "source": "METRO / Profi",
     "sourceUrl": "https://metro.zakaz.md/ro/products/apa-aqua-carpatica-250ml-romania--05942326400674/",
     "ingredientsText": ""
@@ -154,7 +154,7 @@
     "name": "Apă minerală natural carbogazoasă",
     "quantity": "750 ml",
     "code": "5942219116590",
-    "water": { "carbonation": "sparkling", "classification": "natural_mineral" },
+    "water": { "ph": 5.6, "carbonation": "sparkling", "classification": "natural_mineral" },
     "source": "Romaqua Group S.A.",
     "sourceUrl": "https://romaqua-group.ro/wp-content/uploads/2026/04/Borsec-HoReCa-Brosura-2026-03.pdf",
     "ingredientsText": "Borsec, Harghita"
@@ -164,7 +164,7 @@
     "name": "Apă minerală naturală plată",
     "quantity": "1 L",
     "code": null,
-    "water": { "dryResidueMgL": 78, "carbonation": "still", "classification": "natural_mineral", "caMgL": 9.85, "mgMgL": 2.55, "naMgL": 2.84, "kMgL": 1.18, "hco3MgL": 48.8, "so4MgL": 5.89, "clMgL": 3.55, "fMgL": 0.048, "no3MgL": 5.01 },
+    "water": { "dryResidueMgL": 78, "ph": 7.36, "carbonation": "still", "classification": "natural_mineral", "caMgL": 9.85, "mgMgL": 2.55, "naMgL": 2.84, "kMgL": 1.18, "hco3MgL": 48.8, "so4MgL": 5.89, "clMgL": 3.55, "fMgL": 0.048, "no3MgL": 5.01 },
     "source": "Maspex / Linella",
     "sourceUrl": "https://linella.md/bauturi/apa-minerala/apa-minerala-plata-1l-bucovina/",
     "ingredientsText": "Apă minerală naturală oligominerală plată"
@@ -334,7 +334,7 @@
     "name": "Apă potabilă plată",
     "quantity": "9 L",
     "code": "4841257001275",
-    "water": { "tdsMgL": 375, "dryResidueMgL": 305, "carbonation": "still", "classification": "drinking", "caMgL": 32.5, "mgMgL": 12.5, "naPlusKMgL": 72.5, "hco3MgL": 140, "clMgL": 15.5 },
+    "water": { "tdsMgL": 375, "dryResidueMgL": 305, "ph": 7.4, "carbonation": "still", "classification": "drinking", "caMgL": 32.5, "mgMgL": 12.5, "naPlusKMgL": 72.5, "hco3MgL": 140, "clMgL": 15.5 },
     "source": "Rusnac-MoldAqua SRL / Open Food Facts",
     "sourceUrl": "https://world.openfoodfacts.org/product/4841257001275",
     "ingredientsText": ""
@@ -543,5 +543,22 @@
     "source": "Karpatski Mineralni Vody / Molodo",
     "sourceUrl": "https://molodo.com.ua/",
     "ingredientsText": ""
+  },
+  {
+    "brand": "DaviDan",
+    "name": "Apă potabilă carbogazificată",
+    "quantity": "0,5 L",
+    "code": null,
+    "water": {
+      "dryResidueMgL": 390,
+      "carbonation": "sparkling",
+      "classification": "drinking",
+      "caMgL": 14,
+      "mgMgL": 42.6,
+      "no3MgL": 6.4
+    },
+    "source": "SRL Glacial Empire (etichetă)",
+    "sourceUrl": "https://davidan.md/products/apa-davidan",
+    "ingredientsText": "Sonda arteziană nr. 3, s. Mășcăuți, r-nul Criuleni"
   }
 ]

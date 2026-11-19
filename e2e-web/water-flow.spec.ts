@@ -48,15 +48,15 @@ test('water flow: partial bottle shows estimated range, second device fills miss
   await pageA.getByRole('button', { name: ro.add.confirmSave, exact: true }).click();
 
   await expect(pageA).toHaveURL(new RegExp(`/product/${sharedWaterId}$`));
-  await expect(pageA.getByTestId('water-unverified-note').filter({ visible: true }).last()).toBeVisible();
+  await expect(pageA.getByTestId('water-unverified-note')).toHaveCount(0);
   await expect(pageA.getByTestId('water-card').filter({ visible: true }).last()).toContainText('42 mg/l');
 
-  // Device B looks up the same product independently and receives the saved enrichment.
+  // Device B looks up the same product independently and receives the saved enrichment without provenance clutter.
   await pageB.goto(`/product/${sharedWaterId}`);
-  await expect(pageB.getByTestId('water-unverified-note')).toBeVisible();
+  await expect(pageB.getByTestId('water-unverified-note')).toHaveCount(0);
   await expect(pageB.getByTestId('water-card')).toContainText('42 mg/l');
   await expect(pageB.getByTestId('water-card')).toContainText('0 mg/l');
-  await expect(pageB.getByTestId('water-card')).toContainText('Fotografie utilizator');
+  await expect(pageB.getByTestId('water-card')).not.toContainText('Fotografie utilizator');
 
   await ctxA.close();
   await ctxB.close();
