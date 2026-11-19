@@ -113,7 +113,7 @@ export const redesignEn: RedesignCopy = {
   open:(name:string)=>`View details about ${name}`, empty:'We have no additive information for this product.',
  },
  profile: {
-  title:'Profile', goalTitle:'What matters to you?', allergensTitle:'Allergens to watch for', avoidTitle:'Foods and ingredients to avoid',
+  title:'Profile', myAllergies:'My allergies', goalTitle:'What matters to you?', allergensTitle:'Allergens to watch for', avoidTitle:'Foods and ingredients to avoid',
   health:'More balanced food choices', allergies:'Food allergies', family:'Choices for the family',
   weight:'Weight management', other:'Another goal', added_sugar:'Added sugar', sweeteners:'Sweeteners',
   ultra_processed:'Ultra-processed foods', colourings:'Colourings', palm_oil:'Palm oil',
