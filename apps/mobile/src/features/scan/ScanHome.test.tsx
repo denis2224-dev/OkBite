@@ -1,32 +1,43 @@
-import React from 'react';
+import React, { type ReactNode } from 'react';
+import { StyleSheet } from 'react-native';
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { render, fireEvent, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { ro } from '../../copy/ro';
+import { fonts, light } from '../../theme/tokens';
 import { ScanHome } from './ScanHome';
 
-const mockScanner = jest.fn((_props: { embedded?: boolean; torch?: boolean }) => null);
-jest.mock('./ScanScreen', () => ({ __esModule: true, default: (props: { embedded?: boolean; torch?: boolean }) => mockScanner(props) }));
+type ScannerProps = { embedded?: boolean; torch?: boolean; trailing?: ReactNode };
+const mockScanner = jest.fn((props: ScannerProps) => props.trailing ?? null);
+jest.mock('./ScanScreen', () => ({ __esModule: true, default: (props: ScannerProps) => mockScanner(props) }));
+jest.mock('./torchSupport', () => ({ torchSupported: true }));
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), navigate: jest.fn() } }));
 jest.mock('expo-status-bar', () => ({ StatusBar: () => null }));
 jest.mock('./RecentScans', () => ({ RecentScans: () => null }));
 
 const lastProps = () => mockScanner.mock.calls.at(-1)![0];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const flat = (el: { props: Record<string, any> }) => StyleSheet.flatten(el.props.style) as Record<string, unknown>;
+const colourKeys = ['backgroundColor', 'borderColor', 'color', 'boxShadow'];
+const shape = (style: Record<string, unknown>) => Object.fromEntries(Object.entries(style).filter(([key]) => !colourKeys.includes(key)));
 
 describe('ScanHome', () => {
   beforeEach(() => { jest.clearAllMocks(); });
 
-  it('shows the wordmark and a labelled flash button; manual entry is a single row under the scanner, not a header button', async () => {
+  it('is a light page with the logo, the screen title and the score note once', async () => {
     await render(<ScanHome active />);
-    expect(screen.getByRole('header', { name: ro.home.design.brand })).toBeTruthy();
-    expect(screen.getByRole('button', { name: ro.scan.flashOn })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: ro.scan.manual })).toBeNull();
+    expect(screen.getByRole('header', { name: ro.scan.homeTitle })).toBeTruthy();
+    expect(screen.getByLabelText(ro.home.design.brand)).toBeTruthy();
+    expect(flat(screen.getByTestId('scan-home'))).toMatchObject({ backgroundColor: light.ground });
+    expect(screen.getAllByText(ro.score.disclaimer)).toHaveLength(1);
   });
 
-  it('embeds the scanner and toggles the torch with the flash button', async () => {
+  it('embeds the scanner and puts a 52 pt flash circle next to manual entry, toggling the torch', async () => {
     await render(<ScanHome active />);
-    expect(lastProps()).toEqual({ embedded: true, torch: false });
-    await fireEvent.press(screen.getByRole('button', { name: ro.scan.flashOn }));
+    expect(lastProps()).toEqual(expect.objectContaining({ embedded: true, torch: false }));
+    const flash = screen.getByRole('button', { name: ro.scan.flashOn });
+    expect(flat(flash)).toMatchObject({ width: 52, height: 52, backgroundColor: light.surface });
+    await fireEvent.press(flash);
     expect(lastProps().torch).toBe(true);
     await fireEvent.press(screen.getByRole('button', { name: ro.scan.flashOff }));
     expect(lastProps().torch).toBe(false);
@@ -43,6 +54,18 @@ describe('ScanHome', () => {
     expect(router.push).not.toHaveBeenCalled();
     await fireEvent.press(label);
     expect(router.push).toHaveBeenCalledWith('/capture');
+  });
+
+  it('mode switch: the selected segment changes colour only', async () => {
+    await render(<ScanHome active />);
+    const on = flat(screen.getByRole('button', { name: ro.scan.manualLabel }));
+    const off = flat(screen.getByRole('button', { name: ro.scan.photoLabel }));
+    expect(shape(on)).toEqual(shape(off));
+    expect(on.backgroundColor).toBe(light.primary);
+    const onText = flat(screen.getByText(ro.scan.manualLabel));
+    const offText = flat(screen.getByText(ro.scan.labelMode));
+    expect(onText).toMatchObject({ color: light.onPrimary, fontFamily: fonts.bold });
+    expect(offText).toMatchObject({ color: light.textSecondary, fontFamily: fonts.bold });
   });
 
   it('releases the scanner and turns the torch off while the tab is not focused', async () => {

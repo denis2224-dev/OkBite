@@ -4,12 +4,12 @@ import { fonts, radii, shadows } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import { Icon, type IconName } from './Icon';
 
-type Props = { label: string; onPress: () => unknown; icon?: IconName; disabled?: boolean; style?: StyleProp<ViewStyle>; accessibilityLabel?: string };
+type Props = { label: string; onPress: () => unknown; icon?: IconName; disabled?: boolean; style?: StyleProp<ViewStyle>; accessibilityLabel?: string; expanded?: boolean };
 
-function Pill({ label, onPress, icon, disabled, style, accessibilityLabel, primary }: Props & { primary: boolean }) {
+function Pill({ label, onPress, icon, disabled, style, accessibilityLabel, expanded, primary }: Props & { primary: boolean }) {
   const { colors } = useTheme();
   const fg = primary ? colors.onPrimary : colors.ink;
-  return <PressableOpacity accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? label} accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress}
+  return <PressableOpacity accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? label} accessibilityState={expanded === undefined ? { disabled: !!disabled } : { disabled: !!disabled, expanded }} disabled={disabled} onPress={onPress}
     style={[{ minHeight: 54, borderRadius: radii.pill, paddingHorizontal: 22, paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
       primary ? { backgroundColor: colors.primary, boxShadow: shadows.primaryGlow } : { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.sand }, style]}>
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
