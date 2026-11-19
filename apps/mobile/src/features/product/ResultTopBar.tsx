@@ -1,22 +1,11 @@
-import type { ReactNode } from 'react';
 import { View } from 'react-native';
-import { PressableOpacity } from '../../shared/PressableOpacity';
-import { Icon } from '../../ui';
-import { useTheme } from '../../theme/useTheme';
+import { IconCircleButton } from '../../ui';
 import { ro } from '../../copy/ro';
-import { ResultIcon } from './ResultIcon';
 
-function IconButton({ label, disabled, onPress, children }: { label: string; disabled?: boolean; onPress: () => void; children: ReactNode }) {
-  return <PressableOpacity accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress}
-    style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 22, opacity: disabled ? 0.45 : 1 }}>{children}</PressableOpacity>;
-}
-
-/** Share (hidden in the preview) and report on the right. No back arrow: swipe from the left edge goes back. */
+/** Share (hidden in the preview) and report as raised circles on the right. No back arrow: swipe from the left edge goes back. */
 export function ResultTopBar({ onShare, sharing, onReport }: { onShare?: () => void; sharing: boolean; onReport: () => void }) {
-  const { colors } = useTheme();
-  return <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-    <View style={{ flex: 1 }} />
-    {onShare && <IconButton label={ro.share.button} disabled={sharing} onPress={onShare}><Icon name="share" size={24} color={colors.ink} /></IconButton>}
-    <IconButton label={ro.result.report} onPress={onReport}><ResultIcon name="flag" size={24} color={colors.ink} /></IconButton>
+  return <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 12 }}>
+    {onShare && <IconCircleButton icon="share" label={ro.share.button} disabled={sharing} onPress={onShare} />}
+    <IconCircleButton icon="flag" label={ro.result.report} onPress={onReport} />
   </View>;
 }

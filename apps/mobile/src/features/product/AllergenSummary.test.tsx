@@ -1,3 +1,5 @@
+import { StyleSheet } from 'react-native';
+import { light } from '../../theme/tokens';
 import { render, screen } from '@testing-library/react-native';
 import type { Allergen, Product, Profile } from '@okbite/shared';
 import { AllergenSummary } from './AllergenSummary';
@@ -23,6 +25,15 @@ it.each([
   await render(<AllergenSummary product={product} />);
   if (expected === null) expect(screen.queryByTestId('allergen-summary')).toBeNull();
   else expect(screen.getByTestId('allergen-summary')).toHaveTextContent(expected);
+});
+
+it('shows the clear line as a success toast and the no-profile line on the neutral track', async () => {
+  mockProfile = profile(['Arahide']);
+  const view = await render(<AllergenSummary product={yogurt({ status: 'verified' })} />);
+  expect(StyleSheet.flatten(screen.getByTestId('allergen-summary').props.style).backgroundColor).toBe(light.successBg);
+  mockProfile = profile([]);
+  await view.rerender(<AllergenSummary product={yogurt({ allergens: ['Lapte'] })} />);
+  expect(StyleSheet.flatten(screen.getByTestId('allergen-summary').props.style).backgroundColor).toBe(light.track);
 });
 
 it('never claims the label is clear when only a trace of a listed allergen is declared', async () => {
