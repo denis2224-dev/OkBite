@@ -140,6 +140,22 @@ describe('computeWaterScore (adaptive evidence & bounded interval calibration)',
     expect(computeWaterScore(w({ ...therapeutic, no3MgL: 40.5, ranges: { no3MgL: { min: 1, max: 80 } } })))
       .toMatchObject({ score: null, range: { min: 0, max: 20 } });
     expect(computeWaterScore(w({ ...therapeutic, no3MgL: 70 }))).toMatchObject({ score: 0, range: null });
+
+    const missingNo3Therapeutic = computeWaterScore(w(therapeutic));
+    expect(missingNo3Therapeutic).toMatchObject({ score: null, range: { min: 0, max: 20 } });
+    expect(missingNo3Therapeutic.waterMissing).toContain('no3MgL');
+
+    const nonTherapeuticFull = computeWaterScore(w({
+      tdsMgL: 400, fMgL: 2, ph: 7.4, carbonation: 'still', naMgL: 10, so4MgL: 10, caMgL: 40, mgMgL: 20, no3MgL: null,
+    }));
+    expect(nonTherapeuticFull.range).toBeNull();
+    expect(nonTherapeuticFull.waterMissing).not.toContain('no3MgL');
+
+    const nonTherapeuticPartial = computeWaterScore(w({
+      tdsMgL: 400, fMgL: 2, ph: null, carbonation: 'still', no3MgL: null,
+    }));
+    expect(nonTherapeuticPartial.range).not.toBeNull();
+    expect(nonTherapeuticPartial.waterMissing).not.toContain('no3MgL');
   });
 
   it('keeps combined sodium and potassium distinct in the score reasons', () => {

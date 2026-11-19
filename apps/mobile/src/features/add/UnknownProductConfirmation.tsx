@@ -51,7 +51,7 @@ export function UnknownProductConfirmation({ initial, label, photos, categories,
     return {
       ...(initial.categorySlug ? { categorySlug: initial.categorySlug } : initialWater ? { categorySlug: 'apa' } : {}),
       code: initial.code, name: initial.name ?? '', brand: initial.brand ?? '', quantity: initial.quantity ?? '',
-      photoPath: initial.photoPath, ingredientsText: label.ingredientsText ?? '', unit: label.unit ?? (initialWater ? 'ml' : null),
+      photoPath: initial.photoPath, ingredientsText: label.ingredientsText ?? '', unit: initialWater ? 'ml' : label.unit,
       nutrients: { ...label.nutrients },
       ...(initialWater ? { water: seededWater } : {}),
       ingredientsPhotoPath: label.ingredientsPhotoPath, nutritionPhotoPath: label.nutritionPhotoPath,
@@ -119,7 +119,7 @@ export function UnknownProductConfirmation({ initial, label, photos, categories,
               : baseNextWater;
           change({
             ...value, categorySlug,
-            unit: nextIsWater ? (value.unit ?? 'ml') : value.unit,
+            unit: nextIsWater ? 'ml' : value.unit,
             water: nextIsWater ? nextWater : undefined,
           });
           setCategoryOpen(false);
@@ -167,7 +167,7 @@ export function UnknownProductConfirmation({ initial, label, photos, categories,
                       change({
                         ...value,
                         categorySlug: 'apa',
-                        unit: value.unit ?? 'ml',
+                        unit: 'ml',
                         water: mergedWater,
                       });
                       setWaterInvalid(false);

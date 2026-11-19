@@ -801,4 +801,28 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
       water: expect.objectContaining({ carbonation: 'still', ph: 7.8, tdsMgL: 250 }),
     });
   });
+
+  it('hides the g/ml selector and locks unit to ml in ReviewForm when Apă is chosen over unit g', async () => {
+    const onSubmit = jest.fn<(req: AddProductRequestType) => void>();
+    await render(
+      <ReviewForm
+        label={{ ...BASE_LABEL, ingredientsText: null, unit: 'g' }}
+        initial={{ ...BASE_INITIAL, name: 'Apă minerală', quantity: '1500 ml' }}
+        categories={getAvailableCategories()}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: ro.compare.per100('g') })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Apă` }));
+    expect(screen.queryByRole('button', { name: ro.compare.per100('g') })).toBeNull();
+    expect(screen.queryByRole('button', { name: ro.compare.per100('ml') })).toBeNull();
+
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({
+      categorySlug: 'apa',
+      unit: 'ml',
+    });
+  });
 });

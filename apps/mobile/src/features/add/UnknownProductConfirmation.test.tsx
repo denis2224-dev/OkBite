@@ -265,3 +265,44 @@ it('offers one-tap photo water extraction when switched manually to Apă with em
   expect(screen.getByTestId('water-mgMgL').props.value).toBe('42,6');
   expect(screen.getByTestId('water-no3MgL').props.value).toBe('6,4');
 });
+
+it('locks unit to ml when switching to Apă or reading water composition even if initial label unit was g', async () => {
+  const onConfirm = jest.fn(async () => {});
+  const extracted = {
+    ...emptyWaterProfile(),
+    dryResidueMgL: 390,
+    carbonation: 'still' as const,
+  };
+  const onReadWaterFromPhoto = jest.fn(async () => extracted);
+  const categories = [
+    { slug: 'apa', name: 'Apă', scoreKind: 'water' as const },
+    { slug: 'iaurt', name: 'Iaurt', scoreKind: 'general' as const },
+  ];
+
+  // Case 1: switching category manually from a food read with unit='g' to Apă
+  const switchInput = props({
+    categories,
+    label: { ...label, unit: 'g' },
+    onConfirm,
+  });
+  const rendered = await render(<UnknownProductConfirmation {...switchInput} />);
+  await fireEvent.press(screen.getByRole('button', { name: `${ro.add.categoryOptional}: ${ro.add.unknownCategory}` }));
+  await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Apă` }));
+  await act(async () => { await fireEvent.press(screen.getByRole('button', { name: ro.add.confirmSave })); });
+  expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({ categorySlug: 'apa', unit: 'ml' }));
+  await rendered.unmount();
+
+  // Case 2: onReadWaterFromPhoto forces unit='ml' when initial label unit was 'g'
+  const photoConfirm = jest.fn(async () => {});
+  await render(<UnknownProductConfirmation {...props({
+    categories,
+    label: { ...label, unit: 'g', ingredientsText: null },
+    onReadWaterFromPhoto,
+    onConfirm: photoConfirm,
+  })} />);
+  await fireEvent.press(screen.getByRole('button', { name: `${ro.add.categoryOptional}: ${ro.add.unknownCategory}` }));
+  await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Apă` }));
+  await act(async () => { await fireEvent.press(screen.getByRole('button', { name: 'Citește compoziția apei din fotografie' })); });
+  await act(async () => { await fireEvent.press(screen.getByRole('button', { name: ro.add.confirmSave })); });
+  expect(photoConfirm).toHaveBeenCalledWith(expect.objectContaining({ categorySlug: 'apa', unit: 'ml' }));
+});

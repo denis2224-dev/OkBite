@@ -46,4 +46,20 @@ describe('WaterFields', () => {
     expect(zeroCall.no3MgL).toBe(0);
     expect(zeroCall.ranges?.no3MgL).toBeUndefined();
   });
+
+  it('rejects a mismatched ion prefix typed into a mineral field instead of accepting the wrong ion value', async () => {
+    const onChange = jest.fn();
+    const onInvalidChange = jest.fn();
+    await render(<WaterFields value={emptyWaterProfile()} onChange={onChange} onInvalidChange={onInvalidChange} />);
+
+    await fireEvent.changeText(screen.getByTestId('water-caMgL'), 'Mg2+42,6');
+    expect(screen.getByTestId('water-error-caMgL')).toBeTruthy();
+    expect(onInvalidChange).toHaveBeenLastCalledWith(true);
+    expect(onChange).not.toHaveBeenCalled();
+
+    await fireEvent.changeText(screen.getByTestId('water-caMgL'), 'Ca2+14,0');
+    expect(screen.queryByTestId('water-error-caMgL')).toBeNull();
+    expect(onInvalidChange).toHaveBeenLastCalledWith(false);
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ caMgL: 14 }));
+  });
 });

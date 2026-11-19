@@ -70,7 +70,7 @@ export function AddNutritionScreen() {
       if (!activity.isCurrent(token)) return;
       const waterRead = initialIsWater || Boolean(result.water);
       setReadResult(result);
-      setUnit(result.unit ?? (waterRead ? 'ml' : null)); // unread stays null for non-water: the shopper picks g/ml
+      setUnit(waterRead ? 'ml' : result.unit); // unread stays null for non-water: the shopper picks g/ml
       setNutrients({ ...result.nutrients });
       setWater(waterRead ? (result.water ?? emptyWaterProfile()) : null);
     } catch (err) {
@@ -164,28 +164,30 @@ export function AddNutritionScreen() {
   return (
     <Screen title={ro.add.confirmTitle}>
       <View style={{ gap: 12, padding: 16, borderRadius: 20, backgroundColor: colors.surface }}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={ro.review.per100}
-          disabled={saving}
-          onPress={() => setUnitOpen(!unitOpen)}
-          style={{ minHeight: 44, justifyContent: 'center' }}
-        >
-          <Text style={{ color: colors.ink, fontSize: 16 }}>{unit === 'g' ? ro.add.basisGram : unit === 'ml' ? ro.add.basisMl : ro.add.unitQuestion}</Text>
-        </Pressable>
-        {unitOpen || unit === null ? (
-          (['g', 'ml'] as const).map(option => (
-            <ActionButton
-              key={option}
-              label={ro.compare.per100(option)}
-              disabled={saving}
-              onPress={() => {
-                setUnit(option);
-                setUnitOpen(false);
-              }}
-            />
-          ))
-        ) : null}
+        {!isWater ? <>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={ro.review.per100}
+            disabled={saving}
+            onPress={() => setUnitOpen(!unitOpen)}
+            style={{ minHeight: 44, justifyContent: 'center' }}
+          >
+            <Text style={{ color: colors.ink, fontSize: 16 }}>{unit === 'g' ? ro.add.basisGram : unit === 'ml' ? ro.add.basisMl : ro.add.unitQuestion}</Text>
+          </Pressable>
+          {unitOpen || unit === null ? (
+            (['g', 'ml'] as const).map(option => (
+              <ActionButton
+                key={option}
+                label={ro.compare.per100(option)}
+                disabled={saving}
+                onPress={() => {
+                  setUnit(option);
+                  setUnitOpen(false);
+                }}
+              />
+            ))
+          ) : null}
+        </> : null}
         {isWater ? (
           <WaterFields
             value={water ?? emptyWaterProfile()}

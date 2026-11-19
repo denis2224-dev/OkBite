@@ -410,10 +410,18 @@ function solveAdaptiveBounds(w: WaterProfile, effectiveTdsInt: [number, number] 
       waterMissing.push('naMgL');
     }
     if (w.so4MgL === null && rem > 250) waterMissing.push('so4MgL');
+    const therapeuticPossible =
+      w.classification === 'therapeutic' ||
+      (effectiveTdsInt !== null && effectiveTdsInt[1] > 5000) ||
+      naChoices.some((c) => c.val > 1000) ||
+      boronLo > 5.2 ||
+      so4Choices.some((c) => c.val > 1500);
     if (!knownSafetyMin) {
       if (w.fMgL === null && rem > 1.5) waterMissing.push('fMgL');
       if (w.no3MgL === null && rem > 10) waterMissing.push('no3MgL');
       if (w.bMgL === null && w.h3bo3MgL === null && rem > 30) waterMissing.push('h3bo3MgL');
+    } else if (therapeuticPossible && w.no3MgL === null && rem >= 50.001) {
+      waterMissing.push('no3MgL');
     }
     const tdsMin = effectiveTdsInt?.[0] ?? 0;
     const lowNaPossible = naChoices.some((c) => c.val < 20);

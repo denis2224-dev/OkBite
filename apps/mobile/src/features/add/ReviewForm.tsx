@@ -63,7 +63,7 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
   const [brand, setBrand] = useState(initial.brand ?? '');
   const [quantity, setQuantity] = useState(initial.quantity ?? '');
   const [code, setCode] = useState(initial.code ?? '');
-  const [unit, setUnit] = useState<Unit | null>(label.unit ?? (initialWater ? 'ml' : null));
+  const [unit, setUnit] = useState<Unit | null>(initialWater ? 'ml' : label.unit);
   const [categorySlug, setCategorySlug] = useState<string | null>(initialWater ? (initial.categorySlug ?? 'apa') : (initial.categorySlug ?? null));
   const [water, setWater] = useState<WaterProfile | null>(() => label.water ?? (initialWater ? emptyWaterProfile() : null));
   const [waterInvalid, setWaterInvalid] = useState(false);
@@ -215,21 +215,23 @@ export function ReviewForm({ label, initial, categories, onSubmit, onRetake }: R
         <Text style={styles.fieldLabel}>{ro.scan.manualTitle}</Text>
         <TextInput testID="input-code" accessibilityLabel={ro.scan.manualTitle} value={code} onChangeText={(v) => { setCode(v); setFormError(null); }} keyboardType="number-pad" style={styles.input} />
 
-        <View style={styles.unitRow}>
-          {UNITS.map((u) => {
-            const selected = unit === u;
-            return (
-              <Pressable key={u} accessibilityRole="button" accessibilityLabel={ro.compare.per100(u)} accessibilityState={{ selected }} onPress={() => { setUnit(u); setFormError(null); }} style={[styles.unitButton, selected && styles.unitButtonSelected]}>
-                <Text style={[styles.unitText, selected && styles.unitTextSelected]}>{ro.compare.per100(u)}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        {!isWaterMode ? (
+          <View style={styles.unitRow}>
+            {UNITS.map((u) => {
+              const selected = unit === u;
+              return (
+                <Pressable key={u} accessibilityRole="button" accessibilityLabel={ro.compare.per100(u)} accessibilityState={{ selected }} onPress={() => { setUnit(u); setFormError(null); }} style={[styles.unitButton, selected && styles.unitButtonSelected]}>
+                  <Text style={[styles.unitText, selected && styles.unitTextSelected]}>{ro.compare.per100(u)}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
 
         <CategoryPicker categories={categories} selectedSlug={categorySlug} onSelect={(slug) => {
           setCategorySlug(slug);
           setFormError(null);
-          if (slug === 'apa') { setWater(w => w ?? emptyWaterProfile()); setUnit(u => u ?? 'ml'); }
+          if (slug === 'apa') { setWater(w => w ?? emptyWaterProfile()); setUnit('ml'); }
           else { setWater(null); setWaterInvalid(false); }
         }} disabled={submitting} />
       </View>

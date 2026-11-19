@@ -199,3 +199,37 @@ test('informs the shopper when water submission is queued for moderation instead
   });
   expect(mockReplace).toHaveBeenCalledWith(`/product/${foundProductId}`);
 });
+
+test('locks water enrichment unit to ml and hides the g/ml unit toggle even if read-label returns g', async () => {
+  mockParams.value = { productId: foundProductId, kind: 'water' };
+  const water = { ...emptyWaterProfile(), carbonation: 'still' as const, tdsMgL: 390 };
+  jest.mocked(requestUnknownFlow)
+    .mockResolvedValueOnce({
+      ingredientsText: null,
+      unit: 'g',
+      nutrients: { kcal: null, fat: null, sat: null, sugar: null, salt: null, protein: null, fiber: null, fruitVegPct: null },
+      water,
+      unclear: [],
+      ingredientsPhotoPath: null,
+      nutritionPhotoPath: 'uploads/dev-1/water-panel.jpg',
+      reasons: Object.fromEntries([...NUTRIENT_KEYS, 'ingredientsText'].map(k => [k, 'not_printed'])),
+    })
+    .mockResolvedValueOnce(lookupFound);
+
+  await render(<AddNutritionScreen />);
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: ro.capture.shutter }));
+  });
+
+  expect(screen.queryByRole('button', { name: ro.review.per100 })).toBeNull();
+  expect(screen.queryByRole('button', { name: ro.compare.per100('g') })).toBeNull();
+
+  await act(async () => {
+    fireEvent.press(screen.getByRole('button', { name: ro.add.confirmSave }));
+  });
+  expect(jest.mocked(requestUnknownFlow).mock.calls[1]?.[3]).toMatchObject({
+    productId: foundProductId,
+    unit: 'ml',
+    water,
+  });
+});

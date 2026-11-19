@@ -57,7 +57,7 @@ export function WaterFields({ value, disabled, onChange, onInvalidChange }: Wate
     const trimmed = text.trim();
     const kind = key === 'ph' ? 'ph' : key === 'iUgL' ? 'i_ug' : 'mg';
     const maxCap = key === 'ph' ? 14 : 50_000;
-    const { value: parsed, range } = trimmed ? parseWaterValueWithRange(trimmed, kind) : { value: null };
+    const { value: parsed, range } = trimmed ? parseWaterValueWithRange(trimmed, kind, key) : { value: null };
     const valid =
       !trimmed ||
       (parsed !== null &&
