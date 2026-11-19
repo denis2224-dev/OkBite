@@ -198,9 +198,9 @@ test('demo mode keeps the illustrative-scores footnote', async () => {
   expect(screen.getByText(design.footnote)).toBeTruthy();
 });
 
-test('the empty screen labels both slots, explains the rule once, and gives each pick button its own label', async () => {
+test('the empty screen labels both slots without a rule line, and gives each pick button its own label', async () => {
   await render(<Compare />);
-  expect(screen.getByText(design.hint)).toBeTruthy();
+  expect(screen.queryByText('Alege două produse din aceeași categorie.')).toBeNull();
   expect(screen.getByText(design.productA)).toBeTruthy();
   expect(screen.getByText(design.productB)).toBeTruthy();
   const a = screen.getByRole('button', { name: `${design.productA}: ${ro.compare.choose}` });
@@ -266,4 +266,11 @@ test('compares two waters by mineral composition instead of food macros and keep
   expect(screen.getByText('350–400 mg/l')).toBeTruthy();
   expect(screen.getByText('200 mg/l')).toBeTruthy();
   expect(screen.getByText(ro.result.water.ions.naPlusKMgL)).toBeTruthy();
+});
+
+test('an empty picker says the history is empty without a storage note', async () => {
+  await render(<ProductPicker entries={[]} onSelect={jest.fn()} slot={design.productA} />);
+  await fireEvent.press(screen.getByRole('button', { name: `${design.productA}: ${ro.compare.choose}` }));
+  expect(screen.getByText(ro.history.design.emptyTitle)).toBeTruthy();
+  expect(screen.queryByText(/acest telefon/)).toBeNull();
 });

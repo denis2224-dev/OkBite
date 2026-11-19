@@ -124,7 +124,7 @@ export default function Compare() {
   }
   return <SafeAreaView edges={id ? ['top','bottom','left','right'] : ['top','left','right']} style={styles.safe}>
    <View style={styles.frame}>
-    <TabPageHeader title={copy.title} subtitle={a ? copy.subtitle(a.product.category.name,a.product.unit) : copy.hint}/>
+    <TabPageHeader title={copy.title} subtitle={a ? copy.subtitle(a.product.category.name,a.product.unit) : undefined}/>
     <ScrollView style={styles.scroll} contentContainerStyle={[styles.body,{gap:16}]} keyboardShouldPersistTaps="handled">
     {error && <Body accessibilityLiveRegion="polite">{ro.history.storageError}</Body>}
     <ProductPicker slot={copy.productA} entries={entries} selected={a} excluded={b?.product.id} onSelect={entry => select({ id, a: entry, b })} />
