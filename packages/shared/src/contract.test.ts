@@ -394,8 +394,10 @@ describe('water contract', () => {
       brand: '  OM  ',
       name: '  Apă potabilă plată  ',
       quantity: '1,5 L',
+      status: 'verified',
       source: 'Rusnac-MoldAqua SRL',
       sourceUrl: 'https://apaom.md/',
+      ingredientsText: '',
       water: omWater,
     });
     expect(valid).toMatchObject({

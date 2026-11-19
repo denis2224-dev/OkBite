@@ -208,7 +208,7 @@ export const AdminAddWaterInput = z.object({
   brand: z.string().trim().min(1).max(80),
   name: z.string().trim().min(1).max(120),
   quantity: z.string().trim().min(1).max(30),
-  status: z.enum(['verified', 'unverified']).default('verified'),
+  status: z.enum(['verified', 'unverified']),
   source: z.string().trim().min(1).max(200),
   sourceUrl: z
     .string()
@@ -218,7 +218,7 @@ export const AdminAddWaterInput = z.object({
     .refine((u) => /^https?:\/\//i.test(u), 'expected http/https URL')
     .nullable()
     .optional(),
-  ingredientsText: z.string().max(3000).default(''),
+  ingredientsText: z.string().max(3000),
   water: WaterProfile,
 });
 export const ModerateRequest = z.discriminatedUnion('action', [
