@@ -1,6 +1,8 @@
 import { render, screen, fireEvent, within } from '@testing-library/react-native';
 import { useEffect as mockUseEffect } from 'react';
-import Compare from '../../../app/(tabs)/compare';
+import CompareScreen from '../../../app/(tabs)/compare';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { light, radii } from '../../theme/tokens';
 import { previewEntries } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
 import { productScoreFor } from '../product/productScoreFor';
@@ -8,6 +10,8 @@ import { ProductPicker } from './ProductPicker';
 import { router } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { compareRows } from './compare';
+const Compare = () => <GestureHandlerRootView><CompareScreen /></GestureHandlerRootView>;
+const design = ro.compare.design;
 const mockEntries = previewEntries.map(entry => ({ ...entry, savedAt: '2026-11-05T00:00:00.000Z' }));
 let mockId: string | undefined;
 let mockAllergens: string[] = [];
@@ -62,6 +66,7 @@ test('comparison cards keep allergens and traces but leave sources to the produc
   await choose(0); await choose(1);
   expect(screen.queryByText(ro.result.source)).toBeNull();
   expect(screen.queryByText(previewEntries[0]!.product.source)).toBeNull();
+  await fireEvent.press(screen.getByRole('tab', { name: design.tabs.allergens }));
   expect(screen.getAllByText('Lapte')).toHaveLength(2);
   expect(screen.getByText(ro.result.mayContain)).toBeTruthy();
 });
@@ -143,7 +148,6 @@ test('each product card is minimal: A/B label, name and tier word only, no numbe
   expect(styles[0]).toEqual(styles[1]);
 });
 
-const design = ro.compare.design;
 test('the better-choice verdict marks the higher score, and only within one category', async () => {
   const result = await render(<Compare />);
   await choose(0); await choose(1);
@@ -220,4 +224,47 @@ test('an empty picker says the history is empty without a storage note', async (
   await fireEvent.press(screen.getByRole('button', { name: `${design.productA}: ${ro.compare.choose}` }));
   expect(screen.getByText(ro.history.design.emptyTitle)).toBeTruthy();
   expect(screen.queryByText(/acest telefon/)).toBeNull();
+});
+
+test('the comparison sits in swipeable Nutrienți / Ingrediente / Alergeni tabs, Nutrienți first', async () => {
+  await render(<Compare />);
+  await choose(0); await choose(1);
+  const tabs = screen.getAllByRole('tab');
+  expect(tabs.map(tab => tab.props.accessibilityLabel)).toEqual([design.tabs.nutrients, design.tabs.ingredients, design.tabs.allergens]);
+  expect(tabs[0]!.props.accessibilityState.selected).toBe(true);
+  expect(screen.getByText('4,1 g')).toBeTruthy();
+});
+
+test('Ingrediente shows both ingredient lists side by side, as declared', async () => {
+  await render(<Compare />);
+  await choose(0); await choose(1);
+  await fireEvent.press(screen.getByRole('tab', { name: design.tabs.ingredients }));
+  for (const index of [0, 1]) expect(screen.getByText(previewEntries[index]!.product.ingredientsText)).toBeTruthy();
+});
+
+test('one verdict line names the better product, and none when no product wins', async () => {
+  await render(<Compare />);
+  await choose(0); await choose(1);
+  expect(screen.getAllByText(design.verdict(previewEntries[0]!.product.name))).toHaveLength(1);
+});
+
+test('cards are soft cards of equal size; the winner gets an accent outline overlay and the mist pill', async () => {
+  await render(<Compare />);
+  await choose(0); await choose(1);
+  const cards = screen.getAllByTestId('compare-card');
+  expect(StyleSheet.flatten(cards[0]!.props.style)).toMatchObject({ backgroundColor: light.surface, borderRadius: radii.card });
+  expect(StyleSheet.flatten(within(cards[0]!).getByTestId('compare-outline').props.style)).toMatchObject({ borderWidth: 2, borderColor: light.accent, position: 'absolute' });
+  expect(within(cards[1]!).queryByTestId('compare-outline')).toBeNull();
+  expect(StyleSheet.flatten(within(cards[0]!).getByTestId('compare-best').props.style)).toMatchObject({ backgroundColor: light.mist });
+  expect(within(cards[0]!).getAllByTestId(/grade|sq/, { includeHiddenElements: true }).length).toBeGreaterThan(0);
+});
+
+test('better values are primaryDark in the same weight as the others', async () => {
+  await render(<Compare />);
+  await choose(0); await choose(1);
+  const better = StyleSheet.flatten(within(screen.getByTestId('compare-cell-sugar-a')).getByText('4,1 g').props.style);
+  const other = StyleSheet.flatten(within(screen.getByTestId('compare-cell-sugar-b')).getByText('13,2 g').props.style);
+  expect(better.color).toBe(light.primaryDark);
+  expect(better.fontFamily).toBe(other.fontFamily);
+  expect(screen.queryByText(design.favorable)).toBeNull();
 });
