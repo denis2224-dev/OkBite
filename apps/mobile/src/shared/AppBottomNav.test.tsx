@@ -56,8 +56,16 @@ it.each([[0, 'history'], [1, 'compare'], [3, 'allergies'], [4, 'profile']] as co
  const ui = await render(<AppBottomNav {...makeProps(index)} />);
  const flatTabs = tabs.filter(name => name !== 'index');
  for (const name of tabs) expect(ui.queryByTestId(`nav-dot-${name}`, { includeHiddenElements: true })).toBeNull();
- expect(ui.getByRole('tab', { name: ui.getByRole('tab', { selected: true }).props.accessibilityLabel }).props.accessibilityState.selected).toBe(true);
- void current;
+ // The selected icon is drawn in the bright green accent; the others stay muted.
+ type Node = { props?: Record<string, unknown>; children?: (Node | string)[] | null };
+ const find = (node: Node | string | null, id: string): Node | null => {
+  if (!node || typeof node === 'string') return null;
+  if (node.props?.testID === id) return node;
+  for (const child of node.children ?? []) { const hit = find(child, id); if (hit) return hit; }
+  return null;
+ };
+ const ink = (name: string) => JSON.stringify(find(ui.toJSON() as Node, `nav-icon-${name}`));
+ for (const name of flatTabs) expect(ink(name)).toContain(name === current ? light.accent : light.muted);
  const shapes = flatTabs.map(name => { const { backgroundColor: _b, ...rest } = style(ui, `nav-icon-${name}`); return JSON.stringify(rest); });
  expect(new Set(shapes).size).toBe(1); // same size and layout for every flat tab
 });

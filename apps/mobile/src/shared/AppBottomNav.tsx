@@ -25,7 +25,7 @@ export function AppBottomNav({ state, emitter, navigateToTab, insets }: BottomTa
  }, []);
  if (keyboard) return null;
  // CALM floating bar, icons only (names are the accessibility labels). It stays in layout flow, so no screen content hides behind it.
- // The current tab differs by icon colour only; there is no dot.
+ // The current tab differs by icon colour only (bright green accent); there is no dot.
  return <View testID="nav-bar" style={{ backgroundColor: colors.ground, paddingHorizontal: 14, paddingTop: 30, paddingBottom: Math.max(18, insets.bottom) }}>
   <View testID="nav-pill" accessibilityRole="tablist" style={{ height: 78, borderRadius: radii.nav, backgroundColor: colors.surface, boxShadow: shadows.nav, flexDirection: 'row', alignItems: 'center', width: '100%', maxWidth: 480, alignSelf: 'center' }}>
    {items.map(item => {
@@ -43,7 +43,7 @@ export function AppBottomNav({ state, emitter, navigateToTab, insets }: BottomTa
        <Icon name="scan" size={24} color={colors.onPrimary} />
       </View>
       : <View testID={`nav-icon-${item.name}`} style={{ width: 44, height: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.transparent }}>
-       <Icon name={icons[item.name]} size={22} color={selected ? colors.primary : colors.muted} />
+       <Icon name={icons[item.name]} size={22} color={selected ? colors.accent : colors.muted} />
       </View>}
     </PressableOpacity>;
    })}
