@@ -24,7 +24,7 @@ describe('WaterSubmissionsList', () => {
     const onResolve = jest.fn(async () => {});
     await render(<WaterSubmissionsList items={[submission]} onResolve={onResolve} />);
 
-    expect(screen.getByText(/OM · OM Apă Plată/)).toBeTruthy();
+    expect(screen.getByText(/OM, OM Apă Plată/)).toBeTruthy();
     expect(screen.getByText(new RegExp(ro.app.admin.waterKinds.conflict))).toBeTruthy();
     expect(screen.getByText(/350–400 mg\/l/)).toBeTruthy();
     expect(screen.getByText(/490 mg\/l/)).toBeTruthy();

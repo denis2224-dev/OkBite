@@ -39,7 +39,7 @@ export function BasketCard({ basket }: { basket: Basket }) {
     <View style={{ height: 1, backgroundColor: colors.divider }} />
     <View style={{ gap: 2 }}>
       <Body style={{ fontFamily: fonts.bold }}>{ro.history.basket.best(basket.best.name)}</Body>
-      <Caption>{`${ro.history.score(basket.best.score)} · ${ro.tiers[basket.best.tier]}`}</Caption>
+      <Caption>{`${ro.history.score(basket.best.score)}, ${ro.tiers[basket.best.tier]}`}</Caption>
     </View>
   </Card>;
 }

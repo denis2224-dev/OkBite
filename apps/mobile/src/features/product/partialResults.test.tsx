@@ -4,7 +4,6 @@ import { router } from 'expo-router';
 import { ResultView } from './ResultView';
 import { foundYogurt } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
-import { roDate } from './SourceCard';
 import { light as mockLight } from '../../theme/tokens';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
@@ -13,19 +12,15 @@ const empty = Object.fromEntries(NUTRIENT_KEYS.map(key => [key, null])) as typeo
 const product = { ...foundYogurt.product, status: 'unverified' as const, nutrients: empty };
 describe('partial result', () => {
   beforeEach(() => { jest.clearAllMocks(); });
-  it('replaces absent nutrition with a neutral card while keeping the ingredients button and provenance', async () => {
+  it('replaces absent nutrition with a neutral card while keeping the ingredient text', async () => {
     await render(<ResultView product={{...product, allergens: [], mayContain: ['Soia']}} score={foundYogurt.score} />);
     expect(screen.getByText(ro.result.nutritionUnavailable)).toBeTruthy();
     expect(screen.queryByText(ro.score.title)).toBeNull();
     expect(screen.queryByText(ro.result.portion)).toBeNull();
     expect(screen.queryAllByText(/% din referința zilnică/)).toHaveLength(0);
-    expect(screen.getByRole('button', { name: ro.result.ingredientsTile })).toBeTruthy(); // the label text opens from here
-    expect(screen.getByText('Soia')).toBeTruthy();
-    expect(screen.getByText(ro.result.missingAllergenNote)).toBeTruthy();
+    expect(screen.getByRole('button', { name: ro.result.ingredientsHide })).toBeTruthy(); // the label text is on the page
     expect(screen.queryByText(ro.result.noAllergens)).toBeNull();
-    expect(screen.getByText(product.source)).toBeTruthy();
-    expect(screen.getByText(`${ro.result.added}: ${roDate(product.addedAt)}`)).toBeTruthy();
-    expect(screen.getByText(ro.result.unverifiedNote)).toBeTruthy();
+    expect(screen.queryByTestId('source-card')).toBeNull();
   });
   it('shows only available values on their declared basis, preserving real zero', async () => {
     await render(<ResultView product={{...product, nutrients: {...empty, sugar: 0, salt: 0.5}}} score={foundYogurt.score} />);

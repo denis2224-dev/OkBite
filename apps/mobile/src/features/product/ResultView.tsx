@@ -6,16 +6,16 @@ import { Body, Button, Card, Heading, LinkRow, useToast } from '../../ui';
 import { ro } from '../../copy/ro';
 import { isPreview } from '../../lib/preview';
 import { displayScore } from './displayScore';
+import { productScoreFor } from './productScoreFor';
 import { ScoreCard } from './ScoreCard';
-import { WhyScore } from './WhyScore';
+import { InShort } from './InShort';
+import { WhatsInside } from './WhatsInside';
+import { IngredientsLabel } from './IngredientsLabel';
 import { AdditivesCard } from './AdditivesCard';
-import { CompositionCard } from './CompositionCard';
 import { ProfileAllergenAlert } from './ProfileAllergenAlert';
 import { AllergenSummary } from './AllergenSummary';
 import { ResultTopBar } from './ResultTopBar';
-import { PortionSheet } from './PortionSheet';
 import { PartialNutritionCard } from './PartialNutritionCard';
-import { SourceCard } from './SourceCard';
 import { ReportSheet } from './ReportSheet';
 import { WaterResultView } from './WaterResultView';
 import { shareProduct } from '../share/shareProduct';
@@ -25,17 +25,16 @@ import { productShareUrl } from '../share/productShareText';
 const enrichmentReady = process.env.EXPO_PUBLIC_NUTRITION_ENRICHMENT === '1';
 export function ResultView({ product, score, nutritionAdditionAvailable = enrichmentReady }: { product: Product; score: ScoreResult; nutritionAdditionAvailable?: boolean }) {
   const [report, setReport] = useState(false);
-  const [portion, setPortion] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [shareFailed, setShareFailed] = useState(false);
   const toast = useToast();
   const shownScore = displayScore(product, score);
+  const productScore = productScoreFor(product, score);
   const isWater = product.category.scoreKind === 'water' && product.category.slug !== 'necunoscut';
   const hasNutrition = NUTRIENT_KEYS.some(key => product.nutrients[key] !== null);
   const hasExactScore = shownScore.score !== null && shownScore.grade !== 'unavailable';
   const hasRangeScore = Boolean(isWater && shownScore.range && shownScore.grade !== 'unavailable');
   const canShowScore = hasExactScore || hasRangeScore;
-  const showPortion = !isWater && hasExactScore && hasNutrition;
   const share = async () => {
     setSharing(true);
     setShareFailed(false);
@@ -63,15 +62,14 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
         onReport={() => setReport(true)}
       />
     </> : <>
-      {canShowScore ? <ScoreCard product={product} score={shownScore} /> : <><Heading>{product.name}</Heading><Body>{[product.brand, product.quantity].filter(Boolean).join(', ')}</Body></>}
+      {canShowScore ? <ScoreCard product={product} score={shownScore} /> : <><Heading>{product.name}</Heading><Body>{product.quantity}</Body></>}
       {(!isWater || product.allergens.length > 0 || product.mayContain.length > 0) && <AllergenSummary product={product} />}
-      {canShowScore ? <WhyScore score={shownScore} sugar={product.nutrients.sugar} /> : <PartialNutritionCard product={product} />}
+      {canShowScore && productScore.tier ? <>
+        <InShort tier={productScore.tier} reasons={shownScore.reasons} sugar={product.nutrients.sugar} />
+        {!isWater && <WhatsInside product={product} score={shownScore} />}
+      </> : <PartialNutritionCard product={product} />}
       {!isWater && <AdditivesCard product={product} />}
-      {!isWater && <Card testID="result-link-rows" style={{ paddingVertical: 4, gap: 0 }}>
-        <LinkRow label={ro.result.ingredientsTile} last={!showPortion} onPress={() => router.push({ pathname: '/product/[id]/ingredients', params: { id: product.id } })} />
-        {showPortion && <LinkRow label={ro.result.portionTile} last onPress={() => setPortion(true)} />}
-      </Card>}
-      {!isWater && <CompositionCard product={product} />}
+      {!isWater && <IngredientsLabel product={product} />}
       {nutritionAdditionAvailable && isWater && product.status !== 'hidden' &&
         <Button variant="secondary" onPress={() => router.push({ pathname: '/add/nutrition', params: { productId: product.id, kind: 'water' } })}>{ro.result.water.addChemistry}</Button>}
       {nutritionAdditionAvailable && !isWater && product.status === 'unverified' && !hasNutrition &&
@@ -79,10 +77,7 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
       {!isWater && <Card style={{ paddingVertical: 4, gap: 0 }}>
         <LinkRow icon="camera" label={ro.result.original} last onPress={() => router.push({ pathname: '/product/[id]/label', params: { id: product.id } })} />
       </Card>}
-      {/* Provenance is the last card for food products: source, dates, and the OFF or shopper note. */}
-      {!isWater && <SourceCard product={product} />}
     </>}
     {report && <ReportSheet productId={product.id} onClose={() => setReport(false)} />}
-    {portion && <PortionSheet product={product} onClose={() => setPortion(false)} />}
   </>;
 }

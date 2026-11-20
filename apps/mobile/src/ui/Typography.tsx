@@ -9,6 +9,8 @@ function header(step: Step) {
  };
 }
 export function Body({style,...props}:TextProps) {const {colors}=useTheme();return <Text {...props} allowFontScaling style={[{fontFamily:fonts.body,...typeScale.body,color:colors.ink},style]}/>;}
+/** Smallest muted text: the detail line under a row or a value, and the score disclaimer. Nothing visible goes below it. */
+export function Detail({style,...props}:TextProps) {const {colors}=useTheme();return <Text {...props} allowFontScaling style={[{fontFamily:fonts.body,...typeScale.detail,color:colors.muted},style]}/>;}
 /** Muted small text for notes, sources and disclaimers. */
 export function Caption({style,...props}:TextProps) {const {colors}=useTheme();return <Text {...props} allowFontScaling style={[{fontFamily:fonts.body,...typeScale.caption,color:colors.muted},style]}/>;}
 /** Screen titles (26/32). */

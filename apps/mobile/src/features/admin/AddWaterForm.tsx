@@ -182,7 +182,7 @@ export function AddWaterForm({
         <Body>{ro.app.admin.scorePreview}</Body>
         <Text style={styles.previewText}>
           {preview.score !== null
-            ? `${preview.score} ${ro.score.outOf} · ${ro.score[preview.grade]} · ${ro.result.water.tiers[summary.tier]}`
+            ? `${preview.score} ${ro.score.outOf}, ${ro.score[preview.grade]}, ${ro.result.water.tiers[summary.tier]}`
             : ro.result.scoreUnavailable}
         </Text>
       </View>

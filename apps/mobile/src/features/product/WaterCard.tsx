@@ -93,7 +93,7 @@ export function WaterCard({ product }: { product: Product }) {
     items.push({
       id: 'ph',
       label: wCopy.phLabel,
-      subtitle: comp.phRow.isApprox ? `${levelText} · ${wCopy.approxTag}` : levelText,
+      subtitle: comp.phRow.isApprox ? `${levelText}, ${wCopy.approxTag}` : levelText,
       value: comp.phRow.display,
       dots: comp.phRow.dots,
       tone: comp.phRow.tone,

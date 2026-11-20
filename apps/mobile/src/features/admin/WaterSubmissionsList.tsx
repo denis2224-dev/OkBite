@@ -53,8 +53,8 @@ export function WaterSubmissionsList({
         const kindLabel = copy.waterKinds[item.kind];
         return (
           <Card key={item.id} style={{ gap: 8 }}>
-            <Body style={{ fontFamily: fonts.bold }}>{`${item.productBrand} · ${item.productName}${item.productQuantity ? ` (${item.productQuantity})` : ''}`}</Body>
-            <Body>{`${kindLabel} · ${item.createdAt}`}</Body>
+            <Body style={{ fontFamily: fonts.bold }}>{`${item.productBrand}, ${item.productName}${item.productQuantity ? ` (${item.productQuantity})` : ''}`}</Body>
+            <Body>{`${kindLabel}, ${item.createdAt}`}</Body>
             {item.photoUrl && (
               <Image source={{ uri: item.photoUrl }} style={{ width: '100%', height: 140, borderRadius: 12 }} resizeMode="contain" />
             )}

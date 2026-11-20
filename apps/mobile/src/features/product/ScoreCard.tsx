@@ -1,14 +1,13 @@
 import { useState } from 'react';
-import { Image, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import { productScore, summarizeWater, type Product, type ScoreResult } from '@okbite/shared';
-import { Body, Caption, Title } from '../../ui';
-import { fonts, radii } from '../../theme/tokens';
+import { Body, Detail, Title } from '../../ui';
+import { fonts } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 import { letterTones } from '../../theme/letterTones';
 import { tierTone } from '../../theme/tierTones';
 import { ro } from '../../copy/ro';
 import { NutriScoreScale } from './NutriScoreScale';
-import { ScoreTag } from './ScoreTag';
 
 /** Result hero: photo thumbnail and name, the product score as a shelf tag with its tier, then the A–E bar
  * (naming the letter) with the disclaimer directly under it. Without a tier, and in Compare's picker
@@ -41,23 +40,21 @@ export function ScoreCard({ product, score, identity = true }: { product?: Produ
   const hidden = { accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' as const };
   if (product && !isWater && identity && shown && scored?.tier && productLine) {
     const tier = scored.tier;
-    return <View style={{ gap: 16 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-        {thumbUrl && <Image testID="product-thumb" source={{ uri: thumbUrl }} accessible={false} {...hidden} resizeMode="contain"
-          onError={() => setFailedUrl(thumbUrl)}
-          style={{ width: 64, height: 64, borderRadius: radii.small, backgroundColor: colors.soft }} />}
-        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-          <Title numberOfLines={2}>{product.name}</Title>
-          <Body style={{ color: colors.muted }}>{[product.brand, product.quantity].filter(Boolean).join(', ')}</Body>
+    const fg = tierTone(tier).fg;
+    // The overview: photo, name, weight, score with its tier word. Nothing under it.
+    return <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+      {thumbUrl
+        ? <Image testID="product-thumb" source={{ uri: thumbUrl }} accessible={false} {...hidden} resizeMode="contain"
+            onError={() => setFailedUrl(thumbUrl)} style={{ width: 96, height: 96, borderRadius: 22, backgroundColor: colors.mint }} />
+        : <View testID="product-thumb-tile" {...hidden} style={{ width: 96, height: 96, borderRadius: 22, backgroundColor: colors.mint }} />}
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <Title numberOfLines={2}>{product.name}</Title>
+        {!!product.quantity && <Body style={{ color: colors.muted }}>{product.quantity}</Body>}
+        <View testID="product-score" accessible accessibilityRole="text" accessibilityLabel={productLine}
+          style={{ flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', columnGap: 10, marginTop: 4 }}>
+          <Text {...hidden} allowFontScaling style={{ fontFamily: fonts.headingExtra, fontSize: 34, lineHeight: 40, color: fg }}>{shown.value}</Text>
+          <Text {...hidden} allowFontScaling style={{ fontFamily: fonts.bold, fontSize: 16, lineHeight: 22, color: fg }}>{ro.tiers[tier]}</Text>
         </View>
-      </View>
-      <View testID="score-row" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', rowGap: 14, columnGap: 18 }}>
-        <ScoreTag testID="product-score" score={shown.value} tier={tier} label={productLine} />
-        <Title {...hidden} accessibilityRole={undefined} style={{ color: tierTone(tier).fg }}>{ro.tiers[tier]}</Title>
-      </View>
-      <View style={{ gap: 12 }}>
-        <NutriScoreScale letter={score.letter} showLetter />
-        <Caption>{ro.score.disclaimer}</Caption>
       </View>
     </View>;
   }
@@ -87,6 +84,6 @@ export function ScoreCard({ product, score, identity = true }: { product?: Produ
       <Body>{ro.result.insufficient}</Body><Body>{ro.result.missing}</Body>
       {score.missing.map(key => <Body key={key}>{ro.result.nutrients[key]}</Body>)}
     </>)}
-    {!isWater && <Caption>{ro.score.disclaimer}</Caption>}
+    {!isWater && <Detail>{ro.score.disclaimer}</Detail>}
   </View>;
 }

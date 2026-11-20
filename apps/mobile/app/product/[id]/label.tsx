@@ -14,7 +14,7 @@ export default function Label() {
     {error && <Body accessibilityLiveRegion="polite">{error.message}</Body>}
     {product?.status === 'hidden' && <Body>{ro.result.notFound}</Body>}
     {product && product.status !== 'hidden' && <>
-      <Body>{product.name} · {product.brand}</Body>
+      <Body>{product.name}, {product.brand}</Body>
       {product.labelImageUrl && <Image source={{ uri: product.labelImageUrl }} accessibilityRole="image"
         accessibilityLabel={ro.result.original} resizeMode="contain" style={{ width: '100%', height: 320 }} />}
       <Card><Body>{product.ingredientsText ?? ro.result.undeclared}</Body></Card>

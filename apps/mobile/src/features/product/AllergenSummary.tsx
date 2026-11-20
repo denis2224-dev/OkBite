@@ -18,7 +18,7 @@ export function AllergenSummary({ product }: { product: Product }) {
     row = { text: ro.result.noProfileAllergens, icon: 'check', fg: colors.good, bg: colors.goodBg };
   } else if (profile.allergens.length === 0 && product.allergens.length > 0) {
     const names = product.allergens.map(name => ro.allergens[name].toLocaleLowerCase()).join(', ');
-    row = { text: ro.result.containsAllergen(names), icon: 'info', fg: colors.neutral, bg: colors.neutralBg };
+    row = { text: ro.result.containsAllergen(names), icon: 'info', fg: colors.good, bg: colors.goodBg };
   }
   if (!row) return null;
   return <View testID="allergen-summary" accessible accessibilityRole="text" accessibilityLabel={row.text}
