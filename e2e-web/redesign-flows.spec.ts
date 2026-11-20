@@ -178,8 +178,8 @@ test.describe('returning user', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     // The pill tab bar shows icons; each tab is named by its label.
     const tabs = page.getByRole('tablist').getByRole('tab');
-    await expect(tabs).toHaveCount(5);
-    for (const [index, name] of [en.nav.history, en.nav.compare, en.nav.scan, en.nav.allergies, en.nav.profile].entries())
+    await expect(tabs).toHaveCount(4);
+    for (const [index, name] of [en.nav.history, en.nav.compare, en.nav.scan, en.nav.profile].entries())
       await expect(tabs.nth(index)).toHaveAccessibleName(name);
     await page.goto(`/product/${yogurt.product.id}`);
     await expect(page.getByTestId('product-score')).toHaveAccessibleName(
@@ -199,7 +199,6 @@ test('g · offline tabs retain cached history', async ({ page, context }) => {
   for (const [name, heading] of [
     [ro.nav.history, ro.history.design.title],
     [ro.nav.compare, ro.compare.design.title],
-    [ro.nav.allergies, ro.allergies.title],
     [ro.nav.profile, ro.profile.title],
   ] as const) {
     await page.goto('/');

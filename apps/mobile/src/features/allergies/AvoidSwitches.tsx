@@ -24,8 +24,8 @@ export function AvoidSwitches({ selected, disabled, onToggle }: Props) {
             <View style={[styles.track, on
               ? { backgroundColor: colors.primary, borderColor: colors.primary, alignItems: 'flex-end' }
               : { backgroundColor: colors.soft, borderColor: colors.border, alignItems: 'flex-start' }]}>
-              {/* On: lime knob on dark green. Off: white knob on the soft track. */}
-              <View style={[styles.knob, { backgroundColor: on ? colors.themeSelectedIcon : colors.surface }]} />
+              {/* On: white knob on dark green. Off: white knob on the soft track. Only the track colour and the side change. */}
+              <View testID="switch-knob" style={[styles.knob, { backgroundColor: on ? colors.onPrimary : colors.surface }]} />
             </View>
           </Pressable>
         );

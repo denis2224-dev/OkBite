@@ -40,7 +40,7 @@ const legacyRu = {
       recent: 'Недавние', empty: 'Вы ещё ничего не сканировали. Проверенные товары появятся здесь и будут доступны офлайн.',
       medium: 'Среднее', low: 'Низкое',
       footnote: 'Оценка отражает пищевое качество на 100 г в пределах одной категории и не показывает риск заболевания. В прототипе оценки иллюстративны.',
-      scan: 'Сканировать товар', offline: 'Нет подключения · история доступна офлайн', now: 'сейчас',
+      scan: 'Сканировать товар', offline: 'Нет подключения, история доступна офлайн', now: 'сейчас',
       states: { online: 'В сети', offline: 'Офлайн', empty: 'История пуста' },
     },
     title: 'Что на самом деле написано на этикетке?', eyebrow: 'Ваш помощник у полки',
@@ -88,7 +88,7 @@ const legacyRu = {
     addNutrition: 'Добавить таблицу ценности',
     nutritionAdded: 'Данные о пищевой ценности добавлены к товару.',
     insufficientData: 'Недостаточно данных', title: 'Разбор товара', allergens: 'Указанные аллергены',
-    mayContain: 'Может содержать следы', noAllergens: 'На этикетке аллергены не указаны.', noProfileAllergens: 'Ни одного аллергена из вашего списка на этикетке', composition: 'Состав', scoreUnavailable: 'Оценка недоступна',
+    mayContain: 'Может содержать следы', noAllergens: 'На этикетке аллергены не указаны.', noProfileAllergens: 'Ни одного аллергена из вашего списка на этикетке', composition: 'Состав', inShort: 'Кратко', whatsInside: 'Что внутри', ingredientsTitle: 'Ингредиенты', ingredientsLabel: 'Состав:', ingredientsShow: 'Показать состав', ingredientsHide: 'Скрыть состав', verdict: { excellent: 'Рекомендуется для ежедневного употребления', good: 'Подходит для ежедневного употребления', fair: 'Лучше в умеренных количествах', poor: 'Не рекомендуется для ежедневного употребления', bad: 'Не рекомендуется для ежедневного употребления' }, scoreUnavailable: 'Оценка недоступна',
     insufficient: 'Недостаточно данных', missing: 'Не хватает данных для оценки:', unverified: 'Не проверено',
     verified: 'Проверено командой', unverifiedNote: 'Добавлено пользователем и ещё не проверено.', offNote: 'Данные из Open Food Facts.',
     portion: 'Что означает порция', portionNote: 'Суточная норма для взрослого. Ваши потребности могут отличаться.',
@@ -118,7 +118,7 @@ const legacyRu = {
   compare: {
     design: {
       title: 'Сравнение', productA: 'Товар A', productB: 'Товар B',
-      swap: 'Сменить товар B', category: 'Другая категория', subtitle: (category: string, unit: string) => `${category} · на 100 ${unit}`,
+      swap: 'Сменить товар B', category: 'Другая категория', subtitle: (category: string, unit: string) => `${category}, на 100 ${unit}`,
       table: (unit: string) => `Таблица сравнения на 100 ${unit === 'ml' ? 'миллилитров' : 'граммов'}`,
       same: 'одинаково', difference: (amount: string, unit: string) => `разница ${amount} ${unit}`,
       favorable: 'Более благоприятное значение из двух', saturated: 'в том числе насыщенные', none: 'не указаны',
@@ -128,7 +128,7 @@ const legacyRu = {
     },
     per100: (unit: string) => `На 100 ${unit}`, title: 'Сравнить товары',
     otherCategory: 'Для корректного сравнения выберите два товара из одной категории.',
-    pending: 'Сравнение поддерживается командой деталей товара.', choose: 'Выбрать из истории', photo: 'Сфотографировать другой товар',
+    pending: 'Сравнение поддерживается командой деталей товара.', choose: 'Выбрать из истории', photo: 'Сфотографировать другой товар', photoCard: 'Сфотографировать товар', pick: 'Выбрать товар', filterAll: 'Все', filterTitle: 'Тип товара', filterLabel: (current: string) => `Фильтр: ${current}`,
   },
   add: {
     unitQuestion: 'Товар продаётся по весу или по объёму?', unitGram: 'Граммы (g)', unitMl: 'Миллилитры (ml)',
@@ -299,7 +299,7 @@ export const redesignRu: RedesignCopy = {
     open: (name: string) => `Подробнее о ${name}`, empty: 'Для этого товара нет сведений о добавках.',
   },
   profile: {
-    title: 'Профиль', goalTitle: 'Что для вас важно?', allergensTitle: 'Аллергены под контролем', avoidTitle: 'Что вы хотите избегать',
+    title: 'Профиль', edit: 'Изменить', goalTitle: 'Что для вас важно?', allergensTitle: 'Аллергены под контролем', avoidTitle: 'Что вы хотите избегать',
     health: 'Более сбалансированное питание', allergies: 'Пищевые аллергии', family: 'Выбор для семьи',
     weight: 'Контроль веса', other: 'Другая цель', added_sugar: 'Добавленный сахар', sweeteners: 'Подсластители',
     ultra_processed: 'Ультраобработанные продукты', colourings: 'Красители', palm_oil: 'Пальмовое масло',
@@ -307,7 +307,7 @@ export const redesignRu: RedesignCopy = {
     pending: 'Профиль станет доступен после подключения локальных настроек.',
   },
   allergies: {
-    title: 'Ваши аллергии', allergensLabel: 'Аллергены', avoidTitle: 'Хочу избегать',
+    title: 'Ваши аллергии', allergensLabel: 'Аллергены', avoidTitle: 'Хочу избегать', dietaryTitle: 'Пищевые предпочтения', allergenPrefsTitle: 'Предпочтения по аллергенам',
   },
   onboarding: {
     languageTitle: 'Выберите язык',
@@ -317,7 +317,7 @@ export const redesignRu: RedesignCopy = {
     step: (n: number) => `Шаг ${n} из 4`,
   },
   settings: {
-    title: 'Настройки', language: 'Язык', romanian: 'Română', russian: 'Русский', english: 'English',
+    title: 'Настройки', groupProfile: 'Профиль', groupLanguage: 'Язык', groupApp: 'Приложение', groupInfo: 'Информация', language: 'Язык', romanian: 'Română', russian: 'Русский', english: 'English',
     install: 'Установить приложение', clearHistory: 'Очистить историю',
     clearHistoryTitle: 'Очистить всю историю?',
     clearHistoryBody: 'История на этом телефоне будет удалена. Отложенные поиски и опубликованные товары останутся.',
@@ -334,7 +334,7 @@ export const redesignRu: RedesignCopy = {
     promiseTitle: 'Бесплатно, без аккаунта', promiseBody: 'Без рекламы и без рекламного отслеживания.',
   },
   scan: {
-    aimHint: 'Поместите штрихкод в рамку', flashOn: 'Включить вспышку', flashOff: 'Выключить вспышку',
+    aimHint: 'Поместите штрихкод в рамку', flashOn: 'Включить вспышку', flashOff: 'Выключить вспышку', closeUpOn: 'Включить приближение', closeUpOff: 'Выключить приближение',
     manualCode: 'Ввести код', photoLabel: 'Снять этикетку', loadingReader: 'Подготовка сканера…',
     labelMode: 'Этикетка', seeAll: 'Смотреть все',
     shelf: {
