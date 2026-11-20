@@ -19,7 +19,6 @@ const additiveEntry = found.find((entry) => entry.product.ingredients.some((ingr
 const additive = additiveEntry?.product.ingredients.find((ingredient: Ingredient) => ingredient.group === 'add');
 if (!yogurt || !gluten || !unavailable || !additiveEntry || !additive)
   throw new Error('Expected yogurt, gluten and unavailable preview fixtures');
-const additiveScan = { ...additiveEntry, product: { ...additiveEntry.product, code: yogurt.product.code } };
 
 const firstLaunch = { cookies: [], origins: [] };
 const stub = (page: Page, entry: Found) =>
@@ -63,42 +62,31 @@ test.describe('first launch', () => {
 test.describe('returning user', () => {
   test.use({ serviceWorkers: 'block' });
 
-  test('c · manual barcode opens result tier and Why', async ({ page }) => {
+  test('c · the result page shows the score, In short and the report sheet', async ({ page }) => {
     let lookups = 0;
     await page.route('**/functions/v1/lookup*', route => { lookups++; return route.fulfill({ json: yogurt }); });
-    await page.goto('/');
-    await page.getByRole('button', { name: ro.scan.manual, exact: true }).click();
-    await page
-      .getByRole('textbox', { name: ro.scan.manualTitle, exact: true })
-      .fill(yogurt.product.code!);
-    await page.getByRole('button', { name: ro.scan.search, exact: true }).click();
-    const resultSheet = page.getByRole('dialog', { name: yogurt.product.name, exact: true });
-    await expect(resultSheet).toBeVisible();
-    await expect.poll(() => page.evaluate(() => document.activeElement?.closest('[role="dialog"]')?.getAttribute('aria-label'))).toBe(yogurt.product.name);
-    await expect(page).not.toHaveURL(new RegExp(`/product/${yogurt.product.id}`));
+    await page.goto(`/product/${yogurt.product.id}`);
+    await expect(page.getByRole('heading', { name: yogurt.product.name, exact: true })).toBeVisible();
     expect(lookups).toBe(1);
     await expect(page.getByTestId('product-score')).toHaveAccessibleName(
       `${ro.history.score(yogurtScore.score!)} · ${ro.tiers[yogurtScore.tier!]}`,
     );
-    await expect(page.getByText(ro.processing.title, { exact: true })).toBeVisible();
-    await expect(page.getByText(ro.processing.unknown, { exact: true })).toBeVisible();
-    // The B8 result lists the reasons under the score; the separate "De ce?" points breakdown is gone.
+    await expect(page.getByRole('heading', { name: ro.result.inShort, exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: ro.result.whatsInside, exact: true })).toBeVisible();
+    // The processing card and the "De ce?" points breakdown are gone.
+    await expect(page.getByText(ro.processing.title, { exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: ro.tiers.why, exact: true })).toHaveCount(0);
     await expect(page.getByTestId('deduction-row')).toHaveCount(0);
     await page.getByRole('button', { name: ro.result.report, exact: true }).click();
     await expect(page.getByRole('textbox', { name: ro.result.reportLabel, exact: true })).toBeVisible();
     await page.getByRole('button', { name: ro.app.cancel, exact: true }).click();
-    await page.keyboard.press('Escape');
-    await expect(resultSheet).toHaveCount(0);
+    await expect(page.getByRole('textbox', { name: ro.result.reportLabel, exact: true })).toHaveCount(0);
   });
 
-  test('c · additive details open above a scanned result sheet', async ({ page }) => {
-    await stub(page, additiveScan);
-    await page.goto('/');
-    await page.getByRole('button', { name: ro.scan.manual, exact: true }).click();
-    await page.getByRole('textbox', { name: ro.scan.manualTitle, exact: true }).fill(yogurt.product.code!);
-    await page.getByRole('button', { name: ro.scan.search, exact: true }).click();
-    await expect(page.getByRole('dialog', { name: additiveEntry.product.name, exact: true })).toBeVisible();
+  test('c · additive details open from the result page', async ({ page }) => {
+    await stub(page, additiveEntry);
+    await page.goto(`/product/${additiveEntry.product.id}`);
+    await expect(page.getByRole('heading', { name: additiveEntry.product.name, exact: true })).toBeVisible();
     await page.getByRole('button', { name: additive.name, exact: false }).click();
     await expect(page.getByRole('heading', { name: additive.name, exact: true })).toBeVisible();
   });
@@ -110,7 +98,6 @@ test.describe('returning user', () => {
       page.getByRole('heading', { name: unavailable.product.name, exact: true }),
     ).toBeVisible();
     await expect(page.getByText(ro.result.scoreUnavailable, { exact: true }).first()).toBeVisible();
-    await expect(page.getByText(ro.processing.unknown, { exact: true })).toBeVisible();
     await expect(page.getByTestId('product-score')).toHaveCount(0);
     await expect(page.getByText(/\b0 din 100/)).toHaveCount(0);
     await expect(page.getByText(ro.result.insufficientNutrition, { exact: true })).toBeVisible();
@@ -121,7 +108,7 @@ test.describe('returning user', () => {
     await expect(page.getByText('0 g', { exact: true })).toHaveCount(0);
   });
 
-  test('e · history searches saved products', async ({ page }) => {
+  test('e · history lists saved products as photo, rating and verdict, with no search', async ({ page }) => {
     for (const entry of [yogurt, gluten]) {
       await stub(page, entry);
       await page.goto(`/product/${entry.product.id}`);
@@ -135,13 +122,9 @@ test.describe('returning user', () => {
       page.getByRole('button', { name: new RegExp(`^${ro.history.open(name)}`) });
     await expect(open(yogurt.product.name)).toBeVisible();
     await expect(open(gluten.product.name)).toBeVisible();
-    await page
-      .getByRole('textbox', { name: ro.history.search, exact: true })
-      .fill(gluten.product.brand);
-    await expect(open(gluten.product.name)).toBeVisible();
-    await expect(open(yogurt.product.name)).toHaveCount(0);
-    await page.getByRole('textbox', { name: ro.history.search, exact: true }).fill('zzzz');
-    await expect(page.getByText(ro.history.noMatches, { exact: true })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: ro.history.search, exact: true })).toHaveCount(0);
+    // Rows show the score and verdict only: the product name is read aloud, not drawn.
+    await expect(page.getByText(yogurt.product.name, { exact: true })).toHaveCount(0);
   });
 
   test('f · history clear and onboarding reset persist', async ({ page }) => {
@@ -174,6 +157,7 @@ test.describe('returning user', () => {
     await page.goto('/');
     await tab(page, ro.nav.profile).click();
     await page.getByRole('button', { name: ro.nav.settings, exact: true }).click();
+    await page.getByRole('button', { name: ro.settings.language, exact: true }).click(); // the languages open from this row
     await page.getByRole('button', { name: ro.settings.english, exact: true }).click(); // reloads the page
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     // The pill tab bar shows icons; each tab is named by its label.
@@ -186,7 +170,7 @@ test.describe('returning user', () => {
       `${en.history.score(yogurtScore.score!)} · ${en.tiers[yogurtScore.tier!]}`,
     );
     await expect(page.getByRole('button', { name: en.tiers.why, exact: true })).toHaveCount(0);
-    await expect(page.getByText(en.processing.title, { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: en.result.inShort, exact: true })).toBeVisible();
   });
 });
 

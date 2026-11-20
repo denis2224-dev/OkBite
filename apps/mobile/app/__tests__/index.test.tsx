@@ -1,6 +1,6 @@
 import { renderRouter, screen } from 'expo-router/testing-library';
 import { fireEvent } from '@testing-library/react-native';
-import { Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { ro } from '../../src/copy/ro';
 import ScanTab from '../(tabs)/index';
 import About from '../(tabs)/about';
@@ -31,6 +31,10 @@ it.each(['method', 'privacy', 'terms'] as const)('keeps %s reachable from the Ab
 const routes = { '(tabs)/_layout': TabLayout, '(tabs)/index': ScanTab, '(tabs)/about': About,
   '(tabs)/history': () => <Text>history-test</Text>, '(tabs)/profile': Profile, '(tabs)/settings': Settings,
   '(tabs)/compare': () => <Text>comparison-test</Text>, 'product/[id]': () => <Text>product-test</Text> };
+it('lifts the install banner above the floating tab bar on Scan', async () => {
+ await renderRouter({ index: ScanTab, capture: () => null });
+ expect(StyleSheet.flatten((await screen.findByTestId('install-dock')).props.style).paddingBottom).toBeGreaterThanOrEqual(72);
+});
 it('mounts four tabs and releases the scanner on blur', async () => {
  mockCameraMounted.mockClear(); mockCameraStopped.mockClear();
  await renderRouter(routes);
