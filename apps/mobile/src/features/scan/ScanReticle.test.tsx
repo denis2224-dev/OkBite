@@ -13,3 +13,8 @@ it('draws four corner guides and a readable hint without blocking touches', asyn
   expect(StyleSheet.flatten(hint.props.style).color).toBe(light.cameraInk);
   expect(StyleSheet.flatten(screen.getByTestId('scan-reticle-hint').props.style).backgroundColor).toBe(light.cameraOverlay);
 });
+
+it('lifts the hint above the floating tab bar when asked', async () => {
+  await render(<ScanReticle hintBottom={128} />);
+  expect(StyleSheet.flatten(screen.getByTestId('scan-reticle-hint').props.style).bottom).toBe(128);
+});
