@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { NUTRIENT_KEYS } from '@okbite/shared';
+import { emptyWaterProfile, NUTRIENT_KEYS } from '@okbite/shared';
 import { router } from 'expo-router';
 import { ResultView } from './ResultView';
 import { foundYogurt } from '../../test/fixtures';
@@ -48,5 +48,43 @@ describe('partial result', () => {
     expect(screen.queryByRole('button', {name: ro.result.addNutrition})).toBeNull();
     await view.rerender(<ResultView product={{...product, nutrients: {...empty, sugar:0}}} score={foundYogurt.score} nutritionAdditionAvailable />);
     expect(screen.queryByRole('button', {name: ro.result.addNutrition})).toBeNull();
+  });
+  it('withholds score and offers mineral enrichment for partial or unscored waters', async () => {
+    const partialWater = {
+      ...product,
+      category: { slug: 'apa', name: 'Apă', scoreKind: 'water' as const },
+      unit: 'ml' as const,
+      water: { ...emptyWaterProfile(), carbonation: 'still' as const, ph: 9.37 },
+      ingredientsText: '',
+      ingredients: [],
+    };
+    const view = await render(<ResultView product={partialWater} score={{ ...foundYogurt.score, score: 100, letter: 'A', grade: 'good' }} nutritionAdditionAvailable />);
+    expect(screen.queryByLabelText(/100 din 100/)).toBeNull();
+    expect(screen.queryByText(ro.result.nutritionUnavailable)).toBeNull();
+    expect(screen.getByText(ro.result.water.noChemistryPartial)).toBeTruthy();
+    expect(screen.getByText('9,37')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: ro.result.water.addChemistry }));
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/add/nutrition', params: { productId: partialWater.id, kind: 'water' } });
+    await view.rerender(<ResultView product={{ ...partialWater, water: null }} score={{ ...foundYogurt.score, score: 100, letter: 'A', grade: 'good' }} nutritionAdditionAvailable />);
+    expect(screen.getByText(ro.result.water.noChemistry)).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: ro.result.water.addChemistry }));
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/add/nutrition', params: { productId: partialWater.id, kind: 'water' } });
+  });
+
+  it('allows shoppers to add missing minerals on partial unverified waters and suggest corrections on verified waters', async () => {
+    const partialWater = {
+      ...product,
+      category: { slug: 'apa', name: 'Apă', scoreKind: 'water' as const },
+      unit: 'ml' as const,
+      water: { ...emptyWaterProfile(), tdsMgL: 350, ph: 7.5, carbonation: 'still' as const },
+      ingredientsText: '',
+      ingredients: [],
+    };
+    const view = await render(<ResultView product={partialWater} score={foundYogurt.score} nutritionAdditionAvailable />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.result.water.addOrUpdateChemistry }));
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/add/nutrition', params: { productId: partialWater.id, kind: 'water' } });
+
+    await view.rerender(<ResultView product={{ ...partialWater, status: 'verified' }} score={foundYogurt.score} nutritionAdditionAvailable />);
+    expect(screen.getByRole('button', { name: ro.result.water.addOrUpdateChemistry })).toBeTruthy();
   });
 });

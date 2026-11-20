@@ -6,10 +6,10 @@ import { fonts } from '../../theme/tokens';
 import { tierTone } from '../../theme/tierTones';
 import { useTheme } from '../../theme/useTheme';
 
-type Props = { imageUrl: string | null; score: number | null; tier: Tier | null };
+type Props = { imageUrl: string | null; score: number | null; tier: Tier | null; unavailableText?: string };
 
 /** What a History row shows: the product photo on the left, then the rating with the verdict under it. Nothing else. */
-export function HistoryRow({ imageUrl, score, tier }: Props) {
+export function HistoryRow({ imageUrl, score, tier, unavailableText }: Props) {
   const { colors } = useTheme();
   // A photo that fails to load falls back to the neutral tile instead of leaving a hole.
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
@@ -26,7 +26,7 @@ export function HistoryRow({ imageUrl, score, tier }: Props) {
           <Text style={[styles.score, { color: tone.fg }]}>{score}</Text>
           <Text style={[styles.verdict, { color: tone.fg }]}>{ro.tiers[tier]}</Text>
         </>
-        : <Text style={[styles.verdict, { color: colors.muted }]}>{ro.history.noScore}</Text>}
+        : <Text style={[styles.verdict, { color: colors.muted }]}>{unavailableText ?? ro.history.noScore}</Text>}
     </View>
   </View>;
 }

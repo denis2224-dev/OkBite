@@ -1,4 +1,4 @@
-import type { IngredientGroup, Nutrients, ScoreKind, ScoreResult } from '../contract';
+import type { IngredientGroup, Nutrients, ScoreKind, ScoreResult, WaterProfile } from '../contract';
 import { letterFor, nutriScorePoints } from './nutriscore';
 import { hasNonNutritiveSweetener } from './sweeteners';
 import { toHundred } from './toHundred';
@@ -26,6 +26,7 @@ export type ScoredProduct = {
     name: string; slug?: string | null; group: IngredientGroup | null; risk?: 'low' | 'moderate' | 'high' | null;
   }[];
   processing?: { level: number } | null;
+  water?: WaterProfile | null;
 };
 
 export function tierFor(score: number): Tier {
@@ -105,6 +106,9 @@ function roundToTotal(raw: Deduction[], total: number): Deduction[] {
 
 export function productScore(product: ScoredProduct, nutrition: ScoreResult): ProductScore {
   if (nutrition.score === null) return { score: null, tier: null, deductions: [] };
+  if (product.category.scoreKind === 'water' && (product.water !== undefined || nutrition.letter === null)) {
+    return { score: nutrition.score, tier: tierFor(nutrition.score), deductions: [] };
+  }
 
   const raw: Deduction[] = nutritionDeductions(
     product, nutrition.score, NUTRITION - Math.round(nutrition.score * NUTRITION_SHARE),

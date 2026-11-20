@@ -7,10 +7,11 @@ import { Body, Button, Card, Heading } from '../../src/ui';
 import { ro } from '../../src/copy/ro';
 import { listHistory, type HistoryEntry } from '../../src/features/history/store';
 import { ProductPicker } from '../../src/features/compare/ProductPicker';
-import { betterOverall, compareRows, placeAdded, togglePick } from '../../src/features/compare/compare';
+import { betterOverall, compareRows, compareWaterRows, placeAdded, togglePick } from '../../src/features/compare/compare';
 import { RecentProducts } from '../../src/features/compare/RecentProducts';
 import { PhotoCard } from '../../src/features/compare/PhotoCard';
 import { CompareCell } from '../../src/features/compare/CompareCell';
+import { waterFieldDisplayValue, waterFieldLabel, waterUnit } from '../../src/features/product/waterFormat';
 import { CompareVerdict } from '../../src/features/compare/CompareVerdict';
 import { formatAmount } from '../../src/lib/format';
 import { useTheme } from '../../src/theme/useTheme';
@@ -50,7 +51,9 @@ export default function Compare() {
   const rows = a && b ? compareRows(a.product, b.product) : [];
   // "Închide": back to the main Comparație page with nothing chosen.
   const close = () => { select({ id: undefined }); router.setParams({ id: undefined, added: undefined }); };
-  if (a && b && rows.length) {
+  const waterRows = a && b ? compareWaterRows(a.product, b.product) : [];
+  const isWaterPair = Boolean(a && b && a.product.category.scoreKind === 'water' && b.product.category.scoreKind === 'water' && a.product.category.slug === b.product.category.slug);
+  if (a && b && (isWaterPair ? waterRows.length > 0 : rows.length > 0)) {
     const products = [{ entry: a, label: copy.productA, side: 'a' }, { entry: b, label: copy.productB, side: 'b' }] as const;
     const winner = betterOverall(a, b);
     const fromProduct = Boolean(id);
@@ -78,8 +81,22 @@ export default function Compare() {
             <Text style={styles.allergenText}><Text style={styles.bold}>B:</Text> {b.product.allergens.join(', ') || copy.none}</Text>
           </View>
           <HomeCard accessibilityRole="table" accessibilityLabel={copy.table(a.product.unit)} style={styles.table}>
-            <View accessibilityRole="row" style={styles.tableHeader}><Text accessibilityRole="columnheader" style={[styles.label, styles.nutrientColumn]}>{ro.compare.per100(a.product.unit)}</Text><Text accessibilityRole="columnheader" style={[styles.label, styles.valueColumn]}>A</Text><Text accessibilityRole="columnheader" style={[styles.label, styles.valueColumn]}>B</Text></View>
-            {rows.map(row => {
+            <View accessibilityRole="row" style={styles.tableHeader}><Text accessibilityRole="columnheader" style={[styles.label, styles.nutrientColumn]}>{isWaterPair ? ro.result.water.cardTitle : ro.compare.per100(a.product.unit)}</Text><Text accessibilityRole="columnheader" style={[styles.label, styles.valueColumn]}>A</Text><Text accessibilityRole="columnheader" style={[styles.label, styles.valueColumn]}>B</Text></View>
+            {isWaterPair ? waterRows.map(row => {
+              const leftText = a.product.water ? waterFieldDisplayValue(a.product.water, row.key) : null;
+              const rightText = b.product.water ? waterFieldDisplayValue(b.product.water, row.key) : null;
+              const unit = waterUnit(row.key);
+              const difference = row.a === null || row.b === null || a.product.water?.ranges?.[row.key] || b.product.water?.ranges?.[row.key]
+                ? null : row.a === row.b ? copy.same : copy.difference(formatAmount(Math.abs(row.a - row.b)), unit);
+              return <View key={row.key} accessibilityRole="row" style={styles.tableRow}>
+                <View accessibilityRole="rowheader" style={styles.nutrientColumn}><Text style={styles.nutrientName}>{waterFieldLabel(row.key)}</Text>{difference !== null && <Text style={styles.difference}>{difference}</Text>}</View>
+                {([{ side: 'a' as const, text: leftText }, { side: 'b' as const, text: rightText }]).map(({ side, text }) => (
+                  <View key={side} style={{ flex: 1, alignItems: 'center', paddingVertical: 4, borderRadius: 8, backgroundColor: row.better === side ? theme.colors.favorableBg : 'transparent' }}>
+                    <Text testID={`compare-cell-${row.key}-${side}`} style={{ fontFamily: theme.fonts.bold, fontSize: 13, color: theme.colors.ink, textAlign: 'center' }}>{text ?? '—'}</Text>
+                  </View>
+                ))}
+              </View>;
+            }) : rows.map(row => {
               const unit = row.key === 'kcal' ? 'kcal' : 'g';
               const difference = row.a === null || row.b === null ? null : row.a === row.b ? copy.same : copy.difference(formatAmount(Math.abs(row.a - row.b)), unit);
               return <View key={row.key} accessibilityRole="row" style={styles.tableRow}>

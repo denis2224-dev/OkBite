@@ -8,7 +8,7 @@ import { api, ApiError } from '../../lib/api';
 import { router } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { light } from '../../theme/tokens';
-import type { Product, Profile, ScoreResult } from '@okbite/shared';
+import { computeWaterScore, emptyWaterProfile, type Product, type Profile, type ScoreResult } from '@okbite/shared';
 import { displayScore } from './displayScore';
 import { productScoreFor } from './productScoreFor';
 
@@ -94,12 +94,23 @@ it('retains a failed report for retry and closes only after success', async () =
   expect(api.report).toHaveBeenLastCalledWith({ productId: foundYogurt.product.id, message: 'Etichetă diferită' });
 });
 
-it('preserves a supplied water score when label nutrients are absent', async () => {
-  const product = { ...foundYogurt.product, category: { ...foundYogurt.product.category, scoreKind: 'water' as const }, nutrients: { ...foundYogurt.product.nutrients, kcal: null, salt: null, sugar: null, sat: null } };
-  const water = { ...foundYogurt.score, score: 100, letter: 'A' as const, grade: 'good' as const };
-  await render(<ResultView product={product} score={water} />);
-  expect(displayScore(product, water).score).toBe(100);
-  expect(screen.getByLabelText(productLine(product, water))).toBeTruthy();
+it('scores complete water chemistry when food label nutrients are absent', async () => {
+  const product = {
+    ...foundYogurt.product,
+    category: { ...foundYogurt.product.category, scoreKind: 'water' as const },
+    nutrients: { ...foundYogurt.product.nutrients, kcal: null, salt: null, sugar: null, sat: null },
+    water: {
+      ...emptyWaterProfile(),
+      tdsMgL: 200, ph: 8.2, carbonation: 'still' as const, classification: 'natural_mineral' as const,
+      caMgL: 52, mgMgL: 17, hco3MgL: 220, no3MgL: 0.9, naMgL: 0.7,
+    },
+  };
+  const supplied = { ...foundYogurt.score, score: 100, letter: 'A' as const, grade: 'good' as const };
+  await render(<ResultView product={product} score={supplied} />);
+  const scored = displayScore(product, supplied);
+  expect(scored.score).toBe(100);
+  expect(scored.letter).toBeNull();
+  expect(screen.getByText(productLine(product, scored).replace(' · ', ', '))).toBeTruthy(); // shown with a comma; the spoken label keeps the dot
 });
 it('withholds a fat-category score when total fat is missing', async () => {
   const product = { ...foundYogurt.product, category: { ...foundYogurt.product.category, scoreKind: 'fat' as const }, nutrients: { ...foundYogurt.product.nutrients, fat: null } };
@@ -313,4 +324,178 @@ it('puts the product thumbnail before the name, and drops it when the photo fail
   await fireEvent(thumb, 'error');
   expect(screen.queryByTestId('product-thumb', { includeHiddenElements: true })).toBeNull();
   expect(screen.queryByTestId('product-photo', { includeHiddenElements: true })).toBeNull();
+});
+
+it('scores daily Moldovan water from its mineral profile without food macros or Nutri-Score bar', async () => {
+  const emptyNutrients = Object.fromEntries(Object.keys(foundYogurt.product.nutrients).map(k => [k, null])) as Product['nutrients'];
+  const omWater: Product = {
+    ...foundYogurt.product,
+    name: 'OM Apă Plată',
+    brand: 'OM',
+    quantity: '1500 ml',
+    unit: 'ml',
+    category: { slug: 'apa', name: 'Apă', scoreKind: 'water' },
+    nutrients: emptyNutrients,
+    water: { ...emptyWaterProfile(), carbonation: 'still', classification: 'natural_mineral', ph: 6.56, tdsMgL: 375, dryResidueMgL: 260, hco3MgL: 140, so4MgL: 115, naMgL: 55, caMgL: 32.5, mgMgL: 12.5, fMgL: 0.1, no3MgL: 1.5, h3bo3MgL: 0 },
+    ingredientsText: '',
+    ingredients: [],
+    allergens: [],
+    mayContain: [],
+  };
+  await render(<ResultView product={omWater} score={{ score: 100, letter: 'A', grade: 'good', reasons: [], missing: [] }} />);
+  const omExpected = computeWaterScore(omWater.water);
+  expect(omExpected.score).toBe(96);
+  expect(screen.getByTestId('product-score')).toHaveTextContent(`${omExpected.score} din 100, Excelent`);
+  expect(screen.getByTestId('water-ph-pill')).toHaveTextContent('pH 6,56');
+  expect(screen.getByTestId('water-mineral-count')).toHaveTextContent('9/11');
+  expect(screen.getByTestId('water-in-short')).toBeTruthy();
+  expect(screen.getByTestId('water-taste-card')).toBeTruthy();
+  expect(screen.getByTestId('water-more-card')).toBeTruthy();
+  expect(screen.getByText(ro.result.water.tiers.daily)).toBeTruthy();
+  expect(screen.getByTestId('water-card')).toBeTruthy();
+  expect(within(screen.getByTestId('water-card')).getByText('375 mg/l')).toBeTruthy();
+  expect(within(screen.getByTestId('water-card')).getByText('6,56')).toBeTruthy();
+  expect(screen.queryByTestId('nutri-score-A')).toBeNull();
+  expect(screen.queryByTestId('water-unverified-note')).toBeNull();
+  expect(screen.queryByText(ro.result.water.disclaimer)).toBeNull();
+  expect(screen.queryByText(ro.result.original)).toBeNull();
+  expect(screen.queryByText(ro.result.source)).toBeNull();
+  expect(screen.queryByText(ro.result.ingredientsTile)).toBeNull();
+  expect(screen.queryByText(ro.processing.title)).toBeNull();
+  expect(screen.queryByText(ro.result.transcribedLabel)).toBeNull();
+  expect(screen.queryByRole('button', { name: ro.tiers.why })).toBeNull();
+});
+
+it('caps therapeutic mineral water scores and flags not-for-daily-use insight', async () => {
+  const emptyNutrients = Object.fromEntries(Object.keys(foundYogurt.product.nutrients).map(k => [k, null])) as Product['nutrients'];
+  const donatMg: Product = {
+    ...foundYogurt.product,
+    name: 'Donat Mg',
+    brand: 'Donat Mg',
+    quantity: '1000 ml',
+    unit: 'ml',
+    category: { slug: 'apa', name: 'Apă', scoreKind: 'water' },
+    nutrients: emptyNutrients,
+    water: { ...emptyWaterProfile(), carbonation: 'sparkling', classification: 'therapeutic', tdsMgL: 13200, mgMgL: 1030, naMgL: 1565, caMgL: 380, hco3MgL: 7790, so4MgL: 2200, clMgL: 59, h3bo3MgL: 45, no3MgL: 0 },
+    ingredientsText: '',
+    ingredients: [],
+    allergens: [],
+    mayContain: [],
+  };
+  await render(<ResultView product={donatMg} score={{ score: 100, letter: 'A', grade: 'good', reasons: [], missing: [] }} />);
+  const donatExpected = computeWaterScore(donatMg.water);
+  expect(donatExpected.score).toBe(20);
+  expect(screen.getByTestId('product-score')).toHaveTextContent(`${donatExpected.score} din 100, Slab`);
+  expect(screen.getByTestId('water-ph-pill')).toHaveTextContent('pH ≈ 5,5');
+  expect(screen.getByText(ro.result.water.tiers.therapeutic)).toBeTruthy();
+  expect(screen.getByText(ro.result.water.therapeuticCaution)).toBeTruthy();
+  expect(screen.queryByTestId('nutri-score-A')).toBeNull();
+});
+
+it('withholds cached 100/A score on legacy waters without water object instead of inventing 100', async () => {
+  const emptyNutrients = Object.fromEntries(Object.keys(foundYogurt.product.nutrients).map(k => [k, null])) as Product['nutrients'];
+  const { water: _w, ...withoutWater } = foundYogurt.product;
+  const legacyWater: Product = {
+    ...withoutWater,
+    name: 'OM Legacy Plată',
+    brand: 'OM',
+    quantity: '1500 ml',
+    unit: 'ml',
+    category: { slug: 'apa', name: 'Apă', scoreKind: 'water' },
+    nutrients: emptyNutrients,
+    ingredientsText: '',
+    ingredients: [],
+  };
+  await render(<ResultView product={legacyWater} score={{ score: 100, letter: 'A', grade: 'good', reasons: [], missing: [] }} />);
+  expect(screen.getByText(ro.result.scoreUnavailable)).toBeTruthy();
+  expect(screen.queryByTestId('product-score')).toBeNull();
+  expect(screen.queryByText(/100 din 100/)).toBeNull();
+  expect(screen.queryByTestId('nutri-score-A')).toBeNull();
+  expect(screen.queryByText(ro.result.original)).toBeNull();
+  expect(screen.queryByText(ro.result.source)).toBeNull();
+});
+
+it('renders ranges, explicit zeroes, and Na+K without provenance clutter on partial water', async () => {
+  const emptyNutrients = Object.fromEntries(Object.keys(foundYogurt.product.nutrients).map(k => [k, null])) as Product['nutrients'];
+  const omPartial: Product = {
+    ...foundYogurt.product,
+    status: 'verified',
+    name: 'OM Apă Plată',
+    brand: 'OM',
+    quantity: '1,5 L',
+    unit: 'ml',
+    category: { slug: 'apa', name: 'Apă', scoreKind: 'water' },
+    nutrients: emptyNutrients,
+    water: {
+      ...emptyWaterProfile(),
+      carbonation: 'still',
+      classification: 'drinking',
+      tdsMgL: 375,
+      caMgL: 32.5,
+      mgMgL: 12.5,
+      naPlusKMgL: 72.5,
+      hco3MgL: 140,
+      clMgL: 15.5,
+      no3MgL: 0,
+      ranges: { tdsMgL: { min: 350, max: 400 }, naPlusKMgL: { min: 70, max: 75 } },
+      evidence: {
+        tdsMgL: { status: 'verified', source: 'apaom.md' },
+        no3MgL: { status: 'unverified', source: 'Fotografie utilizator', addedAt: '2026-11-17' },
+      },
+    },
+    ingredientsText: '',
+    ingredients: [],
+    allergens: [],
+    mayContain: [],
+  };
+  await render(<ResultView product={omPartial} score={{ score: 100, letter: 'A', grade: 'good', reasons: [], missing: [] }} nutritionAdditionAvailable />);
+  expect(screen.getByTestId('product-score')).toHaveTextContent(/96 din 100/);
+  expect(screen.queryByTestId('product-score-range')).toBeNull();
+  expect(screen.queryByTestId('water-unverified-note')).toBeNull();
+  expect(screen.queryByText(ro.result.water.missingInputs)).toBeNull();
+  expect(within(screen.getByTestId('water-card')).getByText(ro.result.water.ions.naPlusKMgL)).toBeTruthy();
+  expect(within(screen.getByTestId('water-card')).getByText('350–400 mg/l')).toBeTruthy();
+  expect(within(screen.getByTestId('water-card')).getByText('70–75 mg/l')).toBeTruthy();
+  expect(within(screen.getByTestId('water-card')).getByText('0 mg/l')).toBeTruthy();
+  expect(within(screen.getByTestId('water-card')).queryByText(/apaom\.md/)).toBeNull();
+  expect(within(screen.getByTestId('water-card')).queryByText(/Fotografie utilizator/)).toBeNull();
+  expect(screen.getByTestId('water-tier-insight')).toHaveTextContent(ro.result.water.tiers.daily);
+});
+
+it('shows estimated sparkling pH, 4/11 mineral counter, expandable unstated rows, and thresholds info on DaviDan', async () => {
+  const emptyNutrients = Object.fromEntries(Object.keys(foundYogurt.product.nutrients).map(k => [k, null])) as Product['nutrients'];
+  const davidan: Product = {
+    ...foundYogurt.product,
+    status: 'unverified',
+    name: 'Apă potabilă Carbogazificată',
+    brand: 'DAVIDAN',
+    quantity: '0,5L',
+    unit: 'ml',
+    category: { slug: 'apa', name: 'Apă', scoreKind: 'water' },
+    nutrients: emptyNutrients,
+    water: {
+      ...emptyWaterProfile(),
+      dryResidueMgL: 390,
+      carbonation: 'sparkling',
+      classification: 'drinking',
+      caMgL: 14,
+      mgMgL: 42.6,
+      no3MgL: 6.4,
+    },
+    ingredientsText: '',
+    ingredients: [],
+    allergens: [],
+    mayContain: [],
+  };
+  await render(<ResultView product={davidan} score={{ score: 96, letter: 'A', grade: 'good', reasons: [], missing: [] }} />);
+  expect(screen.getByTestId('water-ph-pill')).toHaveTextContent('pH ≈ 5,5');
+  expect(screen.getByTestId('water-mineral-count')).toHaveTextContent('4/11');
+  expect(screen.queryByText(ro.result.original)).toBeNull();
+  expect(screen.queryByText(ro.result.source)).toBeNull();
+  expect(screen.queryByText(ro.result.ingredientsTile)).toBeNull();
+  expect(screen.queryByText(ro.result.unverifiedNote)).toBeNull();
+  await fireEvent.press(screen.getByRole('button', { name: ro.result.water.otherValues(6) }));
+  expect(within(screen.getByTestId('water-card')).getByText(ro.result.water.ions.kMgL)).toBeTruthy();
+  await fireEvent.press(screen.getByRole('button', { name: ro.result.water.whyThresholds }));
+  expect(screen.getByText(ro.result.water.whyThresholdsBody)).toBeTruthy();
 });

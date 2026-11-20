@@ -4,11 +4,13 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { z } from 'zod';
 import { CategoryEntry, Ingredient, IngredientEntry, ScoreFixture } from '../packages/shared/src/index';
+import { checkWaterCatalog } from './load-waters';
 
 export type DataFiles = {
   categories: unknown[];
   ingredients: unknown[];
   fixtures?: unknown[];
+  waters?: unknown[];
   fixtureReviews?: unknown[];
   readErrors?: string[];
 };
@@ -43,11 +45,14 @@ export function readData(dir = DATA_DIR): DataFiles {
   const fixtures = existsSync(join(dir, 'score-fixtures.json'))
     ? read('score-fixtures.json')
     : undefined;
+  const waters = existsSync(join(dir, 'waters-md.json'))
+    ? read('waters-md.json')
+    : undefined;
   const categories = read('categories.json');
   const ingredients = read('ingredients.json');
   const fixtureReviews = existsSync(join(dir, 'score-fixtures.review.json'))
     ? read('score-fixtures.review.json') : undefined;
-  return { categories, ingredients, fixtures, fixtureReviews, readErrors };
+  return { categories, ingredients, fixtures, waters, fixtureReviews, readErrors };
 }
 
 /** Validates the hand-checked data files; C5's loader refuses to run while errors is non-empty. */
@@ -57,6 +62,7 @@ export function checkData(data: DataFiles = readData()): { errors: string[] } {
     ...validate('categories.json', data.categories, CategoryEntry, 'slug'),
     ...validate('ingredients.json', data.ingredients, CheckedIngredient, 'slug'),
     ...validate('score-fixtures.json', data.fixtures ?? [], ScoreFixture, 'name'),
+    ...(data.waters ? checkWaterCatalog(data.waters) : []),
   ];
   // Duplicate checks only look at rows whose slug/aliases parse; validate() already reported the rest.
   const categorySlugs = new Set<string>();

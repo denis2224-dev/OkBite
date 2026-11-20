@@ -9,13 +9,14 @@ import { router } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { compareRows } from './compare';
 import { light } from '../../theme/tokens';
+import { emptyWaterProfile } from '@okbite/shared';
 const design = ro.compare.design;
-const mockEntries = previewEntries.map(entry => ({ ...entry, savedAt: '2026-11-05T00:00:00.000Z' }));
+let mockEntries = previewEntries.map(entry => ({ ...entry, savedAt: '2026-11-05T00:00:00.000Z' }));
 let mockId: string | undefined;
 let mockAdded: string | undefined;
 let mockAllergens: string[] = [];
 let mockPending: Promise<typeof mockEntries> | undefined;
-beforeEach(() => { mockId = undefined; mockAdded = undefined; mockPending = undefined; mockAllergens = []; mockIsPreview = false; });
+beforeEach(() => { mockEntries = previewEntries.map(entry => ({ ...entry, savedAt: '2026-11-05T00:00:00.000Z' })); mockId = undefined; mockAdded = undefined; mockPending = undefined; mockAllergens = []; mockIsPreview = false; });
 let mockIsPreview = false;
 jest.mock('../../lib/preview', () => ({ get isPreview() { return mockIsPreview; } }));
 jest.mock('../profile', () => ({ useProfile: () => ({ profile: { goals: [], allergens: mockAllergens, avoid: [], onboarded: true } }) }));
@@ -221,6 +222,58 @@ test('the empty screen labels both slots without a rule line, and gives each pic
   const b = screen.getByRole('button', { name: `${design.productB}: ${ro.compare.pick}` });
   expect(a).not.toBe(b);
   expect(within(a).getByText(ro.compare.pick)).toBeTruthy();
+});
+
+test('compares two waters by mineral composition instead of food macros and keeps range estimates honest', async () => {
+  const base = previewEntries[0]!;
+  const emptyNutrients = Object.fromEntries(Object.keys(base.product.nutrients).map(k => [k, null])) as typeof base.product.nutrients;
+  const waterA = {
+    ...base,
+    savedAt: '2026-11-05T00:00:00.000Z',
+    product: {
+      ...base.product,
+      id: 'w-om-1',
+      name: 'OM Plată',
+      brand: 'OM',
+      unit: 'ml' as const,
+      category: { slug: 'apa', name: 'Apă', scoreKind: 'water' as const },
+      nutrients: emptyNutrients,
+      water: {
+        ...emptyWaterProfile(),
+        tdsMgL: 375, carbonation: 'still' as const, caMgL: 32.5, mgMgL: 12.5, naPlusKMgL: 72.5,
+        ranges: { tdsMgL: { min: 350, max: 400 }, naPlusKMgL: { min: 70, max: 75 } },
+      },
+      ingredientsText: '',
+      ingredients: [],
+    },
+    score: { score: null, letter: null, grade: 'medium' as const, reasons: [], missing: [] },
+  };
+  const waterB = {
+    ...waterA,
+    product: {
+      ...waterA.product,
+      id: 'w-aqua-2',
+      name: 'Aqua Carpatica',
+      brand: 'Aqua Carpatica',
+      water: {
+        ...emptyWaterProfile(),
+        tdsMgL: 200, ph: 8.2, carbonation: 'still' as const, caMgL: 52, mgMgL: 17, naMgL: 0.7, hco3MgL: 220, no3MgL: 0.9,
+      },
+    },
+    score: { score: 100, letter: null, grade: 'good' as const, reasons: [], missing: [] },
+  };
+  mockEntries = [waterA, waterB];
+  await render(<Compare />);
+  await fireEvent.press(screen.getAllByRole('button', { name: new RegExp(ro.compare.pick) })[0]!);
+  await fireEvent.press(screen.getByRole('button', { name: 'OM Plată, OM' }));
+  await fireEvent.press(screen.getAllByRole('button', { name: new RegExp(ro.compare.pick) })[0]!);
+  await fireEvent.press(screen.getByRole('button', { name: 'Aqua Carpatica, Aqua Carpatica' }));
+
+  expect(screen.queryByText(ro.result.nutrients.kcal)).toBeNull();
+  expect(screen.getByText(ro.result.water.tdsLabel)).toBeTruthy();
+  expect(screen.getByText('350–400 mg/l')).toBeTruthy();
+  expect(screen.getByText('200 mg/l')).toBeTruthy();
+  expect(screen.getByText(ro.result.water.ions.naPlusKMgL)).toBeTruthy();
 });
 
 test('an empty picker says the history is empty without a storage note', async () => {

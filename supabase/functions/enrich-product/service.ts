@@ -1,20 +1,39 @@
-import { type EnrichProductRequest, LookupResponse, Uuid } from '../_shared/contract.ts';
+import { type EnrichProductRequest, LookupResponse, Uuid, type WaterSubmissionOutcome } from '../_shared/contract.ts';
 import { adminClient, HttpError } from '../_lib/http.ts';
 import { loadProduct } from '../_lib/db.ts';
 import { publishPhoto } from '../_lib/storage.ts';
 import { releaseUsage, reserveUsage } from '../_lib/quota.ts';
 
-export async function enrichProduct(input: EnrichProductRequest, device: string) {
+export interface EnrichProductDeps {
+  adminClient: typeof adminClient;
+  loadProduct: typeof loadProduct;
+  publishPhoto: typeof publishPhoto;
+  reserveUsage: typeof reserveUsage;
+  releaseUsage: typeof releaseUsage;
+}
+
+const defaultDeps: EnrichProductDeps = { adminClient, loadProduct, publishPhoto, reserveUsage, releaseUsage };
+
+export async function enrichProduct(
+  input: EnrichProductRequest,
+  device: string,
+  deps: EnrichProductDeps = defaultDeps,
+) {
+  if (input.water && input.unit !== 'ml') throw new HttpError(400);
   input = { ...input, productId: input.productId.toLowerCase() };
   const upload = input.nutritionPhotoPath;
   if (!new RegExp(`^${device}/[a-f0-9-]{36}-(front|ingredients|nutrition)\\.jpg$`).test(upload)) {
     throw new HttpError(400, 'Fotografia nu aparține acestui dispozitiv.');
   }
-  const db = adminClient();
-  const found = async () => {
-    const result = await loadProduct({ id: input.productId });
+  const db = deps.adminClient();
+  const found = async (waterSubmissionStatus?: WaterSubmissionOutcome) => {
+    const result = await deps.loadProduct({ id: input.productId });
     if (!result) throw new HttpError(409, 'Produs indisponibil.', 'duplicate');
-    return LookupResponse.parse({ status: 'found', ...result });
+    return LookupResponse.parse({
+      status: 'found',
+      ...result,
+      ...(waterSubmissionStatus ? { waterSubmissionStatus } : {}),
+    });
   };
   const recover = async () => {
     const receipt = await db.from('enrichment_receipts').select('product_id')
@@ -39,7 +58,7 @@ export async function enrichProduct(input: EnrichProductRequest, device: string)
   };
   if (await rpc()) return await found(); // Eligibility check before quota admission.
   let event: number;
-  try { event = await reserveUsage(db, device, 'added'); }
+  try { event = await deps.reserveUsage(db, device, 'added'); }
   catch (error) {
     if (error instanceof HttpError && error.status === 429) {
       for (let i = 0; i < 5; i++) {
@@ -57,24 +76,46 @@ export async function enrichProduct(input: EnrichProductRequest, device: string)
       throw new Error('Enrichment photo compensation failed');
     }
   };
+  const verifyPublishedOrCleanup = async (
+    checkWaterStatus: boolean,
+  ): Promise<WaterSubmissionOutcome | undefined> => {
+    const [row, subRows] = await Promise.all([
+      db.from('products').select('nutrition_photo_path').eq('id', input.productId).single(),
+      db.from('water_submissions').select('id,status')
+        .eq('product_id', input.productId).eq('photo_path', path)
+        .order('created_at', { ascending: false }).limit(4),
+    ]);
+    if (row.error || subRows.error) throw new Error('Enrichment outcome unknown');
+    const subs = subRows.data ?? [];
+    if (row.data.nutrition_photo_path !== path && subs.length === 0) await cleanup();
+    if (!checkWaterStatus || subs.length === 0) return undefined;
+    const hasAccepted = subs.some((s) => s.status === 'accepted');
+    const hasPending = subs.some((s) => s.status === 'pending');
+    if (hasAccepted && hasPending) return 'partial';
+    if (hasPending) return 'queued_for_review';
+    return 'applied';
+  };
   try {
     if (await rpc()) return await found(); // Concurrent retry committed before publication.
     publishing = true;
-    await publishPhoto(upload, input.productId, suffix);
+    await deps.publishPhoto(upload, input.productId, suffix);
     const { fruitVegPct, ...nutrients } = input.nutrients;
-    await rpc({ p_nutrients: { ...nutrients, fruit_veg_pct: fruitVegPct }, p_unit: input.unit });
-    const row = await db.from('products').select('nutrition_photo_path').eq('id', input.productId).single();
-    if (row.error) throw new Error('Enrichment outcome unknown');
-    if (row.data.nutrition_photo_path !== path) await cleanup();
-    return await found();
+    await rpc({
+      p_nutrients: { ...nutrients, fruit_veg_pct: fruitVegPct, ...(input.water !== undefined ? { water: input.water } : {}) },
+      p_unit: input.unit,
+    });
+    const status = await verifyPublishedOrCleanup(input.water !== undefined && input.water !== null);
+    return await found(status);
   } catch (error) {
     // Release locks out a late commit before compensating; committed events survive.
-    await releaseUsage(db, event);
+    await deps.releaseUsage(db, event);
     const result = await recover();
     if (result) {
-      const row = await db.from('products').select('nutrition_photo_path').eq('id', input.productId).single();
-      if (row.error) throw new Error('Enrichment outcome unknown; compensation deferred');
-      if (row.data.nutrition_photo_path !== path) await cleanup();
+      try {
+        await verifyPublishedOrCleanup(false);
+      } catch {
+        throw new Error('Enrichment outcome unknown; compensation deferred');
+      }
       return result;
     }
     await cleanup();

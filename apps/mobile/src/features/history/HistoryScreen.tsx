@@ -14,6 +14,7 @@ import { useToast } from '../../ui/Toast';
 import { productScoreFor } from '../product/productScoreFor';
 import { savedWhen } from './when';
 import { HistoryRow } from './HistoryRow';
+import { displayScore } from '../product/displayScore';
 
 export function HistoryScreen() {
   const t = useHomeTheme();
@@ -120,16 +121,22 @@ export function HistoryScreen() {
           {visible.map(entry => {
             const { product, score: storedScore, savedAt } = entry;
             const { score: value, tier } = productScoreFor(product, storedScore);
+            // Water has no 0-100 score: it shows an estimated range, or says the score is unavailable.
+            const isWater = product.category.scoreKind === 'water';
+            const range = isWater ? displayScore(product, storedScore).range : undefined;
+            const disclaimer = isWater ? ro.result.water.disclaimer : ro.score.disclaimer;
             const verification = product.status === 'verified' && product.verifiedAt
               ? `${ro.result.checked}: ${roDate(product.verifiedAt)}` : ro.result.unverified;
-            const scoreLabel = value === null || !tier ? ro.result.scoreUnavailable : `${ro.history.score(value)} · ${ro.tiers[tier]}`;
-            const label = [ro.history.open(product.name), product.brand, scoreLabel, ro.score.disclaimer, product.source, `${ro.result.added}: ${roDate(product.addedAt)}`, verification, savedWhen(savedAt)].join('. ');
+            const scoreLabel = range ? ro.result.water.estimatedRange(range.min, range.max)
+              : value === null || !tier ? ro.result.scoreUnavailable : `${ro.history.score(value)} · ${ro.tiers[tier]}`;
+            const label = [ro.history.open(product.name), product.brand, scoreLabel, disclaimer, product.source, `${ro.result.added}: ${roDate(product.addedAt)}`, verification, savedWhen(savedAt)].join('. ');
+            const unavailable = range ? ro.result.water.rangeChip(range.min, range.max) : isWater ? ro.result.scoreUnavailable : ro.history.noScore;
             return <HomePressable key={product.id} label={label} disabled={clearing}
               accessibilityActions={[{ name: 'delete', label: ro.history.remove(product.name) }]}
               onAccessibilityAction={event => { if (event.nativeEvent.actionName === 'delete') void remove(entry); }}
               onLongPress={() => void remove(entry)} onPress={() => router.push({ pathname: '/product/[id]', params: { id: product.id, cached: '1' } })}
               style={styles.row}>
-              <HistoryRow imageUrl={product.imageUrl} score={value} tier={tier} />
+              <HistoryRow imageUrl={product.imageUrl} score={range ? null : value} tier={range ? null : tier} unavailableText={unavailable} />
             </HomePressable>;
           })}
         </View>}

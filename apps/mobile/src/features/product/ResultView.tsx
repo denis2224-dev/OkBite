@@ -17,6 +17,7 @@ import { AllergenSummary } from './AllergenSummary';
 import { ResultTopBar } from './ResultTopBar';
 import { PartialNutritionCard } from './PartialNutritionCard';
 import { ReportSheet } from './ReportSheet';
+import { WaterResultView } from './WaterResultView';
 import { shareProduct } from '../share/shareProduct';
 import { productShareUrl } from '../share/productShareText';
 
@@ -29,8 +30,11 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
   const toast = useToast();
   const shownScore = displayScore(product, score);
   const productScore = productScoreFor(product, score);
+  const isWater = product.category.scoreKind === 'water' && product.category.slug !== 'necunoscut';
   const hasNutrition = NUTRIENT_KEYS.some(key => product.nutrients[key] !== null);
-  const canShowScore = shownScore.score !== null && shownScore.grade !== 'unavailable';
+  const hasExactScore = shownScore.score !== null && shownScore.grade !== 'unavailable';
+  const hasRangeScore = Boolean(isWater && shownScore.range && shownScore.grade !== 'unavailable');
+  const canShowScore = hasExactScore || hasRangeScore;
   const share = async () => {
     setSharing(true);
     setShareFailed(false);
@@ -49,19 +53,31 @@ export function ResultView({ product, score, nutritionAdditionAvailable = enrich
       <Body selectable>{productShareUrl(product)}</Body>
     </View>}
     <ProfileAllergenAlert product={product} />
-    {canShowScore ? <ScoreCard product={product} score={shownScore} /> : <><Heading>{product.name}</Heading><Body>{product.quantity}</Body></>}
-    <AllergenSummary product={product} />
-    {canShowScore && productScore.tier ? <>
-      <InShort tier={productScore.tier} reasons={shownScore.reasons} sugar={product.nutrients.sugar} />
-      <WhatsInside product={product} score={shownScore} />
-    </> : <PartialNutritionCard product={product} />}
-    <AdditivesCard product={product} />
-    <IngredientsLabel product={product} />
-    {nutritionAdditionAvailable && product.status === 'unverified' && !hasNutrition &&
-      <Button variant="secondary" onPress={() => router.push({pathname: '/add/nutrition', params: {productId: product.id}})}>{ro.result.addNutrition}</Button>}
-    <Card style={{ paddingVertical: 4, gap: 0 }}>
-      <LinkRow icon="camera" label={ro.result.original} last onPress={() => router.push({ pathname: '/product/[id]/label', params: { id: product.id } })} />
-    </Card>
+    {isWater && canShowScore && product.water ? <>
+      {(product.allergens.length > 0 || product.mayContain.length > 0) && <AllergenSummary product={product} />}
+      <WaterResultView
+        product={product}
+        score={shownScore}
+        nutritionAdditionAvailable={nutritionAdditionAvailable}
+        onReport={() => setReport(true)}
+      />
+    </> : <>
+      {canShowScore ? <ScoreCard product={product} score={shownScore} /> : <><Heading>{product.name}</Heading><Body>{product.quantity}</Body></>}
+      {(!isWater || product.allergens.length > 0 || product.mayContain.length > 0) && <AllergenSummary product={product} />}
+      {canShowScore && productScore.tier ? <>
+        <InShort tier={productScore.tier} reasons={shownScore.reasons} sugar={product.nutrients.sugar} />
+        {!isWater && <WhatsInside product={product} score={shownScore} />}
+      </> : <PartialNutritionCard product={product} />}
+      {!isWater && <AdditivesCard product={product} />}
+      {!isWater && <IngredientsLabel product={product} />}
+      {nutritionAdditionAvailable && isWater && product.status !== 'hidden' &&
+        <Button variant="secondary" onPress={() => router.push({ pathname: '/add/nutrition', params: { productId: product.id, kind: 'water' } })}>{ro.result.water.addChemistry}</Button>}
+      {nutritionAdditionAvailable && !isWater && product.status === 'unverified' && !hasNutrition &&
+        <Button variant="secondary" onPress={() => router.push({pathname: '/add/nutrition', params: {productId: product.id}})}>{ro.result.addNutrition}</Button>}
+      {!isWater && <Card style={{ paddingVertical: 4, gap: 0 }}>
+        <LinkRow icon="camera" label={ro.result.original} last onPress={() => router.push({ pathname: '/product/[id]/label', params: { id: product.id } })} />
+      </Card>}
+    </>}
     {report && <ReportSheet productId={product.id} onClose={() => setReport(false)} />}
   </>;
 }

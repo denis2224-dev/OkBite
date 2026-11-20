@@ -1,4 +1,5 @@
 import { strict as assert } from 'node:assert';
+import { emptyWaterProfile } from '../_shared/water/parseWater.ts';
 import { createHandler } from './index.ts';
 import { createHandler as reportHandler } from '../report/index.ts';
 
@@ -74,4 +75,26 @@ Deno.test('add-product saves a product without a category as necunoscut', async 
     assert.equal(response.status, 200);
   }
   assert.deepEqual(seen, ['necunoscut', 'iaurt']);
+});
+
+Deno.test('add-product replaces submitted water provenance and requires ingredients for food', async () => {
+  const handler = createHandler(async ({ water }) => {
+    assert.equal(water?.caMgL, 0);
+    assert.equal(water?.evidence?.caMgL?.status, 'unverified');
+    assert.notEqual(water?.evidence?.caMgL?.source, 'User claim');
+    return { status: 'not_found' };
+  });
+  const submit = (categorySlug: string) => handler(new Request('http://local/', {
+    method: 'POST',
+    headers: { 'x-device-id': device },
+    body: JSON.stringify({
+      code: null, name: 'Water test fixture', brand: '', quantity: '', unit: 'ml', ingredientsText: '',
+      categorySlug,
+      nutrients: { kcal: null, fat: null, sat: null, sugar: null, salt: null, protein: null, fiber: null, fruitVegPct: null },
+      water: { ...emptyWaterProfile(), caMgL: 0, evidence: { caMgL: { status: 'verified', source: 'User claim' } } },
+      photoPath: null, ingredientsPhotoPath: device + '/i.jpg', nutritionPhotoPath: null,
+    }),
+  }));
+  assert.equal((await submit('apa')).status, 200);
+  assert.equal((await submit('iaurt')).status, 400);
 });
