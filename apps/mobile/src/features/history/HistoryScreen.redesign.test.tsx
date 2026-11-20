@@ -11,52 +11,44 @@ let mockQueueListener: () => void;
 jest.mock('../offline/queue', () => ({ subscribeQueue: (listener: () => void) => { mockQueueListener = listener; return jest.fn(); } }));
 const entry: HistoryEntry = { ...foundYogurt, savedAt: '2026-11-05T09:00:00.000Z' };
 const second: HistoryEntry = { ...entry, savedAt: '2026-11-06T09:00:00.000Z', product: { ...entry.product, id: '00000000-0000-4000-8000-000000000002', name: 'Pâine cu semințe', brand: 'Brutăria' } };
+const openName = (name: string) => new RegExp(ro.history.open(name));
 beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(listHistory).mockResolvedValue([entry, second]);
   jest.mocked(removeFromHistory).mockResolvedValue();
   jest.mocked(restoreToHistory).mockResolvedValue();
 });
-it('filters by name and brand without losing saved records and keeps newest first', async () => {
+it('keeps newest first and has no search field', async () => {
   await render(<HistoryScreen/>);
-  await screen.findByText(entry.product.name);
+  await screen.findByRole('button', { name: openName(entry.product.name) });
   const rows = screen.getAllByRole('button', { name: /Deschide/ });
   expect(rows[0]!.props.accessibilityLabel).toContain(second.product.name);
-  await fireEvent.changeText(screen.getByLabelText(ro.history.search), ' BRUTĂRIA ');
-  expect(screen.getByText(second.product.name)).toBeTruthy();
-  expect(screen.queryByText(entry.product.name)).toBeNull();
-  await fireEvent.changeText(screen.getByLabelText(ro.history.search), 'semințe');
-  expect(screen.getByText(second.product.name)).toBeTruthy();
-  await fireEvent.changeText(screen.getByLabelText(ro.history.search), 'nu există');
-  expect(screen.getByText(ro.history.noMatches)).toBeTruthy();
-  expect(screen.queryByText(ro.history.design.emptyTitle)).toBeNull();
-  await fireEvent.changeText(screen.getByLabelText(ro.history.search), '');
-  expect(screen.getByText(entry.product.name)).toBeTruthy();
+  expect(screen.queryByLabelText(ro.history.search)).toBeNull();
 });
 it('removes one record on long press and offers undo that restores the saved date', async () => {
   await render(<ToastProvider><HistoryScreen/></ToastProvider>);
   const row = await screen.findByRole('button', { name: new RegExp(ro.history.open(entry.product.name)) });
   await fireEvent(row, 'longPress');
-  await waitFor(() => expect(screen.queryByText(entry.product.name)).toBeNull());
-  expect(screen.getByText(second.product.name)).toBeTruthy();
+  await waitFor(() => expect(screen.queryByRole('button', { name: openName(entry.product.name) })).toBeNull());
+  expect(screen.getByRole('button', { name: openName(second.product.name) })).toBeTruthy();
   expect(screen.getByText(ro.history.removed)).toBeTruthy();
   await fireEvent.press(screen.getByRole('button', { name: ro.history.undo }));
-  await waitFor(() => expect(screen.getByText(entry.product.name)).toBeTruthy());
+  await waitFor(() => expect(screen.getByRole('button', { name: openName(entry.product.name) })).toBeTruthy());
   expect(restoreToHistory).toHaveBeenCalledWith(entry);
 });
 it('keeps a row when delete fails, deleting through the accessible delete action', async () => {
   jest.mocked(removeFromHistory).mockRejectedValueOnce(new Error('disk'));
   await render(<ToastProvider><HistoryScreen/></ToastProvider>);
-  await screen.findByText(entry.product.name);
+  await screen.findByRole('button', { name: openName(entry.product.name) });
   await fireEvent(screen.getByRole('button', { name: new RegExp(ro.history.open(entry.product.name)) }), 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
   await screen.findByText(ro.history.removeError);
-  expect(screen.getByText(entry.product.name)).toBeTruthy();
+  expect(screen.getByRole('button', { name: openName(entry.product.name) })).toBeTruthy();
 });
-it('shows no photo in rows and fără scor for unavailable scores', async () => {
+it('shows the photo in the row and fără scor for unavailable scores', async () => {
   jest.mocked(listHistory).mockResolvedValue([{ ...entry, product: { ...entry.product, imageUrl: 'https://example.com/product.jpg' }, score: { ...entry.score, score: null, grade: 'unavailable' } }]);
   await render(<HistoryScreen/>);
-  await screen.findByText(entry.product.name);
-  expect(screen.queryByTestId('history-thumbnail')).toBeNull(); // rows show the score tag, not a photo
+  await screen.findByRole('button', { name: openName(entry.product.name) });
+  expect(screen.getByTestId('history-photo')).toBeTruthy();
   expect(screen.getByText(ro.history.noScore)).toBeTruthy();
   expect(screen.queryByText('0')).toBeNull();
 });
@@ -65,17 +57,17 @@ it('keeps failed undo retryable and shows a newer scan after restoration succeed
   jest.mocked(listHistory).mockResolvedValueOnce([entry, second]).mockResolvedValue([updated, second]);
   jest.mocked(restoreToHistory).mockRejectedValueOnce(new Error('disk')).mockResolvedValueOnce();
   await render(<ToastProvider><HistoryScreen/></ToastProvider>);
-  await screen.findByText(entry.product.name);
+  await screen.findByRole('button', { name: openName(entry.product.name) });
   await fireEvent(screen.getByRole('button', { name: new RegExp(ro.history.open(entry.product.name)) }), 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
   await screen.findByText(ro.history.removed);
   await fireEvent.press(screen.getByRole('button', { name: ro.history.undo }));
   await screen.findByText(ro.history.restoreError);
-  expect(screen.queryByText(entry.product.name)).toBeNull();
+  expect(screen.queryByRole('button', { name: openName(entry.product.name) })).toBeNull();
   expect(screen.queryByText(ro.history.removeError)).toBeNull();
   await fireEvent.press(screen.getByRole('button', { name: ro.history.undo }));
-  await screen.findByText(updated.product.name);
-  expect(screen.getByText(second.product.name)).toBeTruthy();
-  expect(screen.queryByText(entry.product.name)).toBeNull();
+  await screen.findByRole('button', { name: openName(updated.product.name) });
+  expect(screen.getByRole('button', { name: openName(second.product.name) })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: openName(entry.product.name) })).toBeNull();
   expect(screen.queryByText(ro.history.restoreError)).toBeNull();
 });
 
@@ -85,13 +77,13 @@ it('refreshes queue-saved products when a queue event arrives during deletion', 
   jest.mocked(removeFromHistory).mockReturnValueOnce(new Promise<void>(resolve => { finish = resolve; }));
   jest.mocked(listHistory).mockResolvedValueOnce([entry, second]).mockResolvedValue([queued, second]);
   await render(<HistoryScreen/>);
-  await screen.findByText(entry.product.name);
+  await screen.findByRole('button', { name: openName(entry.product.name) });
   await fireEvent(screen.getByRole('button', { name: new RegExp(ro.history.open(entry.product.name)) }), 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
   await act(() => mockQueueListener());
   await act(() => finish());
-  await screen.findByText(queued.product.name);
-  expect(screen.queryByText(entry.product.name)).toBeNull();
-  expect(screen.getByText(second.product.name)).toBeTruthy();
+  await screen.findByRole('button', { name: openName(queued.product.name) });
+  expect(screen.queryByRole('button', { name: openName(entry.product.name) })).toBeNull();
+  expect(screen.getByRole('button', { name: openName(second.product.name) })).toBeTruthy();
 });
 
 it('keeps clear failure visible when a queued refresh completes', async () => {
@@ -100,11 +92,11 @@ it('keeps clear failure visible when a queued refresh completes', async () => {
   jest.mocked(clearHistory).mockReturnValueOnce(new Promise<void>((_, reject) => { fail = reject; }));
   jest.mocked(listHistory).mockResolvedValueOnce([entry, second]).mockResolvedValue([entry, queued, second]);
   await render(<HistoryScreen/>);
-  await screen.findByText(entry.product.name);
+  await screen.findByRole('button', { name: openName(entry.product.name) });
   await fireEvent.press(screen.getByRole('button', { name: ro.history.clear }));
   await fireEvent.press(screen.getByRole('button', { name: ro.history.clearConfirm }));
   await act(() => mockQueueListener());
   await act(() => fail(new Error('disk')));
-  await screen.findByText(queued.product.name);
+  await screen.findByRole('button', { name: openName(queued.product.name) });
   expect(screen.getByText(ro.history.clearError)).toBeTruthy();
 });

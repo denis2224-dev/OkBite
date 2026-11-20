@@ -30,6 +30,7 @@ function deferred<T>() {
 async function refocus() {
   await act(() => { mockBlur(); mockBlur = mockFocus(); });
 }
+const openName = (name: string) => new RegExp(ro.history.open(name));
 beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(listHistory).mockResolvedValue([entry]);
@@ -39,10 +40,10 @@ it.each(['verified', 'unverified'] as const)('keeps the row short and still anno
   const product = { ...entry.product, status, verifiedAt: status === 'verified' ? '2026-11-06' : null };
   jest.mocked(listHistory).mockResolvedValue([{ ...entry, product }]);
   await render(<HistoryScreen />);
-  await screen.findByText(product.name);
+  await screen.findByRole('button', { name: openName(product.name) });
   const verification = status === 'verified' ? `${ro.result.checked}: 06.11.2026` : ro.result.unverified;
   expect(screen.queryByText(verification)).toBeNull(); // kept short on screen, read aloud below
-  expect(screen.getAllByText(ro.score.disclaimer)).toHaveLength(1); // once, under the list
+  expect(screen.queryByText(ro.score.disclaimer)).toBeNull(); // not printed under the list; the spoken label still has it
   const row = screen.getByRole('button', { name: new RegExp(ro.history.open(product.name)) });
   expect(row.props.accessibilityLabel).toContain(product.brand);
   expect(row.props.accessibilityLabel).toContain(ro.history.score(productScoreFor(entry.product, entry.score).score!));
@@ -54,7 +55,7 @@ it.each(['verified', 'unverified'] as const)('keeps the row short and still anno
 it('opens a clear confirmation dialog even with a long history', async () => {
   jest.mocked(listHistory).mockResolvedValue(Array.from({ length: 30 }, (_, index) => ({ ...entry, product: { ...entry.product, id: `record-${index}`, name: `Produs ${index}` } })));
   await render(<HistoryScreen />);
-  await screen.findByText('Produs 29');
+  await screen.findByRole('button', { name: openName('Produs 29') });
   await fireEvent.press(screen.getByRole('button', { name: ro.history.clear }));
   const dialog = screen.getByLabelText(ro.history.clearTitle);
   expect(dialog.props.accessibilityViewIsModal).toBe(true);
@@ -64,20 +65,18 @@ it('opens a clear confirmation dialog even with a long history', async () => {
 });
 it('shows no "saved only in this browser" banner above the list', async () => {
   await render(<HistoryScreen />);
-  await screen.findByText(entry.product.name);
+  await screen.findByRole('button', { name: openName(entry.product.name) });
   expect(screen.queryByText('Istoricul e salvat doar în acest browser.')).toBeNull();
 });
-it('hides the search field while history is empty', async () => {
-  jest.mocked(listHistory).mockResolvedValue([]);
+it('has no search field, with or without products', async () => {
   await render(<HistoryScreen />);
+  await screen.findByRole('button', { name: openName(entry.product.name) });
+  expect(screen.queryByLabelText(ro.history.search)).toBeNull();
+  jest.mocked(listHistory).mockResolvedValue([]);
+  await refocus();
   await screen.findByText(ro.history.design.emptyTitle);
   expect(screen.queryByLabelText(ro.history.search)).toBeNull();
   expect(screen.getByText(ro.history.design.empty)).toBeTruthy();
-});
-it('shows the search field when history has products', async () => {
-  await render(<HistoryScreen />);
-  await screen.findByText(entry.product.name);
-  expect(screen.getByLabelText(ro.history.search)).toBeTruthy();
 });
 it('shows loading before an empty saved history', async () => {
   const pending = deferred<HistoryEntry[]>();
@@ -94,7 +93,7 @@ it('retries storage failures and opens the saved record through the cached route
   await waitFor(() => expect(screen.getByText(ro.history.loadError)).toBeTruthy());
   expect(screen.queryByText(ro.history.design.emptyTitle)).toBeNull();
   await fireEvent.press(screen.getByRole('button', { name: ro.app.retry }));
-  await waitFor(() => expect(screen.getByText(entry.product.name)).toBeTruthy());
+  await waitFor(() => expect(screen.getByRole('button', { name: openName(entry.product.name) })).toBeTruthy());
   await fireEvent.press(screen.getByRole('button', { name: new RegExp(ro.history.open(entry.product.name)) }));
   expect(router.push).toHaveBeenCalledWith({ pathname: '/product/[id]', params: { id: entry.product.id, cached: '1' } });
 });
@@ -111,52 +110,52 @@ it('announces source dates and marks an unavailable score as fără scor without
 it('keeps the list when deletion is canceled or fails, and clears only on confirmed success', async () => {
   jest.mocked(clearHistory).mockRejectedValueOnce(new Error('disk')).mockResolvedValueOnce();
   await render(<HistoryScreen />);
-  await waitFor(() => expect(screen.getByText(entry.product.name)).toBeTruthy());
+  await waitFor(() => expect(screen.getByRole('button', { name: openName(entry.product.name) })).toBeTruthy());
   await fireEvent.press(screen.getByRole('button', { name: ro.history.clear }));
   await fireEvent.press(screen.getByRole('button', { name: ro.app.cancel }));
   expect(clearHistory).not.toHaveBeenCalled();
-  expect(screen.getByText(entry.product.name)).toBeTruthy();
+  expect(screen.getByRole('button', { name: openName(entry.product.name) })).toBeTruthy();
   await fireEvent.press(screen.getByRole('button', { name: ro.history.clear }));
   await fireEvent.press(screen.getByRole('button', { name: ro.history.clearConfirm }));
   await waitFor(() => expect(screen.getByText(ro.history.clearError)).toBeTruthy());
-  expect(screen.getByText(entry.product.name)).toBeTruthy();
+  expect(screen.getByRole('button', { name: openName(entry.product.name) })).toBeTruthy();
   await fireEvent.press(screen.getByRole('button', { name: ro.history.clearConfirm }));
   await waitFor(() => expect(screen.getByText(ro.history.design.emptyTitle)).toBeTruthy());
-  expect(screen.queryByText(entry.product.name)).toBeNull();
+  expect(screen.queryByRole('button', { name: openName(entry.product.name) })).toBeNull();
 });
 it('refreshes on focus and ignores older reads', async () => {
   const oldRead = deferred<HistoryEntry[]>();
   const newRead = deferred<HistoryEntry[]>();
   const updated = { ...entry, product: { ...entry.product, name: 'Etichetă actualizată' } };
   await render(<HistoryScreen />);
-  await waitFor(() => expect(screen.getByText(entry.product.name)).toBeTruthy());
+  await waitFor(() => expect(screen.getByRole('button', { name: openName(entry.product.name) })).toBeTruthy());
   jest.mocked(listHistory).mockReturnValueOnce(oldRead.promise).mockReturnValueOnce(newRead.promise);
   await refocus();
   await refocus();
   await act(() => newRead.resolve([updated]));
   await act(() => oldRead.resolve([]));
-  expect(screen.getByText(updated.product.name)).toBeTruthy();
+  expect(screen.getByRole('button', { name: openName(updated.product.name) })).toBeTruthy();
   expect(screen.queryByText(ro.history.design.emptyTitle)).toBeNull();
 });
 it('retains saved rows when a focus refresh fails', async () => {
   await render(<HistoryScreen />);
-  await waitFor(() => expect(screen.getByText(entry.product.name)).toBeTruthy());
+  await waitFor(() => expect(screen.getByRole('button', { name: openName(entry.product.name) })).toBeTruthy());
   jest.mocked(listHistory).mockRejectedValueOnce(new Error('disk'));
   await refocus();
   await waitFor(() => expect(screen.getByText(ro.history.loadError)).toBeTruthy());
-  expect(screen.getByText(entry.product.name)).toBeTruthy();
+  expect(screen.getByRole('button', { name: openName(entry.product.name) })).toBeTruthy();
 });
 it('does not restore deleted rows when an earlier read finishes after clear', async () => {
   const pending = deferred<HistoryEntry[]>();
   await render(<HistoryScreen />);
-  await waitFor(() => expect(screen.getByText(entry.product.name)).toBeTruthy());
+  await waitFor(() => expect(screen.getByRole('button', { name: openName(entry.product.name) })).toBeTruthy());
   jest.mocked(listHistory).mockReturnValueOnce(pending.promise);
   await refocus();
   await fireEvent.press(screen.getByRole('button', { name: ro.history.clear }));
   await fireEvent.press(screen.getByRole('button', { name: ro.history.clearConfirm }));
   await waitFor(() => expect(screen.getByText(ro.history.design.emptyTitle)).toBeTruthy());
   await act(() => pending.resolve([entry]));
-  expect(screen.queryByText(entry.product.name)).toBeNull();
+  expect(screen.queryByRole('button', { name: openName(entry.product.name) })).toBeNull();
 });
 
 it('withholds a cached score when required nutrition data is missing', async () => {
@@ -170,39 +169,49 @@ it('withholds a cached score when required nutrition data is missing', async () 
 
 it('renders only the title in the shared tab page header, with no filler subtitle', async () => {
   await render(<HistoryScreen />);
-  await screen.findByText(entry.product.name);
+  await screen.findByRole('button', { name: openName(entry.product.name) });
   const title = screen.getByRole('header', { name: ro.history.design.title });
   expect(StyleSheet.flatten(title.props.style).fontSize).toBe(22);
   expect(screen.queryByText('Disponibil și fără internet.')).toBeNull();
   expect(screen.queryByTestId('tab-page-subtitle')).toBeNull();
 });
 
-it('sums up the saved products in a "Coșul tău" card above the list', async () => {
+it('has no basket summary card, with or without products', async () => {
   await render(<HistoryScreen />);
-  await screen.findByText(entry.product.name);
-  expect(screen.getByRole('header', { name: ro.history.basket.title })).toBeTruthy();
-  const { score, tier } = productScoreFor(entry.product, entry.score);
-  expect(screen.getByLabelText(`${ro.history.score(score!)} · ${ro.tiers[tier!]}`)).toBeTruthy();
-});
-it('leaves the basket card out when history is empty', async () => {
+  await screen.findByRole('button', { name: openName(entry.product.name) });
+  expect(screen.queryByRole('header', { name: ro.history.basket.title })).toBeNull();
   jest.mocked(listHistory).mockResolvedValue([]);
-  await render(<HistoryScreen />);
-  await waitFor(() => expect(screen.queryByText(ro.app.loading)).toBeNull());
+  await refocus();
+  await screen.findByText(ro.history.design.emptyTitle);
   expect(screen.queryByRole('header', { name: ro.history.basket.title })).toBeNull();
 });
 
-it('draws history like the mockup: one card, a small score tag, the name and a short time', async () => {
+it('draws each row as photo on the left, with the rating and the verdict under it, and nothing else', async () => {
   const now = new Date();
-  jest.mocked(listHistory).mockResolvedValue([{ ...entry, savedAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 5).toISOString() }]);
+  const withPhoto = { ...entry, savedAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 5).toISOString(), product: { ...entry.product, imageUrl: 'https://example.com/product.jpg' } };
+  jest.mocked(listHistory).mockResolvedValue([withPhoto]);
   await render(<HistoryScreen />);
-  await screen.findByText(entry.product.name);
-  expect(screen.getByTestId('history-list')).toBeTruthy();
-  expect(screen.getByText('Azi, 08:05')).toBeTruthy();
+  const row = await screen.findByRole('button', { name: openName(entry.product.name) });
+  const { score, tier } = productScoreFor(withPhoto.product, withPhoto.score);
+  expect(within(row).getByTestId('history-photo').props.source).toEqual({ uri: 'https://example.com/product.jpg' });
+  const rating = within(row).getByText(String(score), { includeHiddenElements: true });
+  const verdict = within(row).getByText(ro.tiers[tier!], { includeHiddenElements: true });
+  expect(rating).toBeTruthy();
+  expect(verdict).toBeTruthy();
+  // No name, brand, source or time on the row, and no marker before the verdict.
+  expect(screen.queryByText(entry.product.name)).toBeNull();
+  expect(screen.queryByText('Azi, 08:05')).toBeNull();
   expect(screen.queryByText(entry.product.source)).toBeNull();
-  expect(screen.queryByText(entry.product.brand, { exact: false })).toBeNull(); // brand only in the spoken label
-  const { score } = productScoreFor(entry.product, entry.score);
-  expect(screen.getAllByText(String(score), { includeHiddenElements: true }).length).toBeGreaterThan(0);
-  expect(screen.queryByRole('button', { name: ro.history.remove(entry.product.name) })).toBeNull(); // no trash icons
+  expect(screen.queryByText(entry.product.brand, { exact: false })).toBeNull();
+  expect(screen.queryByText('·', { exact: false })).toBeNull();
+  expect(screen.queryByTestId('history-list')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: ro.history.remove(entry.product.name) })).toBeNull();
+});
+it('keeps a neutral tile where there is no product photo', async () => {
+  await render(<HistoryScreen />);
+  const row = await screen.findByRole('button', { name: openName(entry.product.name) });
+  expect(within(row).queryByTestId('history-photo')).toBeNull();
+  expect(within(row).getByTestId('history-photo-tile')).toBeTruthy();
 });
 it('still deletes a row through the screen-reader delete action', async () => {
   jest.mocked(removeFromHistory).mockResolvedValue();
