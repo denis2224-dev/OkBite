@@ -8,7 +8,7 @@ import { useScreenActivity } from '../capture/useScreenActivity';
 import { CandidateList } from './CandidateList';
 import { ConfirmMatch } from './ConfirmMatch';
 import { NotFound } from './NotFound';
-import { addProductRoute, isGuidedAddEnabled, parseIdentifyParams, productRoute } from './routes';
+import { COMPARE_FLAG, addProductRoute, compareCaptureRoute, compareProductRoute, isCompareFlag, isGuidedAddEnabled, parseIdentifyParams, productRoute } from './routes';
 import { keepPhoto, removePhoto } from '../offline/photos';
 import { resolveQueued } from '../offline/queue';
 import type { FrontRead } from '@okbite/shared';
@@ -20,6 +20,8 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
   const router = useRouter();
   const activity = useScreenActivity();
   const [state] = useState(() => parseIdentifyParams(rawParams));
+  // The photo came from Compare: the confirmed product goes back there, and a retake keeps the flag.
+  const forCompare = isCompareFlag(rawParams[COMPARE_FLAG]);
   const queueId = typeof rawParams.queueId === 'string' ? rawParams.queueId : undefined;
   const frontPhotoId = typeof rawParams.frontPhotoId === 'string' ? rawParams.frontPhotoId : undefined;
   const unknownDraftId = typeof rawParams.unknownDraftId === 'string' ? rawParams.unknownDraftId : undefined;
@@ -46,12 +48,12 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
     if (restartMissingDraft && identifyDraftId) {
       const destination = unknownDraftId
         ? { pathname: '/add' as const, params: { unknownDraftId, retake: 'front' } }
-        : queueId ? '/offline' as const : '/capture' as const;
+        : queueId ? '/offline' as const : forCompare ? compareCaptureRoute : '/capture' as const;
       router.replace(destination);
       clearIdentifyDraft(identifyDraftId);
       leave();
     }
-  }, [identifyDraftId, leave, queueId, restartMissingDraft, router, unknownDraftId]);
+  }, [forCompare, identifyDraftId, leave, queueId, restartMissingDraft, router, unknownDraftId]);
   const openAdd = async (read: FrontRead, photoPath: string | null) => {
     const guided = isGuidedAddEnabled();
     if (!guided && !frontPhotoId && !unknownDraftId) {
@@ -119,7 +121,7 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
       }
       if (activity.isCurrent(token)) {
         setCleanupPending(false);
-        navigate(productRoute(selected.current));
+        navigate(forCompare ? compareProductRoute(selected.current) : productRoute(selected.current));
       }
     } catch { if (activity.isCurrent(token)) setCleanupPending(true); }
     finally { finishing.current = false; }
@@ -134,7 +136,7 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
   ]} /></View>;
   if (addFailed) return <View style={[styles.center, { backgroundColor: colors.ground }]}><StatusPanel message={ro.errors.generic} actions={[
     { label: ro.errors.retry, onPress: () => { if (pendingAdd.current) void openAdd(pendingAdd.current.read, pendingAdd.current.photoPath); } },
-    { label: ro.capture.title, onPress: () => navigate('/capture') },
+    { label: ro.capture.title, onPress: () => navigate(forCompare ? compareCaptureRoute : '/capture') },
     { label: ro.scan.title, onPress: () => navigate('/scan') },
   ]} /></View>;
 
@@ -177,7 +179,7 @@ export function IdentifySession({ rawParams }: { rawParams: Record<string, strin
       <StatusPanel
         message={ro.errors.generic}
         actions={[
-          { label: ro.capture.title, onPress: () => navigate('/capture') },
+          { label: ro.capture.title, onPress: () => navigate(forCompare ? compareCaptureRoute : '/capture') },
           { label: ro.scan.title, onPress: () => navigate('/scan') },
         ]}
       />
