@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { normalizeCode } from '../_shared/ean/index.ts';
 import { mapOffProduct, OFF_FIELDS, OFF_USER_AGENT, toRow } from '../_shared/off/mapOffProduct.ts';
 
 export type OffRow = ReturnType<typeof toRow>;
@@ -22,9 +23,11 @@ async function quietly<T>(work: () => Promise<T>, fallback: T): Promise<T> {
 
 /** Looks an unknown barcode up in Open Food Facts and saves a usable hit; true when saved. */
 export async function offFallback(
-  code: string,
+  barcode: string,
   deps: { fetch: Fetch; store: OffStore },
 ): Promise<boolean> {
+  const code = normalizeCode(barcode);
+  if (!code) return false;
   // A cache read failure must not hide the product: treat it as no recent miss.
   if (await quietly(() => deps.store.recentMiss(code), false)) return false;
   let result: OffRow | 'miss' | 'error';
@@ -38,9 +41,17 @@ export async function offFallback(
     else if (res.status !== 200) result = 'error';
     else {
       const body = await res.json();
-      // The shopper is waiting, so a product without Romanian ingredients is kept when OFF lists its allergens.
-      const mapped = body?.status === 1 ? mapOffProduct({ ...body.product, code }, [], { anyLanguage: true }) : null;
-      result = mapped ? toRow(mapped) : 'miss';
+      if (body?.status === 0) result = 'miss';
+      else {
+        const upstreamCode: unknown = body?.product?.code;
+        if (
+          body?.status !== 1 || typeof upstreamCode !== 'string' ||
+          normalizeCode(upstreamCode) !== code
+        ) return false;
+        // A product without Romanian ingredients is kept when OFF lists its allergens.
+        const mapped = mapOffProduct(body.product, [], { anyLanguage: true });
+        result = mapped ? toRow(mapped) : 'miss';
+      }
     }
   } catch {
     result = 'error';

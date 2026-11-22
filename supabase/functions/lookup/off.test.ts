@@ -8,6 +8,7 @@ const device = 'c2000000-0000-4000-8000-000000000001';
 const req = () =>
   new Request(`http://local/lookup?code=${code}`, { headers: { 'x-device-id': device } });
 const offProduct = {
+  code,
   product_name: 'Iaurt natural',
   brands: 'JLC',
   lang: 'ro',
@@ -18,6 +19,11 @@ const offProduct = {
 };
 const ok = (product: unknown) =>
   new Response(JSON.stringify({ status: 1, product }), { status: 200 });
+
+function projectedHit(url: string, product: Record<string, unknown>) {
+  const fields = new URL(url).searchParams.get('fields')?.split(',') ?? [];
+  return ok(Object.fromEntries(Object.entries(product).filter(([key]) => fields.includes(key))));
+}
 
 function fakeStore() {
   const products = new Map<string, OffRow>();
@@ -31,14 +37,14 @@ function fakeStore() {
   return { products, misses, store };
 }
 
-async function setup(respond: () => Promise<Response>) {
+async function setup(respond: (url: string) => Promise<Response>) {
   const { products, misses, store } = fakeStore();
   const urls: string[] = [];
   const agents: (string | null)[] = [];
   const fetchFn = async (url: string | URL | Request, init?: RequestInit) => {
     urls.push(String(url));
     agents.push(new Headers(init?.headers).get('user-agent'));
-    return await respond();
+    return await respond(String(url));
   };
   const records = JSON.parse(
     await Deno.readTextFile(
@@ -63,7 +69,7 @@ async function setup(respond: () => Promise<Response>) {
 }
 
 Deno.test('OFF hit is saved as unverified and returned found with processing', async () => {
-  const t = await setup(async () => ok(offProduct));
+  const t = await setup(async (url) => projectedHit(url, offProduct));
   const body = LookupResponse.parse(await (await t.handler(req())).json());
   assert.equal(body.status, 'found');
   if (body.status !== 'found') return;
@@ -78,17 +84,51 @@ Deno.test('OFF hit is saved as unverified and returned found with processing', a
   assert.equal(t.agents[0], 'OkBite/1.0 (https://github.com/denis2224-dev/OkBite)');
 });
 
-Deno.test('OFF miss is not_found and remembered so the next lookup does not fetch', async () => {
-  const t = await setup(async () => new Response('{"status":0}', { status: 404 }));
-  for (let i = 0; i < 2; i++) {
-    assert.deepEqual(await (await t.handler(req())).json(), { status: 'not_found' });
+Deno.test('OFF cannot persist or negative-cache a hit with an invalid product identity', async () => {
+  for (const upstreamCode of [undefined, null, 4840001000014, '4840001000013', '3017620422003']) {
+    const t = await setup(async (url) => projectedHit(url, { ...offProduct, code: upstreamCode }));
+    for (let attempt = 0; attempt < 2; attempt++) {
+      assert.deepEqual(await (await t.handler(req())).json(), { status: 'not_found' });
+    }
+    assert.equal(t.urls.length, 2);
+    assert.equal(t.products.size, 0);
+    assert.equal(t.misses.size, 0);
   }
+});
+
+Deno.test('OFF accepts equivalent UPC-A and EAN-13 identities and stores the canonical code', async () => {
+  const upc = '036000291452';
+  const ean = '0036000291452';
+  for (const [requested, returned] of [[ean, upc], [upc, ean]]) {
+    const { products, misses, store } = fakeStore();
+    const fetchFn = async (url: string) => projectedHit(url, { ...offProduct, code: returned });
+    assert.equal(await offFallback(requested, { fetch: fetchFn, store }), true);
+    assert.deepEqual([...products.keys()], [ean]);
+    assert.equal(misses.size, 0);
+  }
+});
+
+Deno.test('an existing local product takes precedence over OFF', async () => {
+  const t = await setup(async () => ok(offProduct));
+  assert.equal((await (await t.handler(req())).json()).status, 'found');
+  assert.equal((await (await t.handler(req())).json()).status, 'found');
   assert.equal(t.urls.length, 1);
-  assert.ok(t.misses.has(code));
+  assert.equal(t.products.size, 1);
+});
+
+Deno.test('OFF miss is not_found and remembered so the next lookup does not fetch', async () => {
+  for (const status of [404, 200]) {
+    const t = await setup(async () => new Response('{"status":0}', { status }));
+    for (let i = 0; i < 2; i++) {
+      assert.deepEqual(await (await t.handler(req())).json(), { status: 'not_found' });
+    }
+    assert.equal(t.urls.length, 1);
+    assert.ok(t.misses.has(code));
+  }
 });
 
 Deno.test('OFF product the mapper rejects counts as a remembered miss', async () => {
-  const t = await setup(async () => ok({ brands: 'X' }));
+  const t = await setup(async () => ok({ code, brands: 'X' }));
   assert.deepEqual(await (await t.handler(req())).json(), { status: 'not_found' });
   assert.ok(t.misses.has(code));
   assert.equal(t.products.size, 0);
