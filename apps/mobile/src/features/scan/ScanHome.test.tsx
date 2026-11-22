@@ -62,6 +62,8 @@ describe('ScanHome', () => {
     const off = flat(screen.getByRole('button', { name: ro.scan.photoLabel }));
     expect(shape(on)).toEqual(shape(off));
     expect(on.backgroundColor).toBe(light.primary);
+    // A wrapping row sits at the top of its box unless its lines are centred too.
+    expect(on).toMatchObject({ alignItems: 'center', justifyContent: 'center', alignContent: 'center' });
     const onText = flat(screen.getByText(ro.scan.manualLabel));
     const offText = flat(screen.getByText(ro.scan.labelMode));
     expect(onText).toMatchObject({ color: light.onPrimary, fontFamily: fonts.bold });

@@ -52,12 +52,20 @@ it('raises Scanează as a 60 pt primary circle with the green glow, whichever ta
  const ui = await render(<AppBottomNav {...makeProps(0)} />);
  expect(style(ui, 'nav-icon-index')).toMatchObject({ width: 60, height: 60, borderRadius: 30, backgroundColor: light.primary, boxShadow: shadows.primaryGlow, marginTop: -30 });
 });
-it.each([[0, 'history'], [1, 'compare'], [3, 'allergies'], [4, 'profile']] as const)('marks the current tab (route %i) by colour only: the dot is always there', async (index, current) => {
+it.each([[0, 'history'], [1, 'compare'], [3, 'allergies'], [4, 'profile']] as const)('marks the current tab (route %i) by icon colour only, with no dot', async (index, current) => {
  const ui = await render(<AppBottomNav {...makeProps(index)} />);
  const flatTabs = tabs.filter(name => name !== 'index');
- for (const name of flatTabs) {
-  expect(style(ui, `nav-dot-${name}`)).toMatchObject({ width: 4, height: 4, backgroundColor: name === current ? light.primary : light.transparent });
- }
+ for (const name of tabs) expect(ui.queryByTestId(`nav-dot-${name}`, { includeHiddenElements: true })).toBeNull();
+ // The selected icon is drawn in the bright green accent; the others stay muted.
+ type Node = { props?: Record<string, unknown>; children?: (Node | string)[] | null };
+ const find = (node: Node | string | null, id: string): Node | null => {
+  if (!node || typeof node === 'string') return null;
+  if (node.props?.testID === id) return node;
+  for (const child of node.children ?? []) { const hit = find(child, id); if (hit) return hit; }
+  return null;
+ };
+ const ink = (name: string) => JSON.stringify(find(ui.toJSON() as Node, `nav-icon-${name}`));
+ for (const name of flatTabs) expect(ink(name)).toContain(name === current ? light.accent : light.muted);
  const shapes = flatTabs.map(name => { const { backgroundColor: _b, ...rest } = style(ui, `nav-icon-${name}`); return JSON.stringify(rest); });
  expect(new Set(shapes).size).toBe(1); // same size and layout for every flat tab
 });

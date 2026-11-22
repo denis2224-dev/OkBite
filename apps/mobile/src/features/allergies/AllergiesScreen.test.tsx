@@ -1,3 +1,4 @@
+import { light, radii } from '../../theme/tokens';
 import 'fake-indexeddb/auto';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ALLERGENS, type Profile } from '@okbite/shared';
@@ -24,25 +25,24 @@ async function renderReady() {
   return screen;
 }
 
-it('renders the title, the 14 allergens, the avoid switches and the allergen note in Romanian', async () => {
+it('renders the title, the 14 allergen chips and the avoid switches in two soft cards, with no lead or headings', async () => {
   const screen = await renderReady();
-  expect(screen.queryByText('Te avertizăm când un produs le conține.')).toBeNull();
-  for (const text of [ro.allergies.title, ro.allergies.avoidTitle,
-    ro.allergies.allergensLabel, ro.result.missingAllergenNote]) {
-    expect(screen.getByText(text, { exact: false })).toBeTruthy();
-  }
+  for (const text of [ro.allergies.title, ro.result.missingAllergenNote]) expect(screen.getByText(text, { exact: false })).toBeTruthy();
+  for (const text of ['Te avertizăm când un produs le conține.', ro.allergies.avoidTitle, ro.allergies.allergensLabel]) expect(screen.queryByText(text)).toBeNull();
+  for (const id of ['allergen-card', 'avoid-card']) expect(StyleSheet.flatten(screen.getByTestId(id).props.style)).toMatchObject({ backgroundColor: light.surface, borderRadius: radii.card });
+  expect(StyleSheet.flatten(screen.getAllByTestId('switch-track', { includeHiddenElements: true })[0]!.props.style)).toMatchObject({ width: 64, height: 38 });
   expect(screen.queryByText('Salvat doar pe acest telefon', { exact: false })).toBeNull();
   expect(screen.getAllByRole('checkbox')).toHaveLength(ALLERGENS.length);
   expect(screen.getAllByRole('switch')).toHaveLength(5);
   expect(screen.queryByText(ro.profile.goalTitle)).toBeNull();
 });
 
-it('renders the title like the Compare page title (22px) with no subtitle under it', async () => {
+it('renders the title like the Compare page title (22px), with no lead', async () => {
   const screen = await renderReady();
   const style = StyleSheet.flatten(screen.getByRole('header', { name: ro.allergies.title }).props.style);
   expect(style.fontSize).toBe(22);
   expect(style.lineHeight).toBe(31.9);
-  expect(screen.queryByTestId('tab-page-subtitle')).toBeNull();
+  expect(screen.queryByText('Te avertizăm când un produs le conține.')).toBeNull();
 });
 
 it('announces the checked state and saves a toggled allergen through useProfile', async () => {
@@ -61,9 +61,8 @@ it('shows a selected chip by colour only: no check mark, same size, so the text 
   const unselected = screen.getByRole('checkbox', { name: ro.allergens.Lapte });
   expect(selected.props.accessibilityState.selected).toBe(true);
   expect(unselected.props.accessibilityState.selected).toBe(false);
-  expect(selected.children).toHaveLength(1); // just the label, no check icon
-  expect(unselected.children).toHaveLength(1);
-  const box = (el: typeof selected) => { const { backgroundColor: _bg, opacity: _o, ...rest } = StyleSheet.flatten(el.props.style); return rest; };
+  expect(JSON.stringify(screen.toJSON())).not.toContain('RNSVGPath'); // no check glyph anywhere on the screen's chips
+  const box = (el: typeof selected) => { const { backgroundColor: _bg, borderColor: _b, opacity: _o, ...rest } = StyleSheet.flatten(el.props.style); return rest; };
   expect(box(selected)).toEqual(box(unselected)); // same padding, radius and size
   expect(StyleSheet.flatten(selected.props.style).backgroundColor).not.toBe(StyleSheet.flatten(unselected.props.style).backgroundColor);
   const font = (name: string) => StyleSheet.flatten(screen.getByText(name).props.style).fontFamily;
