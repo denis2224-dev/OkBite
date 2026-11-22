@@ -28,7 +28,7 @@ describe('ManualCode', () => {
     await view.rerender(<ManualCode open onToggle={onToggle} onSubmit={jest.fn()} />);
     expect(screen.getByRole('button', { name: ro.scan.manual }).props.accessibilityState).toEqual(expect.objectContaining({ expanded: true }));
     const input = screen.getByLabelText(ro.scan.manualTitle);
-    expect(input.props.placeholder).toBe('8 sau 13 cifre');
+    expect(input.props.placeholder).toBe('8, 12 sau 13 cifre');
     expect(screen.queryByText('Cifrele de sub codul de bare: 8 sau 13.')).toBeNull();
   });
 
@@ -42,11 +42,11 @@ describe('ManualCode', () => {
     const onSubmit = jest.fn();
     await render(<Harness onSubmit={onSubmit} />);
     await typeAndSearch(text);
-    expect(screen.getByText('Codul are 8 sau 13 cifre.')).toBeTruthy();
+    expect(screen.getByText('Codul are 8, 12 sau 13 cifre.')).toBeTruthy();
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it.each(['4840022010013', '5449000000997', '96385075'])('shows the checksum message without submitting %s', async (text) => {
+  it.each(['4840022010013', '5449000000997', '96385075', '036000291453'])('shows the checksum message without submitting %s', async (text) => {
     const onSubmit = jest.fn();
     await render(<Harness onSubmit={onSubmit} />);
     await typeAndSearch(text);

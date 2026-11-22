@@ -6,6 +6,7 @@ import { api } from '../../lib/api';
 import { COMPARE_FLAG, compareProductRoute, identifyPhotoRoute, isCompareFlag, isGuidedAddEnabled, productRoute } from '../identify/routes';
 import { keepPhoto, removePhoto } from '../offline/photos';
 import { enqueue } from '../offline/queue';
+import { rememberLookup } from '../product/freshLookup';
 import { compressPhoto } from './compressPhoto';
 import { findBarcode } from './findBarcode';
 import type { AnalysisFlowState } from './StatusPanel';
@@ -60,6 +61,7 @@ export function useCaptureFlow() {
           const hit = await api.lookup({ code });
           if (!current()) return;
           if (hit.status === 'found') {
+            rememberLookup(hit);
             setState(IDLE);
             return openProduct(hit.product.id);
           }
@@ -88,6 +90,8 @@ export function useCaptureFlow() {
         setState(IDLE);
         if (result.status === 'found') {
           if (frontPhotoId) await removePhoto(frontPhotoId).catch(() => {});
+          if (!current()) return;
+          rememberLookup({ product: result.product, score: result.score });
           openProduct(result.product.id);
           return;
         }
@@ -95,7 +99,8 @@ export function useCaptureFlow() {
       } catch (err) {
         if (frontPhotoId) await removePhoto(frontPhotoId).catch(() => {});
         const code = (err as { code?: string } | null)?.code;
-        if (code === 'offline' && compressedUri) {
+        // A request reported as pending may already have reached the provider.
+        if (code === 'offline' && !awaitedPending && compressedUri) {
           try {
             await enqueue({ kind: 'photo', uri: compressedUri });
             if (!current()) return;

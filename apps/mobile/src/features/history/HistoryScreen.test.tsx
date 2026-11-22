@@ -20,7 +20,7 @@ jest.mock('expo-router', () => ({
     }, [effect]);
   },
 }));
-jest.mock('./store', () => ({ listHistory: jest.fn(), clearHistory: jest.fn(), removeFromHistory: jest.fn(), restoreToHistory: jest.fn() }));
+jest.mock('./store', () => ({ listHistory: jest.fn(), subscribeHistory: () => jest.fn(), clearHistory: jest.fn(), removeFromHistory: jest.fn(), restoreToHistory: jest.fn() }));
 jest.mock('../offline/queue', () => ({ subscribeQueue: () => jest.fn() }));
 const entry: HistoryEntry = { ...foundYogurt, savedAt: '2026-11-05T09:00:00.000Z' };
 function deferred<T>() {

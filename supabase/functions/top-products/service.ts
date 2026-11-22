@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Product, ScoreResult } from '../_shared/contract.ts';
+import { productScore } from '../_shared/score/index.ts';
 import {
   loadIngredientKnowledgeBase,
   PRODUCT_INGREDIENT_COLUMNS,
@@ -12,8 +13,14 @@ import {
 import { HttpError } from '../_lib/http.ts';
 
 type Candidate = { product: Product; score: ScoreResult };
-type RankedCandidate = Candidate & { score: { score: number } };
+type RankedCandidate = { candidate: Candidate; rank: number };
 const PAGE_SIZE = 500;
+// Bound the number of UUIDs in each PostgREST URL.
+const INGREDIENT_BATCH_SIZE = 100;
+const byRank = (a: RankedCandidate, b: RankedCandidate) =>
+  b.rank - a.rank ||
+  a.candidate.product.name.localeCompare(b.candidate.product.name, 'ro') ||
+  a.candidate.product.id.localeCompare(b.candidate.product.id);
 
 async function loadIngredientLinks(db: SupabaseClient, ids: string[]) {
   const byProduct = new Map<string, ProductIngredientLink[]>();
@@ -45,38 +52,44 @@ export async function loadShelfCandidates(
   if (category === 'necunoscut') return [];
 
   const ranked: RankedCandidate[] = [];
-  const byRank = (a: RankedCandidate, b: RankedCandidate) =>
-    b.score.score - a.score.score || a.product.name.localeCompare(b.product.name, 'ro');
+  let kb: Awaited<ReturnType<typeof loadIngredientKnowledgeBase>> | undefined;
   let afterId: string | undefined;
   while (true) {
     const query = selectProductRows(db).eq('category_slug', category).eq('status', 'verified')
       .order('id').limit(PAGE_SIZE);
     const { data, error } = await (afterId ? query.gt('id', afterId) : query);
     if (error) throw new Error('Shelf product lookup failed');
+
+    const candidates: Candidate[] = [];
     for (const row of data) {
       const product = productFromRow(db, row);
       if (product.category.slug !== category) continue;
       const score = scoreProduct(product);
-      if (score.score !== null) ranked.push({ product, score: { ...score, score: score.score } });
+      if (score.score !== null) candidates.push({ product, score });
     }
-    ranked.sort(byRank);
-    if (ranked.length > limit) ranked.length = limit;
+
+    for (let offset = 0; offset < candidates.length; offset += INGREDIENT_BATCH_SIZE) {
+      const batch = candidates.slice(offset, offset + INGREDIENT_BATCH_SIZE);
+      const links = await loadIngredientLinks(db, batch.map(({ product }) => product.id));
+      if (!kb && batch.some(({ product }) => !links.has(product.id) && product.ingredientsText.trim())) {
+        kb = await loadIngredientKnowledgeBase(db);
+      }
+      for (const candidate of batch) {
+        const { product, score } = candidate;
+        product.ingredients = productIngredients(
+          product.ingredientsText,
+          links.get(product.id) ?? [],
+          kb,
+        );
+        // scoreProduct uses the resolved category and the same nutrition computation as lookup.
+        const { score: rank } = productScore(product, score);
+        if (rank !== null) ranked.push({ candidate, rank });
+      }
+      ranked.sort(byRank);
+      if (ranked.length > limit) ranked.length = limit;
+    }
     if (data.length < PAGE_SIZE) break;
     afterId = data.at(-1)!.id;
   }
-  if (ranked.length === 0) return [];
-
-  // The nutrition score uses the ingredient text. Only returned products need ingredient links.
-  const links = await loadIngredientLinks(db, ranked.map(({ product }) => product.id));
-  const kb = ranked.some(({ product }) => !links.has(product.id) && product.ingredientsText.trim())
-    ? await loadIngredientKnowledgeBase(db)
-    : undefined;
-  for (const { product } of ranked) {
-    product.ingredients = productIngredients(
-      product.ingredientsText,
-      links.get(product.id) ?? [],
-      kb,
-    );
-  }
-  return ranked;
+  return ranked.map(({ candidate }) => candidate);
 }

@@ -1,11 +1,13 @@
 import { strict as assert } from 'node:assert';
 import { createClient } from '@supabase/supabase-js';
+import { type Ingredient, WATER_FIELD_KEYS, WaterProfile } from '../_shared/contract.ts';
+import { scoreProductNutrition } from '../_shared/score/index.ts';
 import { HttpError } from '../_lib/http.ts';
 import { loadShelfCandidates } from './service.ts';
 
 const category = { slug: 'iaurt', name: 'Iaurturi', scoreKind: 'general' };
 type Row = ReturnType<typeof productRow>;
-type Link = { product_id: string; position: number; raw_name: string; ingredient: null };
+type Link = { product_id: string; position: number; raw_name: string; ingredient: Ingredient | null };
 
 function productRow(number: number, name: string) {
   return {
@@ -26,6 +28,7 @@ function productRow(number: number, name: string) {
     protein: 3.6,
     fiber: 0,
     fruit_veg_pct: null,
+    water: null as WaterProfile | null,
     ingredients_text: '',
     allergens: ['Lapte'],
     may_contain: [],
@@ -39,7 +42,7 @@ function productRow(number: number, name: string) {
   };
 }
 
-function fakeDb(rows: Row[], links: Link[] = []) {
+function fakeDb(rows: Row[], links: Link[] = [], shelf = category) {
   const queries = new Map<string, number>();
   const db = createClient('http://local.invalid', 'anon-key', {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -58,10 +61,11 @@ function fakeDb(rows: Row[], links: Link[] = []) {
         if (table === 'categories') {
           const slug = params.get('slug')?.slice(3);
           if (slug === 'necunoscut') return page([{ ...category, slug }]);
-          return page(slug === 'iaurt' ? [category] : []);
+          return page(slug === shelf.slug ? [shelf] : []);
         }
         if (table === 'products') {
-          assert.equal(params.get('category_slug'), 'eq.iaurt');
+          assert.equal(params.get('category_slug'), `eq.${shelf.slug}`);
+          assert.ok(params.get('select')?.split(',').includes('water'));
           assert.equal(params.get('status'), 'eq.verified');
           assert.equal(params.get('order'), 'id.asc');
           const cursor = params.get('id')?.slice(3) ?? '';
@@ -69,6 +73,7 @@ function fakeDb(rows: Row[], links: Link[] = []) {
         }
         if (table === 'product_ingredients') {
           const ids = params.get('product_id')?.slice(4, -1).split(',') ?? [];
+          assert.ok(ids.length <= 100, 'ingredient queries keep their URLs bounded');
           assert.equal(params.get('order'), 'product_id.asc,position.asc');
           return page(links.filter((link) => ids.includes(link.product_id)));
         }
@@ -89,7 +94,7 @@ function fakeDb(rows: Row[], links: Link[] = []) {
   return { db, queries };
 }
 
-Deno.test('loads verified, scorable products and ranks by nutrition score, then Romanian name', async () => {
+Deno.test('loads verified, scorable products and ranks by product score, then Romanian name', async () => {
   const rows = [
     productRow(1, 'Zăhăr'),
     { ...productRow(2, 'Primul'), sat: 0, sugar: 0 },
@@ -107,13 +112,62 @@ Deno.test('loads verified, scorable products and ranks by nutrition score, then 
   );
 });
 
+Deno.test('includes the overall winner even when it falls outside the nutrition top 20', async () => {
+  const rows = Array.from({ length: 21 }, (_, index) => ({
+    ...productRow(index + 1, 'Iaurt'),
+    sat: 0,
+    sugar: 0,
+    nova_group: 4,
+    nova_source: 'team',
+  }));
+  const winner = {
+    ...productRow(22, 'Iaurt natural'),
+    nova_group: 1,
+    nova_source: 'team',
+  };
+  const { db } = fakeDb([...rows, winner]);
+  const results = await loadShelfCandidates('iaurt', 20, db);
+
+  assert.equal(results.length, 20);
+  assert.equal(results[0].product.id, winner.id);
+  assert.ok(results[0].score.score! < results[1].score.score!);
+  assert.equal(results[1].product.id, rows[0].id);
+});
+
+Deno.test('uses linked additive metadata before ranking candidates', async () => {
+  const withAdditive = productRow(1, 'A');
+  const plain = productRow(2, 'B');
+  const { db } = fakeDb([withAdditive, plain], [{
+    product_id: withAdditive.id,
+    position: 0,
+    raw_name: 'Ingredient de test',
+    ingredient: {
+      slug: 'ingredient-test',
+      name: 'Ingredient de test',
+      group: 'add',
+      risk: 'high',
+      riskSource: 'https://example.invalid/ingredient-test',
+      role: null,
+      explanation: null,
+      source: null,
+      allergen: null,
+    },
+  }]);
+
+  const results = await loadShelfCandidates('iaurt', 2, db);
+  assert.deepEqual(results.map(({ product }) => product.id), [plain.id, withAdditive.id]);
+  assert.equal(results[1].product.ingredients[0].risk, 'high');
+});
+
 Deno.test('keeps the requested limit and considers the best item from later pages', async () => {
   const rows = Array.from({ length: 505 }, (_, index) => productRow(index + 1, 'Iaurt natural'));
   rows[504] = { ...rows[504], name: 'Primul', sat: 0, sugar: 0 };
-  const { db } = fakeDb(rows);
+  const { db, queries } = fakeDb(rows);
   const results = await loadShelfCandidates('iaurt', 20, db);
   assert.equal(results.length, 20);
   assert.equal(results[0].product.id, rows[504].id);
+  assert.equal(queries.get('products'), 2);
+  assert.equal(queries.get('product_ingredients'), 6);
 });
 
 Deno.test('rejects unknown categories and returns empty arrays for an empty shelf', async () => {
@@ -127,6 +181,25 @@ Deno.test('rejects unknown categories and returns empty arrays for an empty shel
   assert.equal(queries.get('products'), undefined);
   assert.deepEqual(await loadShelfCandidates('iaurt', 20, db), []);
   assert.equal(queries.get('product_ingredients'), undefined);
+});
+
+Deno.test('the water shelf preserves lookup chemical scores and excludes missing chemistry', async () => {
+  const shelf = { slug: 'apa', name: 'Apă', scoreKind: 'water' };
+  const profile = WaterProfile.parse({
+    ...Object.fromEntries(WATER_FIELD_KEYS.map((key) => [key, null])),
+    tdsMgL: 200, naMgL: 5, ph: 7, carbonation: 'still',
+  });
+  const rows = [profile, { ...profile, tdsMgL: 800, naMgL: 120 }, null].map((water, index) =>
+    ({ ...productRow(index + 1, `Apă ${index + 1}`), category: shelf, water, unit: 'ml' })
+  );
+  const { db } = fakeDb(rows, [], shelf);
+  const results = await loadShelfCandidates(shelf.slug, 20, db);
+  assert.deepEqual(results.map(({ product }) => product.id), rows.slice(0, 2).map(({ id }) => id));
+  for (const [index, { product, score }] of results.entries()) {
+    assert.deepEqual(product.water, rows[index].water);
+    assert.deepEqual(score, scoreProductNutrition(product));
+    assert.equal(score.letter, null);
+  }
 });
 
 Deno.test('loads ingredients in one batch and shares the knowledge-base fallback', async () => {

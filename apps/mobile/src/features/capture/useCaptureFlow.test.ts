@@ -1,5 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { renderHook, act } from '@testing-library/react-native';
+import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { ImageManipulator } from 'expo-image-manipulator';
 import { scanFromURLAsync } from 'expo-camera';
 import { launchImageLibraryAsync } from 'expo-image-picker';
@@ -8,6 +8,8 @@ import { LookupResponse, IdentifyResponse } from '@okbite/shared';
 import { api } from '../../lib/api';
 import { setGuidedAddEnabled } from '../identify/routes';
 import { enqueue } from '../offline/queue';
+import { forgetLookup, freshLookup } from '../product/freshLookup';
+import { useProduct } from '../product/useProduct';
 import { useCaptureFlow } from './useCaptureFlow';
 import { CODE, PRODUCT_ID, completed, identifyCandidates, identifyFound, identifyNotFound, lookupFound, lookupNotFound, pendingOutcome } from './__fixtures__/responses';
 
@@ -31,6 +33,7 @@ jest.mock('expo-file-system/legacy', () => ({
 }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identifyOutcome: jest.fn() } }));
 jest.mock('../offline/queue', () => ({ enqueue: jest.fn() }));
+jest.mock('../history/store', () => ({ saveToHistory: jest.fn(), getFromHistory: jest.fn() }));
 
 type AsyncMock = jest.Mock<(...a: unknown[]) => Promise<unknown>>;
 const scan = scanFromURLAsync as unknown as AsyncMock;
@@ -60,6 +63,7 @@ describe('useCaptureFlow', () => {
     jest.resetAllMocks();
     setGuidedAddEnabled(false);
     mockParams = {};
+    forgetLookup(PRODUCT_ID);
     jest.mocked(FileSystem.copyAsync).mockImplementation(async ({ from }: { from: string; to: string }) => {
       if (!from.startsWith('file://')) {
         throw new Error(`Refusing non-local URI in keepPhoto: ${from}`);
@@ -80,13 +84,17 @@ describe('useCaptureFlow', () => {
     return hook;
   }
 
-  it('opens the product when the barcode in the photo is found', async () => {
+  it('opens the result of a barcode photo without another lookup', async () => {
     scan.mockResolvedValue([{ data: CODE }]);
     lookup.mockResolvedValue(lookupFound);
     await capture();
-    expect(lookup).toHaveBeenCalledWith({ code: CODE });
-    expect(identifyOutcome).not.toHaveBeenCalled();
     expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+
+    const product = await renderHook(() => useProduct(PRODUCT_ID));
+    await waitFor(() => expect(product.result.current.data?.product).toEqual(identifyFound.product));
+    expect(product.result.current.data?.score).toEqual(identifyFound.score);
+    expect(lookup.mock.calls).toEqual([[{ code: CODE }]]);
+    expect(identifyOutcome).not.toHaveBeenCalled();
   });
 
   it('still sends the photo to identify when the barcode lookup is not_found', async () => {
@@ -98,11 +106,22 @@ describe('useCaptureFlow', () => {
     expect(mockReplace).toHaveBeenCalledWith({ pathname: '/identify', params: { source: 'photo', identifyDraftId: 'front-capture-uuid' } });
   });
 
-  it('treats an unreadable barcode as "ask identify", never as product not found', async () => {
+  it('opens the AI result of an unreadable barcode photo without another lookup', async () => {
     identifyOutcome.mockResolvedValue(completed(identifyFound));
+    lookup.mockResolvedValue(lookupFound);
     await capture();
-    expect(lookup).not.toHaveBeenCalled();
     expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+
+    const product = await renderHook(() => useProduct(PRODUCT_ID));
+    await waitFor(() => expect(product.result.current.data?.product).toEqual(identifyFound.product));
+    expect(product.result.current.data?.score).toEqual(identifyFound.score);
+    expect(identifyOutcome).toHaveBeenCalledTimes(1);
+    expect(lookup).not.toHaveBeenCalled();
+    await product.unmount();
+
+    const deepLink = await renderHook(() => useProduct(PRODUCT_ID));
+    await waitFor(() => expect(deepLink.result.current.data?.product.id).toBe(PRODUCT_ID));
+    expect(lookup.mock.calls).toEqual([[{ id: PRODUCT_ID }]]);
   });
 
   it('sends candidates to the identify screen with the full response', async () => {
@@ -158,6 +177,23 @@ describe('useCaptureFlow', () => {
     await unmount();
     await act(async () => { pending.resolve(completed(identifyFound)); await running; });
     expect(mockReplace).not.toHaveBeenCalled();
+    expect(freshLookup(PRODUCT_ID)).toBeUndefined();
+  });
+
+  it('does not hand off a result when capture is left during photo cleanup', async () => {
+    setGuidedAddEnabled(true);
+    const cleanup = deferred<void>();
+    jest.mocked(FileSystem.deleteAsync).mockReturnValueOnce(cleanup.promise);
+    identifyOutcome.mockResolvedValue(completed(identifyFound));
+    const { result, unmount } = await renderHook(() => useCaptureFlow());
+    let running!: Promise<void>;
+    await act(async () => { running = result.current.takePhoto(photo); });
+    expect(FileSystem.deleteAsync).toHaveBeenCalledWith('file:///doc/okbite-queue/front-capture-uuid.jpg', { idempotent: true });
+    expect(mockReplace).not.toHaveBeenCalled();
+    await unmount();
+    await act(async () => { cleanup.resolve(); await running; });
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(freshLookup(PRODUCT_ID)).toBeUndefined();
   });
 
   it('reports working while the request runs', async () => {
@@ -331,7 +367,11 @@ describe('useCaptureFlow', () => {
     expect(FileSystem.deleteAsync).toHaveBeenCalledWith('file:///doc/okbite-queue/front-capture-uuid.jpg', { idempotent: true });
   });
 
-  it('re-enables retry after a late rejection on a pending analysis', async () => {
+  it.each([
+    { code: 'upstream_failed', status: 'error' },
+    { code: 'analysis_timeout', status: 'error' },
+    { code: 'offline', status: 'offline' },
+  ] as const)('keeps the photo and requires an explicit retry after pending analysis fails with $code', async ({ code, status }) => {
     const delayed = deferred<typeof identifyFound>();
     identifyOutcome
       .mockResolvedValueOnce(pendingOutcome(delayed.promise))
@@ -341,11 +381,15 @@ describe('useCaptureFlow', () => {
     await act(async () => { run = result.current.takePhoto(photo); });
     expect(result.current.canRetry).toBe(false);
     await act(async () => {
-      delayed.reject(Object.assign(new Error('upstream'), { code: 'upstream_failed' }));
+      delayed.reject(Object.assign(new Error(code), { code }));
       await run;
     });
-    expect(result.current.state).toEqual({ status: 'error', code: 'upstream_failed', afterPending: true });
+    expect(result.current.state).toEqual({ status, ...(status === 'error' ? { code } : {}), afterPending: true });
+    expect(result.current.photoUri).toBe('file:///shot.jpg');
     expect(result.current.canRetry).toBe(true);
+    expect(enqueue).not.toHaveBeenCalled();
+    expect(identifyOutcome).toHaveBeenCalledTimes(1);
+    expect(mockReplace).not.toHaveBeenCalled();
     await act(async () => { await result.current.retry(); });
     expect(identifyOutcome).toHaveBeenCalledTimes(2);
     expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);

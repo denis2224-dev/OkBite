@@ -93,3 +93,32 @@ it('fetches the current product when it is reopened after its handoff was used',
   expect(api.lookup).toHaveBeenCalledTimes(1);
   expect(api.lookup).toHaveBeenCalledWith({ id: foundYogurt.product.id });
 });
+
+it('reuses a history write already started by Scan when opening the result', async () => {
+  let finish!: () => void;
+  const historySave = new Promise<void>(resolve => { finish = resolve; });
+  rememberLookup(foundYogurt, historySave);
+
+  const { result } = await renderHook(() => useProduct(foundYogurt.product.id));
+  expect(result.current.data?.product.id).toBe(foundYogurt.product.id);
+  expect(result.current.loading).toBe(false);
+  expect(saveToHistory).not.toHaveBeenCalled();
+
+  await act(async () => finish());
+  expect(result.current.storageError).toBe(false);
+  expect(saveToHistory).not.toHaveBeenCalled();
+  expect(api.lookup).not.toHaveBeenCalled();
+});
+
+it('keeps the result usable and surfaces an error if the original history write fails', async () => {
+  let fail!: (error: Error) => void;
+  const historySave = new Promise<void>((_, reject) => { fail = reject; });
+  void historySave.catch(() => {});
+  rememberLookup(foundYogurt, historySave);
+
+  const { result } = await renderHook(() => useProduct(foundYogurt.product.id));
+  await act(async () => fail(new Error('storage full')));
+  expect(result.current.data?.product.id).toBe(foundYogurt.product.id);
+  expect(result.current.storageError).toBe(true);
+  expect(saveToHistory).not.toHaveBeenCalled();
+});

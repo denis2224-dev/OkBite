@@ -1,4 +1,5 @@
 import { strict as assert } from 'node:assert';
+import { productScore } from '../_shared/score/index.ts';
 import { adminClient, anonClient } from '../_lib/client.ts';
 import { loadProduct } from '../_lib/db.ts';
 import { integrationTest } from '../_lib/integration.ts';
@@ -20,7 +21,7 @@ integrationTest(
       shelf.find(({ product }) => product.id === seedId),
       await loadProduct({ id: seedId }),
     );
-    const scores = shelf.map(({ score }) => score.score as number);
+    const scores = shelf.map(({ product, score }) => productScore(product, score).score as number);
     assert.deepEqual(scores, scores.toSorted((a, b) => b - a));
   },
 );

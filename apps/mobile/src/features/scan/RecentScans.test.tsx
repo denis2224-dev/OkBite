@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { render, fireEvent, screen } from '@testing-library/react-native';
+import { act, render, fireEvent, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import type { Allergen } from '@okbite/shared';
 import { ro } from '../../copy/ro';
@@ -8,11 +8,11 @@ import { previewEntries } from '../../test/fixtures';
 import { StyleSheet } from 'react-native';
 import { productScoreFor } from '../product/productScoreFor';
 import { light, radii } from '../../theme/tokens';
-import { listHistory, type HistoryEntry } from '../history/store';
+import { listHistory, subscribeHistory, type HistoryEntry } from '../history/store';
 import { RecentScans } from './RecentScans';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), navigate: jest.fn() } }));
-jest.mock('../history/store', () => ({ listHistory: jest.fn() }));
+jest.mock('../history/store', () => ({ listHistory: jest.fn(), subscribeHistory: jest.fn(() => () => {}) }));
 jest.mock('../shelf/ShelfPicks', () => ({ ShelfPicks: () => null })); // its own tests cover it; shelf names (Lapte) would mix with allergen names here
 const mockAllergens: { value: Allergen[] } = { value: [] };
 jest.mock('../profile', () => ({ useProfile: () => ({ profile: { goals: [], allergens: mockAllergens.value, avoid: [], onboarded: true } }) }));
@@ -80,6 +80,22 @@ describe('RecentScans', () => {
     await view.rerender(<RecentScans active={false} />);
     await view.rerender(<RecentScans active />);
     expect(listHistory).toHaveBeenCalledTimes(2);
+  });
+
+  it('ignores an older read after a committed write refreshes Recents', async () => {
+    let finishOld!: (rows: HistoryEntry[]) => void;
+    let notify!: () => void;
+    jest.mocked(subscribeHistory).mockImplementationOnce(callback => {
+      notify = callback;
+      return () => {};
+    });
+    jest.mocked(listHistory).mockReturnValueOnce(new Promise(resolve => { finishOld = resolve; }));
+    await render(<RecentScans active />);
+    await act(async () => notify());
+    expect(await screen.findByText(yogurt.product.name)).toBeTruthy();
+    await act(async () => finishOld([]));
+    expect(screen.getByText(yogurt.product.name)).toBeTruthy();
+    expect(screen.queryByText(ro.home.design.empty)).toBeNull();
   });
 
   it('says so when history cannot be read', async () => {

@@ -6,14 +6,14 @@ import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { fonts } from '../../theme/tokens';
 import { SoftCard } from '../../ui/SoftCard';
-import { listHistory, type HistoryEntry } from '../history/store';
+import { listHistory, subscribeHistory, type HistoryEntry } from '../history/store';
 import { useProfile } from '../profile';
 import { RecentScanRow } from './RecentScanRow';
 import { ShelfPicks } from '../shelf/ShelfPicks';
 
 const LIMIT = 3;
 
-/** Shelf picks, then the newest history products in one soft card. Reloads each time the Scan tab is focused. */
+/** Shelf picks, then the newest history products in one soft card. Refreshes while active after history changes. */
 export function RecentScans({ active }: { active: boolean }) {
   const { colors } = useTheme();
   const { profile } = useProfile();
@@ -21,13 +21,21 @@ export function RecentScans({ active }: { active: boolean }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     if (!active) return;
-    let live = true;
-    listHistory().then(rows => {
-      if (!live) return;
-      setEntries([...rows].sort((a, b) => b.savedAt.localeCompare(a.savedAt)).slice(0, LIMIT));
-      setFailed(false);
-    }).catch(() => { if (live) setFailed(true); });
-    return () => { live = false; };
+    let revision = 0;
+    function load() {
+      const request = ++revision;
+      void listHistory().then(rows => {
+        if (request !== revision) return;
+        setEntries([...rows].sort((a, b) => b.savedAt.localeCompare(a.savedAt)).slice(0, LIMIT));
+        setFailed(false);
+      }).catch(() => { if (request === revision) setFailed(true); });
+    }
+    const unsubscribe = subscribeHistory(load);
+    load();
+    return () => {
+      revision++;
+      unsubscribe();
+    };
   }, [active]);
 
   const note = [styles.note, { color: colors.textSecondary }];

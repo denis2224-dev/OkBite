@@ -1,30 +1,26 @@
-# Production analysis outcome client (P-R4-2 / X-01)
+# Production photo analysis timeouts
 
-This ports the already-tested preparation from production-readiness-followup
-46a55fa into apps/mobile, the production application. It does not replace
-the existing identify/readLabel methods or edit R5 capture screens.
+The mobile client uses one request per user attempt for photo identification and
+label reading. The provider has a 40-second budget. The client allows more time
+for the gateway, storage, lookup and response.
 
-New opt-in methods api.identifyOutcome(photo) and api.readLabelOutcome(request)
-return a local client type (no shared contract change):
+- A validated response within 55 seconds completes the request.
+- At 55 seconds, the client shows the pending state and keeps waiting for the
+  same response. Retry stays disabled.
+- At 75 seconds, the client stops waiting, aborts its local transport, and
+  surfaces an unconfirmed outcome. A response that arrives after this point
+  cannot advance the screen or overwrite the draft.
 
-- completed: validated result, with its deadline timer cleared.
-- pending at 55 seconds: retryAllowed:false and the original completion promise.
+A local timeout does not confirm that server processing stopped. Capture keeps
+the selected photo, and guided Add keeps the saved draft. Retry is an explicit
+action that can start another analysis. A pending Capture request that loses its
+network connection stays available for explicit retry.
 
-The pending request is not aborted, resent or automatically retried. A caller
-must keep its original completion, handle both late success and rejection,
-and guard navigation/state by current draft and focus. Use ro.pwa.analysis
-copy; never promise an idempotent retry. An unknown result can remain pending
-indefinitely. This does not provide durable operations across process restart.
+Legacy raw photo methods keep the 55-second maximum. A timed-out queued photo
+retains its local payload and is retried only on request. The timeout is a
+client-side error and adds no fields to the shared API contract.
 
-Legacy identify/readLabel calls retain their existing 55-second timeout.
-R5 owns switching capture/add screens to these outcome methods. The canonical
-operation key remains an R2/R3 dependency and is intentionally not invented.
-
-The source port reuses the existing eight fake-timer regression cases; they
-failed against main before implementation. They cover the exact 55-second
-deadline, no abort/retry, late success, late service/schema errors, early
-network failure, request validation and timer cleanup.
-
-Client preparation is reviewable independently. End-to-end X-01 acceptance
-remains open until R5 integrates the caller and real timeout/restart/focus
-cases pass with an agreed backend operation key.
+Fake-timer tests exercise the soft and hard deadlines with stalled transport,
+device ID and response body. Capture and Add tests exercise pending, recovery,
+navigation and draft restoration. Verify those journeys on the staging build
+and physical devices as part of release acceptance.

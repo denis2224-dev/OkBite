@@ -11,7 +11,7 @@ it('preserves structured service errors', async () => { fetchMock.mockResolvedVa
 it('keeps invalid form and lookup requests as bad_request without sending them', async () => { await expect(api.addProduct({...validAdd,name:''})).rejects.toMatchObject({code:'bad_request'}); await expect(api.lookup({code:'12'})).rejects.toMatchObject({code:'bad_request'}); expect(fetchMock).not.toHaveBeenCalled(); });
 const hang = (_url:unknown,options:RequestInit) => new Promise((_resolve,reject) => options.signal!.addEventListener('abort',()=>reject(new Error('Aborted'))));
 it('times out an unresponsive request', async () => { jest.useFakeTimers(); fetchMock.mockImplementation(hang); const result=expect(api.lookup({code:'4840001000014'})).rejects.toMatchObject({code:'offline'}); await jest.advanceTimersByTimeAsync(20001); await result; jest.useRealTimers(); });
-it('waits for the server AI deadline before giving up on photo analysis', async () => { jest.useFakeTimers(); fetchMock.mockImplementation(hang); let settled=false; const result=api.identify('aGVsbG8=').finally(()=>{settled=true;}); result.catch(()=>{}); await jest.advanceTimersByTimeAsync(40001); expect(settled).toBe(false); await jest.advanceTimersByTimeAsync(15000); await expect(result).rejects.toMatchObject({code:'offline'}); jest.useRealTimers(); });
+it('waits for the server AI deadline before giving up on photo analysis', async () => { jest.useFakeTimers(); fetchMock.mockImplementation(hang); let settled=false; const result=api.identify('aGVsbG8=').finally(()=>{settled=true;}); result.catch(()=>{}); await jest.advanceTimersByTimeAsync(40001); expect(settled).toBe(false); await jest.advanceTimersByTimeAsync(15000); await expect(result).rejects.toMatchObject({code:'analysis_timeout'}); jest.useRealTimers(); });
 const shelf = { category: 'iaurt', products: [{ product: foundYogurt.product, score: foundYogurt.score }] };
 it('asks top-products for one shelf with GET, the limit and the usual headers', async () => {
   fetchMock.mockResolvedValueOnce(response(shelf));
@@ -25,6 +25,10 @@ it('rejects a top-products answer that breaks the shape or is for another shelf'
   fetchMock.mockResolvedValueOnce(response({ category: 'iaurt', products: [{ product: foundYogurt.product }] }));
   await expect(api.topProducts('iaurt')).rejects.toMatchObject({ code: 'invalid_response' });
   fetchMock.mockResolvedValueOnce(response({ ...shelf, category: 'suc' }));
+  await expect(api.topProducts('iaurt')).rejects.toMatchObject({ code: 'invalid_response' });
+});
+it('rejects a shelf answer above the shared result limit', async () => {
+  fetchMock.mockResolvedValueOnce(response({ ...shelf, products: Array(21).fill(shelf.products[0]) }));
   await expect(api.topProducts('iaurt')).rejects.toMatchObject({ code: 'invalid_response' });
 });
 it('does not send a top-products request for a malformed shelf slug', async () => {
