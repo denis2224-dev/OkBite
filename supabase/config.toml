@@ -55,3 +55,7 @@ additional_redirect_urls = ["http://localhost:8081/admin", "okbite://admin"]
 [functions.enrich-product]
 verify_jwt = false
 import_map = "./functions/deno.json"
+
+[functions.top-products]
+verify_jwt = false
+import_map = "./functions/deno.json"
