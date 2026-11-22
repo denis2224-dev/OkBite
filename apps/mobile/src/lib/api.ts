@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Code,Uuid,LookupResponse,IdentifyRequest,IdentifyResponse,ReadLabelRequest,ReadLabelResponse,AddProductRequest,ReportRequest,ErrorBody,type ErrorCode } from '@okbite/shared';
+import { Code,Uuid,LookupResponse,IdentifyRequest,IdentifyResponse,ReadLabelRequest,ReadLabelResponse,AddProductRequest,ReportRequest,ErrorBody,TopProductsQuery,TopProductsResponse,type ErrorCode } from '@okbite/shared';
 import { getDeviceId } from './device';
 import { ro } from '../copy/ro';
 import { isPreview } from './preview';
 import { demoApi } from './demoApi';
 import { waitForAnalysis, type AnalysisOutcome } from './analysisOutcome';
-import { ShelfCategory, TopProductsResponse, TOP_PRODUCTS_LIMIT } from '../features/shelf/topProducts';
 export class ApiError extends Error {constructor(public code:ErrorCode|'offline'|'invalid_response'|'configuration'){super(ro.errors[code]);this.name='ApiError';}}
 // Photo analysis waits past the server's 40 s provider deadline (supabase/functions/_lib/claude.ts AI_DEADLINE_MS).
 const TIMEOUT_MS=20000,AI_TIMEOUT_MS=55000;
@@ -31,9 +30,13 @@ export const api={
  async addProduct(req:AddProductRequest):Promise<LookupResponse>{if(demo())return demoApi.addProduct(validate(AddProductRequest,req));return request('add-product',LookupResponse,validate(AddProductRequest,req));},
  /** Candidates for "Cel mai bun din raft" in one category; the app ranks them (docs/api/top-products.md). */
  async topProducts(category:string):Promise<TopProductsResponse>{
-  const slug=validate(ShelfCategory,category);if(demo())return demoApi.topProducts(slug,TOP_PRODUCTS_LIMIT);
-  const result=await request('top-products',TopProductsResponse,undefined,{category:slug,limit:String(TOP_PRODUCTS_LIMIT)});
-  if(result.category!==slug)throw new ApiError('invalid_response');return result;
+  const query = TopProductsQuery.safeParse({ category });
+  if (!query.success) throw new ApiError('bad_request');
+  const { category: slug, limit } = query.data;
+  if (demo()) return demoApi.topProducts(slug, limit);
+  const result = await request('top-products', TopProductsResponse, undefined, { category: slug, limit: String(limit) });
+  if (result.category !== slug) throw new ApiError('invalid_response');
+  return result;
  },
  async report(req:ReportRequest):Promise<void>{if(demo()){validate(ReportRequest,req);return;}await request('report',z.object({status:z.literal('ok')}),validate(ReportRequest,req));},
 };
