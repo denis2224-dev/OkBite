@@ -18,7 +18,7 @@ de mai jos nu este executat prin simpla existență a acestei fișe.
 | S10 | salvați produsul necunoscut, apoi găsiți-l cu telefonul 2 și cereți verificarea de către R2 | produs vizibil „Neverificat”, același UUID pe telefonul 2; R2 consemnează verificarea |
 | S11 | deschideți un produs online; opriți rețeaua; deschideți istoricul; fotografiați offline; reporniți aplicația și rețeaua | istoricul și fotografia persistă; o singură intrare în coadă; retry rezolvă fără pierdere; candidates/not_found au reluare explicită |
 | S12 | provocați controlat offline/rate limit/eroare server pe staging, apoi retry | mesaj corect, aceeași fotografie reutilizabilă, fără salvări duplicate |
-| S13 | font 200%, light/dark, VoiceOver/TalkBack și navigare tastatură web | text lizibil, controale etichetate, fără clipping sau acțiuni inaccesibile |
+| S13 | font 200%, interfață luminoasă inclusiv cu sistemul în mod întunecat, VoiceOver/TalkBack și navigare tastatură web | text lizibil, controale etichetate, fără clipping sau acțiuni inaccesibile |
 | S14 | cronometrați fotografia unui produs cunoscut → răspuns pe 4G real | sub 3 secunde conform spec; notați fiecare măsurătoare și condițiile rețelei |
 | S15 | fotografiați un cod estompat/înclinat pe care dispozitivul nu îl citește | fotografia este trimisă la identify; eșecul detectorului singur nu deschide direct „produs negăsit” |
 | S16 | trimiteți fotografii reale de 12 MP prin captură/galerie la identify și read-label, cu una și două etichete | fiecare JPEG are latura maximă ≤1600 px și ≤1,5 MB; fiecare request JSON total ≤2.000.000 bytes; fotografiile rămân lizibile |
