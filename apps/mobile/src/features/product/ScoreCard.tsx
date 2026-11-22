@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { Image, View } from 'react-native';
 import { productScore, type Product, type ScoreResult } from '@okbite/shared';
-import { Body, Caption, Title } from '../../ui';
+import { Body, Caption, Card, ProgressBar, ScoreBadge, Title } from '../../ui';
 import { fonts, radii } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 import { letterTones } from '../../theme/letterTones';
-import { tierTone } from '../../theme/tierTones';
 import { ro } from '../../copy/ro';
 import { NutriScoreScale } from './NutriScoreScale';
-import { ScoreTag } from './ScoreTag';
 
 /** Result hero: photo thumbnail and name, the product score as a shelf tag with its tier, then the A–E bar
  * (naming the letter) with the disclaimer directly under it. Without a tier, and in Compare's picker
@@ -32,24 +30,21 @@ export function ScoreCard({ product, score, identity = true }: { product?: Produ
   const hidden = { accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' as const };
   if (product && identity && shown && scored?.tier && productLine) {
     const tier = scored.tier;
-    return <View style={{ gap: 16 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-        {thumbUrl && <Image testID="product-thumb" source={{ uri: thumbUrl }} accessible={false} {...hidden} resizeMode="contain"
-          onError={() => setFailedUrl(thumbUrl)}
-          style={{ width: 64, height: 64, borderRadius: radii.small, backgroundColor: colors.soft }} />}
-        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-          <Title numberOfLines={2}>{product.name}</Title>
-          <Body style={{ color: colors.muted }}>{[product.brand, product.quantity].filter(Boolean).join(', ')}</Body>
+    return <View style={{ gap: 12 }}>
+      <Card testID="score-card" style={{ gap: 18 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+          {thumbUrl && <Image testID="product-thumb" source={{ uri: thumbUrl }} accessible={false} {...hidden} resizeMode="contain"
+            onError={() => setFailedUrl(thumbUrl)}
+            style={{ width: 84, height: 84, borderRadius: radii.image, backgroundColor: colors.mist }} />}
+          <Title numberOfLines={3} style={{ flex: 1, minWidth: 0, fontFamily: fonts.bold, fontSize: 20, lineHeight: 26 }}>{product.name}</Title>
         </View>
-      </View>
-      <View testID="score-row" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', rowGap: 14, columnGap: 18 }}>
-        <ScoreTag testID="product-score" score={shown.value} tier={tier} label={productLine} />
-        <Title {...hidden} accessibilityRole={undefined} style={{ color: tierTone(tier).word }}>{ro.tiers[tier]}</Title>
-      </View>
-      <View style={{ gap: 12 }}>
+        <View testID="score-row" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
+          <ScoreBadge testID="product-score" score={shown.value} tier={tier} label={productLine} />
+        </View>
+        <View {...hidden}><ProgressBar testID="product-score-bar" value={shown.value} /></View>
         <NutriScoreScale letter={score.letter} showLetter />
-        <Caption>{ro.score.disclaimer}</Caption>
-      </View>
+      </Card>
+      <Caption style={{ textAlign: 'center' }}>{ro.score.disclaimer}</Caption>
     </View>;
   }
   return <View style={{ gap: 12 }}>

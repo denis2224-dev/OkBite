@@ -43,7 +43,7 @@ it('PrimaryButton is a 54 pt primary pill with white text and the green glow', a
 
 it('SecondaryButton is a 54 pt surface pill with a 1.5 sand border', async () => {
   await render(<SecondaryButton label="Introdu codul manual" onPress={jest.fn()} />);
-  expect(flat(screen.getByRole('button', { name: 'Introdu codul manual' }))).toMatchObject({ minHeight: 54, borderRadius: radii.pill, backgroundColor: light.surface, borderWidth: 1.5, borderColor: light.sand });
+  expect(flat(screen.getByRole('button', { name: 'Introdu codul manual' }))).toMatchObject({ minHeight: 54, borderRadius: radii.pill, backgroundColor: light.surface, borderWidth: 1.5, borderColor: light.divider });
   expect(flat(screen.getByText('Introdu codul manual')).color).toBe(light.ink);
 });
 
