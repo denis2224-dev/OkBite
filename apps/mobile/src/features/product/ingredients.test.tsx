@@ -54,3 +54,15 @@ test('ingredients retain declared allergens and product provenance', async () =>
   expect(screen.getAllByText('Lapte').length).toBeGreaterThan(0);
   expect(screen.getByText(mockProduct.source)).toBeTruthy();
 });
+
+test('a blank ingredient label never implies no declared allergens', async () => {
+  mockProduct = {
+    ...foundYogurt.product, status: 'verified', ingredientsText: '  ', allergens: [], mayContain: ['Soia'],
+  };
+  await render(<Ingredients />);
+  expect(screen.getByText(ro.result.allergenDataUnknown)).toBeTruthy();
+  expect(screen.queryByText(ro.result.noAllergens)).toBeNull();
+  expect(screen.getByLabelText(`${ro.result.mayContain} ${ro.allergens.Soia}`)).toBeTruthy();
+  expect(screen.queryByLabelText(ro.allergens.Soia)).toBeNull();
+  expect(screen.getAllByText(ro.result.missingAllergenNote)).toHaveLength(1);
+});
