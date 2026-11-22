@@ -14,7 +14,7 @@ export function ToggleChip({ text, selected, disabled, onPress, role = 'checkbox
   return (
     <Pressable accessibilityRole={role} aria-pressed={role === 'button' ? selected : undefined} accessibilityLabel={text}
       accessibilityState={accessibilityState} disabled={disabled} onPress={onPress}
-      style={[styles.chip, { backgroundColor: selected ? colors.primary : colors.soft, opacity: disabled ? 0.6 : 1 }]}>
+      style={[styles.chip, { backgroundColor: selected ? colors.primary : colors.soft }]}>
       <Body style={{ color: fg, fontFamily: fonts.medium, flexShrink: 1 }}>{text}</Body>
     </Pressable>
   );

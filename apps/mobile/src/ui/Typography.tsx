@@ -5,7 +5,7 @@ type Step = keyof typeof typeScale;
 function header(step: Step) {
  return function Header({ style, ...props }: TextProps) {
   const { colors } = useTheme();
-  return <Text {...props} accessibilityRole="header" allowFontScaling style={[{ fontFamily: fonts.heading, ...typeScale[step], color: colors.ink }, style]} />;
+  return <Text {...props} accessibilityRole="header" allowFontScaling style={[{ fontFamily: fonts.heading, ...typeScale[step], letterSpacing: step === 'display' ? -0.3 : 0, color: colors.ink }, style]} />;
  };
 }
 export function Body({style,...props}:TextProps) {const {colors}=useTheme();return <Text {...props} allowFontScaling style={[{fontFamily:fonts.body,...typeScale.body,color:colors.ink},style]}/>;}
@@ -13,9 +13,9 @@ export function Body({style,...props}:TextProps) {const {colors}=useTheme();retu
 export function Detail({style,...props}:TextProps) {const {colors}=useTheme();return <Text {...props} allowFontScaling style={[{fontFamily:fonts.body,...typeScale.detail,color:colors.muted},style]}/>;}
 /** Muted small text for notes, sources and disclaimers. */
 export function Caption({style,...props}:TextProps) {const {colors}=useTheme();return <Text {...props} allowFontScaling style={[{fontFamily:fonts.body,...typeScale.caption,color:colors.muted},style]}/>;}
-/** Screen titles (26/32). */
+/** Screen titles (30/36). */
 export const Heading = header('display');
-/** Product names and other large titles (22/28). */
+/** Card titles (20/26). */
 export const Title = header('title');
-/** Card and section headings (18/24). */
+/** Card questions and section headings (19/25). */
 export const Section = header('section');

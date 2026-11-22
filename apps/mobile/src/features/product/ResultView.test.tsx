@@ -233,7 +233,7 @@ it('raises a red alert for a declared allergen on the profile', async () => {
   expect(screen.getByRole('alert')).toBeTruthy();
   expect(screen.getByText(ro.result.containsAllergen(ro.allergens.Lapte.toLocaleLowerCase()))).toBeTruthy();
   expect(screen.getByText(ro.result.profileAlertSub)).toBeTruthy();
-  expect(screen.getByTestId('profile-alert-contains')).toHaveStyle({ backgroundColor: light.lowBg });
+  expect(screen.getByTestId('profile-alert-contains')).toHaveStyle({ backgroundColor: light.dangerBg });
   expect(screen.queryByText(/Gluten/i)).toBeNull();
 });
 it('raises an amber outlined alert for a may-contain allergen on the profile', async () => {
@@ -279,8 +279,8 @@ it('puts share and report in a top row of 44 pt icon buttons, with no back arrow
   expect(screen.queryByRole('button', { name: ro.result.closeSheet })).toBeNull();
   for (const name of [ro.share.button, ro.result.report]) {
     const style = StyleSheet.flatten(screen.getByRole('button', { name }).props.style);
-    expect(style.minWidth).toBeGreaterThanOrEqual(44);
-    expect(style.minHeight).toBeGreaterThanOrEqual(44);
+    expect(style.minWidth ?? style.width).toBeGreaterThanOrEqual(44);
+    expect(style.minHeight ?? style.height).toBeGreaterThanOrEqual(44);
   }
   const order = inOrder();
   expect(order.indexOf(ro.result.report)).toBeLessThan(order.indexOf(productLine(foundYogurt.product, foundYogurt.score)));

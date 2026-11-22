@@ -3,7 +3,6 @@ import { AccessibilityInfo, Animated, StyleSheet, Text, View } from 'react-nativ
 import Svg, { Path } from 'react-native-svg';
 import type { Tier } from '@okbite/shared';
 import { fonts, typeScale } from '../../theme/tokens';
-import { useTheme } from '../../theme/useTheme';
 import { tierTone } from '../../theme/tierTones';
 import { ro } from '../../copy/ro';
 
@@ -12,8 +11,7 @@ const POINT = 'M22 0H14L0 30l14 30h8zM16.4 30a3.4 3.4 0 1 0 -6.8 0a3.4 3.4 0 1 0
 
 /** The product score as a shelf tag in the tier colour. It sizes to its text and swings in once unless motion is reduced. */
 export function ScoreTag({ score, tier, label, testID }: { score: number; tier: Tier; label: string; testID?: string }) {
-  const { colors } = useTheme();
-  const fg = tierTone(tier).fg;
+  const { fill: fg, onFill } = tierTone(tier);
   const [hang] = useState(() => new Animated.Value(1));
   useEffect(() => {
     let live = true;
@@ -47,8 +45,8 @@ export function ScoreTag({ score, tier, label, testID }: { score: number; tier: 
     <View testID={testID ? `${testID}-body` : undefined} accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
       style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, backgroundColor: fg, borderTopRightRadius: 14, borderBottomRightRadius: 14,
         paddingTop: 8, paddingRight: 16, paddingBottom: 9, paddingLeft: 6 }}>
-      <Text allowFontScaling style={{ fontFamily: fonts.headingExtra, ...typeScale.score, color: colors.onPrimary }}>{score}</Text>
-      <Text allowFontScaling style={{ fontFamily: fonts.medium, ...typeScale.caption, color: colors.onPrimary }}>{ro.score.outOf}</Text>
+      <Text allowFontScaling style={{ fontFamily: fonts.headingExtra, ...typeScale.score, color: onFill }}>{score}</Text>
+      <Text allowFontScaling style={{ fontFamily: fonts.medium, ...typeScale.caption, color: onFill }}>{ro.score.outOf}</Text>
     </View>
   </Animated.View>;
 }

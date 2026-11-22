@@ -125,6 +125,7 @@ const legacyRu = {
   },
   compare: {
     design: {
+      verdict: (name: string) => `${name} — лучший выбор`, tabs: { nutrients: 'Нутриенты', ingredients: 'Состав', allergens: 'Аллергены' },
       title: 'Сравнение', productA: 'Товар A', productB: 'Товар B',
       swap: 'Сменить товар B', category: 'Другая категория', subtitle: (category: string, unit: string) => `${category}, на 100 ${unit}`,
       table: (unit: string) => `Таблица сравнения на 100 ${unit === 'ml' ? 'миллилитров' : 'граммов'}`,
@@ -307,6 +308,7 @@ export const redesignRu: RedesignCopy = {
     open: (name: string) => `Подробнее о ${name}`, empty: 'Для этого товара нет сведений о добавках.',
   },
   profile: {
+    myAllergies: 'Мои аллергии',
     title: 'Профиль', edit: 'Изменить', goalTitle: 'Что для вас важно?', allergensTitle: 'Аллергены под контролем', avoidTitle: 'Что вы хотите избегать',
     health: 'Более сбалансированное питание', allergies: 'Пищевые аллергии', family: 'Выбор для семьи',
     weight: 'Контроль веса', other: 'Другая цель', added_sugar: 'Добавленный сахар', sweeteners: 'Подсластители',
@@ -342,6 +344,7 @@ export const redesignRu: RedesignCopy = {
     promiseTitle: 'Бесплатно, без аккаунта', promiseBody: 'Без рекламы и без рекламного отслеживания.',
   },
   scan: {
+    homeTitle: 'Сканируйте продукт',
     aimHint: 'Поместите штрихкод в рамку', flashOn: 'Включить вспышку', flashOff: 'Выключить вспышку', closeUpOn: 'Включить приближение', closeUpOff: 'Выключить приближение',
     manualCode: 'Ввести код', photoLabel: 'Снять этикетку', loadingReader: 'Подготовка сканера…',
     labelMode: 'Этикетка', seeAll: 'Смотреть все',
