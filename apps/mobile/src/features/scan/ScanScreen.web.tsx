@@ -68,7 +68,7 @@ export default function ScanScreenWeb({ embedded = false }: ScanScreenProps = {}
       ) : null}
       {embedded ? null : <ManualCode open={manualOpen} onToggle={() => setManualOpen(open => !open)}
         onSubmit={(code) => { void onManualCode(code); }} disabled={working} />}
-      {state.status === 'found' && <ResultSheet product={state.product} score={state.score} onClose={dismiss} />}
+      {state.status === 'found' && <ResultSheet product={state.product} score={state.score} onClose={dismiss} storageError={state.storageError} />}
     </>
   );
   if (embedded) return <View style={styles.embedded}>{body}</View>;

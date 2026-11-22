@@ -108,6 +108,34 @@ test.describe('returning user', () => {
     await expect(page.getByText('0 g', { exact: true })).toHaveCount(0);
   });
 
+  test('keeps a closed barcode result in History after reload', async ({ page }) => {
+    let lookups = 0;
+    await page.route('**/functions/v1/lookup*', route => {
+      lookups++;
+      expect(new URL(route.request().url()).searchParams.get('code')).toBe(yogurt.product.code);
+      return route.fulfill({ json: yogurt });
+    });
+    await page.goto('/history');
+    await page.getByRole('button', { name: ro.history.design.scan, exact: true }).click();
+    await expect(page).toHaveURL(/\/scan$/);
+    await page.getByRole('button', { name: ro.scan.manual, exact: true }).click();
+    await page.getByRole('textbox', { name: ro.scan.manualTitle }).fill(yogurt.product.code!);
+    await page.getByRole('button', { name: ro.scan.search, exact: true }).click();
+    const result = page.getByRole('dialog', { name: yogurt.product.name, exact: true });
+    await expect(result).toBeVisible();
+    await result.getByRole('button', { name: ro.app.close, exact: true }).click();
+    await expect(result).toHaveCount(0);
+
+    await page.goBack();
+    await expect(page).toHaveURL(/\/history$/);
+    const row = page.getByRole('button', { name: new RegExp(`^${ro.history.open(yogurt.product.name)}`) });
+    await expect(row).toBeVisible();
+    await page.reload();
+    await expect(row).toBeVisible();
+    await expect(row).toHaveCount(1);
+    expect(lookups).toBe(1);
+  });
+
   test('e · history lists saved products as photo, rating and verdict, with no search', async ({ page }) => {
     for (const entry of [yogurt, gluten]) {
       await stub(page, entry);

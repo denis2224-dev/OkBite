@@ -1,13 +1,16 @@
 import React from 'react';
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { render, fireEvent, screen, act, within } from '@testing-library/react-native';
+import { DatabaseSync as mockDatabaseSync } from 'node:sqlite';
 import { Linking, StyleSheet } from 'react-native';
 import { notificationAsync } from 'expo-haptics';
 import { api } from '../../lib/api';
 import { ro } from '../../copy/ro';
 import { light } from '../../theme/tokens';
 import ScanScreen from './ScanScreen';
-import { CODE, lookupFound, lookupNotFound } from '../capture/__fixtures__/responses';
+import { HistoryScreen } from '../history/HistoryScreen';
+import * as history from '../history/store';
+import { CODE, PRODUCT_ID, lookupFound, lookupNotFound } from '../capture/__fixtures__/responses';
 
 const mockReplace = jest.fn();
 const mockPush = jest.fn();
@@ -15,6 +18,7 @@ let mockFocused = true;
 const mockPermission: { value: unknown } = { value: null };
 const mockRequestPermission = jest.fn();
 jest.mock('expo-router', () => ({
+  router: { push: mockPush },
   useRouter: () => ({ replace: mockReplace, push: mockPush }),
   useIsFocused: () => mockFocused,
   useFocusEffect: (callback: () => void | (() => void)) =>
@@ -29,14 +33,31 @@ jest.mock('expo-camera', () => {
   return { CameraView, useCameraPermissions: () => [mockPermission.value, mockRequestPermission] };
 });
 
+jest.mock('expo-sqlite', () => {
+  const db = new mockDatabaseSync(':memory:');
+  const connection = {
+    execAsync: async (sql: string) => db.exec(sql),
+    runAsync: async (sql: string, ...values: (string | number)[]) => db.prepare(sql).run(...values),
+    getAllAsync: async (sql: string) => db.prepare(sql).all(),
+    withExclusiveTransactionAsync: async (write: (db: unknown) => Promise<void>) => {
+      db.exec('BEGIN IMMEDIATE');
+      try { await write(connection); db.exec('COMMIT'); }
+      catch (error) { db.exec('ROLLBACK'); throw error; }
+    },
+  };
+  return { openDatabaseAsync: async () => connection };
+});
+
 type AsyncMock = jest.Mock<(...a: unknown[]) => Promise<unknown>>;
 const lookup = api.lookup as unknown as AsyncMock;
+const found = lookupFound as Extract<typeof lookupFound, { status: 'found' }>;
 const granted = { granted: true, status: 'granted', canAskAgain: true };
 const camera = () => screen.getByTestId('camera');
 const detect = (data: string) => act(async () => { (camera().props.onBarcodeScanned as (e: { data: string }) => void)({ data }); });
 
 describe('ScanScreen', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await history.clearHistory();
     jest.resetAllMocks();
     mockFocused = true;
     mockPermission.value = granted;
@@ -135,6 +156,64 @@ describe('ScanScreen', () => {
     expect(lookup).toHaveBeenCalledTimes(1);
     expect(notificationAsync).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId('result-sheet')).toBeTruthy();
+  });
+
+  it('keeps the closed camera result in History with one row per product', async () => {
+    lookup.mockResolvedValue(lookupFound);
+    const scan = await render(<ScanScreen embedded />);
+
+    await detect(CODE);
+    await screen.findByTestId('result-sheet');
+    await fireEvent.press(screen.getByRole('button', { name: ro.app.close }));
+    await scan.unmount();
+
+    const open = () => screen.findByRole('button', { name: new RegExp(ro.history.open(found.product.name)) });
+    const historyView = await render(<HistoryScreen />);
+    expect(await open()).toBeTruthy();
+    expect((await history.listHistory()).map(entry => entry.product.id)).toEqual([PRODUCT_ID]);
+    await historyView.unmount();
+
+    // A second scan from a fresh screen updates the same durable row.
+    const secondScan = await render(<ScanScreen embedded />);
+    await detect(CODE);
+    await screen.findByTestId('result-sheet');
+    await fireEvent.press(screen.getByRole('button', { name: ro.app.close }));
+    expect(lookup).toHaveBeenCalledTimes(2);
+    await secondScan.unmount();
+
+    await render(<HistoryScreen />);
+    expect(await open()).toBeTruthy();
+    expect((await history.listHistory()).map(entry => entry.product.id)).toEqual([PRODUCT_ID]);
+  });
+
+  it('does not save a lookup that finishes after Scan loses focus', async () => {
+    let finish!: (value: typeof lookupFound) => void;
+    lookup.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+    const view = await render(<ScanScreen />);
+    await detect(CODE);
+
+    mockFocused = false;
+    await view.rerender(<ScanScreen />);
+    await act(async () => finish(lookupFound));
+    expect(screen.queryByTestId('result-sheet')).toBeNull();
+    expect(await history.listHistory()).toEqual([]);
+  });
+
+  it('keeps a result sheet usable when its history write fails', async () => {
+    lookup.mockResolvedValue(lookupFound);
+    const save = jest.spyOn(history, 'saveToHistory').mockRejectedValueOnce(new Error('disk full'));
+    try {
+      await render(<ScanScreen />);
+      await detect(CODE);
+      expect(await screen.findByText(ro.history.storageError)).toBeTruthy();
+      expect(screen.getByRole('button', { name: ro.app.open })).toBeTruthy();
+      expect(save).toHaveBeenCalledTimes(1);
+      expect(await history.listHistory()).toEqual([]);
+      await fireEvent.press(screen.getByRole('button', { name: ro.app.close }));
+      expect(screen.queryByTestId('result-sheet')).toBeNull();
+    } finally {
+      save.mockRestore();
+    }
   });
 
   it('ignores a detection that is not a valid barcode', async () => {

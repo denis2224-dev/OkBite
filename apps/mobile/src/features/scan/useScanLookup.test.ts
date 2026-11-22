@@ -7,6 +7,7 @@ import { ro } from '../../copy/ro';
 import AddScreen from '../../../app/add/index';
 import { loadUnknownDraft } from '../add/unknownDraft';
 import { GUIDED_ADD_ENABLED, setGuidedAddEnabled } from '../identify/routes';
+import { saveToHistory } from '../history/store';
 import { useScanLookup } from './useScanLookup';
 import { freshLookup as takeFreshLookup, forgetLookup } from '../product/freshLookup';
 import { CODE, PRODUCT_ID, lookupFound, lookupNotFound } from '../capture/__fixtures__/responses';
@@ -22,6 +23,7 @@ jest.mock('expo-router', () => ({
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'draft-id' }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
 jest.mock('../offline/queue', () => ({ enqueue: (arg: unknown) => mockEnqueue(arg) }));
+jest.mock('../history/store', () => ({ saveToHistory: jest.fn() }));
 jest.mock('../add/unknownDraft', () => ({
   ...jest.requireActual<typeof import('../add/unknownDraftRepository')>('../add/unknownDraftRepository'),
   loadUnknownDraft: jest.fn(async () => null),
@@ -39,6 +41,7 @@ describe('useScanLookup', () => {
     setGuidedAddEnabled?.(null);
     mockParams.value = {};
     mockEnqueue.mockResolvedValue(undefined);
+    jest.mocked(saveToHistory).mockResolvedValue(undefined);
     jest.mocked(loadUnknownDraft).mockResolvedValue(null);
     jest.spyOn(AppState, 'addEventListener').mockReturnValue({ remove: jest.fn() });
   });
@@ -50,6 +53,8 @@ describe('useScanLookup', () => {
     expect(lookup).toHaveBeenCalledWith({ code: CODE });
     expect(result.current.state).toEqual({ status: 'found', product: foundLookup.product, score: foundLookup.score });
     expect(mockReplace).not.toHaveBeenCalled();
+    expect(saveToHistory).toHaveBeenCalledTimes(1);
+    expect(saveToHistory).toHaveBeenCalledWith(foundLookup);
   });
 
   it('hands the found result to the product page so it does not look it up again', async () => {
@@ -70,6 +75,24 @@ describe('useScanLookup', () => {
     }
     expect(lookup).toHaveBeenCalledTimes(2);
     expect(lookup).toHaveBeenNthCalledWith(2, { code: CODE });
+  });
+
+  it('lets a shopper close the sheet before the write finishes and scopes failure to that lookup', async () => {
+    lookup.mockResolvedValue(lookupFound);
+    let fail!: (error: Error) => void;
+    jest.mocked(saveToHistory).mockReturnValueOnce(new Promise((_, reject) => { fail = reject; }));
+
+    const { result } = await renderHook(() => useScanLookup());
+    await act(async () => { await result.current.onManualCode(CODE); });
+    expect(result.current.state).toEqual(lookupFound);
+    await act(() => result.current.dismiss());
+    expect(result.current.state.status).toBe('idle');
+    expect(takeFreshLookup(PRODUCT_ID)).toBeUndefined();
+
+    await act(async () => { await result.current.onManualCode(CODE); });
+    await act(async () => fail(new Error('storage full')));
+    expect(result.current.state).toEqual(lookupFound);
+    expect(saveToHistory).toHaveBeenCalledTimes(2);
   });
 
   it('sends an unknown code to identify as local state with no photoPath', async () => {

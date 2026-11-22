@@ -31,6 +31,7 @@ jest.mock('./compressPhoto', () => ({ compressPhoto: jest.fn(async () => ({ uri:
 jest.mock('./findBarcode', () => ({ findBarcode: jest.fn(async () => null) }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identifyOutcome: jest.fn(), readLabelOutcome: jest.fn() } }));
 jest.mock('../offline/queue', () => ({ enqueue: jest.fn() }));
+jest.mock('../history/store', () => ({ saveToHistory: jest.fn(async () => {}) }));
 jest.mock('../add/draftStore', () => ({
   setAddReviewDraft: jest.fn(),
   getAvailableCategories: () => [],
