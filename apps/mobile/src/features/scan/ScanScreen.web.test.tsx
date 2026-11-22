@@ -62,7 +62,8 @@ describe('ScanScreen (web)', () => {
     const frame = StyleSheet.flatten(screen.getByTestId('scan-preview').props.style);
     expect(frame.maxHeight).toBeUndefined();
     expect(frame.aspectRatio).toBeUndefined();
-    expect(frame.minHeight).toBe(240);
+    expect(frame.minHeight).toBe(330);
+    expect(frame.height).toBeUndefined();
   });
 
   it('releases the live preview on blur and restores it on focus', async () => {
@@ -93,7 +94,7 @@ describe('ScanScreen (web)', () => {
   it('without live support shows only the manual fallback and the photo flow, and does not claim live scanning', async () => {
     await render(<ScanScreenWeb />);
     expect(screen.getByText(ro.scan.webManualOnly)).toBeTruthy();
-    expect(screen.queryByText(ro.scan.frameHint)).toBeNull();
+    expect(screen.queryByTestId('scan-reticle')).toBeNull();
     expect(screen.getByRole('button', { name: ro.scan.manual })).toBeTruthy();
     expect(screen.queryByRole('button', { name: ro.capture.title })).toBeNull();
     expect(screen.getAllByRole('button', { name: ro.scan.photoLabel })).toHaveLength(1);
@@ -101,13 +102,13 @@ describe('ScanScreen (web)', () => {
     expect(mockPush).toHaveBeenCalledWith('/capture');
   });
 
-  it('shows the frame hint only while the camera is live', async () => {
+  it('shows the frame guides only while the camera is live', async () => {
     mockLive.status = 'starting';
     const view = await render(<ScanScreenWeb />);
-    expect(screen.queryByText(ro.scan.frameHint)).toBeNull();
+    expect(screen.queryByTestId('scan-reticle')).toBeNull();
     mockLive.status = 'live';
     await view.rerender(<ScanScreenWeb />);
-    expect(screen.getByText(ro.scan.frameHint)).toBeTruthy();
+    expect(screen.getByTestId('scan-reticle')).toBeTruthy();
   });
 
   it('frames a live camera in a tall preview with corner guides', async () => {
@@ -128,7 +129,7 @@ describe('ScanScreen (web)', () => {
     await render(<ScanScreenWeb />);
     expect(screen.getByText('Permite accesul la cameră ca să scanezi.')).toBeTruthy();
     expect(screen.queryByText(ro.pwa.camera.browserDenied)).toBeNull();
-    expect(screen.queryByText(ro.scan.frameHint)).toBeNull();
+    expect(screen.queryByTestId('scan-reticle')).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Încearcă din nou' })).toHaveLength(1);
     await fireEvent.press(screen.getByRole('button', { name: ro.errors.retry }));
     expect(mockLive.retry).toHaveBeenCalled();

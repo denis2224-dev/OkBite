@@ -7,7 +7,7 @@ import { ro } from '../../copy/ro';
 import { api, ApiError } from '../../lib/api';
 import { router } from 'expo-router';
 import { StyleSheet } from 'react-native';
-import { light } from '../../theme/tokens';
+import { light, radii, shadows } from '../../theme/tokens';
 import type { Product, Profile, ScoreResult } from '@okbite/shared';
 import { displayScore } from './displayScore';
 import { productScoreFor } from './productScoreFor';
@@ -43,10 +43,20 @@ it.each([
   expect(screen.getAllByText(ro.result.missingAllergenNote)).toHaveLength(1);
   expect(Object.keys(ro.result)).not.toContain('allergyNote');
 });
-it.each([['with', foundYogurt.product.nutrients], ['without', { ...foundYogurt.product.nutrients, salt: null }]])('shows brand and quantity %s a score without a middle-dot meta string', async (_, nutrients) => {
-  await render(<ResultView product={{ ...foundYogurt.product, nutrients }} score={foundYogurt.score} />);
+it('shows the name without a brand line on the score card, and keeps brand and quantity when there is no score', async () => {
+  const view = await render(<ResultView {...foundYogurt} />);
+  expect(screen.getByText(foundYogurt.product.name)).toBeTruthy();
+  expect(screen.queryByText(`${foundYogurt.product.brand}, ${foundYogurt.product.quantity}`)).toBeNull();
+  await view.rerender(<ResultView product={{ ...foundYogurt.product, nutrients: { ...foundYogurt.product.nutrients, salt: null } }} score={foundYogurt.score} />);
   expect(screen.getByText(`${foundYogurt.product.brand}, ${foundYogurt.product.quantity}`)).toBeTruthy();
-  expect(screen.queryByText(`${foundYogurt.product.brand} · ${foundYogurt.product.quantity}`)).toBeNull();
+});
+it('draws the score card as a soft card with the primary score badge and the product score bar', async () => {
+  await render(<ResultView {...foundYogurt} />);
+  expect(StyleSheet.flatten(screen.getByTestId('score-card').props.style)).toMatchObject({ backgroundColor: light.surface, borderRadius: radii.card, boxShadow: shadows.raised });
+  expect(StyleSheet.flatten(screen.getByTestId('product-score-box', { includeHiddenElements: true }).props.style)).toMatchObject({ backgroundColor: light.primary });
+  const s = productScoreFor(foundYogurt.product, foundYogurt.score);
+  expect(screen.getByTestId('product-score-bar', { includeHiddenElements: true }).props.accessibilityValue).toEqual({ min: 0, max: 100, now: s.score });
+  expect(StyleSheet.flatten(screen.getByText(foundYogurt.product.name).props.style)).toMatchObject({ fontSize: 20 });
 });
 it('shows the yogurt fixture as 86 din 100, Excelent, and reads that score once, from the tag', async () => {
   await render(<ResultView {...foundYogurt} />);
@@ -61,6 +71,7 @@ it('shows the product photo once, as a thumbnail before the name', async () => {
   expect(screen.getAllByTestId('product-thumb', { includeHiddenElements: true })).toHaveLength(1);
   expect(inOrder().match(/"type":"Image"/g)).toHaveLength(1); // the mid-page photo is gone
   expect(inOrder().indexOf('product-thumb')).toBeLessThan(inOrder().indexOf(product.name));
+  expect(StyleSheet.flatten(screen.getByTestId('product-thumb', { includeHiddenElements: true }).props.style)).toMatchObject({ width: 84, height: 84, backgroundColor: light.mist });
 });
 it('leaves no empty photo box when the product has no photo', async () => {
   await render(<ResultView product={{ ...foundYogurt.product, imageUrl: null }} score={foundYogurt.score} />);
@@ -228,7 +239,7 @@ it('raises a red alert for a declared allergen on the profile', async () => {
   expect(screen.getByRole('alert')).toBeTruthy();
   expect(screen.getByText(ro.result.containsAllergen(ro.allergens.Lapte.toLocaleLowerCase()))).toBeTruthy();
   expect(screen.getByText(ro.result.profileAlertSub)).toBeTruthy();
-  expect(screen.getByTestId('profile-alert-contains')).toHaveStyle({ backgroundColor: light.lowBg });
+  expect(screen.getByTestId('profile-alert-contains')).toHaveStyle({ backgroundColor: light.dangerBg });
   expect(screen.queryByText(/Gluten/i)).toBeNull();
 });
 it('raises an amber outlined alert for a may-contain allergen on the profile', async () => {
@@ -271,17 +282,16 @@ it('lists the detail pages as short tiles and leaves the one main action to the 
 it('makes "Compară cu alt produs" the primary action for this product', async () => {
   await render(<CompareAction productId={foundYogurt.product.id} />);
   const compare = screen.getByRole('button', { name: ro.result.compare });
-  expect(StyleSheet.flatten(compare.props.style).backgroundColor).toBe(light.primary);
+  expect(StyleSheet.flatten(compare.props.style)).toMatchObject({ backgroundColor: light.primary, minHeight: 54, borderRadius: radii.pill });
+  expect(screen.queryByText(/→/)).toBeNull();
   await fireEvent.press(compare);
   expect(router.push).toHaveBeenLastCalledWith({ pathname: '/compare', params: { id: foundYogurt.product.id } });
 });
-it('puts share and report in a top row of 44 pt icon buttons, with no back arrow', async () => {
+it('puts share and report in a top row of raised 46 pt circles, with no back arrow', async () => {
   await render(<ResultView {...foundYogurt} />);
   expect(screen.queryByRole('button', { name: ro.result.closeSheet })).toBeNull();
   for (const name of [ro.share.button, ro.result.report]) {
-    const style = StyleSheet.flatten(screen.getByRole('button', { name }).props.style);
-    expect(style.minWidth).toBeGreaterThanOrEqual(44);
-    expect(style.minHeight).toBeGreaterThanOrEqual(44);
+    expect(StyleSheet.flatten(screen.getByRole('button', { name }).props.style)).toMatchObject({ width: 46, height: 46, backgroundColor: light.surface, boxShadow: shadows.raisedSm });
   }
   const order = inOrder();
   expect(order.indexOf(ro.result.report)).toBeLessThan(order.indexOf(productLine(foundYogurt.product, foundYogurt.score)));
@@ -291,6 +301,7 @@ it('puts share and report in a top row of 44 pt icon buttons, with no back arrow
 it('shows Ingrediente and Porție as full-width chevron rows in one card, and only Porție shows the portion table', async () => {
   await render(<ResultView {...foundYogurt} />);
   const rows = screen.getByTestId('result-link-rows');
+  expect(StyleSheet.flatten(rows.props.style)).toMatchObject({ borderRadius: radii.card, boxShadow: shadows.raised });
   expect(rows).not.toHaveStyle({ flexDirection: 'row' });
   const buttons = within(rows).getAllByRole('button');
   expect(buttons.map(button => button.props.accessibilityLabel)).toEqual([ro.result.ingredientsTile, ro.result.portionTile]);
