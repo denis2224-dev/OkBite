@@ -14,6 +14,7 @@ import { useToast } from '../../ui/Toast';
 import { productScoreFor } from '../product/productScoreFor';
 import { savedWhen } from './when';
 import { HistoryRow } from './HistoryRow';
+import { TopProductsLink } from './TopProductsLink';
 import { displayScore } from '../product/displayScore';
 
 export function HistoryScreen() {
@@ -109,6 +110,7 @@ export function HistoryScreen() {
       <TabPageHeader title={copy.title} action={entries.length > 0 ? <HomePressable label={ro.history.clear} disabled={clearing} onPress={() => setConfirming(true)} style={styles.clear}><HomeIcon name="trash" size={18} color={t.colors.low}/><Text style={styles.clearText}>{ro.history.clear}</Text></HomePressable> : null} />
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        <TopProductsLink />
         {loading && <Body accessibilityLiveRegion="polite">{ro.app.loading}</Body>}
         {error && !confirming && <Card><Body accessibilityRole="alert">{error === 'load' ? ro.history.loadError : ro.history.clearError}</Body>{error === 'load' && <Button variant="secondary" onPress={() => void load()}>{ro.app.retry}</Button>}</Card>}
         {!loading && !error && entries.length === 0 && <View style={styles.empty}>
