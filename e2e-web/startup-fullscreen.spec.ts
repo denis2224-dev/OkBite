@@ -33,7 +33,7 @@ for (const mode of ['light'] as const) for (const size of sizes) {
       expect(bounds.width).toBeCloseTo(size.width, 0);
       expect(bounds.height).toBeCloseTo(size.height, 0);
     }
-    await expect(screen).toHaveCSS('background-color', 'rgb(244, 239, 232)');
+    await expect(screen).toHaveCSS('background-color', 'rgb(247, 244, 236)');
     await page.screenshot({path:test.info().outputPath(`${mode}-${size.name}.png`)});
     await page.evaluate(() => (window as unknown as {__okbiteReleaseStartup: () => void}).__okbiteReleaseStartup());
     await expect(screen).toHaveCount(0);
