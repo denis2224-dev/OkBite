@@ -63,11 +63,19 @@ const CONFIDENT_SIMILARITY = 0.6;
 
 export const productRoute = (id: string) => `/product/${id}` as const;
 
+/** Compare's photo buttons open the camera with this flag. It travels with the photo until the product page, which then
+ * sends the product back to Compare once it is saved in history. The Scan tab never sets it. */
+export const COMPARE_FLAG = 'forCompare';
+export const compareCaptureRoute = { pathname: '/capture', params: { [COMPARE_FLAG]: '1' } } as const;
+export const compareProductRoute = (id: string) => ({ pathname: '/product/[id]', params: { id, [COMPARE_FLAG]: '1' } }) as const;
+export const isCompareFlag = (raw: string | string[] | undefined): boolean => raw === '1';
+
 export const identifyPhotoRoute = (
   response: IdentifyPayload,
   frontPhotoId?: string,
   unknownDraftId?: string,
   queueId?: string,
+  forCompare = false,
 ) => {
   const cleanFrontPhotoId = cleanParam(frontPhotoId);
   const cleanUnknownDraftId = cleanParam(unknownDraftId);
@@ -80,6 +88,7 @@ export const identifyPhotoRoute = (
       ...(cleanFrontPhotoId ? { frontPhotoId: cleanFrontPhotoId } : {}),
       ...(cleanUnknownDraftId ? { unknownDraftId: cleanUnknownDraftId } : { identifyDraftId }),
       ...(queueId ? { queueId } : {}),
+      ...(forCompare ? { [COMPARE_FLAG]: '1' } : {}),
     },
   };
 };

@@ -19,13 +19,13 @@ export function AvoidSwitches({ selected, disabled, onToggle }: Props) {
         return (
           <Pressable key={key} accessibilityRole="switch" accessibilityLabel={ro.profile[key]}
             accessibilityState={{ checked: on, disabled }} disabled={disabled} onPress={() => onToggle(key)}
-            style={[styles.row, { borderTopWidth: index ? 1 : 0, borderTopColor: colors.divider, opacity: disabled ? 0.6 : 1 }]}>
+            style={[styles.row, { borderTopWidth: index ? 1 : 0, borderTopColor: colors.divider }]}>
             <Body style={{ flex: 1 }}>{ro.profile[key]}</Body>
             <View style={[styles.track, on
               ? { backgroundColor: colors.primary, borderColor: colors.primary, alignItems: 'flex-end' }
               : { backgroundColor: colors.soft, borderColor: colors.border, alignItems: 'flex-start' }]}>
-              {/* On: lime knob on dark green. Off: white knob on the soft track. */}
-              <View style={[styles.knob, { backgroundColor: on ? colors.themeSelectedIcon : colors.surface }]} />
+              {/* On: white knob on dark green. Off: white knob on the soft track. Only the track colour and the side change. */}
+              <View testID="switch-knob" style={[styles.knob, { backgroundColor: on ? colors.onPrimary : colors.surface }]} />
             </View>
           </Pressable>
         );

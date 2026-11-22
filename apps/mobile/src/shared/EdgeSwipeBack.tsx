@@ -1,16 +1,24 @@
 import { useMemo, type PropsWithChildren } from 'react';
-import { PanResponder, StyleSheet, View } from 'react-native';
+import { Animated, PanResponder, Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { router, usePathname } from 'expo-router';
-import { shouldGoBack, swipeBackEnabled } from './swipeBack';
+import { useTheme } from '../theme/useTheme';
+import { swipeBackEnabled, usesCustomSwipe } from './swipeBack';
+import { useSwipeBackDrag } from './useSwipeBackDrag';
 
 /** Back to wherever the user was just before (page or tab); nothing on the first screen. */
 export function goBack(): void {
   if (router.canGoBack()) router.back();
 }
 
-/** The app's only back control: swipe right from the left edge on pages opened from somewhere (not on nav-bar pages).
- * The strip is thin so sideways scrolling inside pages keeps working; the screen-reader escape gesture also goes back. */
+/** Swipe right from the left edge to go back, on every page except the nav-bar pages. On iPhone and Android the stack does it
+ * natively, with the page following the finger. Here the same is drawn for the tab routes (Setări, Despre) and the web:
+ * the page is dragged along with the finger, then slides off or springs back. The strip is thin so sideways scrolling inside
+ * pages keeps working; the screen-reader escape gesture also goes back. */
 export function EdgeSwipeBack({ children }: PropsWithChildren) {
+  const { colors } = useTheme();
+  const { width } = useWindowDimensions();
+  const pathname = usePathname();
+  const { x, drag, release, cancel } = useSwipeBackDrag(width, goBack);
   const pan = useMemo(() => PanResponder.create({
     // Claim touches that start on the strip: on the web a mouse drag only reaches a responder that took the press.
     onStartShouldSetPanResponder: () => true,
@@ -18,12 +26,15 @@ export function EdgeSwipeBack({ children }: PropsWithChildren) {
     // Keep the gesture once taken: a scrolling page under the finger must not steal it halfway.
     onPanResponderTerminationRequest: () => false,
     onShouldBlockNativeResponder: () => true,
-    onPanResponderRelease: (_, g) => { if (shouldGoBack(g.dx, g.dy, g.vx)) goBack(); },
-  }), []);
-  const enabled = swipeBackEnabled(usePathname());
-  return <View testID="edge-swipe-root" style={styles.root} onAccessibilityEscape={enabled ? goBack : undefined}>
-    {children}
-    {enabled && <View testID="edge-swipe" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.strip} {...pan.panHandlers} />}
+    onPanResponderMove: (_, g) => drag(g.dx),
+    onPanResponderRelease: (_, g) => release(g.dx, g.dy, g.vx),
+    onPanResponderTerminate: cancel,
+  }), [drag, release, cancel]);
+  const enabled = swipeBackEnabled(pathname);
+  const strip = usesCustomSwipe(pathname, Platform.OS);
+  return <View testID="edge-swipe-root" style={[styles.root, { backgroundColor: colors.ground }]} onAccessibilityEscape={enabled ? goBack : undefined}>
+    <Animated.View testID="edge-swipe-content" style={[styles.root, { backgroundColor: colors.ground, transform: [{ translateX: x }] }]}>{children}</Animated.View>
+    {strip && <View testID="edge-swipe" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.strip} {...pan.panHandlers} />}
   </View>;
 }
 

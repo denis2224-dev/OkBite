@@ -7,11 +7,12 @@ import { Card } from '../../ui/Card';
 import { ro } from '../../copy/ro';
 import { ToggleChip } from '../allergies/ToggleChip';
 import { ProfileSaveError } from './ProfileSaveError';
+import { PreferenceCard } from './PreferenceCard';
 import { useProfileEditor } from './useProfileEditor';
 
 const goals: readonly Goal[] = ['health', 'allergies', 'family', 'weight', 'other'];
 
-/** Goals only: allergens and "avoid" keys are edited in one place, the Allergies tab. */
+/** Goals are edited here; dietary and allergen choices are shown here and edited on their Settings pages. */
 export function ProfileScreen({ children }: PropsWithChildren) {
   const { profile, toggle, disabled, errorMessage, retry } = useProfileEditor();
 
@@ -32,6 +33,8 @@ export function ProfileScreen({ children }: PropsWithChildren) {
           ))}
         </View>
       </Card>
+      <PreferenceCard id="pref-dietary" title={ro.allergies.dietaryTitle} href="/preferences/dietary" items={profile.avoid.map(key => ro.profile[key])} />
+      <PreferenceCard id="pref-allergens" title={ro.allergies.allergenPrefsTitle} href="/preferences/allergens" items={profile.allergens.map(name => ro.allergens[name])} />
       {children}
     </Screen>
   );

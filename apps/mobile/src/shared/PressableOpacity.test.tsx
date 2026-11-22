@@ -2,10 +2,10 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet, Text } from 'react-native';
 import { PressableOpacity } from './PressableOpacity';
 
-it('dims on hover and restores the normal opacity on exit', async () => {
+it('does not change opacity on hover, so nothing flashes', async () => {
   await render(<PressableOpacity accessibilityRole="button" accessibilityLabel="Acțiune"><Text>Acțiune</Text></PressableOpacity>);
   await fireEvent(screen.getByRole('button'), 'hoverIn', {});
-  expect(StyleSheet.flatten(screen.getByRole('button').props.style).opacity).toBe(0.9);
+  expect(StyleSheet.flatten(screen.getByRole('button').props.style).opacity).toBeUndefined();
   await fireEvent(screen.getByRole('button'), 'hoverOut', {});
   expect(StyleSheet.flatten(screen.getByRole('button').props.style).opacity).toBeUndefined();
 });
@@ -18,9 +18,9 @@ it('retains keyboard focus through activation and omits a ring for pointer press
   await fireEvent(screen.getByRole('button'), 'pressIn', { currentTarget: { matches: () => false } });
   expect(StyleSheet.flatten(screen.getByRole('button').props.style).outlineWidth).toBe(0);
 });
-it('scales down slightly while pressed so the press is felt without washing out the control', async () => {
+it('stays still while pressed: no shrink and no see-through flash', async () => {
   await render(<PressableOpacity testOnly_pressed accessibilityRole="button" accessibilityLabel="Acțiune"><Text>Acțiune</Text></PressableOpacity>);
   const style = StyleSheet.flatten(screen.getByRole('button').props.style);
-  expect(style.transform).toEqual([{ scale: 0.97 }]);
-  expect(style.opacity).toBeGreaterThanOrEqual(0.8);
+  expect(style.transform).toBeUndefined();
+  expect(style.opacity).toBeUndefined();
 });

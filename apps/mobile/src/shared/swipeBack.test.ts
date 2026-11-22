@@ -1,4 +1,4 @@
-import { shouldGoBack, swipeBackEnabled } from './swipeBack';
+import { shouldGoBack, swipeBackEnabled, usesCustomSwipe } from './swipeBack';
 
 it.each([
   ['a long pull to the right', 90, 10, 0.2, true],
@@ -10,9 +10,26 @@ it.each([
   expect(shouldGoBack(dx, dy, vx)).toBe(expected);
 });
 
-it.each(['/', '/history', '/compare', '/allergies', '/profile'])('is off on the nav-bar page %s', path => {
+it.each(['/', '/history', '/compare', '/profile'])('is off on the nav-bar page %s', path => {
   expect(swipeBackEnabled(path)).toBe(false);
 });
-it.each(['/product/abc', '/product/abc/ingredients', '/settings', '/about', '/capture', '/offline', '/method'])('is on for the opened page %s', path => {
+it.each(['/product/abc', '/product/abc/ingredients', '/settings', '/about', '/preferences/allergens', '/preferences/dietary', '/capture', '/offline', '/method'])('is on for the opened page %s', path => {
   expect(swipeBackEnabled(path)).toBe(true);
+});
+
+describe('usesCustomSwipe', () => {
+  it('is never used on a nav-bar page', () => {
+    for (const path of ['/', '/history', '/compare', '/profile']) for (const platform of ['ios', 'android', 'web']) expect(usesCustomSwipe(path, platform)).toBe(false);
+  });
+  it('is used on every page of the web', () => {
+    for (const path of ['/product/abc', '/settings', '/preferences/dietary', '/capture']) expect(usesCustomSwipe(path, 'web')).toBe(true);
+  });
+  it('on a phone is used only for the tab routes, because the stack swipes the pushed pages itself', () => {
+    expect(usesCustomSwipe('/settings', 'ios')).toBe(true);
+    expect(usesCustomSwipe('/about', 'android')).toBe(true);
+    for (const path of ['/product/abc', '/preferences/allergens', '/method', '/identify', '/add', '/offline']) {
+      expect(usesCustomSwipe(path, 'ios')).toBe(false);
+      expect(usesCustomSwipe(path, 'android')).toBe(false);
+    }
+  });
 });

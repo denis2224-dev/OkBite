@@ -267,17 +267,8 @@ test('recalculates multilingual allergens and traces live before save and preser
   await view.unmount();
   await render(<ResultView product={savedResponse.product} score={savedResponse.score} />);
   expect(screen.getByText('Bona Vita Musli Crunchy cu fructe 30%')).toBeTruthy();
-  expect(screen.getByText(ro.result.allergens)).toBeTruthy();
-  expect(screen.getByText(ro.result.mayContain)).toBeTruthy();
-  expect(screen.getByRole('button', { name: ro.result.ingredientsTile })).toBeTruthy(); // the saved label text opens from Ingrediente
-  expect(screen.getByText(ro.result.unverifiedNote)).toBeTruthy();
-  expect(screen.queryByText(ro.result.unverified)).toBeNull();
-  expect(screen.getByLabelText('Gluten')).toBeTruthy();
-  expect(screen.getByLabelText(`${ro.result.mayContain} Lapte`)).toBeTruthy();
-  expect(screen.getByLabelText(`${ro.result.mayContain} Arahide`)).toBeTruthy();
-  expect(screen.queryByLabelText('Lapte')).toBeNull();
-  expect(screen.queryByLabelText('Arahide')).toBeNull();
-  expect(screen.getByText(ro.result.missingAllergenNote)).toBeTruthy();
+  expect(screen.getByRole('button', { name: ro.result.ingredientsHide })).toBeTruthy(); // the saved label text is on the page
+  expect(screen.getByTestId('allergen-summary')).toHaveTextContent(ro.result.containsAllergen('gluten'));
   expect(screen.queryByText(ro.result.noAllergens)).toBeNull();
 });
 

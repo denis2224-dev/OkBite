@@ -8,7 +8,7 @@ const styleOf = (text: string) => StyleSheet.flatten(screen.getByText(text).prop
 it('steps the scale by about 1.2 from caption to display, with the score numeral above it', () => {
   expect(typeScale).toEqual({
     score: { fontSize: 40, lineHeight: 44 }, display: { fontSize: 26, lineHeight: 32 }, title: { fontSize: 22, lineHeight: 28 },
-    section: { fontSize: 18, lineHeight: 24 }, body: { fontSize: 15, lineHeight: 23 }, caption: { fontSize: 13, lineHeight: 19 },
+    section: { fontSize: 18, lineHeight: 24 }, body: { fontSize: 15, lineHeight: 23 }, caption: { fontSize: 12, lineHeight: 17 }, detail: { fontSize: 11, lineHeight: 15 },
   });
   expect(fonts.headingExtra).toBe('BricolageGrotesque_800ExtraBold');
 });
@@ -24,10 +24,10 @@ it.each([
   expect(header.props.allowFontScaling).toBe(true);
 });
 
-it('Caption is muted, scalable 13/19 body text and not a header', async () => {
+it('Caption is muted, scalable 12/17 body text and not a header', async () => {
   await render(<Caption>Notă</Caption>);
   expect(screen.queryByRole('header')).toBeNull();
-  expect(styleOf('Notă')).toMatchObject({ fontSize: 13, lineHeight: 19, fontFamily: fonts.body, color: light.muted });
+  expect(styleOf('Notă')).toMatchObject({ fontSize: 12, lineHeight: 17, fontFamily: fonts.body, color: light.muted });
   expect(screen.getByText('Notă').props.allowFontScaling).toBe(true);
 });
 

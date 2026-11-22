@@ -48,7 +48,7 @@ export function WaterResultView({
     : summary.tier === 'occasional_high_mineral' ? colors.mediumBg : colors.mint;
   const phInfo = getEffectivePh(water);
   const goodFor = deriveGoodForTags(water);
-  const metaLine = [product.brand, product.quantity].filter(Boolean).join(' · ');
+  const metaLine = [product.brand, product.quantity].filter(Boolean).join(', ');
 
   return (
     <View style={styles.root}>
@@ -80,7 +80,7 @@ export function WaterResultView({
             {shownValue !== null && (
               <View testID="product-score" style={[styles.pill, { backgroundColor: scoreTone.bg }]}>
                 <Body style={[styles.pillText, { color: scoreTone.fg }]}>
-                  {`${ro.history.score(shownValue)} · ${ro.tiers[tierKey]}`}
+                  {`${ro.history.score(shownValue)}, ${ro.tiers[tierKey]}`}
                 </Body>
               </View>
             )}
