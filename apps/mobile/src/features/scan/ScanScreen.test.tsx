@@ -99,13 +99,19 @@ describe('ScanScreen', () => {
     expect(within(blocked).getByRole('button', { name: ro.errors.retry })).toBeTruthy();
   });
 
+  it('frames the embedded camera 330 high with radius 28 on the camera green', async () => {
+    await render(<ScanScreen embedded />);
+    expect(StyleSheet.flatten(screen.getByTestId('scan-preview').props.style)).toMatchObject({ height: 330, borderRadius: 28, backgroundColor: light.cameraBg });
+  });
+
   it('lets the blocked frame grow with large text instead of cutting it off', async () => {
     mockPermission.value = { granted: false, status: 'denied', canAskAgain: false };
     await render(<ScanScreen embedded />);
     const frame = StyleSheet.flatten(screen.getByTestId('scan-preview').props.style);
     expect(frame.maxHeight).toBeUndefined();
     expect(frame.aspectRatio).toBeUndefined();
-    expect(frame.minHeight).toBe(240);
+    expect(frame.minHeight).toBe(330);
+    expect(frame.height).toBeUndefined();
   });
 
   it('reports a rejected native settings action and keeps manual entry', async () => {
@@ -121,7 +127,7 @@ describe('ScanScreen', () => {
   it('scans EAN-13, EAN-8 and UPC-A only, with a visible-size preview', async () => {
     await render(<ScanScreen />);
     expect(camera().props.barcodeScannerSettings).toEqual({ barcodeTypes: ['ean13', 'ean8', 'upc_a'] });
-    expect(screen.getByText(ro.scan.frameHint)).toBeTruthy();
+    expect(screen.getByTestId('scan-reticle')).toBeTruthy();
   });
 
   it('looks up once and taps once when the camera reports the same code repeatedly', async () => {

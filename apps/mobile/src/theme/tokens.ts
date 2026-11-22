@@ -16,11 +16,11 @@ export const light = {
 export type Palette = typeof light;
 /** Soft raised UI: a dark shadow bottom-right and a light one top-left (RN 0.88 `boxShadow`, iOS/Android/web). */
 export const shadows = {
- raised:'6px 6px 16px rgba(120,105,85,0.14), -6px -6px 16px #FFFFFF',
- raisedSm:'3px 3px 8px rgba(120,105,85,0.14), -3px -3px 8px #FFFFFF',
- nav:'6px 6px 18px rgba(120,105,85,0.20), -4px -4px 14px #FFFFFF',
+ raised:'6px 6px 16px rgba(120,105,85,0.14)',
+ raisedSm:'3px 3px 8px rgba(120,105,85,0.14)',
+ nav:'6px 6px 18px rgba(120,105,85,0.20)',
  primaryGlow:'0px 8px 16px rgba(74,112,85,0.30)',
- inset:'inset 2px 2px 4px rgba(120,105,85,0.18), inset -2px -2px 4px #FFFFFF',
+ inset:'inset 2px 2px 4px rgba(120,105,85,0.18)',
 };
 export const radii = {small:14,card:24,cardSm:22,hero:24,pill:999,badge:20,listBadge:14,tile:14,image:20,nav:30,segment:18,segmentTab:14};
 export const spacing = {xs:4,sm:8,md:12,lg:16,xl:24,xxl:32,headerTop:12,phonePreviewTop:48,screenX:22,screenTop:32,section:20,cardPad:20,navClearance:130};

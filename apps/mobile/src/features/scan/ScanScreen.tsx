@@ -17,10 +17,11 @@ import { ResultSheet } from '../product/ResultSheet';
 
 const tapOnDetection = () => { void notificationAsync(NotificationFeedbackType.Success).catch(() => undefined); };
 
-/** `embedded`: inside Scan home, which draws its own header on the dark camera panel. */
-export type ScanScreenProps = { embedded?: boolean; torch?: boolean };
+/** `embedded`: inside Scan home, which draws its own header. */
+/** `trailing`: a control drawn beside the manual-entry pill (Scan home puts the flash there). */
+export type ScanScreenProps = { embedded?: boolean; torch?: boolean; trailing?: React.ReactNode };
 
-export default function ScanScreen({ embedded = false, torch = false }: ScanScreenProps = {}) {
+export default function ScanScreen({ embedded = false, torch = false, trailing }: ScanScreenProps = {}) {
   const focused = useIsFocused();
   const router = useRouter();
   const { colors } = useTheme();
@@ -65,7 +66,7 @@ export default function ScanScreen({ embedded = false, torch = false }: ScanScre
   const body = (
     <>
       {focused && state.status !== 'found' ? <View testID="scan-preview" style={[embedded ? styles.embeddedPreview : styles.preview, blocked && styles.blocked]}>{preview}</View> : null}
-      {working ? <View style={styles.status}><ActivityIndicator color={embedded ? colors.cameraInk : colors.primary} /><Text style={[styles.working, embedded && { color: colors.cameraInk }]}>{ro.capture.working}</Text></View> : null}
+      {working ? <View style={styles.status}><ActivityIndicator color={colors.primary} /><Text style={styles.working}>{ro.capture.working}</Text></View> : null}
       {state.status === 'error' || state.status === 'offline' ? (
         <StatusPanel
           title={state.status === 'offline' ? ro.offline.title : undefined}
@@ -76,7 +77,7 @@ export default function ScanScreen({ embedded = false, torch = false }: ScanScre
           ]}
         />
       ) : null}
-      <ManualCode open={manualOpen} onToggle={() => setManualOpen(open => !open)} onDark={embedded}
+      <ManualCode open={manualOpen} onToggle={() => setManualOpen(open => !open)} trailing={trailing}
         onSubmit={(code) => { void onManualCode(code); }} disabled={working} />
       {state.status === 'found' && <ResultSheet product={state.product} score={state.score} onClose={dismiss} />}
     </>
@@ -95,12 +96,12 @@ const createStyles = (colors: Palette) => StyleSheet.create({
   content: { flexGrow: 1, padding: 16, gap: 16, backgroundColor: colors.ground },
   title: { fontSize: 22, lineHeight: 29, fontFamily: fonts.heading, color: colors.ink },
   // Portrait preview: tall enough to aim at a shelf, capped so manual entry stays reachable.
-  preview: { width: '100%', aspectRatio: 3 / 4, minHeight: 280, maxHeight: 440, borderRadius: 20, overflow: 'hidden', backgroundColor: colors.cameraBackground, justifyContent: 'center' },
-  embedded: { gap: 16, paddingHorizontal: 16 },
+  preview: { width: '100%', aspectRatio: 3 / 4, minHeight: 280, maxHeight: 440, borderRadius: 28, overflow: 'hidden', backgroundColor: colors.cameraBackground, justifyContent: 'center' },
+  embedded: { gap: 16 },
   // Inside Scan home the dark area frames the camera; keep the recent-scans sheet in view.
-  embeddedPreview: { width: '100%', aspectRatio: 1.15, minHeight: 240, maxHeight: 340, borderRadius: 20, overflow: 'hidden', backgroundColor: colors.cameraBackground, justifyContent: 'center' },
+  embeddedPreview: { width: '100%', height: 330, minHeight: 330, borderRadius: 28, overflow: 'hidden', backgroundColor: colors.cameraBg, justifyContent: 'center' },
   // A blocked camera keeps the frame's minimum size but grows with its text (200% font) instead of clipping it.
-  blocked: { maxHeight: undefined, aspectRatio: undefined },
+  blocked: { height: undefined, maxHeight: undefined, aspectRatio: undefined },
   status: { flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },
   working: { color: colors.ink, fontFamily: fonts.body },
 });

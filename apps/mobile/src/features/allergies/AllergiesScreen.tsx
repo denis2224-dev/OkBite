@@ -2,7 +2,8 @@ import { View } from 'react-native';
 import { ro } from '../../copy/ro';
 import { TabPageHeader } from '../../shared/TabPageHeader';
 import { Screen } from '../../ui/Screen';
-import { Caption, Section } from '../../ui/Typography';
+import { Caption } from '../../ui/Typography';
+import { SoftCard } from '../../ui/SoftCard';
 import { ProfileSaveError } from '../profile/ProfileSaveError';
 import { useProfileEditor } from '../profile/useProfileEditor';
 import { AllergenChips } from './AllergenChips';
@@ -17,15 +18,13 @@ export function AllergiesScreen() {
         <TabPageHeader title={ro.allergies.title} />
       </View>
       <ProfileSaveError message={errorMessage} retry={retry} />
-      <View style={{ gap: 8 }}>
-        <Section>{ro.allergies.allergensLabel}</Section>
+      <SoftCard testID="allergen-card">
         <AllergenChips selected={profile.allergens} disabled={disabled} onToggle={(a) => toggle('allergens', a)} />
-      </View>
-      <View style={{ gap: 8 }}>
-        <Section>{ro.allergies.avoidTitle}</Section>
+      </SoftCard>
+      <SoftCard testID="avoid-card" style={{ paddingVertical: 4, gap: 0 }}>
         <AvoidSwitches selected={profile.avoid} disabled={disabled} onToggle={(k) => toggle('avoid', k)} />
-      </View>
-      <Caption>{ro.result.missingAllergenNote}</Caption>
+      </SoftCard>
+      <Caption style={{ textAlign: 'center' }}>{ro.result.missingAllergenNote}</Caption>
     </Screen>
   );
 }

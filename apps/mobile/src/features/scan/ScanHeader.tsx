@@ -1,34 +1,22 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
-import { fonts } from '../../theme/tokens';
-import { ScanIcon, type ScanIconName } from './ScanIcon';
+import { fonts, typeScale } from '../../theme/tokens';
 
-type Props = { torch: boolean; onTorch?: () => void };
-
-/** okBite wordmark with the flash button; `onTorch` is omitted where flash is unsupported. Manual entry lives under the scanner. */
-export function ScanHeader({ torch, onTorch }: Props) {
+/** okBite wordmark, then the screen title. The flash sits next to manual entry, under the camera. */
+export function ScanHeader() {
   const { colors } = useTheme();
   const brand = ro.home.design.brand;
-  const button = (icon: ScanIconName, label: string, on: boolean, onPress: () => void, state: object) =>
-    <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={state} onPress={onPress}
-      style={[styles.round, { backgroundColor: on ? colors.accent : colors.hero }]}>
-      <ScanIcon name={icon} color={on ? colors.onAccent : colors.cameraInk} />
-    </Pressable>;
-  return <View style={styles.row}>
-    <Text accessibilityRole="header" accessibilityLabel={brand} style={[styles.brand, { color: colors.cameraInk }]}>
-      {brand.slice(0, 2)}<Text style={{ color: colors.accent }}>{brand.slice(2)}</Text>
+  return <View style={styles.column}>
+    <Text accessibilityLabel={brand} style={[styles.brand, { color: colors.ink }]}>
+      {brand.slice(0, 2)}<Text style={{ color: colors.primary }}>{brand.slice(2)}</Text>
     </Text>
-    <View style={styles.actions}>
-      {onTorch ? button('flash', torch ? ro.scan.flashOff : ro.scan.flashOn, torch, onTorch, {}) : null}
-    </View>
+    <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>{ro.scan.homeTitle}</Text>
   </View>;
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 16, paddingTop: 12 },
-  brand: { fontFamily: fonts.heading, fontSize: 28, lineHeight: 36, letterSpacing: -0.3 },
-  actions: { flexDirection: 'row', gap: 12 },
-  round: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  column: { gap: 6 },
+  brand: { fontFamily: fonts.bold, fontSize: 20, lineHeight: 26, letterSpacing: -0.3 },
+  title: { fontFamily: fonts.heading, ...typeScale.display, letterSpacing: -0.3 },
 });

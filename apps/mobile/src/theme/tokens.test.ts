@@ -47,13 +47,14 @@ describe('CALM / KIT palette', () => {
 });
 
 describe('CALM / KIT shape tokens', () => {
-  it('defines the soft raised shadows as boxShadow strings', () => {
+  it('defines the soft shadows as boxShadow strings, with no white highlight', () => {
+    for (const value of Object.values(shadows)) expect(value).not.toMatch(/#FFF/i);
     expect(shadows).toEqual({
-      raised: '6px 6px 16px rgba(120,105,85,0.14), -6px -6px 16px #FFFFFF',
-      raisedSm: '3px 3px 8px rgba(120,105,85,0.14), -3px -3px 8px #FFFFFF',
-      nav: '6px 6px 18px rgba(120,105,85,0.20), -4px -4px 14px #FFFFFF',
+      raised: '6px 6px 16px rgba(120,105,85,0.14)',
+      raisedSm: '3px 3px 8px rgba(120,105,85,0.14)',
+      nav: '6px 6px 18px rgba(120,105,85,0.20)',
       primaryGlow: '0px 8px 16px rgba(74,112,85,0.30)',
-      inset: 'inset 2px 2px 4px rgba(120,105,85,0.18), inset -2px -2px 4px #FFFFFF',
+      inset: 'inset 2px 2px 4px rgba(120,105,85,0.18)',
     });
   });
   it('defines the spec radii and spacing', () => {

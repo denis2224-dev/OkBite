@@ -1,6 +1,6 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { Keyboard, StyleSheet } from 'react-native';
-import { light } from '../theme/tokens';
+import { light, radii, shadows } from '../theme/tokens';
 import type { ComponentProps } from 'react';
 import { AppBottomNav } from './AppBottomNav';
 
@@ -42,32 +42,32 @@ it.each([[5, 'settings'], [6, 'about']])('selects no tab while %s (route %s) is 
  expect(ui.getAllByRole('tab')).toHaveLength(5);
  expect(ui.getAllByRole('tab').every(tab => !tab.props.accessibilityState.selected)).toBe(true);
 });
-it('draws the bar as a floating white pill with a thin border and a soft shadow', async () => {
+it('draws the CALM floating bar: 14 from the sides, 78 high, radius 30, surface and the nav shadow', async () => {
  const ui = await render(<AppBottomNav {...makeProps()} />);
- const pill = style(ui, 'nav-pill');
- expect(pill).toMatchObject({ backgroundColor: light.surface, borderWidth: 1, borderColor: light.border, borderRadius: 999, flexDirection: 'row' });
- expect(pill.shadowOpacity).toBeGreaterThan(0);
- expect(pill.elevation).toBeGreaterThan(0);
- expect(style(ui, 'nav-bar').paddingHorizontal).toBeGreaterThanOrEqual(16); // floats off the screen edges
- expect(pill.marginHorizontal).toBeUndefined(); // no width overflow
+ expect(style(ui, 'nav-bar')).toMatchObject({ paddingHorizontal: 14 });
+ expect(style(ui, 'nav-bar').paddingBottom).toBeGreaterThanOrEqual(18);
+ expect(style(ui, 'nav-pill')).toMatchObject({ height: 78, borderRadius: radii.nav, backgroundColor: light.surface, boxShadow: shadows.nav, flexDirection: 'row' });
 });
-it.each([[0, 'history'], [1, 'compare'], [2, 'index'], [3, 'allergies'], [4, 'profile']] as const)('fills only the current tab with a dark circle (route %i)', async (index, current) => {
- const ui = await render(<AppBottomNav {...makeProps(index)} />);
- for (const name of tabs) expect(style(ui, `nav-icon-${name}`).backgroundColor).toBe(name === current ? light.primary : light.transparent);
- const dot = style(ui, `nav-icon-${current}`);
- expect([dot.width, dot.height, dot.borderRadius]).toEqual([52, 52, 26]);
-});
-it('gives every tab the same size; Scan is no longer raised', async () => {
+it('raises Scanează as a 60 pt primary circle with the green glow, whichever tab is open', async () => {
  const ui = await render(<AppBottomNav {...makeProps(0)} />);
- expect(new Set(tabs.map(name => { const { width, height } = style(ui, `nav-icon-${name}`); return `${width}x${height}`; }))).toEqual(new Set(['52x52']));
- for (const tab of ui.getAllByRole('tab')) expect(StyleSheet.flatten(tab.props.style).minHeight).toBeGreaterThanOrEqual(44);
+ expect(style(ui, 'nav-icon-index')).toMatchObject({ width: 60, height: 60, borderRadius: 30, backgroundColor: light.primary, boxShadow: shadows.primaryGlow, marginTop: -30 });
 });
-it('tints a tab the pointer hovers so it reads as clickable', async () => {
- const ui = await render(<AppBottomNav {...makeProps(2)} />);
- await fireEvent(ui.getByRole('tab', { name: 'Profil' }), 'hoverIn', {});
- expect(style(ui, 'nav-icon-profile').backgroundColor).toBe(light.soft);
- await fireEvent(ui.getByRole('tab', { name: 'Profil' }), 'hoverOut', {});
- expect(style(ui, 'nav-icon-profile').backgroundColor).toBe(light.transparent);
+it.each([[0, 'history'], [1, 'compare'], [3, 'allergies'], [4, 'profile']] as const)('marks the current tab (route %i) by icon colour only, with no dot', async (index, current) => {
+ const ui = await render(<AppBottomNav {...makeProps(index)} />);
+ const flatTabs = tabs.filter(name => name !== 'index');
+ for (const name of tabs) expect(ui.queryByTestId(`nav-dot-${name}`, { includeHiddenElements: true })).toBeNull();
+ // The selected icon is drawn in the bright green accent; the others stay muted.
+ type Node = { props?: Record<string, unknown>; children?: (Node | string)[] | null };
+ const find = (node: Node | string | null, id: string): Node | null => {
+  if (!node || typeof node === 'string') return null;
+  if (node.props?.testID === id) return node;
+  for (const child of node.children ?? []) { const hit = find(child, id); if (hit) return hit; }
+  return null;
+ };
+ const ink = (name: string) => JSON.stringify(find(ui.toJSON() as Node, `nav-icon-${name}`));
+ for (const name of flatTabs) expect(ink(name)).toContain(name === current ? light.accent : light.muted);
+ const shapes = flatTabs.map(name => { const { backgroundColor: _b, ...rest } = style(ui, `nav-icon-${name}`); return JSON.stringify(rest); });
+ expect(new Set(shapes).size).toBe(1); // same size and layout for every flat tab
 });
 it('shows icons only, while screen readers still hear each tab name', async () => {
  const ui = await render(<AppBottomNav {...makeProps()} />);
