@@ -33,6 +33,7 @@ export function createService(deps = { adminClient, saveJpeg, askClaude }) {
     const ask: LabelAsk = {
       ingredients: input.ingredientsImage !== null,
       nutrition: nutritionMode(input),
+      ...(input.kind ? { kind: input.kind } : {}),
     };
     try {
       if (input.ingredientsImage !== null) {

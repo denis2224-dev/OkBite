@@ -1,12 +1,15 @@
 import {
   type FieldReason,
   type LabelField,
+  type LabelKind,
   NUTRIENT_KEYS,
   type NutrientKey,
   type NutritionMode,
   ReadLabelResponse,
 } from '../_shared/contract.ts';
+import { emptyWaterProfile } from '../_shared/water/parseWater.ts';
 import { parseJsonObject } from '../_lib/claude.ts';
+import { parseWaterLabel } from './waterLabel.ts';
 
 // This server always sends reasons (optional in the contract only for servers without U3).
 export type LabelRead =
@@ -14,8 +17,8 @@ export type LabelRead =
   & {
     reasons: Record<LabelField, FieldReason>;
   };
-/** What this call asked the model: the ingredients photo (absent on an enrich read) and the nutrition mode. */
-export type LabelAsk = { ingredients: boolean; nutrition: NutritionMode };
+/** What this call asked the model: the ingredients photo (absent on an enrich read), nutrition mode, and optional kind. */
+export type LabelAsk = { ingredients: boolean; nutrition: NutritionMode; kind?: LabelKind };
 type Unclear = LabelRead['unclear'][number];
 
 // Per 100 g/ml no gram value can exceed 100 and no food exceeds 900 kcal (pure fat ≈ 900).
@@ -73,6 +76,20 @@ const UNREAD_CELL = (v: unknown): FieldReason =>
 
 /** Every field null with the given reasons: the AI was not asked, or failed. */
 export function emptyRead(ask: LabelAsk, failed: boolean): LabelRead {
+  if (ask.kind === 'water') {
+    const reasons = Object.fromEntries(
+      NUTRIENT_KEYS.map((k) => [k, 'not_printed' as const]),
+    ) as Record<LabelField, FieldReason>;
+    reasons.ingredientsText = ask.ingredients ? (failed ? 'failed' : 'not_printed') : 'not_photographed';
+    return {
+      ingredientsText: null,
+      unit: 'ml',
+      nutrients: Object.fromEntries(NUTRIENT_KEYS.map((k) => [k, null])) as LabelRead['nutrients'],
+      water: emptyWaterProfile(),
+      unclear: [],
+      reasons,
+    };
+  }
   const nutrientReason = NOT_ASKED[ask.nutrition] ?? (failed ? 'failed' : 'unreadable');
   const reasons = Object.fromEntries(NUTRIENT_KEYS.map((k) => [k, nutrientReason])) as Record<
     LabelField,
@@ -98,6 +115,7 @@ export function parseLabel(
   raw: string,
   ask: LabelAsk = { ingredients: true, nutrition: 'same_photo' },
 ): LabelRead {
+  if (ask.kind === 'water') return parseWaterLabel(raw, ask.ingredients);
   const o = parseJsonObject(raw);
   const read = emptyRead(ask, false);
   const unclear: Unclear[] = [];

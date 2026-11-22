@@ -17,6 +17,51 @@ export const Nutrients = z.object({
   kcal: amount, fat: amount, sat: amount, sugar: amount, salt: amount, protein: amount, fiber: amount,
   fruitVegPct: z.number().min(0).max(100).nullable(),
 });
+const mineralAmount = z.number().finite().min(0).nullable();
+export const Carbonation = z.enum(['still', 'lightly_sparkling', 'sparkling']);
+export const WaterClassification = z.enum(['drinking', 'natural_mineral', 'table_mineral', 'therapeutic']);
+export const LabelKind = z.enum(['food', 'water']);
+export const WATER_NUMERIC_KEYS = [
+  'tdsMgL', 'dryResidueMgL', 'ph', 'caMgL', 'mgMgL', 'naMgL', 'kMgL',
+  'naPlusKMgL', 'hco3MgL', 'so4MgL', 'clMgL', 'fMgL', 'no3MgL', 'bMgL', 'h3bo3MgL', 'iUgL',
+] as const;
+export const WATER_FIELD_KEYS = ['carbonation', 'classification', ...WATER_NUMERIC_KEYS] as const;
+export const WaterNumericKey = z.enum(WATER_NUMERIC_KEYS);
+export const WaterFieldKey = z.enum(WATER_FIELD_KEYS);
+export const WaterRange = z.object({
+  min: z.number().finite().min(0),
+  max: z.number().finite().min(0),
+}).refine((r) => r.min <= r.max, { message: 'range min must not exceed max', path: ['min'] });
+export const WaterFieldEvidence = z.object({
+  status: z.enum(['verified', 'unverified']),
+  source: z.string().min(1).max(200),
+  addedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+});
+const optionalFieldMap = <K extends string, V extends z.ZodTypeAny>(keys: readonly K[], schema: V) =>
+  z.object(Object.fromEntries(keys.map((k) => [k, schema.optional()])) as { [P in K]: z.ZodOptional<V> });
+
+export const WaterProfile = z.object({
+  tdsMgL: z.number().finite().min(0).max(50_000).nullable(),
+  dryResidueMgL: z.number().finite().min(0).max(50_000).nullable(),
+  ph: z.number().finite().min(0).max(14).nullable(),
+  carbonation: Carbonation.nullable(),
+  classification: WaterClassification.nullable(),
+  caMgL: mineralAmount,
+  mgMgL: mineralAmount,
+  naMgL: mineralAmount,
+  kMgL: mineralAmount,
+  naPlusKMgL: mineralAmount,
+  hco3MgL: mineralAmount,
+  so4MgL: mineralAmount,
+  clMgL: mineralAmount,
+  fMgL: mineralAmount,
+  no3MgL: mineralAmount,
+  bMgL: mineralAmount,
+  h3bo3MgL: mineralAmount,
+  iUgL: mineralAmount,
+  ranges: optionalFieldMap(WATER_NUMERIC_KEYS, WaterRange).optional(),
+  evidence: optionalFieldMap(WATER_FIELD_KEYS, WaterFieldEvidence).optional(),
+});
 export const IsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 export const Category = z.object({ slug: z.string(), name: z.string(), scoreKind: ScoreKind });
@@ -30,7 +75,8 @@ export const Product = z.object({
   id: Uuid, code: Code.nullable(), status: ProductStatus,
   name: z.string(), brand: z.string(), quantity: z.string(), category: Category, unit: Unit,
   portion: z.object({ amount: z.number().positive(), label: z.string() }),
-  nutrients: Nutrients, ingredientsText: z.string(), ingredients: z.array(Ingredient),
+  nutrients: Nutrients, water: WaterProfile.nullable().optional(),
+  ingredientsText: z.string(), ingredients: z.array(Ingredient),
   allergens: z.array(Allergen), mayContain: z.array(Allergen),
   imageUrl: z.string().url().nullable(), labelImageUrl: z.string().url().nullable(),
   source: z.string(), addedAt: IsoDate, verifiedAt: IsoDate.nullable(),
@@ -40,17 +86,32 @@ export const Product = z.object({
 export const ScoreReason = z.object({ tone: z.enum(['good', 'bad', 'neutral']), title: z.string(), detail: z.string() });
 export const Grade = z.enum(['good', 'medium', 'low', 'unavailable']);
 export const Letter = z.enum(['A', 'B', 'C', 'D', 'E']);
+export const ScoreRange = z.object({
+  min: z.number().int().min(0).max(100),
+  max: z.number().int().min(0).max(100),
+}).refine((r) => r.min <= r.max, { message: 'score range min must not exceed max', path: ['min'] });
 export const ScoreResult = z.object({
   score: z.number().int().min(0).max(100).nullable(), letter: Letter.nullable(), grade: Grade,
   reasons: z.array(ScoreReason).max(3), missing: z.array(NutrientKey),
+  range: ScoreRange.nullable().optional(),
+  waterMissing: z.array(WaterFieldKey).optional(),
+  unverifiedUsed: z.boolean().optional(),
 });
+export const WaterSubmissionOutcome = z.enum(['applied', 'partial', 'queued_for_review']);
 export const LookupResponse = z.discriminatedUnion('status', [
-  z.object({ status: z.literal('found'), product: Product, score: ScoreResult }),
+  z.object({
+    status: z.literal('found'),
+    product: Product,
+    score: ScoreResult,
+    waterSubmissionStatus: WaterSubmissionOutcome.optional(),
+  }),
   z.object({ status: z.literal('not_found') }),
 ]);
 
 export const FrontRead = z.object({
   brand: z.string().nullable(), name: z.string().nullable(), quantity: z.string().nullable(), code: Code.nullable(),
+  isWater: z.boolean().optional(),
+  carbonation: Carbonation.nullable().optional(),
 });
 export const Candidate = z.object({
   id: Uuid, name: z.string(), brand: z.string(), quantity: z.string(),
@@ -70,15 +131,18 @@ export const LabelField = z.enum(LABEL_FIELDS);
 // No nutrition = an old client: a null nutritionImage meant "both on one photo".
 export const ReadLabelRequest = z.object({
   ingredientsImage: z.string().min(1), nutritionImage: z.string().min(1).nullable(), nutrition: NutritionMode.optional(),
+  kind: LabelKind.optional(),
 }).refine((r) => r.nutrition === undefined || (r.nutrition === 'separate') === (r.nutritionImage !== null), {
   message: 'nutritionImage must match the nutrition mode', path: ['nutritionImage'],
 });
 // Adding nutrition later to a saved product: the nutrition photo alone.
 export const EnrichReadLabelRequest = z.object({
   ingredientsImage: z.null(), nutritionImage: z.string().min(1), nutrition: z.literal('separate'),
+  kind: LabelKind.optional(),
 });
 const LabelResponse = z.object({
   ingredientsText: z.string().nullable(), unit: Unit.nullable(), nutrients: Nutrients,
+  water: WaterProfile.nullable().optional(),
   unclear: z.array(LabelField), // kept for old clients; reasons says why a field is null
   reasons: z.object(Object.fromEntries(LABEL_FIELDS.map((k) => [k, FieldReason])) as Record<LabelField, typeof FieldReason>)
     .optional(), // shortcut: optional while servers without U3 still answer; make required once U3 is deployed
@@ -100,22 +164,74 @@ export const ReadLabelResponse = LabelResponse.superRefine(reasonsMatchValues);
 export const EnrichReadLabelResponse = LabelResponse.extend({
   ingredientsPhotoPath: z.null(), nutritionPhotoPath: z.string().min(1),
 }).superRefine(reasonsMatchValues);
-export const AddProductRequest = z.object({
+const AddProductFields = z.object({
   code: Code.nullable(), name: z.string().min(1).max(120), brand: z.string().max(80), // '' = unreadable on the pack
   quantity: z.string().max(30), unit: Unit, categorySlug: z.string().optional(), // absent = add-product saves 'necunoscut'
-  ingredientsText: z.string().min(3).max(3000), nutrients: Nutrients,
+  ingredientsText: z.string().max(3000), nutrients: Nutrients, water: WaterProfile.nullable().optional(),
   photoPath: z.string().nullable(), ingredientsPhotoPath: z.string(), nutritionPhotoPath: z.string().nullable(),
 });
+const requireIngredientsUnlessWater = (
+  r: { categorySlug?: string; ingredientsText: string; water?: z.infer<typeof WaterProfile> | null },
+  ctx: z.RefinementCtx,
+) => {
+  const isWater = r.categorySlug === 'apa' || (r.water !== null && r.water !== undefined);
+  if (!isWater && r.ingredientsText.length < 3) {
+    ctx.addIssue({ code: 'too_small', minimum: 3, type: 'string', inclusive: true, path: ['ingredientsText'] });
+  }
+};
+export const AddProductRequest = AddProductFields.superRefine(requireIngredientsUnlessWater);
 export const EnrichProductRequest = z.object({
-  productId: Uuid, unit: Unit, nutrients: Nutrients, nutritionPhotoPath: z.string().min(1),
+  productId: Uuid, unit: Unit, nutrients: Nutrients, water: WaterProfile.nullable().optional(), nutritionPhotoPath: z.string().min(1),
 });
 export const ReportRequest = z.object({ productId: Uuid, message: z.string().min(3).max(1000) });
-export const ProductInput = AddProductRequest.omit({ photoPath: true, ingredientsPhotoPath: true, nutritionPhotoPath: true })
-  .extend({ brand: z.string().min(1).max(80), categorySlug: z.string() }); // a verified product names both
+export const ProductInput = AddProductFields.omit({ photoPath: true, ingredientsPhotoPath: true, nutritionPhotoPath: true })
+  .extend({ brand: z.string().min(1).max(80), categorySlug: z.string() }) // a verified product names both
+  .superRefine(requireIngredientsUnlessWater);
+export const WaterPartialProfile = WaterProfile.partial();
+export const WaterSubmissionKind = z.enum(['fill', 'conflict', 'verified_update']);
+export const WaterSubmissionStatus = z.enum(['pending', 'accepted', 'rejected']);
+export const WaterSubmission = z.object({
+  id: Uuid,
+  productId: Uuid,
+  productName: z.string(),
+  productBrand: z.string(),
+  productQuantity: z.string(),
+  currentWater: WaterPartialProfile.nullable(),
+  proposedWater: WaterPartialProfile,
+  photoPath: z.string(),
+  photoUrl: z.string().url().nullable().optional(),
+  kind: WaterSubmissionKind,
+  status: WaterSubmissionStatus,
+  createdAt: IsoDate,
+});
+export const AdminAddWaterInput = z.object({
+  code: Code.nullable(),
+  brand: z.string().trim().min(1).max(80),
+  name: z.string().trim().min(1).max(120),
+  quantity: z.string().trim().min(1).max(30),
+  status: z.enum(['verified', 'unverified']),
+  source: z.string().trim().min(1).max(200),
+  sourceUrl: z
+    .string()
+    .trim()
+    .max(300)
+    .url()
+    .refine((u) => /^https?:\/\//i.test(u), 'expected http/https URL')
+    .nullable()
+    .optional(),
+  ingredientsText: z.string().max(3000),
+  water: WaterProfile,
+});
 export const ModerateRequest = z.discriminatedUnion('action', [
   z.object({ action: z.literal('verify'), productId: Uuid, product: ProductInput }),
   z.object({ action: z.literal('hide'), productId: Uuid, reason: z.string().min(3) }),
   z.object({ action: z.literal('close_report'), reportId: Uuid }),
+  z.object({
+    action: z.literal('resolve_water_submission'),
+    submissionId: Uuid,
+    decision: z.enum(['accept', 'reject']),
+  }),
+  z.object({ action: z.literal('add_water'), product: AdminAddWaterInput }),
 ]);
 export const ErrorCode = z.enum(['bad_request', 'rate_limited', 'not_found', 'unauthorized', 'upstream_failed', 'duplicate']);
 export const ErrorBody = z.object({ error: ErrorCode, message: z.string() });
@@ -149,6 +265,15 @@ export type IngredientGroup = z.infer<typeof IngredientGroup>;
 export type ProductStatus = z.infer<typeof ProductStatus>;
 export type NutrientKey = z.infer<typeof NutrientKey>;
 export type Nutrients = z.infer<typeof Nutrients>;
+export type Carbonation = z.infer<typeof Carbonation>;
+export type WaterClassification = z.infer<typeof WaterClassification>;
+export type LabelKind = z.infer<typeof LabelKind>;
+export type WaterNumericKey = z.infer<typeof WaterNumericKey>;
+export type WaterFieldKey = z.infer<typeof WaterFieldKey>;
+export type WaterRange = z.infer<typeof WaterRange>;
+export type WaterFieldEvidence = z.infer<typeof WaterFieldEvidence>;
+export type WaterProfile = z.infer<typeof WaterProfile>;
+export type WaterPartialProfile = z.infer<typeof WaterPartialProfile>;
 export type IsoDate = z.infer<typeof IsoDate>;
 export type Category = z.infer<typeof Category>;
 export type Ingredient = z.infer<typeof Ingredient>;
@@ -156,7 +281,9 @@ export type Product = z.infer<typeof Product>;
 export type ScoreReason = z.infer<typeof ScoreReason>;
 export type Grade = z.infer<typeof Grade>;
 export type Letter = z.infer<typeof Letter>;
+export type ScoreRange = z.infer<typeof ScoreRange>;
 export type ScoreResult = z.infer<typeof ScoreResult>;
+export type WaterSubmissionOutcome = z.infer<typeof WaterSubmissionOutcome>;
 export type LookupResponse = z.infer<typeof LookupResponse>;
 export type FrontRead = z.infer<typeof FrontRead>;
 export type Candidate = z.infer<typeof Candidate>;
@@ -173,6 +300,10 @@ export type EnrichProductRequest = z.infer<typeof EnrichProductRequest>;
 export type AddProductRequest = z.infer<typeof AddProductRequest>;
 export type ReportRequest = z.infer<typeof ReportRequest>;
 export type ProductInput = z.infer<typeof ProductInput>;
+export type WaterSubmissionKind = z.infer<typeof WaterSubmissionKind>;
+export type WaterSubmissionStatus = z.infer<typeof WaterSubmissionStatus>;
+export type WaterSubmission = z.infer<typeof WaterSubmission>;
+export type AdminAddWaterInput = z.infer<typeof AdminAddWaterInput>;
 export type ModerateRequest = z.infer<typeof ModerateRequest>;
 export type ErrorCode = z.infer<typeof ErrorCode>;
 export type ErrorBody = z.infer<typeof ErrorBody>;

@@ -9,14 +9,16 @@ import type { HistoryEntry } from '../history/store';
 import { productScoreFor } from '../product/productScoreFor';
 import { CompareCell } from './CompareCell';
 import { CompareVerdict } from './CompareVerdict';
-import type { compareRows } from './compare';
+import type { compareRows, WaterCompareRow } from './compare';
+import { waterFieldDisplayValue, waterFieldLabel } from '../product/waterFormat';
 
 const copy = ro.compare.design;
 type Rows = ReturnType<typeof compareRows>;
 
 /** Two product cards, swipeable Nutrienți / Ingrediente / Alergeni tabs and one verdict line. Existing results only. */
-export function ComparisonView({ a, b, rows, winner, onSwap, onCategory }: {
-  a: HistoryEntry; b: HistoryEntry; rows: Rows; winner: 'a' | 'b' | null; onSwap: () => void; onCategory: () => void;
+/** `waterRows` switches the first tab to the mineral table for two waters of the same kind. */
+export function ComparisonView({ a, b, rows, waterRows, winner, onSwap, onCategory }: {
+  a: HistoryEntry; b: HistoryEntry; rows: Rows; waterRows?: WaterCompareRow[]; winner: 'a' | 'b' | null; onSwap: () => void; onCategory: () => void;
 }) {
   const { colors } = useTheme();
   const s = createStyles(colors);
@@ -37,6 +39,23 @@ export function ComparisonView({ a, b, rows, winner, onSwap, onCategory }: {
         {(['a', 'b'] as const).map(side => <CompareCell key={side} testID={`compare-cell-${row.key}-${side}`} value={row[side]} unit={amountUnit} better={row.key !== 'kcal' && row.better === side} />)}
       </View>;
     })}
+  </SoftCard>;
+
+  const water = waterRows && <SoftCard accessibilityRole="table" accessibilityLabel={copy.table(unit)} style={s.table}>
+    <View accessibilityRole="row" style={s.row}>
+      <Text accessibilityRole="columnheader" style={[s.head, s.name]}>{ro.result.water.cardTitle}</Text>
+      <Text accessibilityRole="columnheader" style={[s.head, s.value]}>A</Text>
+      <Text accessibilityRole="columnheader" style={[s.head, s.value]}>B</Text>
+    </View>
+    {waterRows.map(row => <View key={row.key} accessibilityRole="row" style={[s.row, s.divided]}>
+      <Text accessibilityRole="rowheader" style={[s.nutrient, s.name]}>{waterFieldLabel(row.key)}</Text>
+      {sides.map(({ entry, side }) => {
+        const text = entry.product.water ? waterFieldDisplayValue(entry.product.water, row.key) : null;
+        return <View key={side} style={[s.value, { paddingVertical: 4, borderRadius: 8, backgroundColor: row.better === side ? colors.favorableBg : colors.transparent }]}>
+          <Text testID={`compare-cell-${row.key}-${side}`} style={[s.nutrient, { textAlign: 'center' }]}>{text ?? '—'}</Text>
+        </View>;
+      })}
+    </View>)}
   </SoftCard>;
 
   const ingredients = <View style={s.pair}>
@@ -82,12 +101,12 @@ export function ComparisonView({ a, b, rows, winner, onSwap, onCategory }: {
       <SecondaryButton label={copy.category} onPress={onCategory} style={s.half} />
     </View>
     <SwipeableTabs index={tab} onIndexChange={setTab} tabs={[
-      { key: 'nutrients', label: copy.tabs.nutrients, render: () => nutrients },
+      { key: 'nutrients', label: copy.tabs.nutrients, render: () => water ?? nutrients },
       { key: 'ingredients', label: copy.tabs.ingredients, render: () => ingredients },
       { key: 'allergens', label: copy.tabs.allergens, render: () => allergens },
     ]} />
     {winnerName && <StatusToast title={copy.verdict(winnerName)} />}
-    <Text style={s.note}>{ro.score.disclaimer}</Text>
+    <Text style={s.note}>{waterRows ? ro.result.water.disclaimer : ro.score.disclaimer}</Text>
     {isPreview && <Text style={s.note}>{copy.footnote}</Text>}
   </View>;
 }

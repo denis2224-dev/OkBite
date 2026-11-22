@@ -48,6 +48,7 @@ integrationTest('real Auth JWT and membership protect verify/hide/report actions
       }),
     );
   let reportId: string | undefined;
+  let addedWaterId: string | undefined;
   try {
     const verify = { action: 'verify', productId: id, product: input };
     assert.equal((await post(verify, 'forged')).status, 401);
@@ -150,6 +151,58 @@ integrationTest('real Auth JWT and membership protect verify/hide/report actions
     assert.equal(await loadProduct({ id }), null);
     const hidden = await db.from('products').select('hidden_reason').eq('id', id).single();
     assert.equal(hidden.data!.hidden_reason, 'Etichetă neclară');
+
+    const waterPayload = {
+      action: 'add_water',
+      product: {
+        code: '4840009000016',
+        brand: 'OM',
+        name: 'Test Apă C7',
+        quantity: '1,5 L',
+        status: 'verified',
+        source: 'Buletin analiză C7',
+        sourceUrl: 'https://apaom.md/',
+        ingredientsText: '',
+        water: {
+          tdsMgL: 375,
+          dryResidueMgL: null,
+          ph: 7.4,
+          carbonation: 'still',
+          classification: 'drinking',
+          caMgL: 32.5,
+          mgMgL: 12.5,
+          naMgL: null,
+          kMgL: null,
+          naPlusKMgL: 30,
+          hco3MgL: 140,
+          so4MgL: null,
+          clMgL: 15.5,
+          fMgL: null,
+          no3MgL: null,
+          bMgL: null,
+          h3bo3MgL: null,
+          iUgL: null,
+        },
+      },
+    };
+    assert.equal(
+      (await db.from('categories').upsert({ slug: 'apa', name: 'Apă', score_kind: 'water' })).error,
+      null,
+    );
+    const addWaterRes = await post(waterPayload);
+    assert.equal(addWaterRes.status, 200);
+    const addWaterBody = await addWaterRes.json();
+    assert.equal(addWaterBody.status, 'ok');
+    assert.equal(typeof addWaterBody.productId, 'string');
+    addedWaterId = addWaterBody.productId;
+    const loadedWater = await loadProduct({ id: addedWaterId! });
+    assert.equal(loadedWater?.product.status, 'verified');
+    assert.equal(loadedWater?.product.category.slug, 'apa');
+    assert.equal(loadedWater?.product.water?.evidence?.tdsMgL?.status, 'verified');
+    assert.equal(typeof loadedWater?.score.score, 'number');
+    assert.equal(loadedWater?.score.range ?? null, null);
+    assert.equal((await post(waterPayload)).status, 409);
+
     const revokedDuringRequest = createHandler({
       authorize: async (req) => {
         const authenticated = await authorize(req);
@@ -169,6 +222,7 @@ integrationTest('real Auth JWT and membership protect verify/hide/report actions
     assert.equal((await post(verify)).status, 401);
   } finally {
     if (reportId) assert.equal((await db.from('reports').delete().eq('id', reportId)).error, null);
+    if (addedWaterId) assert.equal((await db.from('products').delete().eq('id', addedWaterId)).error, null);
     assert.equal((await db.from('products').delete().eq('id', id)).error, null);
     assert.equal((await db.from('moderators').delete().eq('user_id', actor)).error, null);
     assert.equal((await db.auth.admin.deleteUser(actor)).error, null);

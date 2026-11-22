@@ -92,6 +92,7 @@ export function ReviewDraftScreen({ activeDraft }: { activeDraft: AddReviewDraft
           brand: currentIdentity.brand,
           name: currentIdentity.name,
           quantity: currentIdentity.quantity,
+          ...(currentIdentity.isWater ? { isWater: true } : {}),
         },
         photoPath: currentIdentity.photoPath,
         queueId: currentIdentity.queueId,

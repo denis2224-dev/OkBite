@@ -7,7 +7,7 @@ import { Body, Button, Card, Heading } from '../../src/ui';
 import { ro } from '../../src/copy/ro';
 import { listHistory, type HistoryEntry } from '../../src/features/history/store';
 import { ProductPicker } from '../../src/features/compare/ProductPicker';
-import { betterOverall, compareRows } from '../../src/features/compare/compare';
+import { betterOverall, compareRows, compareWaterRows } from '../../src/features/compare/compare';
 import { ComparisonView } from '../../src/features/compare/ComparisonView';
 import { formatAmount } from '../../src/lib/format';
 import { useTheme } from '../../src/theme/useTheme';
@@ -41,14 +41,16 @@ export default function Compare() {
     return () => { active = false; };
   }, [id]));
   const rows = a && b ? compareRows(a.product, b.product) : [];
-  if (a && b && rows.length) {
+  const waterRows = a && b ? compareWaterRows(a.product, b.product) : [];
+  const isWaterPair = Boolean(a && b && a.product.category.scoreKind === 'water' && b.product.category.scoreKind === 'water' && a.product.category.slug === b.product.category.slug);
+  if (a && b && (isWaterPair ? waterRows.length > 0 : rows.length > 0)) {
     const fromProduct = Boolean(id);
     return <SafeAreaView edges={fromProduct ? ['top', 'bottom', 'left', 'right'] : ['top', 'left', 'right']} style={styles.safe}>
       <View style={styles.frame}>
         <TabPageHeader title={copy.title} />
         <ScrollView style={styles.scroll} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
           {error && <Body accessibilityLiveRegion="polite">{ro.history.storageError}</Body>}
-          <ComparisonView a={a} b={b} rows={rows} winner={betterOverall(a, b)} onSwap={() => setPicker('b')} onCategory={() => setPicker('a')} />
+          <ComparisonView a={a} b={b} rows={rows} waterRows={isWaterPair ? waterRows : undefined} winner={betterOverall(a, b)} onSwap={() => setPicker('b')} onCategory={() => setPicker('a')} />
           <Button variant="ghost" onPress={() => router.push('/capture')}>{ro.compare.photo}</Button>
         </ScrollView>
       </View>
