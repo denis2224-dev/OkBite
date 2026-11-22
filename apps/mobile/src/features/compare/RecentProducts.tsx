@@ -19,7 +19,7 @@ export function RecentProducts({ entries, a, b, onPick }: Props) {
   const [chosen, setChosen] = useState<string | null>(null);
   const visible = useMemo(() => entries.filter(entry => entry.product.status !== 'hidden')
     .sort((x, y) => y.savedAt.localeCompare(x.savedAt)), [entries]);
-  // The product types found in history, most products first. The filter only appears when there is a choice to make.
+  // The product types found in history, most products first. The filter is always on the line, even with a single type.
   const categories = useMemo<Category[]>(() => {
     const found = new Map<string, Category>();
     for (const { product } of visible) {
@@ -33,7 +33,7 @@ export function RecentProducts({ entries, a, b, onPick }: Props) {
   const recent = category ? visible.filter(entry => entry.product.category.slug === category) : visible.slice(0, 8);
   if (!recent.length) return null;
   return <ResultSection title={ro.home.design.recent}
-    action={categories.length > 1 ? <CategoryFilter categories={categories} value={category} onChange={setChosen} /> : undefined}>
+    action={<CategoryFilter categories={categories} value={category} onChange={setChosen} />}>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
       {recent.map(entry => {
         const { product } = entry;
