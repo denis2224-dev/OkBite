@@ -33,3 +33,12 @@ describe('usesCustomSwipe', () => {
     }
   });
 });
+
+describe('the top products page', () => {
+  it('gets swipe-back like the other pushed pages', () => {
+    expect(swipeBackEnabled('/top-products')).toBe(true);
+    expect(usesCustomSwipe('/top-products', 'web')).toBe(true); // a drag that follows the finger on the web
+    expect(usesCustomSwipe('/top-products', 'ios')).toBe(false); // the native stack swipes it on a phone
+    expect(usesCustomSwipe('/preferences/dietary', 'ios')).toBe(usesCustomSwipe('/top-products', 'ios'));
+  });
+});
