@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { router } from 'expo-router';
-import { getLanguage, languageSelectable, setLanguage } from '../../src/copy/lang';
-import { ro } from '../../src/copy/ro';
-import { useProfile } from '../../src/features/profile';
-import { SettingsScreen } from '../../src/features/settings/SettingsScreen';
+import { getLanguage, languageSelectable, setLanguage } from '../src/copy/lang';
+import { ro } from '../src/copy/ro';
+import { useProfile } from '../src/features/profile';
+import { SettingsScreen } from '../src/features/settings/SettingsScreen';
 
-export default function SettingsTab() {
+export default function SettingsPage() {
  const { hydrated, resetOnboarding } = useProfile();
  const [resetFailed, setResetFailed] = useState(false);
  async function restartOnboarding() {

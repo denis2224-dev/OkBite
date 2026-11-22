@@ -3,10 +3,10 @@ import { fireEvent } from '@testing-library/react-native';
 import { StyleSheet, Text } from 'react-native';
 import { ro } from '../../src/copy/ro';
 import ScanTab from '../(tabs)/index';
-import About from '../(tabs)/about';
+import About from '../about';
 import TabLayout from '../(tabs)/_layout';
 import Profile from '../(tabs)/profile';
-import Settings from '../(tabs)/settings';
+import Settings from '../settings';
 
 const mockCameraMounted = jest.fn(); const mockCameraStopped = jest.fn();
 jest.mock('../../src/features/scan/ScanScreen', () => ({ __esModule: true, default: function Scanner() {
@@ -28,8 +28,8 @@ it.each(['method', 'privacy', 'terms'] as const)('keeps %s reachable from the Ab
  await fireEvent.press(screen.getByRole('button', { name: ro.nav[path] }));
  expect(screen).toHavePathname(`/${path}`);
 });
-const routes = { '(tabs)/_layout': TabLayout, '(tabs)/index': ScanTab, '(tabs)/about': About,
-  '(tabs)/history': () => <Text>history-test</Text>, '(tabs)/profile': Profile, '(tabs)/settings': Settings,
+const routes = { '(tabs)/_layout': TabLayout, '(tabs)/index': ScanTab, about: About,
+  '(tabs)/history': () => <Text>history-test</Text>, '(tabs)/profile': Profile, settings: Settings,
   '(tabs)/compare': () => <Text>comparison-test</Text>, 'product/[id]': () => <Text>product-test</Text> };
 it('lifts the install banner above the floating tab bar on Scan', async () => {
  await renderRouter({ index: ScanTab, capture: () => null });
@@ -57,14 +57,14 @@ it('preserves direct product deep links', async () => {
  expect(await screen.findByText('product-test')).toBeTruthy();
  expect(screen).toHavePathname('/product/example');
 });
-it.each([[ro.nav.settings, '/settings'], [ro.nav.about, '/about']] as const)('opens %s from a Profil row with no tab selected', async (label, path) => {
+it.each([[ro.nav.settings, '/settings'], [ro.nav.about, '/about']] as const)('opens %s from a Profil row as a page of its own, not a tab', async (label, path) => {
  await renderRouter(routes, { initialUrl: '/profile' });
  await fireEvent.press(await screen.findByRole('button', { name: label }));
  expect(screen).toHavePathname(path);
- expect(screen.getAllByRole('tab').every(tab => !tab.props.accessibilityState.selected)).toBe(true);
+ expect(screen.queryAllByRole('tab')).toHaveLength(0); // a pushed page: it slides in and swipes back like every other page
 });
 it.each(['/settings', '/about'])('keeps the %s deep link working', async path => {
  await renderRouter(routes, { initialUrl: path });
- expect(await screen.findAllByRole('tab')).toHaveLength(4);
+ expect(await screen.findByRole('header', { name: path === '/settings' ? ro.settings.title : ro.about.title })).toBeTruthy();
  expect(screen).toHavePathname(path);
 });
