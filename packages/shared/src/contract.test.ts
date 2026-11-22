@@ -4,7 +4,7 @@ import {
   Code, Nutrients as NutrientsSchema, IdentifyResponse, AddProductRequest, ReadLabelResponse, Uuid, NUTRIENT_KEYS,
   Product, ScoreResult, LookupResponse, ReadLabelRequest, ReportRequest, ModerateRequest,
   ErrorCode, ErrorBody, IngredientEntry, IdentifyRequest, LABEL_FIELDS, FieldReason, EnrichReadLabelRequest,
-  EnrichReadLabelResponse, EnrichProductRequest, ProductInput, Ingredient,
+  EnrichReadLabelResponse, EnrichProductRequest, ProductInput, Ingredient, TopProductsQuery, TopProductsResponse,
   WaterProfile, Carbonation, WaterClassification, LabelKind, FrontRead,
   WATER_NUMERIC_KEYS, WATER_FIELD_KEYS, WaterRange, WaterFieldEvidence, WaterSubmission, AdminAddWaterInput,
 } from './contract';
@@ -102,6 +102,44 @@ const product = {
   imageUrl: null, labelImageUrl: null, source: 'Fixture din planul C1', addedAt: '2026-11-04', verifiedAt: null,
 };
 const unavailable = { score: null, letter: null, grade: 'unavailable', reasons: [], missing: ['sugar'] };
+
+describe('TopProductsQuery', () => {
+  it.each(['iaurt', 'fructe-legume', 'a'.repeat(64)])('accepts the slug %s', (category) => {
+    expect(TopProductsQuery.parse({ category })).toEqual({ category, limit: 20 });
+  });
+  it.each(['', 'Iaurt', 'iaurt ', '-iaurt', 'iaurt-', 'a--b', 'a'.repeat(65)])('rejects the slug %j', (category) => {
+    expect(TopProductsQuery.safeParse({ category }).success).toBe(false);
+  });
+  it.each([1, 20])('accepts the limit %i', (limit) => {
+    expect(TopProductsQuery.parse({ category: 'iaurt', limit }).limit).toBe(limit);
+  });
+  it.each([0, 21, 1.5, '20'])('rejects the limit %j', (limit) => {
+    expect(TopProductsQuery.safeParse({ category: 'iaurt', limit }).success).toBe(false);
+  });
+  it('rejects unknown keys', () => {
+    expect(TopProductsQuery.safeParse({ category: 'iaurt', foo: '1' }).success).toBe(false);
+  });
+});
+
+describe('TopProductsResponse', () => {
+  const entry = {
+    product: { ...product, status: 'verified' },
+    score: { score: 78, letter: 'B', grade: 'good', reasons: [], missing: [] },
+  };
+  it('accepts an empty shelf', () => {
+    const shelf = { category: 'biscuiti', products: [] };
+    expect(TopProductsResponse.parse(shelf)).toEqual(shelf);
+  });
+  it('accepts 20 products and rejects 21', () => {
+    const products = Array.from({ length: 20 }, () => entry);
+    expect(TopProductsResponse.parse({ category: 'biscuiti', products }).products).toHaveLength(20);
+    expect(TopProductsResponse.safeParse({ category: 'biscuiti', products: [...products, entry] }).success).toBe(false);
+  });
+  it('rejects an entry without a score', () => {
+    const products = [{ product: entry.product }];
+    expect(TopProductsResponse.safeParse({ category: 'biscuiti', products }).success).toBe(false);
+  });
+});
 
 describe('contract boundaries', () => {
   it.each(['', '1234567', '123456789', 'abcdefgh', ' 96385074', '96385074 ', '48400010000140'])(
