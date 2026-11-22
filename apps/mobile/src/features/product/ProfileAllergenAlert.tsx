@@ -23,9 +23,9 @@ export function ProfileAllergenAlert({ product }: { product: Product }) {
     {rows.length > 0 && <View accessible accessibilityRole="alert" accessibilityLiveRegion="polite"
       accessibilityLabel={rows.map(row => `${row.title}. ${row.sub}`).join('. ')} style={{ gap: 8 }}>
       {rows.map(row => {
-        const color = row.trace ? colors.warning : colors.low;
-        return <View key={row.key} testID={`profile-alert-${row.key}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 16,
-          backgroundColor: row.trace ? colors.warningBg : colors.lowBg, borderWidth: 1, borderColor: row.trace ? colors.warningBorder : colors.lowBg }}>
+        const color = row.trace ? colors.warning : colors.dangerText;
+        return <View key={row.key} testID={`profile-alert-${row.key}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: 20,
+          backgroundColor: row.trace ? colors.warningBg : colors.dangerBg, borderWidth: 1, borderColor: row.trace ? colors.warningBorder : colors.dangerBg }}>
           <Icon name={row.icon} size={26} color={color} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Body style={{ color, fontFamily: fonts.bold, fontSize: 17, lineHeight: 24 }}>{row.title}</Body>

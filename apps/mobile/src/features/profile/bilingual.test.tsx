@@ -19,6 +19,7 @@ describe('ProfileScreen English rendering (mocked language)', () => {
     const { findByText, queryByText } = await render(<ProfileScreen />);
     expect(await findByText('Profile')).toBeTruthy();
     expect(await findByText('What matters to you?')).toBeTruthy();
+    expect(await findByText('What matters to you?')).toBeTruthy();
     expect(await findByText('More balanced food choices')).toBeTruthy();
     expect(queryByText('Saved only on this phone')).toBeNull();
   });
