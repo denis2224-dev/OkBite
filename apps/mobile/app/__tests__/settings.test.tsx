@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import SettingsTab from '../(tabs)/settings';
+import SettingsTab from '../settings';
 import { ThemeProvider } from '../../src/theme/useTheme';
 import { ro } from '../../src/copy/ro';
 import * as lang from '../../src/copy/lang';

@@ -160,6 +160,7 @@ test.describe('returning user', () => {
     await page.getByRole('button', { name: ro.settings.language, exact: true }).click(); // the languages open from this row
     await page.getByRole('button', { name: ro.settings.english, exact: true }).click(); // reloads the page
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await page.goto('/'); // Setări is a page of its own now, without the tab bar
     // The pill tab bar shows icons; each tab is named by its label.
     const tabs = page.getByRole('tablist').getByRole('tab');
     await expect(tabs).toHaveCount(4);

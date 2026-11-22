@@ -24,10 +24,8 @@ describe('usesCustomSwipe', () => {
   it('is used on every page of the web', () => {
     for (const path of ['/product/abc', '/settings', '/preferences/dietary', '/capture']) expect(usesCustomSwipe(path, 'web')).toBe(true);
   });
-  it('on a phone is used only for the tab routes, because the stack swipes the pushed pages itself', () => {
-    expect(usesCustomSwipe('/settings', 'ios')).toBe(true);
-    expect(usesCustomSwipe('/about', 'android')).toBe(true);
-    for (const path of ['/product/abc', '/preferences/allergens', '/method', '/identify', '/add', '/offline']) {
+  it('on a phone is never used, because the stack swipes every pushed page itself (Setări and Despre included)', () => {
+    for (const path of ['/settings', '/about', '/product/abc', '/preferences/allergens', '/method', '/identify', '/add', '/offline']) {
       expect(usesCustomSwipe(path, 'ios')).toBe(false);
       expect(usesCustomSwipe(path, 'android')).toBe(false);
     }
