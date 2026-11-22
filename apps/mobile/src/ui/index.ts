@@ -23,3 +23,4 @@ export * from './ToggleRow';
 export * from './SegmentedTabs';
 export * from './ListRow';
 export * from './SettingsRow';
+export * from './SwipeableTabs';

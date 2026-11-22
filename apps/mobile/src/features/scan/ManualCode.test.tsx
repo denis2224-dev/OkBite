@@ -34,7 +34,7 @@ describe('ManualCode', () => {
 
   it('is a secondary pill with the trailing control beside it', async () => {
     await render(<ManualCode open={false} onToggle={jest.fn()} onSubmit={jest.fn()} trailing={<Text>T</Text>} />);
-    expect(StyleSheet.flatten(screen.getByRole('button', { name: ro.scan.manual }).props.style)).toMatchObject({ minHeight: 54, backgroundColor: light.surface, borderColor: light.sand });
+    expect(StyleSheet.flatten(screen.getByRole('button', { name: ro.scan.manual }).props.style)).toMatchObject({ minHeight: 54, backgroundColor: light.surface, borderColor: light.divider });
     expect(screen.getByText('T')).toBeTruthy();
   });
 

@@ -1,22 +1,19 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { ScreenSafeArea as SafeAreaView } from '../../src/shared/ScreenSafeArea';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { TabPageHeader } from '../../src/shared/TabPageHeader';
 import { Body, Button, Card, Heading } from '../../src/ui';
 import { ro } from '../../src/copy/ro';
 import { listHistory, type HistoryEntry } from '../../src/features/history/store';
-import { productScoreFor, tierGrade } from '../../src/features/product/productScoreFor';
 import { ProductPicker } from '../../src/features/compare/ProductPicker';
 import { betterOverall, compareRows } from '../../src/features/compare/compare';
-import { CompareCell } from '../../src/features/compare/CompareCell';
-import { CompareVerdict } from '../../src/features/compare/CompareVerdict';
-import { isPreview } from '../../src/lib/preview';
+import { ComparisonView } from '../../src/features/compare/ComparisonView';
 import { formatAmount } from '../../src/lib/format';
 import { useTheme } from '../../src/theme/useTheme';
 import { useHomeTheme } from '../../src/theme/home';
 import { type ComparisonTheme } from '../../src/theme/comparison';
-import { HomeCard, HomeChip, HomeIcon, HomePressable } from '../../src/shared/HomeChrome';
+import { HomePressable } from '../../src/shared/HomeChrome';
 
 const copy = ro.compare.design;
 
@@ -45,49 +42,13 @@ export default function Compare() {
   }, [id]));
   const rows = a && b ? compareRows(a.product, b.product) : [];
   if (a && b && rows.length) {
-    const products = [{ entry: a, label: copy.productA, side: 'a' }, { entry: b, label: copy.productB, side: 'b' }] as const;
-    const winner = betterOverall(a, b);
     const fromProduct = Boolean(id);
     return <SafeAreaView edges={fromProduct ? ['top', 'bottom', 'left', 'right'] : ['top', 'left', 'right']} style={styles.safe}>
       <View style={styles.frame}>
-        <TabPageHeader title={copy.title} subtitle={copy.subtitle(a.product.category.name, a.product.unit)}/>
+        <TabPageHeader title={copy.title} />
         <ScrollView style={styles.scroll} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
           {error && <Body accessibilityLiveRegion="polite">{ro.history.storageError}</Body>}
-          <View style={styles.products}>{products.map(({ entry, label, side }) => {
-            const { product } = entry;
-            const scored = productScoreFor(product, entry.score);
-            const grade = tierGrade(scored.tier);
-            // Minimal card: what the table below cannot say. No numbers, no reasons, no footer.
-            return <HomeCard key={label} testID="compare-card" style={styles.productCard}>
-              <Text style={styles.label}>{label}</Text>
-              <Text style={styles.productName}>{product.name}</Text>
-              <View style={styles.score}>{scored.score !== null && scored.tier
-                ? <HomeChip background={theme.colors[`${grade}Bg`]} color={theme.colors[grade]}>{ro.tiers[scored.tier]}</HomeChip>
-                : <HomeChip background={theme.colors.neutralBg} color={theme.colors.muted}>{ro.history.noScore}</HomeChip>}</View>
-              <CompareVerdict better={winner === side} allergens={product.allergens} />
-            </HomeCard>;
-          })}</View>
-          <Text style={styles.footnote}>{ro.score.disclaimer}</Text>
-          <View style={styles.actions}>
-            <HomePressable label={copy.swap} onPress={() => setPicker('b')} style={styles.secondary}><HomeIcon name="swap" size={18} /><Text style={styles.secondaryText}>{copy.swap}</Text></HomePressable>
-            <HomePressable label={copy.category} onPress={() => setPicker('a')} style={styles.secondary}><Text style={styles.secondaryText}>{copy.category}</Text></HomePressable>
-          </View>
-          <HomeCard accessibilityRole="table" accessibilityLabel={copy.table(a.product.unit)} style={styles.table}>
-            <View accessibilityRole="row" style={styles.tableHeader}><Text accessibilityRole="columnheader" style={[styles.label, styles.nutrientColumn]}>{ro.compare.per100(a.product.unit)}</Text><Text accessibilityRole="columnheader" style={[styles.label, styles.valueColumn]}>A</Text><Text accessibilityRole="columnheader" style={[styles.label, styles.valueColumn]}>B</Text></View>
-            {rows.map(row => {
-              const unit = row.key === 'kcal' ? 'kcal' : 'g';
-              const difference = row.a === null || row.b === null ? null : row.a === row.b ? copy.same : copy.difference(formatAmount(Math.abs(row.a - row.b)), unit);
-              return <View key={row.key} accessibilityRole="row" style={styles.tableRow}>
-                <View accessibilityRole="rowheader" style={styles.nutrientColumn}><Text style={styles.nutrientName}>{row.key === 'sat' ? copy.saturated : ro.result.nutrients[row.key]}</Text>{difference !== null && <Text style={styles.difference}>{difference}</Text>}</View>
-                {(['a', 'b'] as const).map(side => <CompareCell key={side} testID={`compare-cell-${row.key}-${side}`} value={row[side]} unit={unit} better={row.key !== 'kcal' && row.better === side} />)}
-              </View>;
-            })}
-            <View style={styles.legend}><View style={styles.swatch} /><Text style={styles.legendText}>{copy.favorable}</Text></View>
-          </HomeCard>
-          <HomeCard style={styles.allergens}><Text accessibilityRole="header" style={styles.allergenTitle}>{ro.result.allergens}</Text><Text style={styles.allergenText}><Text style={styles.bold}>A:</Text> <Text>{a.product.allergens.join(', ') || copy.none}</Text></Text><Text style={[styles.allergenText, styles.allergenB]}><Text style={styles.bold}>B:</Text> <Text>{b.product.allergens.join(', ') || copy.none}</Text></Text></HomeCard>
-          {products.map(({entry,label}) => entry.product.mayContain.length > 0 && <View key={label}><Text style={styles.allergenText}>{label} · <Text>{ro.result.mayContain}</Text></Text><Text style={styles.allergenText}>{entry.product.mayContain.join(', ')}</Text></View>)}
-          <Text style={styles.footnote}>{ro.result.missingAllergenNote}</Text>
-          {isPreview && <Text style={styles.footnote}>{copy.footnote}</Text>}
+          <ComparisonView a={a} b={b} rows={rows} winner={betterOverall(a, b)} onSwap={() => setPicker('b')} onCategory={() => setPicker('a')} />
           <Button variant="ghost" onPress={() => router.push('/capture')}>{ro.compare.photo}</Button>
         </ScrollView>
       </View>
@@ -130,7 +91,7 @@ const createStyles = (t: ComparisonTheme) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: t.colors.ground },
   frame: { flex: 1, width: '100%', maxWidth: 430, alignSelf: 'center' },
   subtitle: { fontFamily: t.fonts.body, fontSize: 13, lineHeight: 18.85, color: t.colors.muted },
-  scroll: { flex: 1 }, body: { paddingHorizontal: 16, paddingBottom: 24 },
+  scroll: { flex: 1 }, body: { paddingHorizontal: 22, paddingBottom: 24, gap: 20 },
   products: { flexDirection: 'row', alignItems: 'stretch', gap: 12 }, productCard: { flex: 1, minWidth: 0, padding: 16 },
   identity: { marginTop: 10, gap: 2 },
   reasons: { marginTop: 16, gap: 16 }, reason: { gap: 4 },

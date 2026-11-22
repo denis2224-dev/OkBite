@@ -123,7 +123,7 @@ const legacyRu = {
       same: 'одинаково', difference: (amount: string, unit: string) => `разница ${amount} ${unit}`,
       favorable: 'Более благоприятное значение из двух', saturated: 'в том числе насыщенные', none: 'не указаны',
       footnote: 'Оценки носят справочный характер и сравнимы только в одной категории товаров.',
-      better: 'Лучший выбор', betterValue: 'Лучшее значение',
+      better: 'Лучший выбор', verdict: (name: string) => `${name} — лучший выбор`, tabs: { nutrients: 'Нутриенты', ingredients: 'Состав', allergens: 'Аллергены' }, betterValue: 'Лучшее значение',
       profileWarning: (allergen: string) => `Содержит ${allergen} из вашего списка`,
     },
     per100: (unit: string) => `На 100 ${unit}`, title: 'Сравнить товары',
@@ -299,7 +299,7 @@ export const redesignRu: RedesignCopy = {
     open: (name: string) => `Подробнее о ${name}`, empty: 'Для этого товара нет сведений о добавках.',
   },
   profile: {
-    title: 'Профиль', goalTitle: 'Что для вас важно?', allergensTitle: 'Аллергены под контролем', avoidTitle: 'Что вы хотите избегать',
+    title: 'Профиль', myAllergies: 'Мои аллергены', goalTitle: 'Что для вас важно?', allergensTitle: 'Аллергены под контролем', avoidTitle: 'Что вы хотите избегать',
     health: 'Более сбалансированное питание', allergies: 'Пищевые аллергии', family: 'Выбор для семьи',
     weight: 'Контроль веса', other: 'Другая цель', added_sugar: 'Добавленный сахар', sweeteners: 'Подсластители',
     ultra_processed: 'Ультраобработанные продукты', colourings: 'Красители', palm_oil: 'Пальмовое масло',

@@ -13,5 +13,5 @@ it('draws the icon circle in a solid colour that shows on the black camera frame
 it('makes the first action the primary pill and the rest secondary pills', async () => {
   await render(<CameraBlocked message="m" actions={[{ label: 'Unu', onPress: jest.fn() }, { label: 'Doi', onPress: jest.fn() }]} />);
   expect(StyleSheet.flatten(screen.getByRole('button', { name: 'Unu' }).props.style)).toMatchObject({ backgroundColor: light.primary, minHeight: 54 });
-  expect(StyleSheet.flatten(screen.getByRole('button', { name: 'Doi' }).props.style)).toMatchObject({ backgroundColor: light.surface, borderColor: light.sand });
+  expect(StyleSheet.flatten(screen.getByRole('button', { name: 'Doi' }).props.style)).toMatchObject({ backgroundColor: light.surface, borderColor: light.divider });
 });
