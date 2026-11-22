@@ -7,7 +7,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { Body, Button, Card, Heading } from '../../ui';
 import { ro } from '../../copy/ro';
 import { roDate } from '../product/SourceCard';
-import { clearHistory, listHistory, removeFromHistory, restoreToHistory, type HistoryEntry } from './store';
+import { clearHistory, listHistory, removeFromHistory, restoreToHistory, subscribeHistory, type HistoryEntry } from './store';
 import { subscribeQueue } from '../offline/queue';
 import { TabPageHeader } from '../../shared/TabPageHeader';
 import { useToast } from '../../ui/Toast';
@@ -50,9 +50,16 @@ export function HistoryScreen() {
     focused.current = true;
     setClearing(clearPending.current);
     if (!clearPending.current) setConfirming(false);
+    const refresh = () => { void load(); };
+    const stopHistory = subscribeHistory(refresh);
+    const stopQueue = subscribeQueue(refresh);
     void load();
-    const stop = subscribeQueue(() => { void load(); });
-    return () => { focused.current = false; generation.current++; stop(); };
+    return () => {
+      focused.current = false;
+      generation.current++;
+      stopHistory();
+      stopQueue();
+    };
   }, [load]));
 
   const visible = useMemo(() => [...entries].sort((a, b) => b.savedAt.localeCompare(a.savedAt)), [entries]);

@@ -1,5 +1,5 @@
 import { DatabaseSync as mockDatabaseSync } from 'node:sqlite';
-import { saveToHistory, listHistory, getFromHistory, clearHistory, removeFromHistory, restoreToHistory } from './store';
+import { saveToHistory, listHistory, getFromHistory, clearHistory, removeFromHistory, restoreToHistory, subscribeHistory } from './store';
 import { writeHistory } from './db';
 import { foundYogurt } from '../../test/fixtures';
 
@@ -63,4 +63,28 @@ it('undo never replaces a product scanned again after deletion', async () => {
   await saveToHistory({ ...foundYogurt, product: { ...foundYogurt.product, name: 'Actualizat după ștergere' } });
   await restoreToHistory(original);
   expect((await getFromHistory(original.product.id))?.product.name).toBe('Actualizat după ștergere');
+});
+
+it('notifies subscribers after committed changes and stops after unsubscribe', async () => {
+  const snapshots: Promise<string[]>[] = [];
+  const unsubscribe = subscribeHistory(() => {
+    snapshots.push(listHistory().then(rows => rows.map(row => row.product.id)));
+  });
+  try {
+    await expect(saveToHistory({ ...foundYogurt, product: { ...foundYogurt.product, id: 'invalid' } })).rejects.toThrow();
+    expect(snapshots).toHaveLength(0);
+    await saveToHistory(foundYogurt);
+    expect(await snapshots[0]).toEqual([foundYogurt.product.id]);
+    const [saved] = await listHistory();
+    await removeFromHistory(foundYogurt.product.id);
+    expect(await snapshots[1]).toEqual([]);
+    await restoreToHistory(saved!);
+    expect(await snapshots[2]).toEqual([foundYogurt.product.id]);
+    await clearHistory();
+    expect(await snapshots[3]).toEqual([]);
+  } finally {
+    unsubscribe();
+  }
+  await saveToHistory(foundYogurt);
+  expect(snapshots).toHaveLength(4);
 });
