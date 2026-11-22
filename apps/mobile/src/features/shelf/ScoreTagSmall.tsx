@@ -2,7 +2,6 @@ import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import type { Tier } from '@okbite/shared';
 import { fonts } from '../../theme/tokens';
-import { useTheme } from '../../theme/useTheme';
 import { tierTone } from '../../theme/tierTones';
 
 // Same shelf-tag point as product/ScoreTag (punched hole, evenodd), drawn narrower.
@@ -10,8 +9,7 @@ const POINT = 'M22 0H14L0 30l14 30h8zM16.4 30a3.4 3.4 0 1 0 -6.8 0a3.4 3.4 0 1 0
 
 /** Compact, still version of the score shelf tag for list rows. Decorative: the row around it reads the score. */
 export function ScoreTagSmall({ score, tier }: { score: number; tier: Tier }) {
-  const { colors } = useTheme();
-  const fg = tierTone(tier).fg;
+  const { fill: fg, onFill } = tierTone(tier);
   return <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.tag}>
     {/* The number sets the height; the point stretches to it in an absolute layer, as in ScoreTag. */}
     <View style={styles.point}>
@@ -20,7 +18,7 @@ export function ScoreTagSmall({ score, tier }: { score: number; tier: Tier }) {
       </View>
     </View>
     <View style={[styles.body, { backgroundColor: fg }]}>
-      <Text allowFontScaling style={[styles.number, { color: colors.onPrimary }]}>{score}</Text>
+      <Text allowFontScaling style={[styles.number, { color: onFill }]}>{score}</Text>
     </View>
   </View>;
 }

@@ -1,3 +1,4 @@
+import { light, radii } from '../../theme/tokens';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { router } from 'expo-router';
@@ -105,7 +106,7 @@ it('announces source dates and marks an unavailable score as fără scor without
   expect(row.props.accessibilityLabel).toContain(entry.product.source);
   expect(row.props.accessibilityLabel).toContain(`${ro.result.added}: ${entry.product.addedAt.split('-').reverse().join('.')}`);
   expect(row.props.accessibilityLabel).toContain(ro.result.scoreUnavailable);
-  expect(screen.getByText(ro.history.noScore)).toBeTruthy();
+  expect(screen.getByText('—', { includeHiddenElements: true })).toBeTruthy();
   expect(screen.queryByText('0 din 100')).toBeNull();
 });
 it('keeps the list when deletion is canceled or fails, and clears only on confirmed success', async () => {
@@ -162,7 +163,7 @@ it('does not restore deleted rows when an earlier read finishes after clear', as
 it('withholds a cached score when required nutrition data is missing', async () => {
   jest.mocked(listHistory).mockResolvedValue([{ ...entry, product: { ...entry.product, nutrients: { ...entry.product.nutrients, salt: null } } }]);
   await render(<HistoryScreen />);
-  await waitFor(() => expect(screen.getByText(ro.history.noScore)).toBeTruthy());
+  await waitFor(() => expect(screen.getByText('—', { includeHiddenElements: true })).toBeTruthy());
   expect(screen.getByRole('button', { name: new RegExp(ro.result.scoreUnavailable) })).toBeTruthy();
   expect(screen.queryByText(/^\d+ · /)).toBeNull();
   expect(screen.queryByText(String(productScoreFor(entry.product, entry.score).score), { includeHiddenElements: true })).toBeNull();
@@ -180,24 +181,29 @@ it('renders only the title in the shared tab page header, with no filler subtitl
 it('sums up the saved products in a "Coșul tău" card above the list', async () => {
   await render(<HistoryScreen />);
   await screen.findByText(entry.product.name);
-  expect(screen.getByRole('header', { name: ro.history.basket.title })).toBeTruthy();
+  expect(screen.getByTestId('basket-card')).toBeTruthy();
+  expect(screen.queryByRole('header', { name: ro.history.basket.title })).toBeNull();
   const { score, tier } = productScoreFor(entry.product, entry.score);
-  expect(screen.getByLabelText(`${ro.history.score(score!)} · ${ro.tiers[tier!]}`)).toBeTruthy();
+  expect(screen.getByLabelText(`${ro.history.score(score!)} · ${ro.tiers[tier!]}. ${ro.history.basket.average(1)}`)).toBeTruthy();
 });
 it('leaves the basket card out when history is empty', async () => {
   jest.mocked(listHistory).mockResolvedValue([]);
   await render(<HistoryScreen />);
   await waitFor(() => expect(screen.queryByText(ro.app.loading)).toBeNull());
-  expect(screen.queryByRole('header', { name: ro.history.basket.title })).toBeNull();
+  expect(screen.queryByTestId('basket-card')).toBeNull();
 });
 
-it('draws history like the mockup: one card, a small score tag, the name and a short time', async () => {
+it('draws history as one soft card of grade rows: grade square, name, chevron; the time is only read aloud', async () => {
   const now = new Date();
   jest.mocked(listHistory).mockResolvedValue([{ ...entry, savedAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 5).toISOString() }]);
   await render(<HistoryScreen />);
   await screen.findByText(entry.product.name);
-  expect(screen.getByTestId('history-list')).toBeTruthy();
-  expect(screen.getByText('Azi, 08:05')).toBeTruthy();
+  expect(StyleSheet.flatten(screen.getByTestId('history-list').props.style)).toMatchObject({ backgroundColor: light.surface, borderRadius: radii.card });
+  expect(screen.queryByText('Azi, 08:05')).toBeNull();
+  expect(screen.getByRole('button', { name: new RegExp(ro.history.open(entry.product.name)) }).props.accessibilityLabel).toContain('Azi, 08:05');
+  expect(StyleSheet.flatten(screen.getByLabelText(ro.history.search).props.style)).toBeTruthy();
+  expect(StyleSheet.flatten(screen.getByTestId('history-search').props.style)).toMatchObject({ minHeight: 54, backgroundColor: light.surface });
+  expect(StyleSheet.flatten(screen.getByRole('button', { name: ro.history.clear }).props.style)).toMatchObject({ backgroundColor: light.dangerBg });
   expect(screen.queryByText(entry.product.source)).toBeNull();
   expect(screen.queryByText(entry.product.brand, { exact: false })).toBeNull(); // brand only in the spoken label
   const { score } = productScoreFor(entry.product, entry.score);

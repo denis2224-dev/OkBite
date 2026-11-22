@@ -4,6 +4,8 @@ import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import { ro } from '../../copy/ro';
 import { useTheme } from '../../theme/useTheme';
 import { fonts, typeScale } from '../../theme/tokens';
+import { SoftCard } from '../../ui/SoftCard';
+import { SecondaryButton } from '../../ui/PillButtons';
 import { homeTheme } from '../../theme/home';
 import { shelves, type ShelfSlug } from './shelves';
 import { ShelfIcon } from './ShelfIcon';
@@ -31,9 +33,7 @@ export function ShelfPicks() {
   const [slug, setSlug] = useState<ShelfSlug>(shelves[0]!.slug);
   const { status, picks, retry } = useTopProducts(slug);
   const rise = useRiseIn(slug);
-  const name = ro.scan.shelf.names[slug];
-  const muted = [styles.note, { color: colors.muted }];
-  return <View style={styles.section}>
+  return <SoftCard testID="shelf-card">
     <Text accessibilityRole="header" style={[styles.title, { color: colors.ink }]}>{ro.scan.shelf.title}</Text>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.strip} contentContainerStyle={styles.shelves} keyboardShouldPersistTaps="handled">
       {shelves.map((shelf, index) => {
@@ -41,60 +41,41 @@ export function ShelfPicks() {
         const selected = shelf.slug === slug;
         return <Pressable key={shelf.slug} accessibilityRole="button" accessibilityLabel={ro.scan.shelf.names[shelf.slug]} accessibilityState={{ selected }}
           onPress={() => setSlug(shelf.slug)} style={styles.shelf}>
-          <View style={[styles.circle, { backgroundColor: tile.background, borderColor: selected ? colors.primary : tile.background }]}>
+          <View testID={`shelf-circle-${shelf.slug}`} style={[styles.circle, { backgroundColor: tile.background, borderColor: selected ? colors.primary : tile.background }]}>
             <ShelfIcon name={shelf.icon} color={tile.foreground} />
           </View>
           <Text style={[styles.shelfName, { color: colors.ink }]}>{ro.scan.shelf.names[shelf.slug]}</Text>
         </Pressable>;
       })}
     </ScrollView>
-    <View style={styles.header}>
-      <Text accessibilityRole="header" style={[styles.top, { color: colors.ink }]}>{ro.scan.shelf.top(name)}</Text>
-      {status === 'ready' && picks.length ? <Text style={muted}>{ro.scan.shelf.count(picks.length)}</Text> : null}
-    </View>
     <Animated.View style={[styles.list, { opacity: rise, transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}>
       {status === 'loading' ? <View accessible accessibilityRole="progressbar" accessibilityLabel={ro.app.loading} style={styles.list}>
-        {[0, 1, 2].map(row => <View key={row} style={[styles.placeholder, { backgroundColor: colors.soft }]} />)}
+        {[0, 1, 2].map(row => <View key={row} style={[styles.placeholder, { backgroundColor: colors.track }]} />)}
       </View>
         : status === 'error' ? <View style={styles.message}>
           <Text accessibilityRole="alert" style={[styles.body, { color: colors.ink }]}>{ro.scan.shelf.error}</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel={ro.errors.retry} onPress={retry} style={[styles.retry, { borderColor: colors.primary }]}>
-            <Text style={[styles.retryText, { color: colors.primary }]}>{ro.errors.retry}</Text>
-          </Pressable>
+          <SecondaryButton label={ro.errors.retry} onPress={retry} />
         </View>
           : picks.length === 0 ? <View style={styles.message}>
             <Text style={[styles.body, { color: colors.ink }]}>{ro.scan.shelf.empty}</Text>
-            <Text style={muted}>{ro.scan.shelf.emptyHint}</Text>
           </View>
-            : <>
-              <View accessibilityRole="list" style={styles.list}>
-                {picks.map((pick, index) => <ShelfPickRow key={pick.product.id} pick={pick} best={index === 0} />)}
-              </View>
-              <View>
-                <Text style={muted}>{ro.score.disclaimer}</Text>
-                <Text style={muted}>{ro.scan.shelf.ranking}</Text>
-              </View>
-            </>}
+            : <View accessibilityRole="list">
+              {picks.map((pick, index) => <ShelfPickRow key={pick.product.id} pick={pick} best={index === 0} first={index === 0} />)}
+            </View>}
     </Animated.View>
-  </View>;
+  </SoftCard>;
 }
 
 const styles = StyleSheet.create({
-  section: { gap: 10, paddingBottom: 12 },
   title: { fontFamily: fonts.heading, ...typeScale.title },
-  // The strip runs to the sheet's edges (its 20 px side padding) so shelves scroll off-screen, not into a margin.
+  // The strip runs to the card's edges (its 20 px padding) so shelves scroll off-screen, not into a margin.
   strip: { marginHorizontal: -20 },
   shelves: { paddingHorizontal: 20, gap: 12, alignItems: 'flex-start' },
   shelf: { width: 84, alignItems: 'center', gap: 6, paddingVertical: 2 },
   circle: { width: 64, height: 64, borderRadius: 32, borderWidth: 3, alignItems: 'center', justifyContent: 'center' },
   shelfName: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 17, textAlign: 'center' },
-  header: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', columnGap: 8 },
-  top: { fontFamily: fonts.heading, ...typeScale.section, flexShrink: 1 },
   list: { gap: 8 },
   placeholder: { minHeight: 64, borderRadius: 16 },
-  message: { gap: 4, alignItems: 'flex-start', paddingVertical: 4 },
+  message: { gap: 12, paddingVertical: 4 },
   body: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 21 },
-  note: { fontFamily: fonts.body, ...typeScale.caption },
-  retry: { justifyContent: 'center', borderWidth: 1, borderRadius: 999, paddingHorizontal: 16, marginTop: 4 },
-  retryText: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 21 },
 });

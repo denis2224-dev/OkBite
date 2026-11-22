@@ -9,7 +9,7 @@ export default function ScanTab() {
  const { colors } = useTheme();
  const [focused, setFocused] = useState(false);
  useFocusEffect(useCallback(() => { setFocused(true); return () => setFocused(false); }, []));
- return <ScreenSafeArea edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.cameraPanel }}>
+ return <ScreenSafeArea edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.ground }}>
   <ScanHome active={focused} />
   <InstallPrompt />
  </ScreenSafeArea>;

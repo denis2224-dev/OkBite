@@ -16,7 +16,7 @@ test.describe('N9 five-tab redesign acceptance', () => {
     await expect(page.getByRole('tab', { name: 'Scanează', exact: true })).toHaveAttribute('aria-selected', 'true');
   });
 
-  for (const [name, heading] of [['Istoric', 'Istoric'], ['Compară', 'Comparație'], ['Alergii', 'Alergiile tale'], ['Profil', 'Profil']]) {
+  for (const [name, heading] of [['Istoric', 'Istoric'], ['Compară', 'Compară'], ['Alergii', 'Alergiile tale'], ['Profil', 'Profil']]) {
     test(`${name} opens its screen and can return to Scan`, async ({ page }) => {
       await page.goto('/');
       await page.getByRole('tab', { name, exact: true }).click();
