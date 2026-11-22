@@ -14,7 +14,7 @@ const sheet = (ingredient: Ingredient, onClose = jest.fn()) => render(<AdditiveS
 it('shows name, E-number and role, risk chip and explanation', async () => {
   await sheet(caramel);
   expect(screen.getByText('Caramel cu sulfit de amoniu')).toBeTruthy();
-  expect(screen.getByText('E150d · Colorant sintetic')).toBeTruthy();
+  expect(screen.getByText('E150d, Colorant sintetic')).toBeTruthy();
   expect(screen.getByText(ro.additives.moderate)).toBeTruthy();
   expect(screen.getByText(caramel.explanation!)).toBeTruthy();
   expect(screen.queryByText(ro.additives.romanianOnly)).toBeNull();

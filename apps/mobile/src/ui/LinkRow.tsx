@@ -6,7 +6,7 @@ import { Body, Caption } from './Typography';
 import { Icon, type IconName } from './Icon';
 
 /** A navigation row: optional leading icon, label, optional hint and a trailing chevron. */
-export function LinkRow({ label, hint, icon, last = false, ...props }: PressableProps & { label: string; hint?: string; icon?: IconName; last?: boolean }) {
+export function LinkRow({ label, hint, icon, value, singleLine = false, last = false, ...props }: PressableProps & { label: string; hint?: string; icon?: IconName; value?: string; singleLine?: boolean; last?: boolean }) {
   const { colors } = useTheme();
   return <PressableOpacity {...props} accessibilityRole="button" accessibilityLabel={label}
     style={{ minHeight: 56, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: last ? 0 : 1, borderColor: colors.divider }}>
@@ -14,9 +14,10 @@ export function LinkRow({ label, hint, icon, last = false, ...props }: Pressable
       <Icon name={icon} size={20} color={colors.primary} />
     </View> : null}
     <View style={{ flex: 1, minWidth: 0 }}>
-      <Body style={{ fontFamily: fonts.bold }}>{label}</Body>
+      <Body {...(singleLine ? { numberOfLines: 1, adjustsFontSizeToFit: true, minimumFontScale: 0.85 } : {})} style={{ fontFamily: fonts.bold }}>{label}</Body>
       {hint ? <Caption>{hint}</Caption> : null}
     </View>
+    {value ? <Body numberOfLines={1} style={{ color: colors.good, fontSize: 14 }}>{value}</Body> : null}
     <Icon name="arrow" size={20} color={colors.muted} />
   </PressableOpacity>;
 }

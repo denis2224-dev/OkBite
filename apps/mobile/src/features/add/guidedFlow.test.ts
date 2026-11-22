@@ -1,3 +1,4 @@
+import { emptyWaterProfile } from '@okbite/shared';
 import { draftToGuided, guidedToDraft } from './guidedDraftAdapter';
 import { createGuidedFlow } from './guidedFlow';
 
@@ -293,4 +294,71 @@ test('retaking front photo clears remotePhotoPath and reloads interrupted draft 
   expect(deps.identify).toHaveBeenCalledTimes(2);
   expect(deps.readLabel).toHaveBeenCalledTimes(1);
   expect(resumed.getState().stage).toBe('review');
+});
+
+test('detected water skips nutrition question, sends kind=water, and goes straight to review even without food nutrients', async () => {
+  const waterProfile = { ...emptyWaterProfile(), carbonation: 'still' as const, ph: 7.4, tdsMgL: 451, caMgL: 75.1 };
+  const waterLabel = {
+    ...label,
+    ingredientsText: null,
+    unit: 'ml' as const,
+    reasons: { ...reasons, kcal: 'not_printed', fat: 'not_printed', sat: 'not_printed', sugar: 'not_printed', salt: 'not_printed', protein: 'not_printed', fiber: 'not_printed', fruitVegPct: 'not_printed', ingredientsText: 'not_printed' },
+    water: waterProfile,
+  };
+  const deps = {
+    preparePhoto: jest.fn(async (uri: string) => ({ uri, base64: `jpeg:${uri}`, bytes: 100 })),
+    keepPhoto: jest.fn(async (uri: string) => `id:${uri}`),
+    openPhoto: jest.fn(async (id: string) => ({ uri: id.slice(3), release: jest.fn() })),
+    identify: jest.fn(async () => ({ status: 'not_found', read: { brand: 'OM', name: 'OM Apă Plată', quantity: '1500 ml', code: null, isWater: true }, photoPath: 'uploads/om-front' })),
+    readLabel: jest.fn(async () => waterLabel),
+    onIdentify: jest.fn(), onFound: jest.fn(), onReview: jest.fn(), persist: jest.fn(async () => {}),
+  };
+  const flow = createGuidedFlow({ code: null, brand: null, name: null, quantity: null, photoPath: null }, deps);
+  await flow.capturePhoto('front');
+  expect(flow.getState().initial.isWater).toBe(true);
+  expect(flow.getState().initial.categorySlug).toBe('apa');
+  expect(flow.getState().stage).toBe('ingredients');
+  await flow.capturePhoto('mineral-panel');
+  expect(deps.readLabel).toHaveBeenCalledWith({
+    ingredientsImage: 'jpeg:mineral-panel',
+    nutritionImage: null,
+    nutrition: 'same_photo',
+    kind: 'water',
+  });
+  expect(flow.getState().stage).toBe('review');
+  expect(flow.getState().label?.water).toEqual(waterProfile);
+});
+
+test('client infers water and carbonation when identify returns Apă potabilă without backend isWater flag', async () => {
+  const waterProfile = { ...emptyWaterProfile(), dryResidueMgL: 390, caMgL: 14, mgMgL: 42.6, no3MgL: 6.4 };
+  const waterLabel = {
+    ...label,
+    ingredientsText: null,
+    unit: 'ml' as const,
+    reasons: { ...reasons, kcal: 'not_printed', fat: 'not_printed', sat: 'not_printed', sugar: 'not_printed', salt: 'not_printed', protein: 'not_printed', fiber: 'not_printed', fruitVegPct: 'not_printed', ingredientsText: 'not_printed' },
+    water: waterProfile,
+  };
+  const deps = {
+    preparePhoto: jest.fn(async (uri: string) => ({ uri, base64: `jpeg:${uri}`, bytes: 100 })),
+    keepPhoto: jest.fn(async (uri: string) => `id:${uri}`),
+    openPhoto: jest.fn(async (id: string) => ({ uri: id.slice(3), release: jest.fn() })),
+    identify: jest.fn(async () => ({
+      status: 'not_found',
+      read: { brand: 'DAVIDAN', name: 'Apă potabilă Carbogazificată', quantity: '0,5L', code: null },
+      photoPath: 'uploads/davidan-front',
+    })),
+    readLabel: jest.fn(async () => waterLabel),
+    onIdentify: jest.fn(), onFound: jest.fn(), onReview: jest.fn(), persist: jest.fn(async () => {}),
+  };
+  const flow = createGuidedFlow({ code: null, brand: null, name: null, quantity: null, photoPath: null }, deps);
+  await flow.capturePhoto('front');
+  expect(flow.getState().initial).toMatchObject({ isWater: true, categorySlug: 'apa', carbonation: 'sparkling' });
+  await flow.capturePhoto('lab-report');
+  expect(deps.readLabel).toHaveBeenCalledWith({
+    ingredientsImage: 'jpeg:lab-report',
+    nutritionImage: null,
+    nutrition: 'same_photo',
+    kind: 'water',
+  });
+  expect(flow.getState().stage).toBe('review');
 });

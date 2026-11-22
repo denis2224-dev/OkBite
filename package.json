@@ -74,6 +74,7 @@
     "test:app": "jest --runInBand",
     "typecheck:app": "tsc --noEmit",
     "data:load": "tsx scripts/load-data.ts",
+    "data:load-waters": "tsx scripts/load-waters.ts",
     "data:off": "tsx scripts/import-off.ts",
     "label:accuracy": "tsx scripts/label-accuracy.ts",
     "preinstall": "node scripts/verify-toolchain.mjs",

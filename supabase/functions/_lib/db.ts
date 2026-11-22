@@ -1,13 +1,13 @@
 import type { QueryData, SupabaseClient } from '@supabase/supabase-js';
 import { Category, Code, Ingredient, type NutrientKey, Product, ScoreResult, Uuid } from '../_shared/contract.ts';
 import { BUILTIN_INGREDIENTS, matchIngredients, resolveOffCategory } from '../_shared/ingredients/index.ts';
-import { computeScore } from '../_shared/score/index.ts';
+import { scoreProductNutrition } from '../_shared/score/index.ts';
 import { anonClient } from './client.ts';
 import { photoUrl } from './photoUrl.ts';
 
 // Explicit public columns: C2 deliberately denies SELECT * to shopper readers.
 const columns =
-  'id,code,status,name,brand,quantity,unit,portion_amount,portion_label,kcal,fat,sat,sugar,salt,protein,fiber,fruit_veg_pct,ingredients_text,allergens,may_contain,image_path,ingredients_photo_path,nutrition_photo_path,source,added_at,verified_at,nova_group,nova_source,category:categories(slug,name,scoreKind:score_kind)';
+  'id,code,status,name,brand,quantity,unit,portion_amount,portion_label,kcal,fat,sat,sugar,salt,protein,fiber,fruit_veg_pct,water,ingredients_text,allergens,may_contain,image_path,ingredients_photo_path,nutrition_photo_path,source,added_at,verified_at,nova_group,nova_source,category:categories(slug,name,scoreKind:score_kind)';
 export const PRODUCT_INGREDIENT_COLUMNS =
   'position,raw_name,ingredient:ingredients(slug,name,group:grp,role,explanation,source,allergen,risk,riskSource:risk_source)';
 
@@ -113,6 +113,7 @@ export function productFromRow(
       fiber: row.fiber,
       fruitVegPct: row.fruit_veg_pct,
     },
+    water: row.water ?? null,
     ingredientsText: row.ingredients_text,
     ingredients,
     allergens: row.allergens,
@@ -137,6 +138,6 @@ export function scoreProduct(product: Product): ScoreResult {
         missing: (['kcal', 'sat', 'sugar', 'salt'] as NutrientKey[])
           .filter((key) => product.nutrients[key] === null),
       }
-      : computeScore(product.nutrients, product.category.scoreKind, product.ingredientsText),
+      : scoreProductNutrition(product),
   );
 }

@@ -27,13 +27,13 @@ for (const mode of ['light'] as const) {
     await expect(page.getByText(ro.score.title, {exact:true})).toHaveCount(0);
     await expect(page.getByText(ro.result.portion, {exact:true})).toHaveCount(0);
     await expect(page.getByRole('button', {name:ro.result.portionTile, exact:true})).toHaveCount(0);
-    // The label text opens from the Ingrediente row of the trimmed result.
-    await expect(page.getByRole('button', {name:ro.result.ingredientsTile, exact:true})).toBeAttached();
-    await expect(page.getByText(ro.result.unverifiedNote, {exact:true})).toBeAttached();
+    // The label text is on the page itself, behind the chevron button of the Ingrediente card.
+    await expect(page.getByRole('button', {name:ro.result.ingredientsHide, exact:true})).toBeAttached();
+    await expect(page.getByText(ro.result.unverifiedNote, {exact:true})).toHaveCount(0); // the source card is gone
     await expect(page.getByRole('button', {name:ro.result.addNutrition, exact:true})).toHaveCount(process.env.EXPO_PUBLIC_NUTRITION_ENRICHMENT === '1' ? 1 : 0);
     await expect(page.getByRole('progressbar', {name:ro.app.loading})).toHaveCount(0);
     await doubledText(page);
-    const note = page.getByText(ro.result.missingAllergenNote, {exact:true});
+    const note = page.getByText(product.ingredientsText, {exact:false});
     await note.scrollIntoViewIfNeeded();
     await expect(note).toBeVisible();
     const bounds = (await note.boundingBox())!;
@@ -60,9 +60,11 @@ for (const mode of ['light'] as const) {
     await page.reload();
     await expect(page.getByText(ro.result.categoryUnconfirmed, {exact:true})).toBeAttached();
     await expect(page.getByText(ro.score.title, {exact:true})).toHaveCount(0);
-    await page.getByRole('button', {name:ro.result.ingredientsTile, exact:true}).click();
-    await expect(page.getByText(ro.result.transcribedLabel, {exact:true})).toBeAttached();
-    await expect(page.getByText(product.ingredientsText, {exact:true})).toBeAttached();
+    await expect(page.getByText(product.ingredientsText, {exact:false})).toBeAttached(); // open at first
+    await page.getByRole('button', {name:ro.result.ingredientsHide, exact:true}).click();
+    await expect(page.getByText(product.ingredientsText, {exact:false})).toHaveCount(0);
+    await page.getByRole('button', {name:ro.result.ingredientsShow, exact:true}).click();
+    await expect(page.getByText(product.ingredientsText, {exact:false})).toBeAttached();
     expect(errors).toEqual([]);
   });
 }

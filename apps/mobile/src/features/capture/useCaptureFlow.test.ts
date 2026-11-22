@@ -12,7 +12,8 @@ import { useCaptureFlow } from './useCaptureFlow';
 import { CODE, PRODUCT_ID, completed, identifyCandidates, identifyFound, identifyNotFound, lookupFound, lookupNotFound, pendingOutcome } from './__fixtures__/responses';
 
 const mockReplace = jest.fn();
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }), useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof import('react')>('react').useEffect(callback, [callback]) }));
+let mockParams: Record<string, string> = {};
+jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace }), useLocalSearchParams: () => mockParams, useFocusEffect: (callback: () => void | (() => void)) => jest.requireActual<typeof import('react')>('react').useEffect(callback, [callback]) }));
 jest.mock('expo-image-manipulator', () => ({ SaveFormat: { JPEG: 'jpeg' }, ImageManipulator: { manipulate: jest.fn() } }));
 jest.mock('expo-camera', () => ({ scanFromURLAsync: jest.fn() }));
 jest.mock('expo-image-picker', () => ({ launchImageLibraryAsync: jest.fn() }));
@@ -58,6 +59,7 @@ describe('useCaptureFlow', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     setGuidedAddEnabled(false);
+    mockParams = {};
     jest.mocked(FileSystem.copyAsync).mockImplementation(async ({ from }: { from: string; to: string }) => {
       if (!from.startsWith('file://')) {
         throw new Error(`Refusing non-local URI in keepPhoto: ${from}`);
@@ -346,6 +348,28 @@ describe('useCaptureFlow', () => {
     expect(result.current.canRetry).toBe(true);
     await act(async () => { await result.current.retry(); });
     expect(identifyOutcome).toHaveBeenCalledTimes(2);
+    expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
+  });
+
+  describe('opened from Compare', () => {
+    beforeEach(() => { mockParams = { forCompare: '1' }; });
+    it('sends a product found by barcode to the product page with the Compare flag', async () => {
+      scan.mockResolvedValue([{ data: CODE }]);
+      lookup.mockResolvedValue(lookupFound);
+      await capture();
+      expect(mockReplace).toHaveBeenCalledWith({ pathname: '/product/[id]', params: { id: PRODUCT_ID, forCompare: '1' } });
+    });
+    it('keeps the Compare flag on the way to the identify step', async () => {
+      scan.mockResolvedValue([]);
+      identifyOutcome.mockResolvedValue(completed(identifyCandidates));
+      await capture();
+      expect(mockReplace).toHaveBeenCalledWith({ pathname: '/identify', params: { source: 'photo', identifyDraftId: 'front-capture-uuid', forCompare: '1' } });
+    });
+  });
+  it('does not set the Compare flag when the camera was opened from anywhere else', async () => {
+    scan.mockResolvedValue([{ data: CODE }]);
+    lookup.mockResolvedValue(lookupFound);
+    await capture();
     expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);
   });
 });

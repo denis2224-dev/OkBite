@@ -47,13 +47,13 @@ describe('ScanScreen (web)', () => {
     expect(within(blocked).getAllByRole('button', { name: ro.errors.retry })).toHaveLength(1);
   });
 
-  it('keeps the manual-only note inside the frame with no buttons, and manual entry outside it', async () => {
+  it('keeps the manual-only note inside the frame with no buttons, and no manual entry on the Scan page', async () => {
     mockLive.status = 'unsupported';
     await render(<ScanScreenWeb embedded />);
     const frame = screen.getByTestId('scan-preview');
     expect(within(frame).getByText(ro.scan.webManualOnly)).toBeTruthy();
     expect(within(frame).queryAllByRole('button')).toHaveLength(0);
-    expect(screen.getByRole('button', { name: ro.scan.manual })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: ro.scan.manual })).toBeNull();
   });
 
   it('lets the blocked frame grow with large text instead of cutting it off', async () => {
@@ -162,18 +162,15 @@ describe('ScanScreen (web)', () => {
     }
   });
 
-  it('inside Scan home keeps manual entry one closed row, live or blocked, that opens in place', async () => {
+  it('inside Scan home has no manual entry, live or blocked, and fills the screen', async () => {
     mockLive.status = 'live';
     const view = await render(<ScanScreenWeb embedded />);
     expect(screen.queryByRole('header', { name: ro.scan.title })).toBeNull();
-    expect(screen.queryByLabelText(ro.scan.manualTitle)).toBeNull();
-    await fireEvent.press(screen.getByRole('button', { name: ro.scan.manual }));
-    expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: ro.scan.manual }));
-    expect(screen.queryByLabelText(ro.scan.manualTitle)).toBeNull();
+    expect(screen.queryByRole('button', { name: ro.scan.manual })).toBeNull();
+    expect(StyleSheet.flatten(screen.getByTestId('scan-preview').props.style).flex).toBe(1);
     mockLive.status = 'denied';
     await view.rerender(<ScanScreenWeb embedded />);
-    expect(screen.getByRole('button', { name: ro.scan.manual })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: ro.scan.manual })).toBeNull();
   });
 
   it('looks up a manually typed code and sends an unknown one to guided add', async () => {

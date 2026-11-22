@@ -179,26 +179,30 @@ describe('ScanScreen', () => {
     expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add', params: { flow: 'guided', code: CODE } });
   });
 
-  it('inside Scan home drops the page title and keeps manual entry one closed row until asked', async () => {
+  it('inside Scan home is only the camera: no title, no manual entry, no photo button', async () => {
     const view = await render(<ScanScreen embedded />);
     expect(screen.queryByText(ro.scan.title)).toBeNull();
-    expect(screen.queryByLabelText(ro.scan.manualTitle)).toBeNull();
+    expect(screen.queryByRole('button', { name: ro.scan.manual })).toBeNull();
     expect(screen.queryByRole('button', { name: ro.scan.photoLabel })).toBeNull();
     expect(camera().props.enableTorch).toBe(false);
-    await fireEvent.press(screen.getByRole('button', { name: ro.scan.manual }));
-    expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
-    expect(screen.getByRole('button', { name: ro.scan.manual }).props.accessibilityState).toEqual(expect.objectContaining({ expanded: true }));
-    await fireEvent.press(screen.getByRole('button', { name: ro.scan.manual }));
-    expect(screen.queryByLabelText(ro.scan.manualTitle)).toBeNull();
-    await view.rerender(<ScanScreen embedded torch />);
+    expect(camera().props.zoom).toBe(0);
+    await view.rerender(<ScanScreen embedded torch zoom />);
     expect(camera().props.enableTorch).toBe(true);
+    expect(camera().props.zoom).toBeGreaterThan(0);
   });
 
-  it('inside Scan home still offers manual entry when the camera is refused', async () => {
+  it('fills the whole screen with no rounded frame', async () => {
+    await render(<ScanScreen embedded />);
+    const frame = StyleSheet.flatten(screen.getByTestId('scan-preview').props.style);
+    expect(frame.flex).toBe(1);
+    expect(frame.borderRadius).toBeUndefined();
+    expect(frame.aspectRatio).toBeUndefined();
+  });
+
+  it('inside Scan home keeps no manual entry even when the camera is refused', async () => {
     mockPermission.value = { granted: false, status: 'denied', canAskAgain: false };
     await render(<ScanScreen embedded />);
-    await fireEvent.press(screen.getByRole('button', { name: ro.scan.manual }));
-    expect(screen.getByLabelText(ro.scan.manualTitle)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: ro.scan.manual })).toBeNull();
   });
 
   it('offers a retry when the camera fails to start', async () => {

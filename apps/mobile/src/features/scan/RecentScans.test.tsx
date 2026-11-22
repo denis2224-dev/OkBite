@@ -5,7 +5,9 @@ import { router } from 'expo-router';
 import type { Allergen } from '@okbite/shared';
 import { ro } from '../../copy/ro';
 import { previewEntries } from '../../test/fixtures';
-import { displayScore } from '../product/displayScore';
+import { StyleSheet } from 'react-native';
+import { productScoreFor } from '../product/productScoreFor';
+import { light, radii } from '../../theme/tokens';
 import { listHistory, type HistoryEntry } from '../history/store';
 import { RecentScans } from './RecentScans';
 
@@ -18,7 +20,7 @@ jest.mock('../profile', () => ({ useProfile: () => ({ profile: { goals: [], alle
 // Four real preview entries; the oldest is the biscuits (gluten, milk, soy), the newest the first yogurt (milk only).
 const entries: HistoryEntry[] = previewEntries.slice(0, 4).map((entry, index) => ({ ...entry, savedAt: `2026-11-0${9 - index}T09:00:00.000Z` }));
 const [yogurt, , , biscuits] = entries as [HistoryEntry, HistoryEntry, HistoryEntry, HistoryEntry];
-const tier = (entry: HistoryEntry) => ro.score[displayScore(entry.product, entry.score).grade];
+const score = (entry: HistoryEntry) => String(productScoreFor(entry.product, entry.score).score ?? '—');
 
 describe('RecentScans', () => {
   beforeEach(() => {
@@ -27,14 +29,15 @@ describe('RecentScans', () => {
     jest.mocked(listHistory).mockResolvedValue([...entries].reverse());
   });
 
-  it('lists the three newest history products with their tier word and the score disclaimer', async () => {
+  it('lists the three newest history products as grade rows in one soft card, with no heading or note', async () => {
     await render(<RecentScans active />);
-    expect(await screen.findByRole('header', { name: ro.home.design.recent })).toBeTruthy();
     expect(await screen.findByText(yogurt.product.name)).toBeTruthy();
+    expect(screen.queryByRole('header')).toBeNull();
+    expect(StyleSheet.flatten(screen.getByTestId('recent-card').props.style)).toMatchObject({ backgroundColor: light.surface, borderRadius: radii.card });
     expect(screen.queryByText(biscuits.product.name)).toBeNull();
     expect(screen.getAllByRole('button', { name: new RegExp(`^${ro.history.open('')}`) })).toHaveLength(3);
-    expect(screen.getAllByText(tier(yogurt)).length).toBeGreaterThan(0);
-    expect(screen.getByText(ro.score.disclaimer)).toBeTruthy();
+    expect(screen.getAllByText(score(yogurt), { includeHiddenElements: true }).length).toBeGreaterThan(0);
+    expect(screen.queryByText(ro.score.disclaimer)).toBeNull();
     expect(screen.queryByText(ro.allergens.Lapte)).toBeNull();
   });
 

@@ -25,7 +25,8 @@ export async function readGuidedLabel(state: GuidedFlowState, deps: GuidedFlowDe
   }
   const ingredientsImage = await read(state.photos.ingredients);
   const nutritionImage = mode === 'separate' && state.photos.nutrition ? await read(state.photos.nutrition) : null;
-  const request = GuidedReadLabelRequest.parse({ ingredientsImage, nutritionImage, nutrition: mode });
+  const isWater = Boolean(state.initial.isWater || state.initial.categorySlug === 'apa');
+  const request = GuidedReadLabelRequest.parse({ ingredientsImage, nutritionImage, nutrition: mode, ...(isWater ? { kind: 'water' as const } : {}) });
   validateBody(request);
   if (!active()) return null;
   const response = GuidedReadLabelResponse.safeParse(await deps.readLabel(request));
@@ -38,6 +39,7 @@ export function ingredientsOnly(label: GuidedReadLabelResponse, reason: FieldRea
     unclear: label.unclear.filter(key => key === 'ingredientsText') };
 }
 export function hasUnreadableNutrition(label: GuidedReadLabelResponse) {
+  if (label.water && Object.values(label.water).some(v => v !== null)) return false;
   const anyRead = NUTRIENT_KEYS.some(key => label.nutrients[key] !== null);
   return !anyRead && NUTRIENT_KEYS.some(key => ['unreadable', 'no_per_100', 'failed'].includes(label.reasons[key] ?? ''));
 }

@@ -11,7 +11,7 @@ export function ProcessingLevel({ product }: { product: Product }) {
     <Body style={{ fontFamily: fonts.bold }}>{ro.processing.title}</Body>
     {level
       ? <>
-        <Body>{`${level} · ${ro.processing[level]}`}</Body>
+        <Body>{`${level}, ${ro.processing[level]}`}</Body>
         <Body>{ro.processing[`level${level}` as const]}</Body>
       </>
       : <Body>{ro.processing.unknown}</Body>}
