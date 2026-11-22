@@ -2,7 +2,7 @@ export type AnalysisOutcome<T> =
   | { status: 'completed'; result: T }
   | { status: 'pending'; retryAllowed: false; completion: Promise<T> };
 
-// Keep the same request available to the caller; a deadline is not a failure.
+// Expose the same request to callers after the soft pending deadline.
 export async function waitForAnalysis<T>(completion: Promise<T>): Promise<AnalysisOutcome<T>> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const pending = new Promise<AnalysisOutcome<T>>((resolve) => {
