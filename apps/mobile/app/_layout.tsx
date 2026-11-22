@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { UpdateBanner } from '../src/ui/UpdateBanner';
 import { InstallPromptProvider } from '../src/lib/installPrompt';
 import { useEffect } from 'react';
@@ -18,5 +19,5 @@ import { installErrorReporter, setErrorScreen } from '../src/lib/errorReporter';
 function QueueListener(){useQueueFlush();return null;}
 function Diagnostics(){const path=usePathname();useEffect(()=>{setErrorScreen(path);installErrorReporter();},[path]);return null;}
 const actionRoutes = new Set(['/capture', '/scan', '/identify', '/add', '/add/review']);
-function Navigation(){const pathname=usePathname();const {colors}=useTheme();return <ToastProvider><Diagnostics/><QueueListener/><StatusBar style="dark"/><EdgeSwipeBack><Stack screenLayout={({children})=>actionRoutes.has(pathname)?<SafeAreaView edges={['top','left','right','bottom']} style={{flex:1,backgroundColor:colors.ground}}>{children}</SafeAreaView>:children} screenOptions={{headerShown:false,contentStyle:{backgroundColor:colors.ground},animation:'none'}}/></EdgeSwipeBack><UpdateBanner/></ToastProvider>;}
+function Navigation(){const pathname=usePathname();const {colors}=useTheme();return <ToastProvider><Diagnostics/><QueueListener/><StatusBar style="dark"/><EdgeSwipeBack><Stack screenLayout={({children})=>actionRoutes.has(pathname)?<SafeAreaView edges={['top','left','right','bottom']} style={{flex:1,backgroundColor:colors.ground}}>{children}</SafeAreaView>:children} screenOptions={{headerShown:false,contentStyle:{backgroundColor:colors.ground},animation:Platform.OS==='web'?'none':'slide_from_right',gestureEnabled:true}}/></EdgeSwipeBack><UpdateBanner/></ToastProvider>;}
 export default function Layout(){useEffect(scheduleScannerPreload, []);const [fontsLoaded,fontError]=useFonts({Manrope_400Regular,Manrope_500Medium,Manrope_600SemiBold,Manrope_700Bold,Manrope_800ExtraBold,BricolageGrotesque_700Bold,BricolageGrotesque_800ExtraBold});return <SafeAreaProvider><ThemeProvider><InstallPromptProvider><StartupGate ready={fontsLoaded} error={fontError}>{(fontsLoaded||fontError)&&<Navigation/>}</StartupGate></InstallPromptProvider></ThemeProvider></SafeAreaProvider>;}

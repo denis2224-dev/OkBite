@@ -1,7 +1,10 @@
 import {
+  Carbonation,
   IdentifyResponse,
+  inferFrontWaterMeta,
   normalizeCode,
   type Candidate,
+  type Carbonation as CarbonationType,
   type FrontRead,
 } from '@okbite/shared';
 import { randomUUID } from 'expo-crypto';
@@ -24,6 +27,8 @@ export type AddRouteParams = {
   frontPhotoId?: string;
   unknownDraftId?: string;
   flow?: 'guided' | 'manual';
+  isWater?: '1';
+  carbonation?: CarbonationType;
 };
 
 // U1/U2a/U3 are integrated; keep an explicit rollback switch for older backends.
@@ -43,6 +48,9 @@ export type AddInitialValues = {
   photoPath: string | null;
   frontPhotoId?: string;
   unknownDraftId?: string;
+  isWater?: boolean;
+  carbonation?: CarbonationType | null;
+  categorySlug?: string;
 };
 
 export type IdentifyRouteState =
@@ -55,11 +63,19 @@ const CONFIDENT_SIMILARITY = 0.6;
 
 export const productRoute = (id: string) => `/product/${id}` as const;
 
+/** Compare's photo buttons open the camera with this flag. It travels with the photo until the product page, which then
+ * sends the product back to Compare once it is saved in history. The Scan tab never sets it. */
+export const COMPARE_FLAG = 'forCompare';
+export const compareCaptureRoute = { pathname: '/capture', params: { [COMPARE_FLAG]: '1' } } as const;
+export const compareProductRoute = (id: string) => ({ pathname: '/product/[id]', params: { id, [COMPARE_FLAG]: '1' } }) as const;
+export const isCompareFlag = (raw: string | string[] | undefined): boolean => raw === '1';
+
 export const identifyPhotoRoute = (
   response: IdentifyPayload,
   frontPhotoId?: string,
   unknownDraftId?: string,
   queueId?: string,
+  forCompare = false,
 ) => {
   const cleanFrontPhotoId = cleanParam(frontPhotoId);
   const cleanUnknownDraftId = cleanParam(unknownDraftId);
@@ -72,6 +88,7 @@ export const identifyPhotoRoute = (
       ...(cleanFrontPhotoId ? { frontPhotoId: cleanFrontPhotoId } : {}),
       ...(cleanUnknownDraftId ? { unknownDraftId: cleanUnknownDraftId } : { identifyDraftId }),
       ...(queueId ? { queueId } : {}),
+      ...(forCompare ? { [COMPARE_FLAG]: '1' } : {}),
     },
   };
 };
@@ -115,6 +132,13 @@ export function addProductRoute({
   const cleanUnknownDraftId = cleanParam(unknownDraftId);
   const resolvedFlow = flow ?? (isGuidedAddEnabled() ? 'guided' : undefined);
 
+  const waterMeta = inferFrontWaterMeta({
+    brand,
+    name,
+    isWater: read.isWater,
+    carbonation: read.carbonation ?? null,
+  });
+
   if (code) params.code = code;
   if (brand) params.brand = brand;
   if (name) params.name = name;
@@ -124,6 +148,8 @@ export function addProductRoute({
   if (cleanFrontPhotoId) params.frontPhotoId = cleanFrontPhotoId;
   if (cleanUnknownDraftId) params.unknownDraftId = cleanUnknownDraftId;
   if (resolvedFlow) params.flow = resolvedFlow;
+  if (waterMeta.isWater) params.isWater = '1';
+  if (waterMeta.carbonation) params.carbonation = waterMeta.carbonation;
   return { pathname: '/add', params };
 }
 
@@ -134,13 +160,24 @@ export function parseAddParams(
   const rawCode = cleanParam(raw.code);
   const frontPhotoId = cleanParam(raw.frontPhotoId);
   const unknownDraftId = cleanParam(raw.unknownDraftId);
+  const brand = cleanParam(raw.brand);
+  const name = cleanParam(raw.name);
+  const parsedCarbonation = Carbonation.safeParse(cleanParam(raw.carbonation));
+  const waterMeta = inferFrontWaterMeta({
+    brand,
+    name,
+    isWater: raw.isWater === '1',
+    carbonation: parsedCarbonation.success ? parsedCarbonation.data : null,
+  });
   return {
     ...(cleanParam(raw.queueId) ? { queueId: cleanParam(raw.queueId)! } : {}),
     ...(frontPhotoId ? { frontPhotoId } : {}),
     ...(unknownDraftId ? { unknownDraftId } : {}),
+    ...(waterMeta.isWater ? { isWater: true, categorySlug: 'apa' } : {}),
+    ...(waterMeta.carbonation ? { carbonation: waterMeta.carbonation } : {}),
     code: rawCode ? normalizeCode(rawCode) : null,
-    brand: cleanParam(raw.brand),
-    name: cleanParam(raw.name),
+    brand,
+    name,
     quantity: cleanParam(raw.quantity),
     photoPath: cleanParam(raw.photoPath),
   };

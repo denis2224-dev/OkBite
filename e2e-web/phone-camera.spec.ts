@@ -61,14 +61,16 @@ test('repeated capture and scan navigation preserves React hook ordering', async
   const errors = errorsOn(page);
   await page.goto(app + '/');
   for (let i = 0; i < 2; i++) {
-    await page.getByRole('button', { name: 'Fotografiază eticheta', exact: true }).click();
-    await expect(page).toHaveURL(/\/capture$/);
+    // The camera is opened from Comparație now: the Scan tab is only the camera.
+    await page.getByRole('tab', { name: 'Compară', exact: true }).click();
+    await page.getByRole('button', { name: 'Fotografiază un produs', exact: true }).click();
+    await expect(page).toHaveURL(/\/capture(\?forCompare=1)?$/);
     await page.goBack(); // pages have no back arrow; browser back / edge swipe go back
-    await expect(page.getByRole('tab', { name: 'Scanează', exact: true })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('tab', { name: 'Compară', exact: true })).toHaveAttribute('aria-selected', 'true');
     await page.getByRole('tab', { name: 'Istoric', exact: true }).click();
     await page.getByRole('tab', { name: 'Scanează', exact: true }).click();
     await expect(page).toHaveURL(app + '/');
-    await expect(page.getByRole('button', { name: 'Introdu codul', exact: true })).toBeVisible();
+    await expect(page.getByTestId('scan-preview')).toBeVisible();
   }
   expect(errors).toEqual([]);
 });

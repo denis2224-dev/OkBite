@@ -5,5 +5,5 @@ it.each([
   ['excellent', light.good, light.goodBg], ['good', light.goodTier, light.goodBg], ['fair', light.medium, light.mediumBg],
   ['poor', light.low, light.lowBg], ['bad', light.low, light.lowBg],
 ] as const)('colours the %s tier with its grade tone', (tier, fg, bg) => {
-  expect(tierTone(tier)).toEqual({ fg, bg });
+  expect(tierTone(tier)).toMatchObject({ fg, bg });
 });

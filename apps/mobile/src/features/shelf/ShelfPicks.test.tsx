@@ -1,5 +1,6 @@
 import React from 'react';
-import { AccessibilityInfo, Animated } from 'react-native';
+import { AccessibilityInfo, Animated, StyleSheet } from 'react-native';
+import { light, radii } from '../../theme/tokens';
 import { render, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { ro } from '../../copy/ro';
@@ -36,21 +37,27 @@ it('shows the title and every shelf as a button, in order, with the first one se
   await screen.findByRole('button', { name: rowLabel(yogurts[0]!) });
 });
 
-it('lists the top products of the first shelf with score, tier, the best-choice pill and the score notes', async () => {
+it('lists the top products of the first shelf as grade rows in a soft card, with no labels or notes', async () => {
   await render(<ShelfPicks />);
-  expect(await screen.findByRole('header', { name: ro.scan.shelf.top(ro.scan.shelf.names.iaurt) })).toBeTruthy();
   expect(yogurts).toHaveLength(3);
   for (const pick of yogurts) {
-    expect(screen.getByRole('button', { name: rowLabel(pick) })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: rowLabel(pick) })).toBeTruthy();
     expect(screen.getByText(pick.product.name)).toBeTruthy();
-    expect(screen.getByText(`${pick.product.brand}, ${pick.product.quantity}`)).toBeTruthy();
     expect(screen.getAllByText(String(pick.score), { includeHiddenElements: true }).length).toBeGreaterThan(0);
   }
-  expect(screen.getByText(ro.scan.shelf.count(3))).toBeTruthy();
-  expect(screen.getAllByText(ro.scan.shelf.best)).toHaveLength(1);
+  expect(StyleSheet.flatten(screen.getByTestId('shelf-card').props.style)).toMatchObject({ backgroundColor: light.surface, borderRadius: radii.card });
   expect(screen.getByRole('button', { name: rowLabel(yogurts[0]!) }).props.accessibilityLabel).toContain(ro.scan.shelf.best);
-  expect(screen.getByText(ro.score.disclaimer)).toBeTruthy();
-  expect(screen.getByText(ro.scan.shelf.ranking)).toBeTruthy();
+  for (const text of [ro.scan.shelf.top(ro.scan.shelf.names.iaurt), ro.scan.shelf.count(3), ro.scan.shelf.best, ro.score.disclaimer, ro.scan.shelf.ranking, `${yogurts[0]!.product.brand}, ${yogurts[0]!.product.quantity}`]) {
+    expect(screen.queryByText(text)).toBeNull();
+  }
+});
+
+it('shelf buttons change colour only when selected', async () => {
+  await render(<ShelfPicks />);
+  const ring = (slug: keyof typeof ro.scan.shelf.names) => StyleSheet.flatten(screen.getByTestId(`shelf-circle-${slug}`, { includeHiddenElements: true }).props.style);
+  const shape = (style: Record<string, unknown>) => Object.fromEntries(Object.entries(style).filter(([key]) => !['backgroundColor', 'borderColor', 'color', 'boxShadow'].includes(key)));
+  expect(shape(ring('iaurt'))).toEqual(shape(ring('biscuiti')));
+  expect(ring('iaurt').borderColor).toBe(light.primary);
 });
 
 it('switches shelf: the selection, the header and the rows change; going back does not ask again', async () => {
@@ -59,7 +66,6 @@ it('switches shelf: the selection, the header and the rows change; going back do
   await fireEvent.press(shelf('biscuiti'));
   expect(shelf('biscuiti').props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));
   expect(shelf('iaurt').props.accessibilityState).toEqual(expect.objectContaining({ selected: false }));
-  expect(await screen.findByRole('header', { name: ro.scan.shelf.top(ro.scan.shelf.names.biscuiti) })).toBeTruthy();
   expect(await screen.findByRole('button', { name: rowLabel(biscuits[0]!) })).toBeTruthy();
   expect(screen.queryByText(yogurts[0]!.product.name)).toBeNull();
   await fireEvent.press(shelf('iaurt'));
@@ -85,7 +91,6 @@ it('says the shelf is empty when it has no products, or none with a score', asyn
   await render(<ShelfPicks />);
   await fireEvent.press(shelf('suc')); // the sample juice has no score
   expect(await screen.findByText(ro.scan.shelf.empty)).toBeTruthy();
-  expect(screen.getByText(ro.scan.shelf.emptyHint)).toBeTruthy();
   expect(screen.queryByText(ro.score.disclaimer)).toBeNull();
   await fireEvent.press(shelf('apa'));
   expect(await screen.findByText(ro.scan.shelf.empty)).toBeTruthy();

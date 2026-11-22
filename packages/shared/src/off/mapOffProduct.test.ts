@@ -280,6 +280,43 @@ describe('inferCategorySlug everyday categories', () => {
     expect(slug(['en:alcoholic-beverages', 'en:beers'])).toBe('necunoscut');
     expect(slug(['en:dietary-supplements'])).toBe('necunoscut');
   });
+
+  it('maps OFF water with empty ingredients and extracts water carbonation & minerals in mg/L', () => {
+    const evianOff = {
+      code: '3068320085005',
+      product_name: 'Evian Natural Mineral Water',
+      brands: 'Evian',
+      quantity: '1.5 L',
+      ingredients_text: '',
+      lang: 'ro',
+      nutrition_data_per: '100ml',
+      product_quantity_unit: 'ml',
+      categories_tags: ['en:waters', 'en:spring-waters', 'en:mineral-waters', 'en:non-carbonated-waters'],
+      nutriments: {
+        sodium_100g: 0.00065,
+        calcium_100g: 0.008,
+        magnesium_100g: 0.0026,
+        bicarbonate_100g: 0.036,
+        sulfate_100g: 0.0014,
+        chloride_100g: 0.001,
+        nitrate_100g: 0.00038,
+      },
+    };
+    const mapped = mapOffProduct(evianOff);
+    expect(mapped).not.toBeNull();
+    expect(mapped!.categorySlug).toBe('apa');
+    expect(mapped!.water).toMatchObject({
+      carbonation: 'still',
+      caMgL: 80,
+      mgMgL: 26,
+      naMgL: 6.5,
+      hco3MgL: 360,
+      so4MgL: 14,
+      clMgL: 10,
+      no3MgL: 3.8,
+    });
+    expect(toRow(mapped!).water).toEqual(mapped!.water);
+  });
 });
 
 describe('offImageUrl', () => {

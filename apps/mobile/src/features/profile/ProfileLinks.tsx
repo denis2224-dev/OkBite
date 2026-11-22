@@ -1,12 +1,13 @@
 import { router } from 'expo-router';
 import { ro } from '../../copy/ro';
-import { Card } from '../../ui/Card';
-import { LinkRow } from '../../ui/LinkRow';
+import { SoftCard } from '../../ui/SoftCard';
+import { SettingsRow } from '../../ui/SettingsRow';
 
-/** Settings and About left the tab bar; Profil is where they open from. */
+/** Alergii, Setări and Despre as settings rows; Setări and Despre left the tab bar and open from here. */
 export function ProfileLinks() {
- return <Card style={{ paddingVertical: 4, gap: 0 }}>
-  <LinkRow label={ro.nav.settings} icon="sun" onPress={() => router.push('/settings')} />
-  <LinkRow label={ro.nav.about} icon="info" last onPress={() => router.push('/about')} />
- </Card>;
+  return <SoftCard style={{ paddingVertical: 4, gap: 0 }}>
+    <SettingsRow first icon="shield" title={ro.profile.myAllergies} onPress={() => router.navigate('/allergies')} />
+    <SettingsRow icon="sun" title={ro.nav.settings} onPress={() => router.push('/settings')} />
+    <SettingsRow icon="info" title={ro.nav.about} onPress={() => router.push('/about')} />
+  </SoftCard>;
 }

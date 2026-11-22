@@ -1,9 +1,11 @@
 // The label prompt (R3 plan D5 step 4, U3 modes): text and numbers exactly as printed, never estimated.
 import { NUTRIENT_KEYS } from '../_shared/contract.ts';
 import type { LabelAsk } from './parseLabel.ts';
+import { WATER_PROMPT } from './waterLabel.ts';
 
 // Only the parts the shopper photographed are asked for, so the model never fills the others.
 export function labelPrompt(ask: LabelAsk): string {
+  if (ask.kind === 'water') return WATER_PROMPT;
   const nutrition = ask.nutrition === 'same_photo' || ask.nutrition === 'separate';
   const lines = !ask.ingredients
     ? ['Photo 1: nutrition table.']

@@ -2,7 +2,7 @@ import * as native from 'react-native';
 import { AccessibilityInfo, Animated, StyleSheet } from 'react-native';
 import { render, screen, waitFor } from '@testing-library/react-native';
 import { ScoreTag } from './ScoreTag';
-import { light } from '../../theme/tokens';
+import { light, typeScale } from '../../theme/tokens';
 import { ro } from '../../copy/ro';
 
 const flat = (testID: string) => StyleSheet.flatten(screen.getByTestId(testID, { includeHiddenElements: true }).props.style);
@@ -19,11 +19,11 @@ it('reads its label once and hides the drawn parts from screen readers', async (
   expect(screen.getByText(ro.score.outOf, { includeHiddenElements: true })).toBeTruthy();
 });
 
-it('fills the body with the tier colour and prints the number in white', async () => {
+it('fills the body with the tier fill and prints the number in the tier text colour', async () => {
   jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
   await render(<ScoreTag score={41} tier="poor" label="x" testID="tag" />);
-  expect(flat('tag-body').backgroundColor).toBe(light.low);
-  expect(StyleSheet.flatten(screen.getByText('41', { includeHiddenElements: true }).props.style)).toMatchObject({ fontSize: 40, lineHeight: 44, color: light.onPrimary });
+  expect(flat('tag-body').backgroundColor).toBe(light.dangerBg);
+  expect(StyleSheet.flatten(screen.getByText('41', { includeHiddenElements: true }).props.style)).toMatchObject({ fontSize: typeScale.score.fontSize, lineHeight: typeScale.score.lineHeight, color: light.dangerText });
 });
 
 it('grows with 200% text instead of fixing its size', async () => {

@@ -6,10 +6,12 @@ import { ro } from '../../src/copy/ro';
 jest.mock('../../src/lib/preview', () => ({ isPreview: true }));
 const Blank = () => null;
 // Demo mode must use the real capture and scan routes, never the missing /preview route.
-it('in demo mode the photo fallback opens /capture', async () => {
+it('in demo mode the Scan tab is only the camera with its light and close-up buttons', async () => {
  await renderRouter({ index: ScanTab, capture: Blank, scan: ScanRoute });
- await fireEvent.press(await screen.findByRole('button', { name: 'Fotografiază eticheta' }));
- expect(screen).toHavePathname('/capture');
+ expect(await screen.findByRole('button', { name: ro.scan.flashOn })).toBeTruthy();
+ expect(screen.getByRole('button', { name: ro.scan.closeUpOn })).toBeTruthy();
+ expect(screen.queryByRole('button', { name: 'Fotografiază eticheta' })).toBeNull();
+ expect(screen).toHavePathname('/');
 });
 it('in demo mode /scan remains directly reachable with its manual fallback', async () => {
  await renderRouter({ index: ScanTab, capture: Blank, scan: ScanRoute }, { initialUrl: '/scan' });

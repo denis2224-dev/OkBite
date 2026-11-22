@@ -52,12 +52,12 @@ async function review(page: Page, choice: string) {
 async function result(page: Page, id: string, scored = false) {
   await expect(page).toHaveURL(new RegExp(`/product/${id}$`));
   await expect(page.getByRole('heading', { name: example.product.name, exact: true })).toBeVisible();
-  await expect(page.getByText(ro.result.unverifiedNote, { exact: true }).filter({ visible: true })).toBeVisible();
-  // Declared allergens live in the Compoziție card of the B8 result.
-  await expect(page.getByTestId('composition-card').getByText(ro.result.allergens, { exact: true }).filter({ visible: true })).toBeVisible();
+  // The source note, the Compoziție card and the disclaimer are no longer on the result page.
+  await expect(page.getByText(ro.result.unverifiedNote, { exact: true })).toHaveCount(0);
+  await expect(page.getByTestId('composition-card')).toHaveCount(0);
   if (scored) {
     await expect(page.getByTestId('product-score')).toHaveAccessibleName(/^\d+ din 100 · \S/);
-    await expect(page.getByText(ro.score.disclaimer, { exact: true }).filter({ visible: true })).toBeVisible();
+    await expect(page.getByText(ro.score.disclaimer, { exact: true })).toHaveCount(0);
   } else {
     await expect(page.getByText(ro.result.scoreUnavailable, { exact: true })).toBeVisible();
     await expect(page.getByTestId('product-score')).toHaveCount(0);

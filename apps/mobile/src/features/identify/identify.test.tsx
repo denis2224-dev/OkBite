@@ -112,6 +112,14 @@ describe('IdentifyScreen and B3 flow', () => {
     await fireEvent.press(screen.getByRole('button', { name: ro.identify.confirmYes }));
     expect(resolveQueued).toHaveBeenCalledWith('queued-id');
   });
+  it('sends a confirmed product back to Compare when the photo came from Compare', async () => {
+    const response = { status: 'candidates' as const, read: ORIGINAL_READ, photoPath: PHOTO_PATH, candidates: [CAND_1] };
+    mockParams.value = identifyPhotoRoute(response, undefined, undefined, undefined, true).params;
+    expect(mockParams.value.forCompare).toBe('1');
+    await render(<IdentifyScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.identify.confirmYes }));
+    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/product/[id]', params: { id: CAND_1.id, forCompare: '1' } });
+  });
   it.each([false, true])('clears a confirmed draft while protecting newer shared photos: %s', async sharesPhoto => {
     jest.mocked(loadUnknownDraft).mockResolvedValueOnce({ version: 1, id: 'confirmed-draft',
       initial: { ...ORIGINAL_READ, photoPath: PHOTO_PATH }, stage: 'ingredients', nutritionMode: null,

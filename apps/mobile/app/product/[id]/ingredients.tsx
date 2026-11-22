@@ -21,7 +21,7 @@ export default function Ingredients() {
     {error && <Body accessibilityLiveRegion="polite">{error.message}</Body>}
     {product?.status === 'hidden' && <Body>{ro.result.notFound}</Body>}
     {product && product.status !== 'hidden' && <>
-      <Body>{product.name} · {product.brand}</Body>
+      <Body>{product.name}, {product.brand}</Body>
       {product.status === 'unverified' && <Badge tone="unverified">{ro.result.unverified}</Badge>}
       <Card><Body>{ro.result.allergens}</Body>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{product.allergens.map(name => <AllergenChip key={name} name={name} />)}</View>

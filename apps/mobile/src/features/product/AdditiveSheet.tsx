@@ -9,13 +9,13 @@ import { ro } from '../../copy/ro';
 import { getLanguage } from '../../copy/lang';
 import { ReportSheet } from './ReportSheet';
 
-// "E129 · Colorant" above the name, as in the mockup. The E-number comes from the knowledge-base
+// "E129, Colorant" above the name, as in the mockup. The E-number comes from the knowledge-base
 // slug ("aspartam-e951" -> "E951") and is left out when the name or role already shows it.
 function eyebrow({ slug, name, role }: Ingredient): string {
   const digits = slug?.match(/-e(\d{3}[a-z]?)$/)?.[1];
   const shown = `${name} ${role ?? ''}`.toUpperCase();
   const code = digits && !shown.includes(`E${digits.toUpperCase()}`) ? `E${digits}` : null;
-  return [code, role].filter(Boolean).join(' · ');
+  return [code, role].filter(Boolean).join(', ');
 }
 
 export function RiskChip({ risk }: { risk: Ingredient['risk'] }) {
