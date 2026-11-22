@@ -251,7 +251,7 @@ test('shows retry guidance and explicit retry after a pending front identify rej
   expect(screen.getByText(ro.add.ingredientsTitle)).toBeTruthy();
 });
 
-test('shows >55 s pending message during label read, then retry guidance on late failure and navigates on retry', async () => {
+test.each(['upstream_failed', 'analysis_timeout'] as const)('recovers a pending guided label read after %s only on explicit retry', async code => {
   let rejectLate!: (err: unknown) => void;
   jest.mocked(api.readLabelOutcome)
     .mockResolvedValueOnce(pendingOutcome(new Promise((_r, reject) => { rejectLate = reject; })) as never)
@@ -265,10 +265,16 @@ test('shows >55 s pending message during label read, then retry guidance on late
   expect(screen.getByText(ro.pwa.analysis.unknown)).toBeTruthy();
   expect(screen.queryByRole('button', { name: ro.add.retryRead })).toBeNull();
 
-  await act(async () => {
-    rejectLate(Object.assign(new Error('upstream'), { code: 'upstream_failed' }));
-  });
-  expect(screen.getByText(new RegExp(ro.pwa.analysis.retry))).toBeTruthy();
+  await act(async () => { rejectLate(Object.assign(new Error(code), { code })); });
+  expect(screen.getByText(ro.errors[code], { exact: false })).toBeTruthy();
+  expect(screen.getByText(ro.pwa.analysis.retry, { exact: false })).toBeTruthy();
+  expect(screen.getByRole('button', { name: ro.add.manualEntry })).toBeTruthy();
+  expect(api.readLabelOutcome).toHaveBeenCalledTimes(1);
+  expect(mockReplace).not.toHaveBeenCalled();
+
   await fireEvent.press(screen.getByRole('button', { name: ro.add.retryRead }));
+  expect(api.readLabelOutcome).toHaveBeenCalledTimes(2);
+  const calls = jest.mocked(api.readLabelOutcome).mock.calls;
+  expect(calls[1]).toEqual(calls[0]);
   expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add/review', params: { unknownDraftId: 'draft-id' } });
 });

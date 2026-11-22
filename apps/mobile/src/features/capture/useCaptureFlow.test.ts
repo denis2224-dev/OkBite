@@ -331,7 +331,11 @@ describe('useCaptureFlow', () => {
     expect(FileSystem.deleteAsync).toHaveBeenCalledWith('file:///doc/okbite-queue/front-capture-uuid.jpg', { idempotent: true });
   });
 
-  it('re-enables retry after a late rejection on a pending analysis', async () => {
+  it.each([
+    { code: 'upstream_failed', status: 'error' },
+    { code: 'analysis_timeout', status: 'error' },
+    { code: 'offline', status: 'offline' },
+  ] as const)('keeps the photo and requires an explicit retry after pending analysis fails with $code', async ({ code, status }) => {
     const delayed = deferred<typeof identifyFound>();
     identifyOutcome
       .mockResolvedValueOnce(pendingOutcome(delayed.promise))
@@ -341,11 +345,15 @@ describe('useCaptureFlow', () => {
     await act(async () => { run = result.current.takePhoto(photo); });
     expect(result.current.canRetry).toBe(false);
     await act(async () => {
-      delayed.reject(Object.assign(new Error('upstream'), { code: 'upstream_failed' }));
+      delayed.reject(Object.assign(new Error(code), { code }));
       await run;
     });
-    expect(result.current.state).toEqual({ status: 'error', code: 'upstream_failed', afterPending: true });
+    expect(result.current.state).toEqual({ status, ...(status === 'error' ? { code } : {}), afterPending: true });
+    expect(result.current.photoUri).toBe('file:///shot.jpg');
     expect(result.current.canRetry).toBe(true);
+    expect(enqueue).not.toHaveBeenCalled();
+    expect(identifyOutcome).toHaveBeenCalledTimes(1);
+    expect(mockReplace).not.toHaveBeenCalled();
     await act(async () => { await result.current.retry(); });
     expect(identifyOutcome).toHaveBeenCalledTimes(2);
     expect(mockReplace).toHaveBeenCalledWith(`/product/${PRODUCT_ID}`);

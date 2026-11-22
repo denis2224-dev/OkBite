@@ -8,6 +8,7 @@ import { fonts } from '../../theme/tokens';
 export const errorMessage = (code?: string): string => {
   switch (code) {
     case 'offline': return ro.errors.offline;
+    case 'analysis_timeout': return ro.errors.analysis_timeout;
     case 'invalid_response': return ro.errors.invalid_response;
     case 'rate_limited': return ro.errors.rate_limited;
     case 'bad_request': return ro.errors.bad_request;

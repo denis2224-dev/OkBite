@@ -549,7 +549,7 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
     expect(mockReplace).toHaveBeenCalledWith('/add/review');
   });
 
-  it('shows retry guidance and re-enables explicit retry on preserved photos after a pending read rejects', async () => {
+  it.each(['upstream_failed', 'analysis_timeout'] as const)('shows retry guidance and uses the preserved photos after %s', async code => {
     let rejectLate!: (err: unknown) => void;
     mockReadLabel
       .mockResolvedValueOnce(pendingOutcome(new Promise((_resolve, reject) => { rejectLate = reject; })))
@@ -561,12 +561,16 @@ describe('AddCaptureScreen, useAddFlow and /add -> /add/review route integration
     await fireEvent.press(screen.getByRole('button', { name: ro.add.samePhoto }));
     expect(await screen.findByTestId('add-pending-analysis')).toBeTruthy();
 
-    await act(async () => { rejectLate(Object.assign(new Error('upstream'), { code: 'upstream_failed' })); });
+    await act(async () => { rejectLate(Object.assign(new Error(code), { code })); });
     expect(screen.getByTestId('add-error-recovery')).toBeTruthy();
-    expect(screen.getByText(new RegExp(ro.pwa.analysis.retry))).toBeTruthy();
+    expect(screen.getByText(ro.errors[code], { exact: false })).toBeTruthy();
+    expect(screen.getByText(ro.pwa.analysis.retry, { exact: false })).toBeTruthy();
+    expect(mockReadLabel).toHaveBeenCalledTimes(1);
+    expect(mockReplace).not.toHaveBeenCalled();
 
     await fireEvent.press(screen.getByRole('button', { name: ro.errors.retry }));
     expect(mockReadLabel).toHaveBeenCalledTimes(2);
+    expect(mockReadLabel.mock.calls[1]).toEqual(mockReadLabel.mock.calls[0]);
     expect(mockReplace).toHaveBeenCalledWith('/add/review');
   });
 });
