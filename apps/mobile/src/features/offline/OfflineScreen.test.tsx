@@ -35,3 +35,9 @@ it('requires confirmation before releasing a queued capture', async () => {
   await waitFor(() => expect(completeQueued).toHaveBeenCalledWith('queued'));
   await waitFor(() => expect(screen.getByText(ro.offline.emptyQueue)).toBeTruthy());
 });
+
+it('does not repeat the offline explanation above the queue', async () => {
+  await render(<OfflineScreen />);
+  await waitFor(() => expect(screen.getByText(ro.errors.rate_limited)).toBeTruthy());
+  expect(screen.queryByText(/Căutările se trimit când revine internetul/)).toBeNull();
+});

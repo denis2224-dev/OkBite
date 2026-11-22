@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { SettingsScreen } from './SettingsScreen';
 import { ThemeProvider } from '../../theme/useTheme';
@@ -17,7 +18,7 @@ beforeEach(() => {
 });
 it('keeps missing language/reset integrations explicit and offers no theme choice', async () => {
   await render(<SettingsScreen />, { wrapper: ThemeProvider });
-  expect(screen.getByRole('button', { name: ro.settings.english })).toBeDisabled();
+  expect(screen.getByRole('button', { name: ro.settings.language })).toBeDisabled();
   expect(screen.getByText(ro.settings.pending)).toBeTruthy();
   expect(screen.queryByText(ro.settings.resetOnboarding)).toBeNull();
   for (const label of ['După telefon', 'Luminos', 'Întunecat', 'Aspect']) expect(screen.queryByText(label)).toBeNull();
@@ -25,9 +26,13 @@ it('keeps missing language/reset integrations explicit and offers no theme choic
 it('passes language choices to N17 and opens existing legal destinations', async () => {
   const setLanguage = jest.fn();
   await render(<SettingsScreen currentLanguage="en" setLanguage={setLanguage} />);
+  expect(screen.queryByRole('button', { name: ro.settings.russian })).toBeNull(); // the choices open from the Language row
+  await fireEvent.press(screen.getByRole('button', { name: ro.settings.language }));
   expect(screen.getByRole('button', { name: ro.settings.english }).props.accessibilityState.selected).toBe(true);
   await fireEvent.press(screen.getByRole('button', { name: ro.settings.russian }));
   expect(setLanguage).toHaveBeenCalledWith('ru');
+  expect(screen.queryByRole('button', { name: ro.settings.romanian })).toBeNull(); // the list closes after a choice
+  await fireEvent.press(screen.getByRole('button', { name: ro.settings.language }));
   await fireEvent.press(screen.getByRole('button', { name: ro.settings.romanian }));
   expect(setLanguage).toHaveBeenCalledWith('ro');
   for (const [label, path] of [[ro.settings.method, '/method'], [ro.settings.privacy, '/privacy'], [ro.settings.terms, '/terms']]) {
@@ -81,12 +86,39 @@ it('prevents duplicate deletion or cancellation while storage is busy', async ()
   await act(() => { finish(); });
   expect(screen.getByText(ro.history.cleared)).toBeTruthy();
 });
-it('orders the groups Language, App (clear history last), Info with sentence-case headings', async () => {
+it('is a grouped list: Profile, Language, App, Information, with only the existing rows', async () => {
   await render(<SettingsScreen setLanguage={jest.fn()} resetOnboarding={jest.fn()} />);
-  const headings = screen.getAllByRole('header').map(h => h.props.children);
-  expect(headings).toEqual([ro.settings.title, ro.settings.language, ro.settings.app, ro.settings.info]);
-  expect(ro.settings.language).toBe('Limbă');
+  expect(screen.getAllByRole('header').map(h => h.props.children)).toEqual([ro.settings.title, ro.settings.groupProfile, ro.settings.groupLanguage, ro.settings.groupApp, ro.settings.groupInfo]);
   const names = screen.getAllByRole('button').map(b => b.props.accessibilityLabel).filter(n => n !== 'Înapoi');
-  expect(names).toEqual([ro.settings.romanian, ro.settings.russian, ro.settings.english, ro.settings.install, ro.settings.resetOnboarding, ro.settings.clearHistory, ro.settings.method, ro.settings.privacy, ro.settings.terms]);
+  expect(names).toEqual([ro.allergies.dietaryTitle, ro.allergies.allergenPrefsTitle, ro.settings.language, ro.settings.install, ro.settings.resetOnboarding, ro.settings.clearHistory, ro.settings.method, ro.settings.privacy, ro.settings.terms]);
   expect(screen.getByText(ro.settings.version, { exact: false })).toBeTruthy();
+});
+it('shows no count or "selected" text on the preference rows, and only Language shows a value', async () => {
+  await render(<SettingsScreen currentLanguage="en" setLanguage={jest.fn()} />);
+  expect(screen.queryByText(/selected|selectat|выбран/i)).toBeNull();
+  expect(screen.getByText(ro.settings.english)).toBeTruthy(); // the current language, on the Language row
+  for (const label of [ro.allergies.dietaryTitle, ro.allergies.allergenPrefsTitle]) {
+    const row = screen.getByRole('button', { name: label });
+    expect(within(row).getAllByText(/./)).toHaveLength(1); // the label only
+  }
+});
+it('keeps every row label on one line', async () => {
+  await render(<SettingsScreen setLanguage={jest.fn()} resetOnboarding={jest.fn()} />);
+  for (const label of [ro.allergies.dietaryTitle, ro.allergies.allergenPrefsTitle, ro.settings.language, ro.settings.install, ro.settings.clearHistory, ro.settings.method, ro.settings.privacy, ro.settings.terms]) {
+    const text = within(screen.getByRole('button', { name: label })).getByText(label);
+    expect(text.props.numberOfLines).toBe(1);
+    expect(text.props.adjustsFontSizeToFit).toBe(true);
+  }
+});
+it('opens the two preference pages from the Profile group', async () => {
+  await render(<SettingsScreen />);
+  await fireEvent.press(screen.getByRole('button', { name: ro.allergies.dietaryTitle }));
+  expect(router.push).toHaveBeenLastCalledWith('/preferences/dietary');
+  await fireEvent.press(screen.getByRole('button', { name: ro.allergies.allergenPrefsTitle }));
+  expect(router.push).toHaveBeenLastCalledWith('/preferences/allergens');
+});
+it('draws the groups as small grey labels over white rounded cards, with a green icon tile on each row', async () => {
+  await render(<SettingsScreen />);
+  expect(screen.getAllByTestId('link-row-icon').length).toBeGreaterThanOrEqual(8);
+  expect(StyleSheet.flatten(screen.getByText(ro.settings.groupProfile).props.style)).toMatchObject({ textTransform: 'uppercase', fontSize: 12 });
 });

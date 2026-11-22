@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { describe, it, expect, jest, beforeAll, beforeEach, afterEach } from '@jest/globals';
-import { render, fireEvent, screen, act, within } from '@testing-library/react-native';
+import { render, fireEvent, screen, act, within, waitFor } from '@testing-library/react-native';
 import {
   AddProductRequest,
   CategoryEntry,
@@ -773,5 +773,56 @@ describe('ReviewForm, CategoryPicker and /add/review route (B7)', () => {
     expect(mockReplace).not.toHaveBeenCalled();
     expect(saveToHistory).toHaveBeenCalledWith(SAVED_LOOKUP);
     expect(completeQueued).toHaveBeenCalledWith('draft-a');
+  });
+
+  it('switches ReviewForm to WaterFields when Apă is selected, allows empty ingredients, and submits water profile', async () => {
+    const onSubmit = jest.fn<(req: AddProductRequestType) => void>();
+    await render(
+      <ReviewForm
+        label={{ ...BASE_LABEL, ingredientsText: null, unit: null }}
+        initial={{ ...BASE_INITIAL, name: 'Apă de izvor', quantity: '1500 ml' }}
+        categories={getAvailableCategories()}
+        onSubmit={onSubmit}
+      />,
+    );
+    expect(screen.getByRole('button', { name: ro.review.save }).props.accessibilityState?.disabled).toBe(true);
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Apă` }));
+    expect(screen.getByTestId('water-fields')).toBeTruthy();
+    expect(screen.getByRole('button', { name: ro.review.save }).props.accessibilityState?.disabled).toBe(false);
+    await fireEvent.changeText(screen.getByLabelText(ro.result.water.phLabel), '7,8');
+    await fireEvent.changeText(screen.getByLabelText(ro.result.water.tdsLabel), '250');
+    await fireEvent.press(screen.getByRole('button', { name: ro.result.water.carbonation.still }));
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({
+      categorySlug: 'apa',
+      unit: 'ml',
+      ingredientsText: '',
+      water: expect.objectContaining({ carbonation: 'still', ph: 7.8, tdsMgL: 250 }),
+    });
+  });
+
+  it('hides the g/ml selector and locks unit to ml in ReviewForm when Apă is chosen over unit g', async () => {
+    const onSubmit = jest.fn<(req: AddProductRequestType) => void>();
+    await render(
+      <ReviewForm
+        label={{ ...BASE_LABEL, ingredientsText: null, unit: 'g' }}
+        initial={{ ...BASE_INITIAL, name: 'Apă minerală', quantity: '1500 ml' }}
+        categories={getAvailableCategories()}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: ro.compare.per100('g') })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: `${ro.review.category}: Apă` }));
+    expect(screen.queryByRole('button', { name: ro.compare.per100('g') })).toBeNull();
+    expect(screen.queryByRole('button', { name: ro.compare.per100('ml') })).toBeNull();
+
+    await fireEvent.press(screen.getByRole('button', { name: ro.review.save }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({
+      categorySlug: 'apa',
+      unit: 'ml',
+    });
   });
 });

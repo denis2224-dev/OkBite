@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OkBite – Option A final</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--page:#E9E6DD;--ink:#1C2420;--muted:#56615A}
+*{box-sizing:border-box;margin:0}
+body{background:var(--page);color:var(--ink);font-family:Manrope,system-ui,sans-serif;padding:32px 0 64px}
+.intro,.opt-head{padding:0 32px;max-width:980px}
+h1{font:800 30px/1.1 'Bricolage Grotesque';letter-spacing:-.02em}
+.intro p{margin-top:10px;color:var(--muted);line-height:1.55;max-width:62ch}
+.opt{margin-top:48px}
+.opt-head h2{font:700 22px/1.2 'Bricolage Grotesque'}
+.opt-head p{margin-top:6px;color:var(--muted);line-height:1.5;max-width:70ch;font-size:14px}
+.row{display:flex;gap:22px;overflow-x:auto;padding:22px 32px 12px;scroll-snap-type:x proximity}
+.cell{flex:none;scroll-snap-align:start}
+.cap{font:600 12px Manrope;color:var(--muted);margin:0 0 8px 4px}
+.phone{position:relative;width:288px;height:612px;border-radius:38px;border:7px solid #15191a;overflow:hidden;background:var(--ground);box-shadow:0 18px 40px -18px rgba(0,0,0,.45);isolation:isolate}
+.status{position:absolute;top:0;left:0;right:0;height:40px;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:6px 24px 0;font:700 12px Manrope;color:var(--ink)}
+.status i{display:block;width:62px;height:18px;border-radius:12px;background:#0b0d0c;position:absolute;left:50%;top:9px;transform:translateX(-50%)}
+.phone.dark .status{color:#fff}
+.scroll{position:absolute;inset:0;padding:44px 14px 96px;overflow:hidden}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+/* nav pill, shared */
+.nav{position:absolute;left:14px;right:14px;bottom:12px;height:60px;border-radius:999px;display:flex;align-items:center;justify-content:space-around;padding:0 6px;z-index:6}
+.nav b{width:48px;height:48px;border-radius:50%;display:grid;place-items:center}
+/* shared pieces */
+.t{font-family:'Bricolage Grotesque';font-weight:700}
+.tier{font-weight:700;font-size:12px}
+.ph{display:grid;place-items:center;flex:none;overflow:hidden}
+.verd{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:12px}
+
+.t-ex{color:#1F4A35}.t-go{color:#4F7A1F}.t-fa{color:#6B4600}.t-po{color:#8E3417}
+.p-ex{background:#D5E8CE}.p-go{background:#E1EEDC}.p-fa{background:#FCEFD2}.p-po{background:#FBE3D8}
+.dots{display:flex;gap:4px}.dots u{width:9px;height:9px;border-radius:50%;background:#D9DDD3}
+.dots.n1 u:nth-child(-n+2){background:#8b8b82}.dots.n2 u:nth-child(-n+4){background:#8b8b82}.dots.hi u{background:#E0443E}
+.chev{opacity:.55}
+/* ============ OPTION A  calm list ============ */
+.A{--ground:#F7F4EC;--card:#fff;--prim:#173A2A;--tile:#E3EEDF;--line:#EBEFE8;--lab:#7a8178}
+.A .nav{background:#fff;border:1px solid #DFE5DC;box-shadow:0 6px 18px rgba(0,0,0,.08);color:#56615A}
+.A .nav b.on{background:#173A2A;color:#fff}
+.A .card{background:#fff;border-radius:20px;padding:14px;box-shadow:0 1px 0 rgba(23,58,42,.04),0 8px 20px -14px rgba(23,58,42,.25)}
+.A h3.sec{font:700 12px Manrope;letter-spacing:.14em;text-transform:uppercase;color:#1F4A35;display:flex;align-items:center;gap:10px;margin:18px 2px 8px}
+.A h3.sec:after{content:"";flex:1;height:1px;background:#DDE3D8}
+.A h3.sec em{font-style:normal;background:#EBEFE8;border-radius:8px;padding:2px 8px;letter-spacing:0;color:#173A2A}
+.A .scr-title{font:800 24px 'Bricolage Grotesque';margin:6px 2px 14px;color:#173A2A}
+.A .hrow{display:flex;gap:12px;align-items:center;background:#fff;border-radius:20px;padding:10px;margin-bottom:10px;box-shadow:0 8px 20px -16px rgba(23,58,42,.35)}
+.A .hrow .ph{width:68px;height:68px;border-radius:14px;background:#E3EEDF}
+.A .hrow .sc{font:800 24px/1 'Bricolage Grotesque'}
+.A .hrow .verd{margin-top:5px}
+.A .lrow{display:flex;align-items:center;gap:12px;padding:10px 0;font-size:14px;font-weight:600}
+.A .lrow+.lrow{border-top:1px solid #EEF1EA}
+.A .lrow .tile{width:34px;height:34px;border-radius:10px;background:#E3EEDF;color:#1F4A35;display:grid;place-items:center}
+.A .lrow .val{margin-left:auto;color:#1F4A35;font-weight:600;font-size:13px}
+.A .grp{font:600 11px Manrope;letter-spacing:.12em;text-transform:uppercase;color:#7a8178;margin:16px 6px 7px}
+.A .chip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:#F1F4EC;font-size:12.5px;font-weight:600;margin:0 6px 6px 0}
+.A .chip.sel{background:#E3EEDF;color:#173A2A}
+.A .brief{background:#fff;border-radius:22px;padding:16px;box-shadow:0 10px 24px -16px rgba(23,58,42,.4)}
+.A .brief .hd{display:flex;gap:10px;align-items:flex-start;font:700 15px/1.25 Manrope;color:#8E3417}
+.A .brief ul{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:9px;font-size:13.5px;font-weight:600}
+.A .brief li{display:flex;gap:10px;align-items:center}
+.A .brief li svg{color:#1F4A35}
+.A .brief li.warn svg{color:#8E3417}
+.A .meter{display:flex;align-items:center;justify-content:space-between;padding:11px 0}
+.A .meter+.meter{border-top:1px solid #EEF1EA}
+.A .meter b{font-size:15px}
+.A .meter small{display:block;font-size:12px;color:#56615A;margin-top:2px;font-weight:500}
+.A .meter .v{font:700 15px 'Bricolage Grotesque';text-align:right}
+.A .scan-btn{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:rgba(40,46,44,.55);color:#fff;backdrop-filter:blur(8px)}
+.A .scan-btn.on{background:#fff;color:#173A2A}
+.A .hint{position:absolute;left:18px;right:18px;bottom:88px;border-radius:999px;background:rgba(30,36,34,.78);color:#fff;text-align:center;padding:12px 14px;font:600 14px Manrope;backdrop-filter:blur(8px)}
+/* ============ OPTION B  deep green ============ */
+.B{--ground:#EEF0E6;--prim:#173A2A;--lime:#C8E07A}
+.B .nav{background:#173A2A;color:#9BB3A4;box-shadow:0 10px 24px -8px rgba(23,58,42,.7)}
+.B .nav b.on{background:#C8E07A;color:#173A2A}
+.B .scr-title{font:800 26px 'Bricolage Grotesque';letter-spacing:-.02em;margin:6px 2px 16px}
+.B .hrow{display:flex;gap:14px;align-items:stretch;margin-bottom:12px}
+.B .hrow .ph{width:84px;height:96px;border-radius:18px;background:#fff}
+.B .hrow .meta{flex:1;border-radius:18px;background:#fff;padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:6px}
+.B .hrow .sc{font:800 34px/1 'Bricolage Grotesque'}
+.B .hrow .verd{padding:4px 10px;border-radius:999px;width:max-content}
+.B .hrow .verd:before{display:none}
+.B .brief{background:#173A2A;color:#fff;border-radius:26px;padding:18px;position:relative;overflow:hidden}
+.B .brief:before{content:"";position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;background:#C8E07A;opacity:.14}
+.B .brief .hd{font:800 19px/1.15 'Bricolage Grotesque';letter-spacing:-.01em}
+.B .brief .hd small{display:block;font:600 12px Manrope;color:#C8E07A;margin-bottom:7px}
+.B .brief ul{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:8px;position:relative}
+.B .brief li{display:flex;justify-content:space-between;align-items:center;gap:8px;background:rgba(255,255,255,.08);border-radius:12px;padding:9px 12px;font-size:13px;font-weight:600}
+.B .brief li b{color:#C8E07A}
+.B .brief li.warn b{color:#FFB59A}
+.B .sec{font:800 17px 'Bricolage Grotesque';margin:20px 2px 10px;display:flex;justify-content:space-between;align-items:center}
+.B .sec em{font:700 12px Manrope;font-style:normal;background:#173A2A;color:#C8E07A;border-radius:999px;padding:3px 10px}
+.B .bars{background:#fff;border-radius:22px;padding:6px 16px}
+.B .bar{padding:12px 0}.B .bar+.bar{border-top:1px solid #EEF0E6}
+.B .bar .top{display:flex;justify-content:space-between;font-weight:700;font-size:14px}
+.B .bar .top span{font:800 15px 'Bricolage Grotesque'}
+.B .bar .trk{height:8px;border-radius:8px;background:#E8EDE4;margin-top:8px;overflow:hidden}
+.B .bar .trk i{display:block;height:100%;border-radius:8px;background:#173A2A}
+.B .bar .trk i.hi{background:#E0643E}
+.B .bar small{display:block;margin-top:6px;font-size:12px;color:#56615A;font-weight:500}
+.B .chips{display:flex;flex-wrap:wrap;gap:7px}
+.B .chip{display:inline-flex;align-items:center;gap:6px;padding:9px 13px;border-radius:14px;background:#fff;font-size:12.5px;font-weight:700}
+.B .chip.sel{background:#173A2A;color:#C8E07A}
+.B .set{background:#fff;border-radius:22px;padding:4px 14px}
+.B .lrow{display:flex;align-items:center;gap:12px;padding:12px 0;font-size:14px;font-weight:700}
+.B .lrow+.lrow{border-top:1px solid #EEF0E6}
+.B .lrow .tile{width:36px;height:36px;border-radius:12px;background:#173A2A;color:#C8E07A;display:grid;place-items:center}
+.B .lrow .val{margin-left:auto;font-weight:600;font-size:13px;color:#4F7A1F}
+.B .grp{font:700 13px Manrope;color:#173A2A;margin:18px 6px 8px;letter-spacing:.02em}
+.B .scan-btn{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;background:rgba(10,20,14,.6);color:#fff;backdrop-filter:blur(8px)}
+.B .scan-btn.on{background:#C8E07A;color:#173A2A}
+.B .hint{position:absolute;left:50%;transform:translateX(-50%);bottom:90px;border-radius:14px;background:rgba(10,20,14,.72);color:#fff;padding:10px 16px;font:600 13px Manrope;white-space:nowrap;backdrop-filter:blur(8px)}
+/* ============ OPTION C  paper rows ============ */
+.C{--ground:#FBFAF5}
+.C .nav{background:rgba(251,250,245,.92);border-top:1px solid #DFE0D6;left:0;right:0;bottom:0;height:74px;border-radius:0;padding:0 14px 8px;color:#6a726c}
+.C .nav b{border-radius:12px;width:56px;height:44px}
+.C .nav b.on{color:#173A2A;box-shadow:inset 0 -3px 0 #173A2A;border-radius:0}
+.C .scr-title{font:800 34px/1 'Bricolage Grotesque';letter-spacing:-.03em;margin:10px 2px 14px;color:#10241a}
+.C .hrow{display:flex;gap:14px;align-items:center;padding:12px 2px;border-bottom:1px solid #E4E5DB}
+.C .hrow .ph{width:70px;height:70px;border-radius:10px;background:#F0F1E6}
+.C .hrow .sc{font:800 30px/1 'Bricolage Grotesque';letter-spacing:-.03em}
+.C .hrow .verd{margin-top:4px}
+.C .brief{padding:6px 2px 14px;border-bottom:2px solid #10241a}
+.C .brief .hd{font:800 24px/1.1 'Bricolage Grotesque';letter-spacing:-.02em;color:#8E3417}
+.C .brief .hd small{display:block;font:600 12px Manrope;color:#56615A;margin-bottom:6px}
+.C .brief ul{list-style:none;padding:0;margin:12px 0 0;font-size:13.5px;font-weight:600;display:grid;gap:7px}
+.C .brief li{display:flex;gap:10px}
+.C .brief li:before{content:"";width:6px;height:6px;border-radius:50%;background:#10241a;margin-top:7px;flex:none}
+.C .sec{font:800 19px 'Bricolage Grotesque';letter-spacing:-.01em;margin:22px 2px 6px;display:flex;justify-content:space-between;align-items:baseline}
+.C .sec em{font:600 12px Manrope;font-style:normal;color:#56615A}
+.C .meter{display:flex;justify-content:space-between;align-items:baseline;padding:11px 2px;border-bottom:1px solid #E4E5DB}
+.C .meter b{font-size:14.5px}.C .meter small{display:block;font-size:12px;color:#56615A;font-weight:500;margin-top:2px}
+.C .meter .v{font:800 22px 'Bricolage Grotesque';letter-spacing:-.02em;text-align:right}
+.C .meter .v.hi{color:#8E3417}
+.C .chip{display:inline-flex;gap:6px;align-items:center;padding:7px 11px;border:1.5px solid #CFD2C4;border-radius:8px;font-size:12.5px;font-weight:600;margin:0 6px 7px 0}
+.C .chip.sel{background:#10241a;border-color:#10241a;color:#fff}
+.C .para{font-size:13.5px;line-height:1.65;color:#2a332d;padding:4px 2px}
+.C .lrow{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid #E4E5DB;font-size:14.5px;font-weight:600}
+.C .lrow .tile{color:#10241a;display:grid;place-items:center}
+.C .lrow .val{margin-left:auto;font-weight:500;color:#56615A;font-size:13px}
+.C .grp{font:800 15px 'Bricolage Grotesque';margin:22px 2px 0;color:#10241a}
+.C .scan-btn{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.55);color:#fff;backdrop-filter:blur(8px)}
+.C .scan-btn.on{background:#fff;color:#10241a;border-color:#fff}
+.C .hint{position:absolute;left:0;right:0;top:56px;text-align:center;color:#fff;font:600 13px Manrope;text-shadow:0 1px 8px rgba(0,0,0,.6)}
+/* camera (shared) */
+.cam{position:absolute;inset:0;background:#2a2f2c;overflow:hidden}
+.cam .shelf{position:absolute;inset:-20px;filter:blur(9px) saturate(.9);opacity:.95}
+.cam .shelf i{position:absolute;border-radius:8px}
+.cam .vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,transparent 35%,rgba(0,0,0,.55))}
+.frame{position:absolute;left:34px;right:34px;top:200px;height:190px}
+.frame i{position:absolute;width:32px;height:32px;border:3px solid #fff}
+.frame i:nth-child(1){left:0;top:0;border-right:0;border-bottom:0;border-radius:8px 0 0 0}
+.frame i:nth-child(2){right:0;top:0;border-left:0;border-bottom:0;border-radius:0 8px 0 0}
+.frame i:nth-child(3){left:0;bottom:0;border-right:0;border-top:0;border-radius:0 0 0 8px}
+.frame i:nth-child(4){right:0;bottom:0;border-left:0;border-top:0;border-radius:0 0 8px 0}
+.B .frame i{border-color:#C8E07A}
+.B .frame u{position:absolute;left:10px;right:10px;top:50%;height:2px;background:#C8E07A;box-shadow:0 0 14px #C8E07A;opacity:.9}
+.C .frame{left:22px;right:22px;top:110px;height:330px}
+.C .frame i{width:22px;height:22px;border-width:2px;border-radius:0 !important}
+.btns{position:absolute;left:14px;top:50px;display:grid;gap:10px;z-index:4}
+.C .btns{left:50%;transform:translateX(-50%);top:auto;bottom:92px;grid-auto-flow:column}.phone.dark.C .nav b.on{color:#fff;box-shadow:inset 0 -3px 0 #fff}
+.notes{padding:10px 32px 0;max-width:980px;color:var(--muted);font-size:13px;line-height:1.55}
+.lrow>span:nth-child(2){flex:1;min-width:0}.lrow .val{white-space:nowrap}.B .chip{border:1.5px solid #D5DBCB}.B .chip.sel{border-color:#173A2A}
+.A .capt{font-size:11px;line-height:15px;color:#6a7269;font-weight:500}
+.A .wi{padding:2px 14px}.A .wi .r{padding:12px 0}.A .wi .r+.r{border-top:1px solid #EEF1EA}
+.A .wi .top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.A .wi .top b{font-size:14px}.A .wi .top span{font:700 14px 'Bricolage Grotesque'}
+.A .wi .trk{height:6px;border-radius:6px;background:#E8EDE4;margin:8px 0 6px;overflow:hidden}
+.A .wi .trk i{display:block;height:100%;border-radius:6px;background:#173A2A}.A .wi .trk i.hi{background:#C9533C}
+.A .lrow>span:nth-child(2){white-space:nowrap;flex:1}.A .lrow{gap:10px;font-size:13.5px}
+.A .pref .hd{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:12px}
+.A .pref .hd b{font-size:14px;white-space:nowrap}
+.A .pref .edit{font-size:12.5px;font-weight:600;color:#1F4A35;flex:none}
+.A .ing{background:#fff;border-radius:20px;padding:6px 14px 6px}
+.A .ing .btn{display:flex;width:100%;justify-content:space-between;align-items:center;background:none;border:0;padding:10px 0;font:700 14px Manrope;color:#173A2A;cursor:pointer}
+.A .ing .btn svg{transition:transform .2s}
+.A .ing:not(.closed) .btn svg{transform:rotate(180deg)}
+.A .ing.closed .lab{display:none}
+.A .lab{margin:2px 0 10px;padding:12px 12px;border:1px solid #DFE3D3;border-radius:12px;background:#FBFAF3;font-size:12.5px;line-height:1.6;color:#2a332d}
+.A .lab b{font-weight:800}
+</style>
+</head>
+<body>
+<div class="intro">
+  <h1>OkBite: Option A with your changes</h1>
+  <p>One direction, six screens. Products and numbers are samples. Tap the arrow on Ingredients to open and close it.</p>
+</div>
+<div id="root"></div>
+<div class="notes" id="notes"></div>
+
+<script>
+const P={
+ scan:'<rect x="4" y="4" width="16" height="16" rx="3" stroke-dasharray="4 20" />',
+};
+const I={
+ scan:'<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ swap:'<path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>',
+ user:'<circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/>',
+ flash:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+ flashoff:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/><path d="M3 3l18 18"/>',
+ focus:'<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3" fill="currentColor"/>',
+ chev:'<path d="m9 6 6 6-6 6"/>',down:'<path d="m6 9 6 6 6-6"/>',
+ leaf:'<path d="M5 19c0-9 5-14 15-14 0 10-5 15-14 15"/><path d="M5 19c3-5 6-8 10-10"/>',
+ sprout:'<path d="M12 21V11M12 11c0-4-3-6-7-6 0 4 3 6 7 6zM12 14c0-3 2-5 6-5 0 3-2 5-6 5z"/>',
+ globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+ download:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',
+ trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+ info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/>',
+ doc:'<path d="M6 3h8l4 4v14H6zM14 3v4h4M9 12h6M9 16h6"/>',
+ shield:'<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/>',
+ flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+ share:'<path d="M12 15V4M8 8l4-4 4 4M5 13v6h14v-6"/>',
+ alert:'<path d="M12 3 2 20h20zM12 10v5M12 17.5v.01"/>',
+ drop:'<path d="M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z"/>',
+ cup:'<path d="M5 8h11v6a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5zM16 10h2a2 2 0 0 1 0 4h-2M7 3v2M11 3v2"/>',
+ flame:'<path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z"/>',
+ check:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+ ban:'<circle cx="12" cy="12" r="9"/><path d="m6 6 12 12"/>',
+};
+const ic=(n,s)=>`<svg class="i" viewBox="0 0 24 24"${s?` style="width:${s}px;height:${s}px"`:''}>${I[n]}</svg>`;
+const status=t=>`<div class="status"><span>13:38</span><i></i><span>5G ▮</span></div>`;
+const nav=(on,v)=>`<div class="nav">${[['clock','h'],['swap','c'],['scan','s'],['user','p']].map(([n,k])=>`<b class="${k===on?'on':''}">${ic(n,22)}</b>`).join('')}</div>`;
+const phone=(v,cls,body,navOn)=>`<div class="phone ${cls||''}">${status()}${body}${nav(navOn,v)}</div>`;
+// product art
+const art=(k,c1,c2)=>{
+ const m={
+  can:`<svg viewBox="0 0 48 64" width="40" height="54"><rect x="10" y="6" width="28" height="52" rx="6" fill="${c1}"/><rect x="10" y="24" width="28" height="16" fill="${c2}"/><rect x="14" y="2" width="20" height="6" rx="2" fill="#b9bdbb"/></svg>`,
+  cup:`<svg viewBox="0 0 48 64" width="40" height="54"><path d="M8 14h32l-4 42a3 3 0 0 1-3 3H15a3 3 0 0 1-3-3z" fill="${c1}"/><rect x="8" y="9" width="32" height="7" rx="2" fill="${c2}"/><rect x="15" y="28" width="18" height="14" rx="3" fill="${c2}" opacity=".9"/></svg>`,
+  bag:`<svg viewBox="0 0 48 64" width="40" height="54"><path d="M9 8h30l-2 6 2 42H9l2-42z" fill="${c1}"/><circle cx="24" cy="34" r="9" fill="${c2}"/></svg>`,
+  bottle:`<svg viewBox="0 0 48 64" width="40" height="54"><rect x="19" y="3" width="10" height="9" rx="2" fill="${c2}"/><path d="M17 12h14l5 10v34a3 3 0 0 1-3 3H15a3 3 0 0 1-3-3V22z" fill="${c1}"/><rect x="14" y="32" width="20" height="14" fill="${c2}" opacity=".9"/></svg>`};
+ return m[k];
+};
+const items=[['can','#d8452f','#f5c84a','38','Poor','po'],['cup','#f4f1e8','#4f8c5a','86','Excellent','ex'],['bag','#c58a4a','#f2deb0','71','Good','go'],['bottle','#4a86b8','#e8f1f7','54','Fair','fa'],['cup','#f2c0c8','#d0566e','79','Good','go']];
+const histRow=(v,it)=>`<div class="hrow"><div class="ph">${art(it[0],it[1],it[2])}</div>${v==='B'?'<div class="meta">':'<div>'}<div class="sc t-${it[5]}">${it[3]}</div><div class="verd t-${it[5]}${v==='B'?' p-'+it[5]:''}">${it[4]}</div></div></div>`;
+const cam=()=>`<div class="cam"><div class="shelf"><i style="left:10%;top:6%;width:26%;height:30%;background:#8c6a3d"></i><i style="left:40%;top:4%;width:22%;height:34%;background:#3d5a80"></i><i style="left:66%;top:8%;width:26%;height:28%;background:#b2492f"></i><i style="left:6%;top:44%;width:30%;height:28%;background:#d9c28a"></i><i style="left:42%;top:42%;width:24%;height:32%;background:#51765a"></i><i style="left:70%;top:46%;width:24%;height:30%;background:#c9c3b0"></i><i style="left:0;top:80%;width:100%;height:22%;background:#1c201e"></i></div><div class="vig"></div></div>`;
+const scan=v=>`<div class="phone dark ${v}">${status()}${cam()}
+ <div class="btns"><div class="scan-btn">${ic('flashoff',22)}</div><div class="scan-btn on">${ic('focus',22)}</div></div>
+ <div class="frame"><i></i><i></i><i></i><i></i>${v==='B'?'<u></u>':''}</div>
+ <div class="hint">${v==='C'?'Point the camera at a barcode':'Point your camera at a product barcode'}</div>
+ ${navScan(v)}</div>`;
+const navScan=v=>{ // translucent nav on camera
+ const base=nav('s',v);
+ return base.replace('class="nav"','class="nav" style="'+(v==='A'?'background:rgba(255,255,255,.88)':v==='B'?'':'background:rgba(15,20,17,.7);border-color:#333;color:#c9cfca')+'"');
+};
+const brief=(v)=>{
+ const head=v==='A'?`<div class="hd">${ic('alert',20)}<span>Not recommended for daily consumption</span></div>`:
+  `<div class="hd"><small>${v==='B'?'In short':'Verdict'}</small>Not recommended for daily consumption</div>`;
+ const li=v==='A'?[['drop','High in sugar: 28 g','warn'],['cup','Contains caffeine: 75 mg',''],['flame','Calories: 115 kcal','']].map(([i,t,c])=>`<li class="${c}">${ic(i,18)}<span>${t}</span></li>`).join(''):
+  [['Sugar','28 g','warn'],['Caffeine','75 mg',''],['Calories','115 kcal','']].map(([a,b,c])=>`<li class="${c}"><span>${a}</span><b>${b}</b></li>`).join('');
+ return `<div class="brief">${head}<ul>${li}</ul></div>`;
+};
+const rows=[['Sugar','28 g','Very sugary',5,'hi'],['Caffeine','75 mg','Moderate',2,'n1'],['Calories','115 kcal','Moderate',3,'n2']];
+const inside=v=>{
+ if(v==='A')return `<div class="card wi">${rows.map(r=>`<div class="r"><div class="top"><b>${r[0]}</b><span>${r[1]}</span></div><div class="trk"><i class="${r[4]==='hi'?'hi':''}" style="width:${r[3]*20}%"></i></div><div class="capt">${r[2]}</div></div>`).join('')}</div>`;
+ if(v==='B')return `<div class="bars">${rows.map(r=>`<div class="bar"><div class="top">${r[0]}<span>${r[1]}</span></div><div class="trk"><i class="${r[4]==='hi'?'hi':''}" style="width:${r[3]*20}%"></i></div><small>${r[2]}</small></div>`).join('')}</div>`;
+ return rows.map(r=>`<div class="meter"><div><b>${r[0]}</b><small>${r[2]}</small></div><div class="v ${r[4]==='hi'?'hi':''}">${r[1]}</div></div>`).join('');
+};
+const sec=(v,t,n)=>v==='A'?`<h3 class="sec">${t}${n?`<em>${n}</em>`:''}</h3>`:`<div class="sec">${t}${n?`<em>${n}</em>`:''}</div>`;
+const prodTop=v=>`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:8px">${['share','flag'].map(n=>`<span style="width:36px;height:36px;border-radius:${v==='B'?'12px':'50%'};background:${v==='C'?'transparent':'#fff'};border:${v==='C'?'1.5px solid #CFD2C4':'1px solid #DFE5DC'};display:grid;place-items:center;color:#173A2A">${ic(n,18)}</span>`).join('')}</div>
+ <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">
+  <div class="ph" style="width:76px;height:84px;border-radius:${v==='C'?'10px':'18px'};background:${v==='A'?'#E3EEDF':v==='B'?'#fff':'#F0F1E6'}">${art('can','#d8452f','#f5c84a')}</div>
+  <div><div class="t" style="font-size:17px;line-height:1.15">Citrus Energy</div><div style="font-size:12.5px;color:#56615A;margin:2px 0 6px">250 ml</div><div style="display:flex;align-items:baseline;gap:8px"><span class="t t-po" style="font-size:28px;line-height:1">38</span><span class="verd t-po">Poor</span></div></div></div>`;
+const adds=['E101 Riboflavin','E150a Plain caramel','E330 Citric acid'];
+const ingr=['Water','Sugar','Citric acid','Caffeine','Taurine','Colour (E150a)','Riboflavin (E101)'];
+const prod1=v=>`<div class="scroll ${v}">${prodTop(v)}${sec(v,'In short')}${brief(v)}${sec(v,'What’s inside')}${inside(v)}</div>`;
+const chipHtml=(a,v)=>a.map(x=>`<span class="chip">${x}${ic('chev',13)}</span>`).join('');
+const prod2=v=>{
+ const add=v==='B'?`<div class="chips">${chipHtml(adds,v)}</div>`:v==='A'?`<div class="card"><div style="font:700 12px Manrope;color:#1F4A35;margin-bottom:9px;display:flex;gap:6px;align-items:center">${ic('leaf',15)}Risk-free</div>${chipHtml(adds,v)}</div>`:`<div style="padding-top:8px">${chipHtml(adds,v)}</div>`;
+ const ing=v==='A'?`<div class="ing"><button class="btn" onclick="this.parentNode.classList.toggle('closed')"><span>Ingredients</span>${ic('down',20)}</button><div class="lab"><b>Ingredients:</b> water, sugar, citric acid, caffeine, taurine, colour (E150a), riboflavin (E101).</div></div>`:v==='B'?`<div class="chips">${ingr.map((x,i)=>`<span class="chip${i<3?' sel':''}">${x}</span>`).join('')}</div>`:`<div class="para">${ingr.join(', ')}.</div>`;
+ return `<div class="scroll ${v}" style="padding-top:50px">${sec(v,'Additives','3')}${add}<div style="height:14px"></div>${ing}</div>`;
+};
+const histScr=v=>`<div class="scroll ${v}"><div class="scr-title">History</div>${items.map(i=>histRow(v,i)).join('')}</div>`;
+const toggleTxt='';
+const lr=(v,icon,label,val,last)=>`<div class="lrow"><span class="tile">${ic(icon,v==='A'||v==='B'?19:21)}</span><span>${label}</span>${val?`<span class="val">${val}</span>`:''}${ic('chev',16).replace('class="i"','class="i chev"')}</div>`;
+const grp=(v,t)=>`<div class="grp">${t}</div>`;
+const wrapSet=(v,inner)=>v==='A'?`<div class="card" style="padding:2px 14px">${inner}</div>`:v==='B'?`<div class="set">${inner}</div>`:`<div>${inner}</div>`;
+const settings=v=>`<div class="scroll ${v}" style="padding-top:48px"><div class="scr-title" style="margin-bottom:0">Settings</div>
+ ${grp(v,v==='C'?'Profile':'PROFILE')}${wrapSet(v,lr(v,'leaf','Dietary preferences','')+lr(v,'sprout','Allergen preferences',''))}
+ ${grp(v,v==='C'?'Language':'LANGUAGE')}${wrapSet(v,lr(v,'globe','Language','English'))}
+ ${grp(v,v==='C'?'App':'APP')}${wrapSet(v,lr(v,'download','Install app','')+lr(v,'trash','Clear history',''))}
+ ${grp(v,v==='C'?'Information':'INFORMATION')}${wrapSet(v,lr(v,'info','Method','')+lr(v,'shield','Privacy','')+lr(v,'doc','Terms',''))}
+</div>`;
+const sel=(v,t,on)=>`<span class="chip ${on?'sel':''}">${t}</span>`;
+const prefBlock=(v,title,icon,list)=>`<div class="card pref" style="margin-bottom:10px"><div class="hd"><b>${title}</b><span class="edit">Edit</span></div><div>${list.map(x=>sel(v,x,true)).join('')}</div></div>`;
+const profile=v=>`<div class="scroll ${v}"><div class="scr-title">Profile</div>
+ ${v==='A'?'<div class="card" style="margin-bottom:10px">':v==='B'?'<div style="background:#fff;border-radius:22px;padding:14px;margin-bottom:10px">':'<div style="padding:4px 2px 14px;border-bottom:1px solid #E4E5DB">'}
+ <div style="font-weight:700;font-size:14px;margin-bottom:10px">What matters to you?</div>
+ ${['Balanced food choices','Family','Weight'].map((x,i)=>sel(v,x,i!==2)).join('')}</div>
+ ${prefBlock(v,'Dietary preferences','leaf',['No added sugar','No palm oil'])}
+ ${prefBlock(v,'Allergen preferences','sprout',['Milk','Gluten','Peanuts'])}
+ ${wrapSet(v,lr(v,'info','Settings','')+lr(v,'info','About',''))}
+</div>`;
+const defs=[['A','Option A','Cream page, white cards, green icon tiles.']];
+const cap=['Scan','History','Product, top','Product, scrolled','Profile','Settings'];
+document.getElementById('root').innerHTML=defs.map(([v,t,d])=>`<section class="opt"><div class="opt-head"><h2>${t}</h2><p>${d}</p></div><div class="row">
+ ${[scan(v),phone(v,'',histScr(v),'h').replace('class="phone "','class="phone '+v+'"'),phone(v,'',prod1(v),'h'),phone(v,'',prod2(v),'h'),phone(v,'',profile(v),'p'),phone(v,'',settings(v),'p')]
+ .map((h,i)=>`<div class="cell"><div class="cap">${cap[i]}</div>${h.replace(/class="phone( dark)? ?[ABC]?"/,m=>m).replace('<div class="phone','<div class="phone '+v+' ')}</div>`).join('')}
+</div></section>`).join('');
+document.getElementById('notes').innerHTML='The bottom bar has four tabs (History, Compare, Scan, Profile) because Allergies is gone. Settings opens from the Settings row on Profile, as it does today. History rows show only photo, score and verdict. The scan page is the camera, the light button, the close-up button and the hint.';
+</script>
+</body>
+</html>

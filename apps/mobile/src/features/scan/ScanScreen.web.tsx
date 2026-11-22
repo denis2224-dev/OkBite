@@ -24,7 +24,7 @@ function deniedHelp(): string {
   return /Android/i.test(ua) ? ro.pwa.camera.androidDenied : ro.pwa.camera.browserDenied;
 }
 
-/** The browser has no torch control here, so `torch` is ignored. */
+/** The browser has no torch or zoom control here, so `torch` and `zoom` are ignored. */
 export default function ScanScreenWeb({ embedded = false }: ScanScreenProps = {}) {
   const focused = useIsFocused();
   const { colors } = useTheme();
@@ -47,7 +47,7 @@ export default function ScanScreenWeb({ embedded = false }: ScanScreenProps = {}
         <View testID="scan-preview" style={cameraOn ? frame : [frame, styles.blocked]}>
           {cameraOn ? <>
             <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            {liveStatus === 'live' ? <ScanReticle /> : <ActivityIndicator style={StyleSheet.absoluteFill} color={colors.cameraInk} />}
+            {liveStatus === 'live' ? <ScanReticle hintBottom={embedded ? 128 : undefined} /> : <ActivityIndicator style={StyleSheet.absoluteFill} color={colors.cameraInk} />}
           </> : <CameraBlocked
             title={denied && retried ? ro.scan.deniedText : undefined}
             message={liveStatus === 'unsupported' ? ro.scan.webManualOnly : !denied ? cameraMessage(liveStatus) : retried ? deniedHelp() : ro.scan.deniedText}
@@ -55,19 +55,19 @@ export default function ScanScreenWeb({ embedded = false }: ScanScreenProps = {}
           />}
         </View>
       ) : null}
-      {working ? <View style={styles.status}><ActivityIndicator /><Body style={embedded ? { color: colors.cameraInk } : undefined}>{ro.capture.working}</Body></View> : null}
+      {working ? <View style={[styles.status, embedded && styles.overlay]}><ActivityIndicator /><Body style={embedded ? { color: colors.cameraInk } : undefined}>{ro.capture.working}</Body></View> : null}
       {state.status === 'error' || state.status === 'offline' ? (
-        <StatusPanel
+        <View style={embedded ? styles.overlay : undefined}><StatusPanel
           title={state.status === 'offline' ? ro.offline.title : undefined}
           message={state.status === 'offline' ? ro.offline.subtitle : errorMessage(state.code)}
           actions={[
             { label: state.status === 'offline' ? ro.offline.retry : ro.errors.retry, onPress: () => { void retry(); } },
             { label: ro.nav.close, onPress: dismiss },
           ]}
-        />
+        /></View>
       ) : null}
-      <ManualCode open={manualOpen} onToggle={() => setManualOpen(open => !open)} onDark={embedded}
-        onSubmit={(code) => { void onManualCode(code); }} disabled={working} />
+      {embedded ? null : <ManualCode open={manualOpen} onToggle={() => setManualOpen(open => !open)}
+        onSubmit={(code) => { void onManualCode(code); }} disabled={working} />}
       {state.status === 'found' && <ResultSheet product={state.product} score={state.score} onClose={dismiss} />}
     </>
   );
@@ -86,9 +86,10 @@ const createStyles = (colors: Palette) => StyleSheet.create({
   title: { fontSize: 22, lineHeight: 29 },
   // Portrait preview: tall enough to aim at a shelf, capped so manual entry stays reachable.
   preview: { width: '100%', aspectRatio: 3 / 4, minHeight: 280, maxHeight: 440, borderRadius: 20, overflow: 'hidden', backgroundColor: colors.cameraBackground, justifyContent: 'center' },
-  embedded: { gap: 16, paddingHorizontal: 16 },
-  embeddedPreview: { width: '100%', aspectRatio: 1.15, minHeight: 240, maxHeight: 340, borderRadius: 20, overflow: 'hidden', backgroundColor: colors.cameraBackground, justifyContent: 'center' },
+  embedded: { flex: 1 },
+  embeddedPreview: { flex: 1, minHeight: 240, overflow: 'hidden', backgroundColor: colors.cameraBackground, justifyContent: 'center' },
   // A blocked camera keeps the frame's minimum size but grows with its text (200% font) instead of clipping it.
   blocked: { maxHeight: undefined, aspectRatio: undefined },
   status: { flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },
+  overlay: { position: 'absolute', left: 16, right: 16, top: '40%' },
 });

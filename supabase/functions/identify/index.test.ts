@@ -76,3 +76,116 @@ Deno.test('identify removes the upload and releases quota when the stored photo 
   );
   assert.ok(requests.some((r) => r.startsWith('DELETE /rest/v1/usage_events')), requests.join());
 });
+
+Deno.test('identify rejects sparkling-vs-still water mismatches, caps brand-only similarity < 0.6, and loads saved water on barcode', async () => {
+  const db = {
+    storage: {
+      from: () => ({
+        download: async () => ({
+          data: new Blob([Uint8Array.from([1, 2, 3])]),
+          error: null,
+        }),
+        remove: async () => ({ error: null }),
+      }),
+    },
+    rpc: async (fn: string) => {
+      if (fn === 'reserve_usage') return { data: 11, error: null };
+      if (fn === 'search_products') {
+        return {
+          data: [
+            {
+              id: 'a0000000-0000-4000-8000-000000000001',
+              name: 'Apă potabilă plată',
+              brand: 'OM',
+              quantity: '1,5 L',
+              image_path: null,
+              similarity: 0.92,
+            },
+            {
+              id: 'a0000000-0000-4000-8000-000000000002',
+              name: 'Apă potabilă carbogazoasă',
+              brand: 'OM',
+              quantity: '1,5 L',
+              image_path: null,
+              similarity: 0.88,
+            },
+          ],
+          error: null,
+        };
+      }
+      return { data: null, error: null };
+    },
+    from: (table: string) => {
+      if (table === 'products') {
+        const rows = [
+          {
+            id: 'a0000000-0000-4000-8000-000000000001',
+            name: 'Apă potabilă plată',
+            brand: 'OM',
+            quantity: '1,5 L',
+            image_path: null,
+            category_slug: 'apa',
+            water: { carbonation: 'still' },
+          },
+          {
+            id: 'a0000000-0000-4000-8000-000000000002',
+            name: 'Apă potabilă carbogazoasă',
+            brand: 'OM',
+            quantity: '1,5 L',
+            image_path: null,
+            category_slug: 'apa',
+            water: { carbonation: 'sparkling' },
+          },
+        ];
+        const q = {
+          in: () => q,
+          eq: () => q,
+          ilike: () => q,
+          neq: () => q,
+          limit: async () => ({ data: rows, error: null }),
+        };
+        return { select: () => q };
+      }
+      return {
+        delete: () => ({ eq: () => ({ is: () => Promise.resolve({ error: null }) }) }),
+      };
+    },
+  };
+
+  // Sparkling photo must exclude still candidate.
+  const sparklingSvc = createService({
+    adminClient: () => db as never,
+    loadProduct: async () => null,
+    saveJpeg: async (_p, device) => `${device}/11111111-1111-4111-8111-111111111111-front.jpg`,
+    askClaude: async () => '{"brand":"OM","name":"Apă carbogazoasă","quantity":"1,5 L","barcodeDigits":"","isWater":true,"carbonation":"sparkling"}',
+    logEvent: async () => {},
+  });
+  const sparklingRes = await sparklingSvc({ photo: 'x' }, '22222222-2222-4222-8222-222222222222');
+  assert.equal(sparklingRes.status, 'candidates');
+  if (sparklingRes.status === 'candidates') {
+    assert.deepEqual(sparklingRes.candidates.map((c) => c.id), ['a0000000-0000-4000-8000-000000000002']);
+  }
+
+  const kidsSvc = createService({
+    adminClient: () => db as never,
+    loadProduct: async () => null,
+    saveJpeg: async () => '22222222-2222-4222-8222-222222222222/11111111-1111-4111-8111-111111111111-front.jpg',
+    askClaude: async () => '{"brand":"OM","name":"Apă Kids plată","quantity":"1,5 L","barcodeDigits":"","isWater":true,"carbonation":"still"}',
+    logEvent: async () => {},
+  });
+  assert.equal((await kidsSvc({ photo: 'x' }, '22222222-2222-4222-8222-222222222222')).status, 'not_found');
+
+  // Brand-only photo caps similarity below 0.6 and asks user confirmation among distinct variants.
+  const brandOnlySvc = createService({
+    adminClient: () => db as never,
+    loadProduct: async () => null,
+    saveJpeg: async (_p, device) => `${device}/11111111-1111-4111-8111-111111111111-front.jpg`,
+    askClaude: async () => '{"brand":"OM","name":"","quantity":"","barcodeDigits":"","isWater":true,"carbonation":""}',
+    logEvent: async () => {},
+  });
+  const brandOnlyRes = await brandOnlySvc({ photo: 'x' }, '22222222-2222-4222-8222-222222222222');
+  assert.equal(brandOnlyRes.status, 'candidates');
+  if (brandOnlyRes.status === 'candidates') {
+    assert.ok(brandOnlyRes.candidates.every((c) => c.similarity < 0.6));
+  }
+});

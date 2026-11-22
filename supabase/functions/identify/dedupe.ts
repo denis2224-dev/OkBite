@@ -1,4 +1,12 @@
-type Row = { id: string; name: string; brand: string; quantity: string };
+import type { Carbonation } from '../_shared/contract.ts';
+
+type Row = {
+  id: string;
+  name: string;
+  brand: string;
+  quantity: string;
+  carbonation?: Carbonation | null;
+};
 
 const norm = (s: string) =>
   s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/\s+/g, ' ').trim();
@@ -16,8 +24,8 @@ export function packSize(quantity: string): { amount: number; unit: 'ml' | 'g' }
   if (/\d\s*[x×*]\s*\d/.test(q)) return null;
   const m = q.match(/(\d+(?:[.,]\d+)?)\s*(ml|cl|kg|l|g)(?![a-z])/);
   if (!m) return null;
-  const [factor, unit] = UNIT[m[2]];
-  return { amount: Number(m[1].replace(',', '.')) * factor, unit };
+  const [factor, unit] = UNIT[m[2]!];
+  return { amount: Number(m[1]!.replace(',', '.')) * factor, unit };
 }
 
 export function sameSize(a: string, b: string): boolean {
@@ -26,23 +34,29 @@ export function sameSize(a: string, b: string): boolean {
   return !!x && !!y && x.unit === y.unit && Math.abs(x.amount - y.amount) <= x.amount * 0.01;
 }
 
-export const groupKey = (r: Pick<Row, 'brand' | 'name'>) => `${norm(r.brand)}|${norm(r.name)}`;
+export const groupKey = (r: Pick<Row, 'brand' | 'name' | 'carbonation'>) =>
+  `${norm(r.brand)}|${norm(r.name)}|${r.carbonation ?? ''}`;
+
+const compatibleCarbonation = (rowCarb: Carbonation | null | undefined, filterCarb?: Carbonation | null) =>
+  !filterCarb || !rowCarb || rowCarb === filterCarb;
 
 /**
- * One candidate per brand+name: sizes of the same product share a name and tie on similarity, so the
- * search alone returns arbitrary sizes. Within a group the size read from the photo wins, else the
- * best-ranked row. `siblings` are more rows of the same groups (other sizes the search cut off).
+ * One candidate per brand+name+carbonation: sizes of the exact same product share a profile, while
+ * contradicting water types (still vs sparkling) or distinct lines remain separate.
  */
 export function dedupeCandidates<T extends Row>(
   rows: T[],
   siblings: T[],
   quantity: string | null,
+  filterCarbonation?: Carbonation | null,
 ): T[] {
+  const matchingRows = rows.filter((r) => compatibleCarbonation(r.carbonation, filterCarbonation));
+  const matchingSiblings = siblings.filter((r) => compatibleCarbonation(r.carbonation, filterCarbonation));
   const picked = new Map<string, T>();
-  for (const row of rows) {
+  for (const row of matchingRows) {
     const key = groupKey(row);
     if (picked.has(key)) continue;
-    const pool = [row, ...rows, ...siblings].filter((r) => groupKey(r) === key);
+    const pool = [row, ...matchingRows, ...matchingSiblings].filter((r) => groupKey(r) === key);
     picked.set(key, (quantity && pool.find((r) => sameSize(r.quantity, quantity))) || row);
   }
   return [...picked.values()];

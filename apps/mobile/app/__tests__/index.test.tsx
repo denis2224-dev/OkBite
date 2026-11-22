@@ -1,6 +1,6 @@
 import { renderRouter, screen } from 'expo-router/testing-library';
 import { fireEvent } from '@testing-library/react-native';
-import { Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { ro } from '../../src/copy/ro';
 import ScanTab from '../(tabs)/index';
 import About from '../(tabs)/about';
@@ -16,11 +16,12 @@ jest.mock('../../src/features/scan/ScanScreen', () => ({ __esModule: true, defau
 } }));
 jest.mock('../../src/features/admin/AdminEntry', () => ({ AdminEntry: () => null }));
 
-it('opens Scan at / and keeps the photo path available', async () => {
+it('opens Scan at / with only the camera, the light button and the close-up button', async () => {
  await renderRouter({ index: ScanTab, capture: () => null });
  expect(await screen.findByText('scanner-test')).toBeTruthy();
- await fireEvent.press(screen.getByRole('button', { name: 'Fotografiază eticheta' }));
- expect(screen).toHavePathname('/capture');
+ expect(screen.getByRole('button', { name: ro.scan.flashOn })).toBeTruthy();
+ expect(screen.getByRole('button', { name: ro.scan.closeUpOn })).toBeTruthy();
+ expect(screen.queryByRole('button', { name: 'Fotografiază eticheta' })).toBeNull();
 });
 it.each(['method', 'privacy', 'terms'] as const)('keeps %s reachable from the About tab', async path => {
  await renderRouter({ about: About, [path]: () => null }, { initialUrl: '/about' });
@@ -29,14 +30,16 @@ it.each(['method', 'privacy', 'terms'] as const)('keeps %s reachable from the Ab
 });
 const routes = { '(tabs)/_layout': TabLayout, '(tabs)/index': ScanTab, '(tabs)/about': About,
   '(tabs)/history': () => <Text>history-test</Text>, '(tabs)/profile': Profile, '(tabs)/settings': Settings,
-  // The real Alergii screen lands with W2 (UI9-allergies-tab); a stub keeps the shell test independent of it.
-  '(tabs)/allergies': () => <Text>allergies-test</Text>,
   '(tabs)/compare': () => <Text>comparison-test</Text>, 'product/[id]': () => <Text>product-test</Text> };
-it('mounts five tabs and releases the scanner on blur', async () => {
+it('lifts the install banner above the floating tab bar on Scan', async () => {
+ await renderRouter({ index: ScanTab, capture: () => null });
+ expect(StyleSheet.flatten((await screen.findByTestId('install-dock')).props.style).paddingBottom).toBeGreaterThanOrEqual(72);
+});
+it('mounts four tabs and releases the scanner on blur', async () => {
  mockCameraMounted.mockClear(); mockCameraStopped.mockClear();
  await renderRouter(routes);
  expect((await screen.findByRole('tab', { name: 'Scanează' })).props.accessibilityState.selected).toBe(true);
- expect(screen.getAllByRole('tab').map(tab => tab.props.accessibilityLabel)).toEqual(['Istoric', 'Compară', 'Scanează', 'Alergii', 'Profil']);
+ expect(screen.getAllByRole('tab').map(tab => tab.props.accessibilityLabel)).toEqual(['Istoric', 'Compară', 'Scanează', 'Profil']);
  await fireEvent.press(screen.getByRole('tab', { name: 'Istoric' }));
  expect(await screen.findByText('history-test')).toBeTruthy();
  expect(mockCameraStopped).toHaveBeenCalled();
@@ -62,6 +65,6 @@ it.each([[ro.nav.settings, '/settings'], [ro.nav.about, '/about']] as const)('op
 });
 it.each(['/settings', '/about'])('keeps the %s deep link working', async path => {
  await renderRouter(routes, { initialUrl: path });
- expect(await screen.findAllByRole('tab')).toHaveLength(5);
+ expect(await screen.findAllByRole('tab')).toHaveLength(4);
  expect(screen).toHavePathname(path);
 });

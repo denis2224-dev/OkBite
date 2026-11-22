@@ -129,6 +129,7 @@ export function createService(
           unit: input.unit,
           ...nutrients,
           fruit_veg_pct: fruitVegPct,
+          ...(input.water !== undefined ? { water: input.water } : {}),
           ingredients_text: input.ingredientsText,
           allergens: allergens.allergens,
           may_contain: allergens.mayContain,

@@ -169,11 +169,6 @@ export function OnboardingScreen({
           })}
         </ScrollView>
         <View style={{ paddingTop: 8, gap: 8 }}>
-          {step === 3 && (
-            <Body style={{ color: colors.muted, fontSize: 13, lineHeight: 19, textAlign: 'center' }}>
-              {ro.onboarding.savedLocally}
-            </Body>
-          )}
           {step === 3 ? (
             <Button disabled={blocked} onPress={finish}>{ro.onboarding.done}</Button>
           ) : (

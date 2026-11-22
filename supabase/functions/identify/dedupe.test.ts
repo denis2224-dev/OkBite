@@ -51,3 +51,38 @@ Deno.test('different products keep their own rows and order', () => {
     ['a', 'z'],
   );
 });
+
+Deno.test('water candidates never collapse or cross-match contradicting carbonation or lines across sizes', () => {
+  const waterRow = (
+    id: string,
+    quantity: string,
+    name: string,
+    brand: string,
+    carbonation: 'still' | 'sparkling' | 'lightly_sparkling' | null,
+  ) => ({
+    id,
+    name,
+    brand,
+    quantity,
+    carbonation,
+  });
+  const still500 = waterRow('s1', '500 ml', 'Apă potabilă plată', 'OM', 'still');
+  const still1500 = waterRow('s2', '1,5 L', 'Apă potabilă plată', 'OM', 'still');
+  const carb1500 = waterRow('c1', '1,5 L', 'Apă potabilă carbogazoasă', 'OM', 'sparkling');
+  const sport750 = waterRow('sp1', '750 ml', 'Sport plată', 'OM', 'still');
+
+  // Filtering still photo excludes sparkling row even at identical 1.5 L quantity.
+  const dedupedStill = dedupeCandidates([still500, carb1500, sport750], [still1500], '1,5 L', 'still');
+  assert.deepEqual(dedupedStill.map((r) => r.id), ['s2', 'sp1']);
+
+  // Ambiguous unknown carbonation keeps distinct carbonation groups separate instead of merging sizes.
+  const dedupedAll = dedupeCandidates(
+    [
+      waterRow('w1', '500 ml', 'Dorna', 'Dorna', 'still'),
+      waterRow('w2', '500 ml', 'Dorna', 'Dorna', 'sparkling'),
+    ],
+    [],
+    '500 ml',
+  );
+  assert.deepEqual(dedupedAll.map((r) => r.id), ['w1', 'w2']);
+});

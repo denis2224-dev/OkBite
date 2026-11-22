@@ -1,6 +1,5 @@
 import { createStore, update } from 'idb-keyval';
 
-export const showStorageWarning = true;
 const history = createStore('okbite-history', 'history');
 let attempted = false;
 

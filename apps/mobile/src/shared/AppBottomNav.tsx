@@ -7,16 +7,16 @@ import { useTheme } from '../theme/useTheme';
 import { HomeIcon } from './HomeChrome';
 import { PressableOpacity } from './PressableOpacity';
 
-type TabName = 'history' | 'compare' | 'index' | 'allergies' | 'profile';
+type TabName = 'history' | 'compare' | 'index' | 'profile';
 const items: { name: TabName; label: string }[] = [
  { name: 'history', label: ro.nav.history }, { name: 'compare', label: ro.nav.compare }, { name: 'index', label: ro.nav.scan },
- { name: 'allergies', label: ro.nav.allergies }, { name: 'profile', label: ro.nav.profile },
+ { name: 'profile', label: ro.nav.profile },
 ];
 
 function TabIcon({ name, color }: { name: TabName; color: string }) {
- if (name !== 'allergies' && name !== 'profile') return <HomeIcon name={name === 'index' ? 'scan' : name === 'history' ? 'clock' : 'swap'} size={24} color={color} />;
+ if (name !== 'profile') return <HomeIcon name={name === 'index' ? 'scan' : name === 'history' ? 'clock' : 'swap'} size={24} color={color} />;
  return <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-  {name === 'profile' ? <><Circle cx={12} cy={7} r={4}/><Path d="M4 21v-2a8 8 0 0 1 16 0v2"/></> : <Path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6zM9 12l2 2 4-4"/>}
+  <Circle cx={12} cy={7} r={4}/><Path d="M4 21v-2a8 8 0 0 1 16 0v2"/>
  </Svg>;
 }
 
@@ -32,10 +32,13 @@ export function AppBottomNav({ state, emitter, navigateToTab, insets }: BottomTa
  if (keyboard) return null;
  // A floating white pill: icons only (names stay for screen readers), the current tab in a dark circle.
  // It stays in layout flow, so content never hides behind it.
- return <View testID="nav-bar" style={{ backgroundColor: colors.ground, alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: Math.max(12, insets.bottom) }}>
+ // On Scan the camera fills the screen, so the bar floats over it with no background band.
+ const overCamera = state.routes[state.index]?.name === 'index';
+ return <View testID="nav-bar" style={[{ backgroundColor: colors.ground, alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: Math.max(12, insets.bottom) },
+  overCamera && { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: colors.transparent }]}>
   <View testID="nav-pill" accessibilityRole="tablist" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', 
    width: '100%', maxWidth: 448, paddingHorizontal: 6, paddingVertical: 6, borderRadius: 999,
-   backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
+   backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, opacity: overCamera ? 0.92 : 1,
    shadowColor: colors.ink, shadowOpacity: 0.08, shadowRadius: 18, shadowOffset: { width: 0, height: 6 }, elevation: 6 }}>
    {items.map(item => {
     const route = state.routes.find(value => value.name === item.name);

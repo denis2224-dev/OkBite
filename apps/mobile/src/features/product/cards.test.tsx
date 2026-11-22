@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react-native';
 import { ScoreCard } from './ScoreCard';
-import { WhyScore } from './WhyScore';
+import { InShort } from './InShort';
 import { PortionTable } from './PortionTable';
 import { SourceCard, roDate } from './SourceCard';
 import { foundYogurt } from '../../test/fixtures';
@@ -13,7 +13,7 @@ it('shows unavailable instead of zero and always includes the disclaimer', async
   expect(screen.getByText(ro.score.disclaimer)).toBeTruthy();
 });
 it('shows the supplied score reasons without calculating a new score', async () => {
-  await render(<WhyScore score={{ ...foundYogurt.score, reasons: [{ tone: 'neutral', title: 'Motiv de test', detail: 'Detaliu de test' }] }} sugar={null} />);
+  await render(<InShort tier="good" reasons={[{ tone: 'neutral', title: 'Motiv de test', detail: 'Detaliu de test' }]} sugar={null} />);
   expect(screen.getByText('Motiv de test')).toBeTruthy();
   expect(screen.getByText('Detaliu de test')).toBeTruthy();
 });

@@ -1,7 +1,8 @@
 import { z } from 'zod';
-import { ALLERGENS, AddProductRequest, type Allergen, type IngredientEntry } from '../contract';
+import { ALLERGENS, AddProductRequest, type Allergen, type IngredientEntry, type WaterProfile } from '../contract';
 import { detectAllergens } from '../allergens';
 import { normalizeCode } from '../ean';
+import { emptyWaterProfile, parseWaterCarbonation } from '../water/parseWater';
 
 /** Open Food Facts product fields the mapper reads; ask OFF for exactly these. */
 export const OFF_FIELDS =
@@ -132,6 +133,35 @@ function per100(off: OffProduct, key: string): number | null {
   return amount(n.value);
 }
 
+const toMgL = (gPer100Ml: number | null) =>
+  gPer100Ml === null ? null : Math.round(gPer100Ml * 10_000 * 100) / 100;
+
+function offWater(off: OffProduct, name: string, ingredientsText: string): WaterProfile | null {
+  const tags = (off.categories_tags ?? []).join(' ').toLowerCase();
+  const carbonation = /\b(non-carbonated-waters|still-waters)\b/.test(tags)
+    ? 'still'
+    : /\b(carbonated-waters|sparkling-waters|lightly-sparkling-waters)\b/.test(tags)
+    ? (/\blightly/.test(tags) ? 'lightly_sparkling' : 'sparkling')
+    : parseWaterCarbonation(`${name} ${ingredientsText}`);
+
+  const w: WaterProfile = {
+    ...emptyWaterProfile(),
+    carbonation,
+    classification: /\bmineral-waters\b/.test(tags) ? 'natural_mineral' : /\bspring-waters|waters\b/.test(tags) ? 'drinking' : null,
+    caMgL: toMgL(per100(off, 'calcium')),
+    mgMgL: toMgL(per100(off, 'magnesium')),
+    naMgL: toMgL(per100(off, 'sodium')),
+    kMgL: toMgL(per100(off, 'potassium')),
+    hco3MgL: toMgL(per100(off, 'bicarbonate')),
+    so4MgL: toMgL(per100(off, 'sulfate') ?? per100(off, 'sulphate')),
+    clMgL: toMgL(per100(off, 'chloride')),
+    fMgL: toMgL(per100(off, 'fluoride')),
+    no3MgL: toMgL(per100(off, 'nitrate')),
+  };
+  const hasAny = Object.values(w).some((v) => v !== null);
+  return hasAny ? w : null;
+}
+
 /** Per-100 g/ml nutrients of an OFF product (null where OFF has no declared per-100 value). */
 export function offNutrients(off: OffProduct) {
   return {
@@ -194,15 +224,18 @@ export function mapOffProduct(
     off.ingredients_text_ro,
     off.lang === 'ro' || foreignOk ? off.ingredients_text : undefined,
   );
+  const categorySlug = inferCategorySlug(off, name, ingredientsText, unit);
+  const water = categorySlug === 'apa' ? offWater(off, name, ingredientsText) : null;
   const product = AddProductRequest.safeParse({
     code,
     name: name.slice(0, 120),
     brand,
     quantity: text(off.quantity).slice(0, 30),
     unit,
-    categorySlug: inferCategorySlug(off, name, ingredientsText, unit),
+    categorySlug,
     ingredientsText,
     nutrients: offNutrients(off),
+    ...(water ? { water } : {}),
     photoPath: null,
     ingredientsPhotoPath: '',
     nutritionPhotoPath: null,
@@ -258,6 +291,7 @@ export function toRow(p: OffMapped, source: string = p.source) {
     protein: n.protein,
     fiber: n.fiber,
     fruit_veg_pct: n.fruitVegPct,
+    water: p.water ?? null,
     ingredients_text: p.ingredientsText,
     allergens: p.allergens,
     may_contain: p.mayContain,

@@ -24,5 +24,6 @@ it('edits the existing local profile and restores the choice after reloading', a
 
   const reopened = await render(<ProfileTab />);
   await waitFor(() => expect(reopened.getByRole('checkbox', { name: ro.profile.health }).props.accessibilityState.checked).toBe(true));
-  expect(reopened.getByText(ro.profile.savedLocally)).toBeTruthy();
+  expect(reopened.queryByText('Salvat doar pe acest telefon')).toBeNull();
+  expect(reopened.getByText(ro.profile.goalTitle)).toBeTruthy();
 });

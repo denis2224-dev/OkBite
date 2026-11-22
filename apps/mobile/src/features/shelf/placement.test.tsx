@@ -11,11 +11,10 @@ jest.mock('../history/store', () => ({ listHistory: jest.fn(async () => []) }));
 jest.mock('../profile', () => ({ useProfile: () => ({ profile: { goals: [], allergens: [], avoid: [], onboarded: true } }) }));
 jest.mock('../../lib/api', () => ({ api: { topProducts: jest.fn(async (category: string) => ({ category, products: [] })) } }));
 
-it('shows "Cel mai bun din raft" on the Scan home sheet, above "Scanate recent"', async () => {
+it('keeps "Cel mai bun din raft" and "Scanate recent" off the Scan page, which is only the camera', async () => {
   jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
   await render(<ScanHome active />);
-  await screen.findByText(ro.scan.shelf.empty);
-  const headers = screen.getAllByRole('header').map(header => header.props.children);
-  expect(headers.indexOf(ro.scan.shelf.title)).toBeGreaterThan(-1);
-  expect(headers.indexOf(ro.scan.shelf.title)).toBeLessThan(headers.indexOf(ro.home.design.recent));
+  expect(screen.queryByText(ro.scan.shelf.title)).toBeNull();
+  expect(screen.queryByText(ro.home.design.recent)).toBeNull();
+  expect(screen.queryAllByRole('header')).toHaveLength(0);
 });

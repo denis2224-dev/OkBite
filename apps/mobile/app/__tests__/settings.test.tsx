@@ -40,10 +40,12 @@ it('enables the implemented web language setter and restores the selected langua
  jest.replaceProperty(lang, 'languageSelectable', true);
  window.localStorage.setItem('okbite.lang', 'en');
  const ui = await render(<SettingsTab />);
+ await fireEvent.press(ui.getByRole('button', {name:ro.settings.language}));
  expect(ui.getByRole('button', {name:ro.settings.english}).props.accessibilityState.selected).toBe(true);
  await fireEvent.press(ui.getByRole('button', {name:ro.settings.russian}));
  expect(window.localStorage.getItem('okbite.lang')).toBe('ru');
  expect(document.documentElement.lang).toBe('ru');
+ await fireEvent.press(ui.getByRole('button', {name:ro.settings.language}));
  await fireEvent.press(ui.getByRole('button', {name:ro.settings.romanian}));
  expect(window.localStorage.getItem('okbite.lang')).toBe('ro');
  expect(document.documentElement.lang).toBe('ro');
@@ -52,7 +54,7 @@ it('enables the implemented web language setter and restores the selected langua
 
 it('keeps language selection disabled on native and legal destinations reachable', async () => {
  const ui = await render(<SettingsTab />);
- expect(ui.getByRole('button', {name:ro.settings.english})).toBeDisabled();
+ expect(ui.getByRole('button', {name:ro.settings.language})).toBeDisabled();
  for (const path of ['method', 'privacy', 'terms'] as const) {
   await fireEvent.press(ui.getByRole('button', {name:ro.settings[path]}));
   expect(router.push).toHaveBeenLastCalledWith(`/${path}`);

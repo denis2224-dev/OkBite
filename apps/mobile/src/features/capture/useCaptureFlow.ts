@@ -1,9 +1,9 @@
 import { useCallback, useRef, useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import type { IdentifyResponse } from '@okbite/shared';
 import { api } from '../../lib/api';
-import { identifyPhotoRoute, isGuidedAddEnabled, productRoute } from '../identify/routes';
+import { COMPARE_FLAG, compareProductRoute, identifyPhotoRoute, isCompareFlag, isGuidedAddEnabled, productRoute } from '../identify/routes';
 import { keepPhoto, removePhoto } from '../offline/photos';
 import { enqueue } from '../offline/queue';
 import { compressPhoto } from './compressPhoto';
@@ -21,6 +21,9 @@ const IDENTIFY_PHOTO_MAX_BYTES = 1_450_000;
 
 export function useCaptureFlow() {
   const router = useRouter();
+  // Opened from Compare: a found product goes back there, into slot A or B.
+  const forCompare = isCompareFlag(useLocalSearchParams()[COMPARE_FLAG]);
+  const openProduct = useCallback((id: string) => router.replace(forCompare ? compareProductRoute(id) : productRoute(id)), [router, forCompare]);
   const [state, setState] = useState<CaptureState>(IDLE);
   const [canRetry, setCanRetry] = useState(false);
   const busy = useRef(false);
@@ -58,7 +61,7 @@ export function useCaptureFlow() {
           if (!current()) return;
           if (hit.status === 'found') {
             setState(IDLE);
-            return router.replace(productRoute(hit.product.id));
+            return openProduct(hit.product.id);
           }
         }
         if (isGuidedAddEnabled()) {
@@ -85,10 +88,10 @@ export function useCaptureFlow() {
         setState(IDLE);
         if (result.status === 'found') {
           if (frontPhotoId) await removePhoto(frontPhotoId).catch(() => {});
-          router.replace(productRoute(result.product.id));
+          openProduct(result.product.id);
           return;
         }
-        router.replace(identifyPhotoRoute(result, frontPhotoId));
+        router.replace(identifyPhotoRoute(result, frontPhotoId, undefined, undefined, forCompare));
       } catch (err) {
         if (frontPhotoId) await removePhoto(frontPhotoId).catch(() => {});
         const code = (err as { code?: string } | null)?.code;
@@ -110,7 +113,7 @@ export function useCaptureFlow() {
         if (!current()) setState(IDLE); // a stale answer leaves no spinner behind
       }
     },
-    [activity, router],
+    [activity, router, openProduct, forCompare],
   );
 
   const takePhoto = useCallback(

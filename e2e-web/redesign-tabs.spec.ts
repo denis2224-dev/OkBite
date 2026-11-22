@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-const tabs = ['Istoric', 'Compară', 'Scanează', 'Alergii', 'Profil'];
+const tabs = ['Istoric', 'Compară', 'Scanează', 'Profil'];
 const entry = JSON.parse(readFileSync('apps/mobile/src/test/preview-data.json', 'utf8'))[0];
 
-test.describe('N9 five-tab redesign acceptance', () => {
+test.describe('N9 four-tab redesign acceptance', () => {
   test.use({ serviceWorkers: 'block' });
 
   test('tabs appear in order with Scan selected at startup', async ({ page }) => {
@@ -16,7 +16,7 @@ test.describe('N9 five-tab redesign acceptance', () => {
     await expect(page.getByRole('tab', { name: 'Scanează', exact: true })).toHaveAttribute('aria-selected', 'true');
   });
 
-  for (const [name, heading] of [['Istoric', 'Istoric'], ['Compară', 'Comparație'], ['Alergii', 'Alergiile tale'], ['Profil', 'Profil']]) {
+  for (const [name, heading] of [['Istoric', 'Istoric'], ['Compară', 'Comparație'], ['Profil', 'Profil']]) {
     test(`${name} opens its screen and can return to Scan`, async ({ page }) => {
       await page.goto('/');
       await page.getByRole('tab', { name, exact: true }).click();
