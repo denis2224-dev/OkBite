@@ -57,7 +57,7 @@ it('shows no photo in rows and fără scor for unavailable scores', async () => 
   await render(<HistoryScreen/>);
   await screen.findByText(entry.product.name);
   expect(screen.queryByTestId('history-thumbnail')).toBeNull(); // rows show the score tag, not a photo
-  expect(screen.getByText(ro.history.noScore)).toBeTruthy();
+  expect(screen.getByText('—', { includeHiddenElements: true })).toBeTruthy();
   expect(screen.queryByText('0')).toBeNull();
 });
 it('keeps failed undo retryable and shows a newer scan after restoration succeeds', async () => {

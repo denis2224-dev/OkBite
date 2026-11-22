@@ -114,7 +114,7 @@ export const redesignRo = {
   open:(name:string)=>`Vezi detalii despre ${name}`, empty:'Nu avem informații despre aditivi pentru acest produs.',
  },
  profile: {
-  title:'Profil', goalTitle:'Ce este important pentru tine?', allergensTitle:'Alergeni de urmărit', avoidTitle:'Alimente și ingrediente de evitat',
+  title:'Profil', myAllergies:'Alergiile mele', goalTitle:'Ce este important pentru tine?', allergensTitle:'Alergeni de urmărit', avoidTitle:'Alimente și ingrediente de evitat',
   health:'Alegeri alimentare mai echilibrate', allergies:'Alergii alimentare', family:'Alegeri pentru familie',
   weight:'Gestionarea greutății', other:'Alt obiectiv', added_sugar:'Zahăr adăugat', sweeteners:'Îndulcitori',
   ultra_processed:'Produse ultraprocesate', colourings:'Coloranți', palm_oil:'Ulei de palmier',
