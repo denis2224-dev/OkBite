@@ -17,7 +17,7 @@ export function UnverifiedList({
             key={item.id}
             variant="secondary"
             onPress={() => onOpen(item.id)}
-          >{`${item.brand} · ${item.name}`}</Button>
+          >{`${item.brand}, ${item.name}`}</Button>
         ))
       ) : (
         <Body>{ro.app.admin.emptyProducts}</Body>

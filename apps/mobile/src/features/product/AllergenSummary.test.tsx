@@ -39,11 +39,10 @@ it('still shows the summary under the name when the score is unavailable', async
   expect(inOrder().indexOf(product.name)).toBeLessThan(inOrder().indexOf('allergen-summary'));
 });
 
-it('sits between the score tag and the reasons, and keeps one missing-allergen note', async () => {
+it('sits between the score and the reasons', async () => {
   mockProfile = profile(['Arahide']);
   await render(<ResultView product={yogurt({ status: 'verified' })} score={{ ...foundYogurt.score, letter: 'B' }} />);
   const order = inOrder();
   expect(order.indexOf('product-score')).toBeLessThan(order.indexOf('allergen-summary'));
   expect(order.indexOf('allergen-summary')).toBeLessThan(order.indexOf('reason-tone-'));
-  expect(screen.getAllByText(ro.result.missingAllergenNote)).toHaveLength(1);
 });

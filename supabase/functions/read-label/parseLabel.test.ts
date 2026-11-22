@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { UpstreamError } from '../_lib/claude.ts';
 import { parseLabel } from './parseLabel.ts';
+import { WATER_PROMPT } from './waterLabel.ts';
 
 const label = (over: Record<string, unknown>) =>
   JSON.stringify({
@@ -265,4 +266,61 @@ Deno.test('parseLabel accepts Cyrillic units only where they match the field and
   assert.equal(parseLabel(label({ unit: 'на 200 г' })).unit, null);
   assert.equal(parseLabel(label({ unit: 'per g' })).unit, null);
   assert.equal(parseLabel(label({ kcal: '1851 кДж' })).nutrients.kcal, null);
+});
+
+Deno.test('parseLabel extracts RO/RU/UA mineral profiles and ranges when kind is water', () => {
+  const omJson = JSON.stringify({
+    tdsMgL: '350-400 mg/l',
+    dryResidueMgL: '290-320 mg/l',
+    ph: '',
+    carbonation: 'Apă necarbogazoasă',
+    classification: 'apă potabilă',
+    caMgL: '30-35',
+    mgMgL: '10-15',
+    naPlusKMgL: '70-75',
+    hco3MgL: '130-150',
+    clMgL: '13-18',
+    ingredientsText: '',
+  });
+  const read = parseLabel(omJson, { ingredients: true, nutrition: 'same_photo', kind: 'water' });
+  assert.equal(read.unit, 'ml');
+  assert.equal(read.ingredientsText, null);
+  assert.equal(read.reasons.ingredientsText, 'not_printed');
+  assert.equal(read.water?.tdsMgL, 375);
+  assert.equal(read.water?.naPlusKMgL, 72.5);
+  assert.equal(read.water?.carbonation, 'still');
+  assert.equal(read.water?.classification, 'drinking');
+
+  const enrichWater = parseLabel(
+    JSON.stringify({ tdsMgL: '6,5-12 g/l', h3bo3MgL: '100-250 mg/l', naMgL: '1500-3000', no3MgL: '0' }),
+    { ingredients: false, nutrition: 'separate', kind: 'water' },
+  );
+  assert.equal(enrichWater.reasons.ingredientsText, 'not_photographed');
+  assert.equal(enrichWater.water?.tdsMgL, 9250);
+  assert.equal(enrichWater.water?.h3bo3MgL, 175);
+  assert.equal(enrichWater.water?.no3MgL, 0);
+  assert.deepEqual(enrichWater.water?.ranges?.h3bo3MgL, { min: 100, max: 250 });
+  assert.deepEqual(enrichWater.water?.ranges?.naMgL, { min: 1500, max: 3000 });
+  assert.deepEqual(read.water?.ranges?.tdsMgL, { min: 350, max: 400 });
+
+  const davidan = parseLabel(
+    JSON.stringify({
+      dryResidueMgL: '390',
+      no3MgL: 'NO3-6,4',
+      caMgL: 'Ca2 + 14,0',
+      mgMgL: 'Mg2 + 42,6',
+      carbonation: 'Apă potabilă Carbogazificată',
+      classification: 'apei potabile HG Nr. 934/2',
+    }),
+    { ingredients: true, nutrition: 'same_photo', kind: 'water' },
+  );
+  assert.equal(davidan.water?.dryResidueMgL, 390);
+  assert.equal(davidan.water?.no3MgL, 6.4);
+  assert.equal(davidan.water?.caMgL, 14);
+  assert.equal(davidan.water?.mgMgL, 42.6);
+  assert.equal(davidan.water?.carbonation, 'sparkling');
+  assert.equal(davidan.water?.classification, 'drinking');
+  assert.match(WATER_PROMPT, /reziduu sec solubil/i);
+  assert.match(WATER_PROMPT, /NO2/);
+  assert.match(WATER_PROMPT, /SO2/);
 });

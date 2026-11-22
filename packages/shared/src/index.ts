@@ -7,3 +7,4 @@ export * from './ingredients';
 export * from './profile/types';
 export * from './profile/match';
 export { OFF_IMAGE_URL } from './off/mapOffProduct';
+export * from './water/parseWater';

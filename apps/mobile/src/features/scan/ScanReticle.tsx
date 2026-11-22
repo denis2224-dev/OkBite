@@ -8,7 +8,7 @@ const SIZE = 28;
 const STROKE = 4;
 
 /** Corner guides that show where to hold the barcode, with the hint on a legible pill. Decorative only. */
-export function ScanReticle() {
+export function ScanReticle({ hintBottom = 16 }: { hintBottom?: number } = {}) {
   const { colors } = useTheme();
   return <View testID="scan-reticle" pointerEvents="none" style={[StyleSheet.absoluteFill, styles.fill]}>
     <View style={styles.frame}>
@@ -20,7 +20,7 @@ export function ScanReticle() {
         borderBottomLeftRadius: corner === 'bl' ? 12 : 0, borderBottomRightRadius: corner === 'br' ? 12 : 0,
       }]} />)}
     </View>
-    <View testID="scan-reticle-hint" style={[styles.hint, { backgroundColor: colors.cameraOverlay }]}>
+    <View testID="scan-reticle-hint" style={[styles.hint, { bottom: hintBottom, backgroundColor: colors.cameraOverlay }]}>
       <Text style={[styles.hintText, { color: colors.cameraInk }]}>{ro.scan.frameHint}</Text>
     </View>
   </View>;

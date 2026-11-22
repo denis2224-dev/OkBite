@@ -96,18 +96,23 @@ export function GuidedAddScreen() {
   const isWorking = state.stage === 'working';
   const isFront = state.stage === 'front' || (isWorking && !state.remotePhotoPath);
   const isNutrition = state.stage === 'nutrition' || state.stage === 'nutrition_unreadable';
+  const isWater = Boolean(state.initial.isWater || state.initial.categorySlug === 'apa');
   const stageTitle =
     isFront
       ? ro.add.frontTitle
       : isNutrition
         ? ro.add.nutritionTitle
-        : ro.add.ingredientsTitle;
+        : isWater
+          ? ro.result.water.panelTitle
+          : ro.add.ingredientsTitle;
   const stageHint =
     isFront
       ? ro.add.frontHint
       : isNutrition
         ? ro.add.nutritionHint
-        : ro.add.ingredientsHint;
+        : isWater
+          ? ro.result.water.panelHint
+          : ro.add.ingredientsHint;
 
   const totalSteps = 4;
   const ingredientsStep = 2;

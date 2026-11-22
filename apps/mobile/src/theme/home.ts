@@ -1,11 +1,11 @@
 import { light, fonts } from './tokens';
 export const homeTheme = {
   colors: { ...light, cardBorder: light.border, separator: light.divider },
-  fonts: { ...fonts, body: 'Manrope_400Regular', semibold: fonts.medium, extra: 'Manrope_800ExtraBold', headingExtra: 'BricolageGrotesque_800ExtraBold' },
+  fonts: { ...fonts, body: fonts.body, semibold: fonts.bold, extra: fonts.bold, headingExtra: fonts.headingExtra },
   tiles: [
-    { background: '#E8EFE3', foreground: '#35613D' },
-    { background: '#F5E8D4', foreground: '#8A5A2C' },
-    { background: '#F1E3E1', foreground: '#8C4646' },
+    { background: light.mist, foreground: light.primaryDark },
+    { background: light.successBg, foreground: light.primaryDark },
+    { background: light.chipSelectedBg, foreground: light.primaryDark },
   ],
 } as const;
 
