@@ -82,8 +82,8 @@ const legacyRu = {
   scan: {
     frameHint: 'Поместите штрихкод в рамку', deniedText: 'Разрешите доступ к камере для сканирования.',
     manualTitle: 'Введите код вручную', manualEmpty: 'Введите цифры под штрихкодом.', search: 'Найти',
-    title: 'Сканировать штрихкод', manual: 'Ввести код', manualLabel: 'Штрихкод', manualPlaceholder: '8 или 13 цифр',
-    manualChecksum: 'Похоже, код неверен. Проверьте цифры.', manualInvalid: 'Штрихкод содержит 8 или 13 цифр.',
+    title: 'Сканировать штрихкод', manual: 'Ввести код', manualLabel: 'Штрихкод', manualPlaceholder: '8, 12 или 13 цифр',
+    manualChecksum: 'Похоже, код неверен. Проверьте цифры.', manualInvalid: 'Штрихкод содержит 8, 12 или 13 цифр.',
     submit: 'Найти товар', webManualOnly: 'В этом браузере введите код вручную или сфотографируйте этикетку.',
   },
   result: {
