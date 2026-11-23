@@ -27,9 +27,13 @@ it('cannot be pulled up: the content does not bounce, so the page behind never s
   expect(scroll.props.overScrollMode).toBe('never');
 });
 
-it('sits at the bottom, wide at most 480, and never taller than 90% of the screen', async () => {
+it('sits at the bottom, wide at most 480, never taller than 90% of the screen, with no gap under it', async () => {
   await open();
-  expect(StyleSheet.flatten(screen.getByTestId('sheet').props.style)).toMatchObject({ width: '100%', maxWidth: 480, maxHeight: '90%' });
+  const panel = StyleSheet.flatten(screen.getByTestId('sheet').props.style);
+  expect(panel).toMatchObject({ width: '100%', maxWidth: 480, flexShrink: 1 });
+  expect(panel.maxHeight).toBeUndefined(); // a % cap here is a % of the content-sized frame and cut the sheet short, leaving the page showing under it
+  expect(StyleSheet.flatten(screen.getByTestId('sheet-frame', { includeHiddenElements: true }).props.style)).toMatchObject({ width: '100%', maxHeight: '90%' });
+  expect(StyleSheet.flatten(screen.getByTestId('sheet-scroll').props.style)).toMatchObject({ flexShrink: 1 });
 });
 
 it('closes from the system back gesture, and from the backdrop only when asked to', async () => {
