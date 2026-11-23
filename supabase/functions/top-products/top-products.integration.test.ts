@@ -1,18 +1,22 @@
 import { strict as assert } from 'node:assert';
+import { productScore } from '../_shared/score/index.ts';
 import { ErrorBody, TopProductsResponse } from '../_shared/contract.ts';
 import { adminClient } from '../_lib/client.ts';
 import { integrationTest } from '../_lib/integration.ts';
+
+const origin = 'https://okbite.md';
 
 function shelf(category: string, limit = 20): Promise<Response> {
   const url = new URL('/functions/v1/top-products', Deno.env.get('SUPABASE_URL')!);
   url.search = new URLSearchParams({ category, limit: String(limit) }).toString();
   const key = Deno.env.get('SUPABASE_ANON_KEY')!;
-  return fetch(url, { headers: { apikey: key, authorization: `Bearer ${key}` } });
+  return fetch(url, { headers: { apikey: key, authorization: `Bearer ${key}`, origin } });
 }
 
 integrationTest('top-products gateway returns the seeded yogurt shelf in score order', async () => {
   const res = await shelf('iaurt');
   assert.equal(res.status, 200);
+  assert.equal(res.headers.get('access-control-allow-origin'), origin);
   const { category, products } = TopProductsResponse.parse(await res.json());
   assert.equal(category, 'iaurt');
   assert.deepEqual(
@@ -24,7 +28,7 @@ integrationTest('top-products gateway returns the seeded yogurt shelf in score o
     assert.equal(product.category.slug, category);
     assert.notEqual(score.score, null);
   }
-  const scores = products.map(({ score }) => score.score!);
+  const scores = products.map(({ product, score }) => productScore(product, score).score!);
   assert.deepEqual(scores, [...scores].sort((a, b) => b - a));
 
   const limited = await shelf('iaurt', 1);

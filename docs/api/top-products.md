@@ -1,12 +1,12 @@
 # `top-products` — candidates for "Cel mai bun din raft"
 
-Status: **the function does not exist yet.** The app already calls it (`api.topProducts` in
-`apps/mobile/src/lib/api.ts`); until it is deployed the section shows its error state with a retry.
+The app calls the `top-products` function through the configured Supabase gateway.
 In demo mode (`EXPO_PUBLIC_PREVIEW=1` without a backend URL) the app answers from its sample products.
 
-The Scan home screen shows, per category ("shelf"), the three best verified products by OkBite
-product score. The backend returns candidates; **the app ranks them**, so the order always matches
-the score shown on Result, History and Compare.
+The shelf component shows up to three verified products per category. The full-screen Scan tab
+keeps the component off the camera page. The backend ranks the eligible category products using
+the OkBite score used by Result, History and Compare. The app recomputes the displayed score
+from each returned entry.
 
 ## Request
 
@@ -49,14 +49,15 @@ No body. Same headers and 20 s client timeout as `lookup`. One request per shelf
 
 - `status = 'verified'` only; never hidden or unverified products.
 - `category.slug` equal to the requested slug.
-- With a nutrition score (`score.score` not null) — products without one are dropped by the app anyway.
-- At most `limit`, best `score.score` first. Twenty candidates are asked for so the app can re-rank by
-  the product score (nutrition, additives, processing) and still fill three rows.
+- With a numeric score. The input score comes from the nutrition rules for food and the chemical
+  rules for water, as in product lookup.
+- At most `limit`, best OkBite product score first, with ties resolved by Romanian product name, then
+  ID. Food ranking includes nutrition, additives and processing. Water ranking uses the chemical
+  score. Each entry carries the same `ScoreResult` as product lookup.
 
 ## What the app does with the answer
 
-1. Validates with Zod (`TopProductsResponse` in `apps/mobile/src/features/shelf/topProducts.ts`):
-   `{ category: string (non-empty), products: Array<{ product: Product, score: ScoreResult }> }`.
+1. Validates with the shared Zod `TopProductsResponse` schema, including its 20-entry cap.
    Any mismatch, or a `category` different from the one requested, counts as `invalid_response`.
 2. Keeps `product.status === 'verified'` with a non-null product score (`productScoreFor`).
 3. Sorts by product score, highest first; ties by `name` A to Z (Romanian collation); keeps 3.
@@ -77,9 +78,6 @@ failures are not kept. The function may add `Cache-Control` (a few minutes is fi
 
 ## Open questions for the backend
 
-1. Should `TopProductsResponse` move into the shared contract (R2), replacing the local schema?
-2. Pre-ordering: `score.score` is the nutrition score, the app ranks by the product score. Can the
-   backend order by the product score (`productScore` from `@okbite/shared`) so 20 candidates are surely enough?
-3. A `total` count of verified products on the shelf? Today the header counts only the rows shown.
-4. Should verified Open Food Facts imports (`source` starting with "Open Food Facts") take part, or only team-checked labels?
-5. Rate limiting: the user can open up to 25 shelves in a row; is the per-device limit of `lookup` suitable here?
+1. Should the header show a total count of verified products on the shelf? Today it counts displayed rows.
+2. Should the shelf keep including verified Open Food Facts imports alongside team-checked labels?
+3. Is the lookup per-device rate limit suitable here? A shopper can open up to 25 shelves in a row.
