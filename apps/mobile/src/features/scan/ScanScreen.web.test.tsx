@@ -7,7 +7,8 @@ import { ro } from '../../copy/ro';
 import { light } from '../../theme/tokens';
 import ScanScreenWeb from './ScanScreen.web';
 import { cameraMessage } from '../capture/cameraSupport.web';
-import { CODE, lookupNotFound } from '../capture/__fixtures__/responses';
+import { saveToHistory } from '../history/store';
+import { CODE, lookupFound, lookupNotFound } from '../capture/__fixtures__/responses';
 import * as useScanLookupModule from './useScanLookup';
 
 const mockReplace = jest.fn();
@@ -26,6 +27,7 @@ jest.mock('expo-router', () => ({
 }));
 jest.mock('../../lib/api', () => ({ api: { lookup: jest.fn(), identify: jest.fn() } }));
 jest.mock('./useWebLiveScan', () => ({ useWebLiveScan: () => mockLive }));
+jest.mock('../history/store', () => ({ saveToHistory: jest.fn() }));
 
 describe('ScanScreen (web)', () => {
   beforeEach(() => {
@@ -180,6 +182,18 @@ describe('ScanScreen (web)', () => {
     await fireEvent.changeText(screen.getByLabelText(ro.scan.manualTitle), CODE);
     await fireEvent.press(screen.getByRole('button', { name: ro.scan.search }));
     expect(mockReplace).toHaveBeenCalledWith({ pathname: '/add', params: { flow: 'guided', code: CODE } });
+  });
+
+  it('keeps the manually found result open and shows if browser storage fails', async () => {
+    jest.mocked(api.lookup).mockResolvedValue(lookupFound);
+    jest.mocked(saveToHistory).mockRejectedValue(new Error('storage full'));
+    await render(<ScanScreenWeb />);
+    await fireEvent.press(screen.getByRole('button', { name: ro.scan.manual }));
+    await fireEvent.changeText(screen.getByLabelText(ro.scan.manualTitle), CODE);
+    await fireEvent.press(screen.getByRole('button', { name: ro.scan.search }));
+    expect(await screen.findByText(ro.history.storageError)).toBeTruthy();
+    expect(screen.getByRole('button', { name: ro.app.open })).toBeTruthy();
+    expect(saveToHistory).toHaveBeenCalledTimes(1);
   });
 
   it('uses themed text for the scan heading and working status message', async () => {
