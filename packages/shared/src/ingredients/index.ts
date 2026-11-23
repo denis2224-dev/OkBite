@@ -3,7 +3,11 @@ import type { Category, Ingredient, IngredientEntry, Product } from '../contract
 
 export type IngredientKey = Pick<IngredientEntry, 'slug' | 'name' | 'aliases'>;
 
-export const BUILTIN_INGREDIENTS: Omit<IngredientEntry, 'checkedBy' | 'checkedAt'>[] = [
+/** One entry of data/ingredients.json (checkedBy and checkedAt stay in the file). A test keeps this list equal to the file. */
+export type BuiltinIngredient = Omit<IngredientEntry, 'checkedBy' | 'checkedAt'> & { risk: Ingredient['risk']; riskSource: Ingredient['riskSource'] };
+
+// Generated from data/ingredients.json: edit the file, not this list.
+export const BUILTIN_INGREDIENTS: BuiltinIngredient[] = [
   {
     slug: 'apa-carbogazoasa',
     name: 'Apă carbogazoasă',
@@ -13,6 +17,8 @@ export const BUILTIN_INGREDIENTS: Omit<IngredientEntry, 'checkedBy' | 'checkedAt
     explanation: 'Apă potabilă sau minerală în care s-a dizolvat dioxid de carbon pentru efervescență. Nu aduce calorii, zaharuri sau grăsimi.',
     source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169',
     allergen: null,
+    risk: null,
+    riskSource: null,
   },
   {
     slug: 'dioxid-de-carbon-e290',
@@ -23,6 +29,8 @@ export const BUILTIN_INGREDIENTS: Omit<IngredientEntry, 'checkedBy' | 'checkedAt
     explanation: 'Gaz alimentar dizolvat în băuturi pentru a le face acidulate (bule). Poate da senzație de balonare la consum rapid sau în cantități mari.',
     source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333',
     allergen: null,
+    risk: null,
+    riskSource: null,
   },
   {
     slug: 'colorant-caramel-e150d',
@@ -33,6 +41,8 @@ export const BUILTIN_INGREDIENTS: Omit<IngredientEntry, 'checkedBy' | 'checkedAt
     explanation: 'Colorant maro închis folosit frecvent în băuturile tip cola. Este un aditiv cu rol strict estetic; EFSA a stabilit o doză zilnică acceptabilă (DZA) pentru clasa caramelilor (E150a–d) și limite pentru compușii secundari (4-MEI).',
     source: 'https://www.efsa.europa.eu/en/efsajournal/pub/2004',
     allergen: null,
+    risk: 'moderate',
+    riskSource: 'https://doi.org/10.2903/j.efsa.2012.3030',
   },
   {
     slug: 'acid-fosforic-e338',
@@ -43,6 +53,8 @@ export const BUILTIN_INGREDIENTS: Omit<IngredientEntry, 'checkedBy' | 'checkedAt
     explanation: 'Aditiv care conferă gustul acrișor specific băuturilor cola și echilibrează dulceața. Aciditatea ridicată din băuturile răcoritoare poate eroda smalțul dentar la consum frecvent, iar aportul excesiv de fosfați aditivi este monitorizat de EFSA.',
     source: 'https://www.efsa.europa.eu/en/efsajournal/pub/5674',
     allergen: null,
+    risk: 'high',
+    riskSource: 'https://doi.org/10.2903/j.efsa.2019.5674',
   },
   {
     slug: 'acid-citric-e330',
@@ -53,6 +65,8 @@ export const BUILTIN_INGREDIENTS: Omit<IngredientEntry, 'checkedBy' | 'checkedAt
     explanation: 'Acid organic prezent natural în citrice și produs industrial prin fermentare. Dă gust acrișor și stabilizează băuturile; în concentrații mari în băuturi acide poate contribui la eroziunea smalțului dentar.',
     source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333',
     allergen: null,
+    risk: null,
+    riskSource: null,
   },
   {
     slug: 'citrati-de-sodiu-e331',
@@ -63,6 +77,8 @@ export const BUILTIN_INGREDIENTS: Omit<IngredientEntry, 'checkedBy' | 'checkedAt
     explanation: 'Săruri de sodiu ale acidului citric folosite pentru a regla aciditatea băuturilor răcoritoare și a stabiliza gustul.',
     source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333',
     allergen: null,
+    risk: null,
+    riskSource: null,
   },
   {
     slug: 'aspartam-e951',
@@ -73,6 +89,8 @@ export const BUILTIN_INGREDIENTS: Omit<IngredientEntry, 'checkedBy' | 'checkedAt
     explanation: 'Îndulcitor artificial de ~200 de ori mai dulce decât zahărul. Conține o sursă de fenilalanină (contraindicat persoanelor cu fenilcetonurie). În algoritmul Nutri-Score 2023 pentru băuturi, îndulcitorii fără calorii adaugă 4 puncte nefavorabile pentru a nu încuraja obișnuința cu gustul dulce; OMS (2023) nu recomandă îndulcitorii fără zahăr pentru controlul greutății pe termen lung.',
     source: 'https://www.efsa.europa.eu/en/efsajournal/pub/3496',
     allergen: null,
+    risk: 'low',
+    riskSource: 'https://doi.org/10.2903/j.efsa.2013.3496',
   },
   {
     slug: 'acesulfam-k-e950',
@@ -81,8 +99,10 @@ export const BUILTIN_INGREDIENTS: Omit<IngredientEntry, 'checkedBy' | 'checkedAt
     group: 'add',
     role: 'Îndulcitor intens fără calorii (E950)',
     explanation: 'Îndulcitor sintetic fără calorii, folosit adesea împreună cu aspartamul sau ciclamații pentru a masca postgustul amărui. În Nutri-Score 2023, prezența îndulcitorilor în băuturi este penalizată cu 4 puncte nefavorabile.',
-    source: 'https://www.efsa.europa.eu/en/efsajournal/pub/9398',
+    source: 'https://doi.org/10.2903/j.efsa.2025.9317',
     allergen: null,
+    risk: 'low',
+    riskSource: 'https://doi.org/10.2903/j.efsa.2025.9317',
   },
   {
     slug: 'ciclamat-de-sodiu-e952',
@@ -93,6 +113,8 @@ export const BUILTIN_INGREDIENTS: Omit<IngredientEntry, 'checkedBy' | 'checkedAt
     explanation: 'Îndulcitor sintetic fără calorii (de ~30–50 de ori mai dulce decât zahărul), utilizat în băuturi răcoritoare „zero zahăr”. Are o doză zilnică acceptabilă mai mică decât alți îndulcitori (7 mg/kg corp/zi) și declanșează penalizarea de 4 puncte în Nutri-Score 2023 pentru băuturi.',
     source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333',
     allergen: null,
+    risk: null,
+    riskSource: null,
   },
   {
     slug: 'sucraloza-e955',
@@ -103,6 +125,8 @@ export const BUILTIN_INGREDIENTS: Omit<IngredientEntry, 'checkedBy' | 'checkedAt
     explanation: 'Îndulcitor artificial obținut prin clorurarea zaharozei, de ~600 de ori mai dulce decât zahărul. În băuturi, prezența îndulcitorilor fără calorii adaugă 4 puncte nefavorabile în calculul Nutri-Score 2023.',
     source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333',
     allergen: null,
+    risk: 'low',
+    riskSource: 'https://doi.org/10.2903/j.efsa.2026.9854',
   },
   {
     slug: 'zaharina-e954',
@@ -113,6 +137,8 @@ export const BUILTIN_INGREDIENTS: Omit<IngredientEntry, 'checkedBy' | 'checkedAt
     explanation: 'Îndulcitor sintetic intens fără calorii. În băuturi răcoritoare, îndulcitorii fără calorii primesc 4 puncte nefavorabile în Nutri-Score 2023.',
     source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333',
     allergen: null,
+    risk: 'low',
+    riskSource: 'https://doi.org/10.2903/j.efsa.2024.9044',
   },
   {
     slug: 'glicozide-steviolice-e960a',
@@ -123,6 +149,8 @@ export const BUILTIN_INGREDIENTS: Omit<IngredientEntry, 'checkedBy' | 'checkedAt
     explanation: 'Îndulcitor extras din frunzele plantei Stevia rebaudiana. Deși are origine vegetală, este un îndulcitor intens fără calorii și adaugă 4 puncte nefavorabile băuturilor în Nutri-Score 2023.',
     source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333',
     allergen: null,
+    risk: 'moderate',
+    riskSource: 'https://doi.org/10.2903/j.efsa.2024.9045',
   },
   {
     slug: 'benzoat-de-sodiu-e211',
@@ -133,6 +161,8 @@ export const BUILTIN_INGREDIENTS: Omit<IngredientEntry, 'checkedBy' | 'checkedAt
     explanation: 'Conservant folosit în băuturi răcoritoare acide și sosuri pentru a opri dezvoltarea drojdiilor și bacteriilor.',
     source: 'https://www.efsa.europa.eu/en/efsajournal/pub/4433',
     allergen: null,
+    risk: 'moderate',
+    riskSource: 'https://doi.org/10.2903/j.efsa.2016.4433',
   },
   {
     slug: 'sorbat-de-potasiu-e202',
@@ -143,6 +173,8 @@ export const BUILTIN_INGREDIENTS: Omit<IngredientEntry, 'checkedBy' | 'checkedAt
     explanation: 'Sare de potasiu a acidului sorbic, utilizată pentru a preveni apariția mucegaiurilor și drojdiilor în băuturi, lactate și sosuri.',
     source: 'https://www.efsa.europa.eu/en/efsajournal/pub/4144',
     allergen: null,
+    risk: 'low',
+    riskSource: 'https://doi.org/10.2903/j.efsa.2019.5625',
   },
   {
     slug: 'cafeina',
@@ -153,6 +185,8 @@ export const BUILTIN_INGREDIENTS: Omit<IngredientEntry, 'checkedBy' | 'checkedAt
     explanation: 'Alcaloid cu efect stimulent asupra sistemului nervos central, adăugat în băuturile tip cola pentru gust amărui și în băuturile energizante. Se recomandă limitarea consumului la copii, femei însărcinate și persoane sensibile la cafeină.',
     source: 'https://www.efsa.europa.eu/en/efsajournal/pub/4102',
     allergen: null,
+    risk: null,
+    riskSource: null,
   },
   {
     slug: 'aroma-naturala',
@@ -163,16 +197,20 @@ export const BUILTIN_INGREDIENTS: Omit<IngredientEntry, 'checkedBy' | 'checkedAt
     explanation: 'Substanțe aromatizante obținute din surse vegetale, animale sau microbiologice, folosite pentru a reda sau standardiza gustul și mirosul produsului.',
     source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1334',
     allergen: null,
+    risk: null,
+    riskSource: null,
   },
   {
     slug: 'zahar',
     name: 'Zahăr',
-    aliases: ['zahar alb', 'zaharoza', 'sirop de glucoza-fructoza', 'sirop de fructoza-glucoza'],
+    aliases: ['zahar alb', 'zaharوها', 'sirop de glucoza-fructoza', 'sirop de fructoza-glucoza'],
     group: 'taste',
     role: 'Îndulcitor caloric',
     explanation: 'Zaharuri adăugate de producător pentru gust și conservare. Aduc calorii și cresc direct punctele nefavorabile pentru zaharuri în tabelul nutrițional.',
     source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169',
     allergen: null,
+    risk: null,
+    riskSource: null,
   },
   {
     slug: 'sare',
@@ -183,6 +221,176 @@ export const BUILTIN_INGREDIENTS: Omit<IngredientEntry, 'checkedBy' | 'checkedAt
     explanation: 'Clorură de sodiu adăugată pentru gust sau conservare. Contribuie direct la cantitatea totală de sare din tabelul nutrițional.',
     source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169',
     allergen: null,
+    risk: null,
+    riskSource: null,
+  },
+  {
+    slug: 'lapte-normalizat',
+    name: 'Lapte normalizat',
+    aliases: ['lapte de vaca pasteurizat', 'lapte pasteurizat'],
+    group: 'base',
+    role: 'Ingredient de bază',
+    explanation: 'Lapte de vacă cu grăsimea ajustată la valoarea de pe etichetă. Aduce proteine, calciu și lactoză, zahărul natural din lapte.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169',
+    allergen: 'Lapte',
+    risk: null,
+    riskSource: null,
+  },
+  {
+    slug: 'lapte-integral',
+    name: 'Lapte integral',
+    aliases: ['lapte de vaca integral'],
+    group: 'base',
+    role: 'Ingredient de bază',
+    explanation: 'Lapte de vacă cu conținutul integral de grăsime. Aduce proteine, calciu și lactoză.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169',
+    allergen: 'Lapte',
+    risk: null,
+    riskSource: null,
+  },
+  {
+    slug: 'smantana',
+    name: 'Smântână',
+    aliases: ['smantana pasteurizata'],
+    group: 'fat',
+    role: 'Grăsime și cremozitate',
+    explanation: 'Partea grasă a laptelui, bogată în grăsimi saturate și responsabilă pentru textura densă și cremoasă.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169',
+    allergen: 'Lapte',
+    risk: null,
+    riskSource: null,
+  },
+  {
+    slug: 'culturi-lactice-vii',
+    name: 'Culturi lactice vii',
+    aliases: ['culturi lactice', 'culturi lactice selectionate', 'fermenti lactici'],
+    group: 'cult',
+    role: 'Fermentare',
+    explanation: 'Bacterii lactice care transformă lactoza din lapte în acid lactic, dând iaurtului și chefirului textura și gustul acrișor.',
+    source: 'https://www.fao.org/fao-who-codexalimentarius',
+    allergen: null,
+    risk: null,
+    riskSource: null,
+  },
+  {
+    slug: 'amidon-modificat',
+    name: 'Amidon modificat',
+    aliases: ['amidon modificat din porumb', 'amidon modificat de tapioca'],
+    group: 'add',
+    role: 'Îngroșător și stabilizator',
+    explanation: 'Amidon tratat fizic sau chimic pentru a păstra textura cremoasă la rece, la încălzire și la amestecare.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333',
+    allergen: null,
+    risk: 'low',
+    riskSource: 'https://doi.org/10.2903/j.efsa.2017.4911',
+  },
+  {
+    slug: 'pectina-e440',
+    name: 'Pectină (E440)',
+    aliases: ['pectina', 'pectine', 'e440', 'e 440'],
+    group: 'add',
+    role: 'Gelifiant (E440)',
+    explanation: 'Fibră solubilă extrasă din fructe (mere, citrice), folosită pentru a lega gemurile, iaurturile cu fructe și jeleurile.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333',
+    allergen: null,
+    risk: 'low',
+    riskSource: 'https://doi.org/10.2903/j.efsa.2017.4866',
+  },
+  {
+    slug: 'carmin-e120',
+    name: 'Carmin (E120)',
+    aliases: ['carmin', 'acid carminic', 'cosenila', 'e120', 'e 120'],
+    group: 'add',
+    role: 'Colorant (E120)',
+    explanation: 'Colorant roșu obținut din insecte (coșenilă). Poate provoca reacții alergice rare la persoane sensibile și nu este potrivit pentru dietele vegetariene/vegane.',
+    source: 'https://www.efsa.europa.eu/en/efsajournal/pub/4288',
+    allergen: null,
+    risk: 'low',
+    riskSource: 'https://doi.org/10.2903/j.efsa.2015.4288',
+  },
+  {
+    slug: 'faina-de-grau',
+    name: 'Făină de grâu',
+    aliases: ['faina alba de grau'],
+    group: 'base',
+    role: 'Cereale',
+    explanation: 'Făină albă rafinată din grâu, cu mai puține fibre decât făina integrală. Conține gluten.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169',
+    allergen: 'Gluten',
+    risk: null,
+    riskSource: null,
+  },
+  {
+    slug: 'ulei-de-palmier',
+    name: 'Ulei de palmier',
+    aliases: ['grasime de palmier', 'grasime vegetala de palmier'],
+    group: 'fat',
+    role: 'Grăsime vegetală',
+    explanation: 'Grăsime vegetală semisolidă la temperatura camerei, bogată în acizi grași saturați (~50%).',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169',
+    allergen: null,
+    risk: null,
+    riskSource: null,
+  },
+  {
+    slug: 'ulei-de-floarea-soarelui',
+    name: 'Ulei de floarea-soarelui',
+    aliases: ['ulei vegetal de floarea-soarelui', 'ulei rafinat de floarea-soarelui'],
+    group: 'fat',
+    role: 'Grăsime vegetală',
+    explanation: 'Ulei vegetal lichid bogat în acizi grași nesaturați și cu conținut redus de grăsimi saturate.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32011R1169',
+    allergen: null,
+    risk: null,
+    riskSource: null,
+  },
+  {
+    slug: 'lecitina-din-soia-e322',
+    name: 'Lecitină din soia (E322)',
+    aliases: ['lecitina din soia', 'lecitine din soia', 'lecitina de soia', 'e322', 'e 322'],
+    group: 'add',
+    role: 'Emulsifiant (E322)',
+    explanation: 'Ajută grăsimea și apa să se amestece uniform în ciocolată, biscuiți și creme. Provine din soia, alergen declarat.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333',
+    allergen: 'Soia',
+    risk: 'low',
+    riskSource: 'https://doi.org/10.2903/j.efsa.2017.4742',
+  },
+  {
+    slug: 'bicarbonat-de-sodiu-e500',
+    name: 'Bicarbonat de sodiu (E500)',
+    aliases: ['bicarbonat de sodiu', 'carbonati de sodiu', 'carbonat acid de sodiu', 'e500', 'e 500'],
+    group: 'add',
+    role: 'Agent de afânare (E500)',
+    explanation: 'Face aluatul să crească la coacere prin eliberare de dioxid de carbon. Conține sodiu, contribuind ușor la valoarea sării.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333',
+    allergen: null,
+    risk: null,
+    riskSource: null,
+  },
+  {
+    slug: 'acid-ascorbic-e300',
+    name: 'Acid ascorbic (E300)',
+    aliases: ['acid ascorbic', 'vitamina c', 'e300', 'e 300'],
+    group: 'add',
+    role: 'Antioxidant (E300)',
+    explanation: 'Vitamina C folosită ca antioxidant alimentar pentru a preveni oxidarea și închiderea la culoare a sucurilor și alimentelor.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32008R1333',
+    allergen: null,
+    risk: 'low',
+    riskSource: 'https://doi.org/10.2903/j.efsa.2015.4087',
+  },
+  {
+    slug: 'suc-de-mere-din-concentrat',
+    name: 'Suc de mere din concentrat',
+    aliases: ['suc de mere reconstituit'],
+    group: 'base',
+    role: 'Ingredient de bază',
+    explanation: 'Suc obținut prin eliminarea apei din sucul de mere și reconstituire ulterioară cu apă. Conține zaharurile naturale ale merelor.',
+    source: 'https://eur-lex.europa.eu/legal-content/RO/TXT/?uri=CELEX:32001L0112',
+    allergen: null,
+    risk: null,
+    riskSource: null,
   },
 ];
 
@@ -264,14 +472,33 @@ export function matchIngredients(
   }).filter((entry) => Boolean(entry.rawName));
 }
 
+const BY_SLUG = new Map(BUILTIN_INGREDIENTS.map((entry) => [entry.slug, entry]));
+
+/** A stored ingredient with every gap filled from the knowledge base (found by its slug, else by its name or E-number): explanation, source, role, risk. What the backend already sent is never replaced. */
+function fillFromKnowledgeBase(item: Ingredient): Ingredient {
+  const slug = item.slug ?? matchIngredients(item.name, BUILTIN_INGREDIENTS)[0]?.slug ?? null;
+  const entry = slug ? BY_SLUG.get(slug) : undefined;
+  if (!entry) return item;
+  return {
+    ...item,
+    slug: entry.slug,
+    group: item.group ?? entry.group,
+    role: item.role ?? entry.role,
+    explanation: item.explanation ?? entry.explanation,
+    source: item.source ?? entry.source,
+    allergen: item.allergen ?? entry.allergen,
+    risk: item.risk ?? entry.risk,
+    riskSource: item.riskSource ?? entry.riskSource,
+  };
+}
+
 export function resolveProductIngredients(
   product: Pick<Product, 'ingredients' | 'ingredientsText'>,
 ): Ingredient[] {
-  if (product.ingredients.length > 0) return product.ingredients;
+  if (product.ingredients.length > 0) return product.ingredients.map(fillFromKnowledgeBase);
   if (!product.ingredientsText?.trim()) return [];
-  const bySlug = new Map(BUILTIN_INGREDIENTS.map((entry) => [entry.slug, entry]));
   return matchIngredients(product.ingredientsText, BUILTIN_INGREDIENTS).map((m) => {
-    const entry = m.slug ? bySlug.get(m.slug) : undefined;
+    const entry = m.slug ? BY_SLUG.get(m.slug) : undefined;
     return entry
       ? {
           slug: entry.slug,
@@ -281,6 +508,8 @@ export function resolveProductIngredients(
           explanation: entry.explanation,
           source: entry.source,
           allergen: entry.allergen,
+          risk: entry.risk,
+          riskSource: entry.riskSource,
         }
       : {
           slug: null,
