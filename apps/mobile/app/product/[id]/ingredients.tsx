@@ -7,6 +7,7 @@ import { AllergenChip, Badge, Body, Button, Card, Heading, Screen, useToast } fr
 import { ro } from '../../../src/copy/ro';
 import { useProduct } from '../../../src/features/product/useProduct';
 import { SourceCard } from '../../../src/features/product/SourceCard';
+import { AllergenDetails } from '../../../src/features/product/AllergenDetails';
 const groups = ['base', 'fat', 'taste', 'add', 'cult', null] as const;
 
 export default function Ingredients() {
@@ -24,11 +25,7 @@ export default function Ingredients() {
       <Body>{product.name}, {product.brand}</Body>
       {product.status === 'unverified' && <Badge tone="unverified">{ro.result.unverified}</Badge>}
       <Card><Body>{ro.result.allergens}</Body>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{product.allergens.map(name => <AllergenChip key={name} name={name} />)}</View>
-        {!product.allergens.length && <Body>{ro.result.noAllergens}</Body>}
-        {!!product.mayContain.length && <><Body>{ro.result.mayContain}</Body><View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {product.mayContain.map(name => <AllergenChip key={name} name={name} />)}</View></>}
-        <Body>{ro.result.missingAllergenNote}</Body>
+        <AllergenDetails product={product} />
       </Card>
       <Card><Body style={{fontWeight:'700'}}>{ro.result.transcribedLabel}</Body><Body selectable>{product.ingredientsText}</Body></Card>
       {groups.map(group => {

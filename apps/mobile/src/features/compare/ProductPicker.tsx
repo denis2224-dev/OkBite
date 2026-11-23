@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { PressableOpacity as Pressable } from '../../shared/PressableOpacity';
 import type { HistoryEntry } from '../history/store';
-import { AllergenChip, Badge, Body, Button, Card } from '../../ui';
+import { Badge, Body, Button, Card } from '../../ui';
 import { ro } from '../../copy/ro';
 import { fonts } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
@@ -10,6 +10,7 @@ import { ScoreCard } from '../product/ScoreCard';
 import { productScoreFor } from '../product/productScoreFor';
 import { tierTone } from '../../theme/tierTones';
 import { SourceCard } from '../product/SourceCard';
+import { AllergenDetails } from '../product/AllergenDetails';
 
 export function ProductPicker({ entries, selected, category, excluded, slot, onSelect }: {
   slot?: string; entries: HistoryEntry[]; selected?: HistoryEntry; category?: string; excluded?: string; onSelect(entry: HistoryEntry): void;
@@ -59,12 +60,8 @@ export function ProductPicker({ entries, selected, category, excluded, slot, onS
     {selected && <ScoreCard product={selected.product} identity={false} score={missing.length ? { score: null, letter: null, grade: 'unavailable', reasons: [], missing } : selected.score} />}
     {selected && <>
       <Body>{ro.result.allergens}</Body>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{selected.product.allergens.map(name => <AllergenChip key={name} name={name} />)}</View>
-      {!selected.product.allergens.length && selected.product.status === 'verified' && !!selected.product.ingredientsText.trim()
-        && <Body>{ro.result.noAllergens}</Body>}
-      {!!selected.product.mayContain.length && <><Body>{ro.result.mayContain}</Body><View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {selected.product.mayContain.map(name => <AllergenChip key={name} name={name} tone="trace" />)}</View></>}
-      <Body>{ro.result.missingAllergenNote}</Body><SourceCard product={selected.product} />
+      <AllergenDetails product={selected.product} />
+      <SourceCard product={selected.product} />
     </>}
     {open && (!options.length ? <Body>{ro.history.design.emptyTitle}</Body> : options.map(entry => <Button key={entry.product.id} variant="ghost"
       onPress={() => { onSelect(entry); setOpen(false); }}>{`${entry.product.name}, ${entry.product.brand}`}</Button>))}

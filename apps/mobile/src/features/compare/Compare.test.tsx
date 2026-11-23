@@ -55,7 +55,7 @@ test('a different deep link does not show the old comparison while history is lo
   await result.rerender(<Compare />);
   expect(screen.queryByText('4,1 g')).toBeNull();
 });
-test('declared allergens are plain, easy to notice text right under the cards, with no box, no traces and no sources', async () => {
+test('declared allergens and distinct traces are plain text right under the cards, without a box or sources', async () => {
   await render(<Compare />);
   await choose(0); await choose(1);
   const note = screen.getByTestId('compare-allergens');
@@ -76,10 +76,24 @@ test('declared allergens are plain, easy to notice text right under the cards, w
   const order = JSON.stringify(screen.toJSON());
   expect(order.lastIndexOf('compare-card')).toBeLessThan(order.indexOf('compare-allergens'));
   expect(order.indexOf('compare-allergens')).toBeLessThan(order.indexOf('compare-cell-kcal-a'));
-  expect(screen.queryByText(ro.result.mayContain)).toBeNull(); // the traces lines are gone
+  expect(within(note).getByText(`${ro.result.mayContain} ${ro.allergens['Fructe cu coajă lemnoasă']}`)).toBeTruthy();
   expect(screen.queryByText(ro.result.source)).toBeNull();
   expect(screen.queryByText(previewEntries[0]!.product.source)).toBeNull();
 });
+test('paired comparison distinguishes an incomplete label from possible traces', async () => {
+  const first = mockEntries[0]!;
+  mockEntries[0] = {
+    ...first,
+    product: { ...first.product, status: 'verified', ingredientsText: ' ', allergens: [], mayContain: ['Soia'] },
+  };
+  await render(<Compare />);
+  await choose(0); await choose(1);
+  const note = within(screen.getByTestId('compare-allergens'));
+  expect(note.getByText(ro.result.allergenDataUnknown, { exact: false })).toBeTruthy();
+  expect(note.getByText(`${ro.result.mayContain} ${ro.allergens.Soia}`)).toBeTruthy();
+  expect(note.queryByText(ro.result.noAllergens, { exact: false })).toBeNull();
+});
+
 test('an unverified selection keeps its status visible', async () => {
   const selected = mockEntries[0]!;
   await render(<ProductPicker entries={mockEntries} selected={{ ...selected,
@@ -102,6 +116,7 @@ test('uses trace tone for mayContain and missingAllergenNote when unverified', a
   }} onSelect={() => {}} />);
   expect(screen.getAllByText(ro.result.missingAllergenNote)).toHaveLength(1);
   expect(screen.queryByText(ro.result.noAllergens)).toBeNull();
+  expect(screen.getByText(ro.result.allergenDataUnknown)).toBeTruthy();
   expect(screen.getByLabelText(`${ro.result.mayContain} Lapte`)).toBeTruthy();
   expect(screen.getByLabelText(`${ro.result.mayContain} Arahide`)).toBeTruthy();
   expect(screen.queryByLabelText('Lapte')).toBeNull();
@@ -205,12 +220,13 @@ test('the live comparison does not show the illustrative-scores footnote', async
   expect(screen.queryByText(design.footnote)).toBeNull();
 });
 
-test('the comparison page has no footnote-style text at all, not even in demo mode', async () => {
+test('demo comparisons show only the packaging note', async () => {
   mockIsPreview = true;
   await render(<Compare />);
   await choose(0); await choose(1);
   expect(screen.getAllByTestId('compare-card')).toHaveLength(2);
-  for (const text of [ro.score.disclaimer, design.footnote, ro.result.missingAllergenNote]) expect(screen.queryByText(text)).toBeNull();
+  for (const text of [ro.score.disclaimer, design.footnote]) expect(screen.queryByText(text)).toBeNull();
+  expect(screen.getAllByText(ro.result.missingAllergenNote)).toHaveLength(1);
 });
 
 test('the empty screen labels both slots without a rule line, and gives each pick button its own label', async () => {
