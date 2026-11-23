@@ -4,14 +4,15 @@ import { router } from 'expo-router';
 import { AboutScreen } from './AboutScreen';
 import { ro } from '../../copy/ro';
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), back: jest.fn() } }));
-it('has exactly three blocks, the disclaimer once and no duplicate sources heading', async () => {
+it('has no score section, no tier list and no duplicate sources heading', async () => {
   await render(<AboutScreen />);
-  expect(screen.getAllByRole('header').map(h => h.props.children)).toEqual([ro.about.title, ro.about.whatTitle, ro.about.scoreTitle, ro.about.promiseTitle]);
+  expect(screen.getAllByRole('header').map(h => h.props.children)).toEqual([ro.about.title, ro.about.whatTitle, ro.about.promiseTitle]);
   for (const text of [ro.about.whatBody, ro.about.promiseBody]) expect(screen.getByText(text)).toBeTruthy();
-  expect(screen.getAllByText(ro.score.disclaimer)).toHaveLength(1);
+  expect(screen.queryByText(ro.about.scoreTitle)).toBeNull();
+  expect(screen.queryByText(ro.score.disclaimer)).toBeNull();
   expect(screen.queryByText('Sursele noastre')).toBeNull();
   expect(screen.getAllByRole('button').map(b => b.props.accessibilityLabel)).toEqual(expect.arrayContaining([ro.settings.method, ro.about.sources, ro.nav.privacy, ro.nav.terms]));
-  for (const tier of ['excellent', 'good', 'fair', 'poor', 'bad'] as const) expect(screen.getByText(ro.tiers[tier])).toBeTruthy();
+  for (const tier of ['excellent', 'good', 'fair', 'poor', 'bad'] as const) expect(screen.queryByText(ro.tiers[tier])).toBeNull();
   await fireEvent.press(screen.getByRole('button', { name: ro.settings.method }));
   expect(router.push).toHaveBeenCalledWith('/method');
   await fireEvent.press(screen.getByRole('button', { name: ro.nav.privacy }));

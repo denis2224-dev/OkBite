@@ -26,10 +26,10 @@ function SettingsProbe() {
 const routes = {
   '(tabs)/_layout': TabLayout,
   '(tabs)/index': () => <Text>Scan destination</Text>,
-  '(tabs)/about': () => null,
+  about: () => null,
   '(tabs)/history': () => null,
   '(tabs)/profile': () => null,
-  '(tabs)/settings': SettingsProbe,
+  settings: SettingsProbe,
   '(tabs)/compare': () => null,
   onboarding: OnboardingRoute,
   'product/[id]': () => <Text>Deep link destination</Text>,

@@ -67,9 +67,17 @@ describe('product type filter on the "Scanate recent" line', () => {
     await render(<RecentProducts entries={entries} onPick={jest.fn()} />);
     expect(pill(ro.compare.filterAll)).toBeTruthy();
   });
-  it('hides the filter when all products are of one type', async () => {
+  it('keeps the filter on the line even when all products are of one type', async () => {
     await render(<RecentProducts entries={entries.filter(entry => entry.product.category.slug === 'iaurt')} onPick={jest.fn()} />);
-    expect(screen.queryByRole('button', { name: new RegExp(`^${ro.compare.filterLabel('')}`) })).toBeNull();
+    expect(pill(ro.compare.filterAll)).toBeTruthy();
+    await fireEvent.press(pill(ro.compare.filterAll));
+    expect(screen.getByRole('button', { name: 'Iaurturi' })).toBeTruthy(); // the one type found, next to "Toate"
+    expect(screen.getByRole('button', { name: ro.compare.filterAll })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Biscuiți' })).toBeNull();
+  });
+  it('shows no filter, and no row, while there is no history', async () => {
+    await render(<RecentProducts entries={[]} onPick={jest.fn()} />);
+    expect(screen.toJSON()).toBeNull();
   });
   it('lists every type found in history, with how many products each has', async () => {
     await render(<RecentProducts entries={entries} onPick={jest.fn()} />);
