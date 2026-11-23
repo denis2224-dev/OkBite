@@ -95,7 +95,8 @@ export function useCaptureFlow() {
       } catch (err) {
         if (frontPhotoId) await removePhoto(frontPhotoId).catch(() => {});
         const code = (err as { code?: string } | null)?.code;
-        if (code === 'offline' && compressedUri) {
+        // A request reported as pending may already have reached the provider.
+        if (code === 'offline' && !awaitedPending && compressedUri) {
           try {
             await enqueue({ kind: 'photo', uri: compressedUri });
             if (!current()) return;
