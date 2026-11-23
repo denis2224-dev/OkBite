@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Linking, Modal, ScrollView, View } from 'react-native';
+import { Linking, View } from 'react-native';
 import type { Ingredient } from '@okbite/shared';
-import { Body, Button, Caption, Card, Heading, Icon } from '../../ui';
+import { Body, Button, Caption, Card, Heading, Icon, SwipeSheet } from '../../ui';
 import { PressableOpacity } from '../../shared/PressableOpacity';
 import { useTheme } from '../../theme/useTheme';
 import { fonts } from '../../theme/tokens';
@@ -45,31 +45,25 @@ export function AdditiveSheet({ ingredient, productId, onClose }: { ingredient: 
     try { await Linking.openURL(url); } catch { setLinkFailed(true); }
   }
   if (report) return <ReportSheet productId={productId} onClose={() => setReport(false)} />;
-  return <Modal transparent animationType="none" onRequestClose={onClose}>
-    <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: colors.scrim }}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}>
-        <View accessibilityViewIsModal style={{ width: '100%', maxWidth: 480, alignSelf: 'center', gap: 16, padding: 20, paddingBottom: 28, backgroundColor: colors.ground, borderTopLeftRadius: 28, borderTopRightRadius: 28 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-            <View style={{ flex: 1, gap: 6 }}>
-              {!!top && <Body style={{ fontSize: 14, fontFamily: fonts.bold, color: colors.muted }}>{top}</Body>}
-              <Heading>{ingredient.name}</Heading>
-            </View>
-            <PressableOpacity accessibilityRole="button" accessibilityLabel={ro.app.close} onPress={onClose}
-              style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface }}>
-              <Icon name="close" size={18} color={colors.ink} />
-            </PressableOpacity>
-          </View>
-          <RiskChip risk={ingredient.risk} />
-          <Card>
-            <Body>{ingredient.explanation ?? ro.ingredients.explanationSoon}</Body>
-            {ingredient.explanation && getLanguage() !== 'ro' && <Body style={{ color: colors.muted }}>{ro.additives.romanianOnly}</Body>}
-          </Card>
-          {ingredient.riskSource && <SourceLink label={ro.additives.source} onPress={() => open(ingredient.riskSource!)} />}
-          {ingredient.source && <SourceLink label={ro.additives.explanationSource} onPress={() => open(ingredient.source!)} />}
-          {linkFailed && <Body accessibilityLiveRegion="polite" style={{ color: colors.low }}>{ro.errors.generic}</Body>}
-          <Button variant="secondary" onPress={() => setReport(true)}>{ro.result.report}</Button>
-        </View>
-      </ScrollView>
+  return <SwipeSheet testID="additive-sheet" label={ingredient.name} onClose={onClose}>
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+      <View style={{ flex: 1, gap: 6 }}>
+        {!!top && <Body style={{ fontSize: 14, fontFamily: fonts.bold, color: colors.muted }}>{top}</Body>}
+        <Heading>{ingredient.name}</Heading>
+      </View>
+      <PressableOpacity accessibilityRole="button" accessibilityLabel={ro.app.close} onPress={onClose}
+        style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface }}>
+        <Icon name="close" size={18} color={colors.ink} />
+      </PressableOpacity>
     </View>
-  </Modal>;
+    <RiskChip risk={ingredient.risk} />
+    <Card>
+      <Body>{ingredient.explanation ?? ro.ingredients.explanationSoon}</Body>
+      {ingredient.explanation && getLanguage() !== 'ro' && <Body style={{ color: colors.muted }}>{ro.additives.romanianOnly}</Body>}
+    </Card>
+    {ingredient.riskSource && <SourceLink label={ro.additives.source} onPress={() => open(ingredient.riskSource!)} />}
+    {ingredient.source && <SourceLink label={ro.additives.explanationSource} onPress={() => open(ingredient.source!)} />}
+    {linkFailed && <Body accessibilityLiveRegion="polite" style={{ color: colors.low }}>{ro.errors.generic}</Body>}
+    <Button variant="secondary" onPress={() => setReport(true)}>{ro.result.report}</Button>
+  </SwipeSheet>;
 }

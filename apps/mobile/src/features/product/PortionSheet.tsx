@@ -5,7 +5,7 @@ import { Button } from '../../ui';
 import { useTheme } from '../../theme/useTheme';
 import { ro } from '../../copy/ro';
 import { PortionTable } from './PortionTable';
-import { shouldDismiss } from './sheetGesture';
+import { shouldDismiss } from '../../shared/sheetGesture';
 
 /** Opened from the "Porție" button. Pull the handle down (or tap outside, or Închide) to close it. */
 export function PortionSheet({ product, onClose }: { product: Product; onClose: () => void }) {
