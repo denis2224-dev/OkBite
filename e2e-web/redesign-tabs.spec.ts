@@ -28,13 +28,13 @@ test.describe('N9 four-tab redesign acceptance', () => {
   }
 
   for (const [row, heading] of [['Setări', 'Setări'], ['Despre', 'Despre OkBite']]) {
-    test(`Profil → ${row} row opens ${heading} with no tab selected`, async ({ page }) => {
+    test(`Profil → ${row} row opens ${heading} as its own page without the tab bar`, async ({ page }) => {
       await page.goto('/');
       await page.getByRole('tab', { name: 'Profil', exact: true }).click();
       await page.getByRole('button', { name: row, exact: true }).click();
       await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible();
-      await expect(page.getByRole('tab', { name: 'Profil', exact: true })).toHaveAttribute('aria-selected', 'false');
-      await expect(page.locator('[role="tab"][aria-selected="true"]')).toHaveCount(0);
+      // A pushed page like every other: no tab bar, so nothing is selected; the edge swipe goes back to Profil.
+      await expect(page.getByRole('tablist')).toHaveCount(0);
     });
   }
 });

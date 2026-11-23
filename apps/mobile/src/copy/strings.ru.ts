@@ -180,6 +180,7 @@ const legacyRu = {
     retakePhoto: 'Переснять фото', retakePhotos: 'Переснять фото', title: 'Проверьте распознанный текст',
     unclearField: 'Сверьте это значение с упаковкой.', save: 'Сохранить товар', retake: 'Переснять фото',
   },
+  topProducts: { title: 'Лучшие продукты', rank: (n: number) => `Место ${n}` },
   history: {
     design: {
       title: 'История', emptyTitle: 'История пуста', empty: 'Отсканированные товары появятся здесь.',

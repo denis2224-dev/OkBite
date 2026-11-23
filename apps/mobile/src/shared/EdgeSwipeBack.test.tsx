@@ -36,11 +36,11 @@ it('leaves pushed pages to the native stack gesture on a phone, so there is no s
   expect(stripOf()).toBeNull();
 });
 
-it.each(['/settings', '/about'])('still lays the strip over the tab route %s on a phone', async path => {
+it.each(['/settings', '/about'])('leaves %s to the native stack gesture on a phone too, since it is a pushed page', async path => {
   jest.replaceProperty(Platform, 'OS', 'ios');
   mockPath = path;
   await render(<EdgeSwipeBack><Text>Pagina</Text></EdgeSwipeBack>);
-  expect(stripOf()).not.toBeNull();
+  expect(stripOf()).toBeNull();
 });
 
 it('wraps the page in a view that can be moved sideways while it is dragged', async () => {

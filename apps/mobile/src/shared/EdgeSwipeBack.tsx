@@ -11,7 +11,7 @@ export function goBack(): void {
 }
 
 /** Swipe right from the left edge to go back, on every page except the nav-bar pages. On iPhone and Android the stack does it
- * natively, with the page following the finger. Here the same is drawn for the tab routes (Setări, Despre) and the web:
+ * natively, with the page following the finger. Here the same is drawn for the web:
  * the page is dragged along with the finger, then slides off or springs back. The strip is thin so sideways scrolling inside
  * pages keeps working; the screen-reader escape gesture also goes back. */
 export function EdgeSwipeBack({ children }: PropsWithChildren) {

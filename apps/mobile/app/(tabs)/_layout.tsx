@@ -6,7 +6,7 @@ import { AppBottomNav } from '../../src/shared/AppBottomNav';
 export const unstable_settings = { initialRouteName: 'index' };
 // Back (swipe) returns to the tab or page visited just before.
 export const tabBackBehavior = 'history' as const;
-// Settings and About stay routes (deep links keep working) but have no tab; they open from rows in Profil.
+// Settings and About are pages on the root stack (app/settings.tsx, app/about.tsx): they slide in and swipe back like every other page.
 export default function TabLayout() {
  const router = useRouter();
  const segments = useSegments();
@@ -23,7 +23,5 @@ export default function TabLayout() {
   <Tabs.Screen name="compare" options={{ title: ro.nav.compare }} />
   <Tabs.Screen name="index" options={{ title: ro.nav.scan }} />
   <Tabs.Screen name="profile" options={{ title: ro.nav.profile }} />
-  <Tabs.Screen name="settings" options={{ title: ro.nav.settings }} />
-  <Tabs.Screen name="about" options={{ title: ro.nav.about }} />
  </Tabs>;
 }

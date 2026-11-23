@@ -14,4 +14,12 @@ appId: md.okbite.app
     visible: Iaurt natural 2,5%
     timeout: 30000
 - assertVisible: Conține lapte
+- scrollUntilVisible:
+    element:
+      text: Calculat la 100 g; nu indică riscul unei boli.
+- assertVisible: Calculat la 100 g; nu indică riscul unei boli.
+- scrollUntilVisible:
+    direction: UP
+    element:
+      text: Închide
 - tapOn: Închide
