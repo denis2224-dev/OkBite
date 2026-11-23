@@ -217,7 +217,7 @@ it('orders the profile alert, score, in short, what\'s inside, ingredients and t
   await render(<ResultView product={foundYogurt.product} score={{ ...foundYogurt.score, letter: 'B' }} />);
   const order = inOrder();
   const markers = [ro.result.profileAlertSub, productLine(foundYogurt.product, foundYogurt.score), 'reason-tone-',
-    ro.result.whatsInside, ro.result.ingredientsLabel, ro.result.original].map(text => order.indexOf(text));
+    ro.result.whatsInside, 'ingredients-label', ro.result.original].map(text => order.indexOf(text));
   expect(markers.every(index => index >= 0)).toBe(true);
   expect([...markers].sort((a, b) => a - b)).toEqual(markers);
 });
