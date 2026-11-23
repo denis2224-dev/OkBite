@@ -31,3 +31,13 @@ it('keeps report and additive sheets usable above the result sheet', async () =>
   await fireEvent.press(screen.getByRole('button', { name: 'colorant caramel, Risc moderat' }));
   expect(screen.getAllByText('Explicație de test.')).toHaveLength(1); // in the additive sheet
 });
+
+it('announces a failed history save and leaves the product available', async () => {
+  const close = jest.fn();
+  await render(<ResultSheet {...foundYogurt} onClose={close} storageError />);
+  expect(screen.getByText(ro.history.storageError).props.accessibilityLiveRegion).toBe('polite');
+  await fireEvent.press(screen.getByRole('button', { name: ro.app.open }));
+  expect(router.push).toHaveBeenCalledWith(`/product/${foundYogurt.product.id}`);
+  await fireEvent.press(screen.getByRole('button', { name: ro.app.close }));
+  expect(close).toHaveBeenCalledTimes(1);
+});

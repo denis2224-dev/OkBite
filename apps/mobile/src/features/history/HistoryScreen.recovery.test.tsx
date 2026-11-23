@@ -11,7 +11,7 @@ jest.mock('expo-router', () => ({
   router: { push: (href: unknown) => mockReplace(href) },
   useFocusEffect: (effect: () => void) => jest.requireActual<typeof import('react')>('react').useEffect(effect, [effect]),
 }));
-jest.mock('./store', () => ({ listHistory: jest.fn() }));
+jest.mock('./store', () => ({ listHistory: jest.fn(), subscribeHistory: () => jest.fn() }));
 jest.mock('../offline/queue', () => ({ subscribeQueue: jest.fn(() => jest.fn()) }));
 jest.mock('../../ui/Screen', () => ({ Screen: ({ children }: { children: React.ReactNode }) => children }));
 it('opens saved results and offers a path back to pending photos', async () => {

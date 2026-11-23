@@ -2,13 +2,20 @@ import { useEffect, useRef } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import type { Product, ScoreResult } from '@okbite/shared';
-import { Button, Icon } from '../../ui';
+import { Body, Button, Icon } from '../../ui';
 import { ro } from '../../copy/ro';
 import { PressableOpacity } from '../../shared/PressableOpacity';
 import { useTheme } from '../../theme/useTheme';
 import { ResultView } from './ResultView';
 
-export function ResultSheet({ product, score, onClose }: { product: Product; score: ScoreResult; onClose: () => void }) {
+type ResultSheetProps = {
+  product: Product;
+  score: ScoreResult;
+  onClose: () => void;
+  storageError?: boolean;
+};
+
+export function ResultSheet({ product, score, onClose, storageError }: ResultSheetProps) {
   const { colors } = useTheme();
   const sheet = useRef<{ focus?: () => void } | null>(null);
   useEffect(() => {
@@ -33,6 +40,7 @@ export function ResultSheet({ product, score, onClose }: { product: Product; sco
               <Icon name="close" size={18} color={colors.ink} />
             </PressableOpacity>
           </View>
+          {storageError && <Body accessibilityLiveRegion="polite">{ro.history.storageError}</Body>}
           <ResultView product={product} score={score} />
           <Button variant="secondary" onPress={() => router.push(`/product/${product.id}`)}>{ro.app.open}</Button>
         </View>
