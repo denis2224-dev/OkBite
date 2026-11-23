@@ -1,4 +1,4 @@
-import { identifyCandidates, identifyNotFound, lookupNotFound } from '../capture/__fixtures__/responses';
+import { identifyCandidates, identifyFound, identifyNotFound, lookupNotFound } from '../capture/__fixtures__/responses';
 import { LookupResponse, IdentifyResponse } from '@okbite/shared';
 import { DatabaseSync as mockDatabaseSync } from 'node:sqlite';
 import { randomUUID as mockRandomUUID } from 'node:crypto';
@@ -458,6 +458,25 @@ it('allows an explicit retry and exposes service failures instead of silently re
   expect(await retryQueued(pending.id)).toEqual({ resolved: 1 });
   expect(await listQueue()).toEqual([]);
 });
+it('retains a timed-out photo and resumes it only on explicit retry', async () => {
+  const source = FileSystem.documentDirectory! + 'timed-out.jpg';
+  await mockFs.writeFile(source, 'label image');
+  await enqueue({ kind: 'photo', uri: source });
+  const pending = (await listQueue())[0]!;
+  jest.mocked(api.identify).mockRejectedValueOnce(new ApiError('analysis_timeout'));
+
+  await flushQueue();
+  expect((await listQueue())[0]?.error).toBe('analysis_timeout');
+  expect(await mockFs.readFile(pending.payload, 'utf8')).toBe('label image');
+  await flushQueue();
+  expect(api.identify).toHaveBeenCalledTimes(1);
+
+  jest.mocked(api.identify).mockResolvedValueOnce(identifyFound);
+  expect(await retryQueued(pending.id)).toEqual({ resolved: 1 });
+  expect(api.identify).toHaveBeenCalledTimes(2);
+  expect(await listQueue()).toEqual([]);
+});
+
 it('keeps review photo ownership until acknowledged by its consumer', async () => {
   const source = FileSystem.documentDirectory! + 'review.jpg';
   await mockFs.writeFile(source, 'review image');
