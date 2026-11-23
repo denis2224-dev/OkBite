@@ -20,13 +20,18 @@ export function useSwipeReveal(disabled: boolean, onArmed: () => void) {
   const [id] = useState(() => ({}));
   // How much red rests: 0 closed, ACTION_WIDTH after the first swipe, the full row once armed.
   const rest = useRef(0);
+  // How much red the finger has pulled out right now.
+  const shown = useRef(0);
 
   const go = useCallback((to: number, done?: () => void) => {
     rest.current = to;
+    shown.current = to;
     Animated.timing(reveal, { toValue: to, duration: 140, useNativeDriver: false }).start(done);
   }, [reveal]);
   const close = useCallback(() => {
     if (active?.id === id) active = null;
+    // Nothing showing (for example the question came from a screen reader): nothing to animate.
+    if (rest.current === 0 && shown.current === 0) return;
     go(0, () => setRevealed(false));
   }, [go, id]);
   const claim = useCallback(() => {
@@ -42,6 +47,7 @@ export function useSwipeReveal(disabled: boolean, onArmed: () => void) {
     const limit = rest.current === 0 ? ACTION_WIDTH : Math.max(width, ACTION_WIDTH);
     const next = Math.max(0, Math.min(limit, rest.current - dx));
     if (next > 0) { setRevealed(true); claim(); }
+    shown.current = next;
     reveal.setValue(next);
   }, [claim, reveal, width]);
   const release = useCallback((dx: number, vx: number) => {
