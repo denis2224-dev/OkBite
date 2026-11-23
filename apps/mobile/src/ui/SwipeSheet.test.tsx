@@ -1,5 +1,5 @@
 import { Animated, StyleSheet, Text } from 'react-native';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { SwipeSheet } from './SwipeSheet';
 
 const open = (props: Partial<React.ComponentProps<typeof SwipeSheet>> = {}) =>
@@ -67,5 +67,30 @@ describe('sliding in', () => {
     await open();
     expect(timing).not.toHaveBeenCalled();
     expect(screen.queryByTestId('sheet-scrim', { includeHiddenElements: true })).toBeNull();
+  });
+});
+
+describe('sliding out', () => {
+  afterEach(() => jest.restoreAllMocks());
+  it('a sheet that slid in slides away before it reports closed, from the backdrop and the back gesture', async () => {
+    const finish: (() => void)[] = [];
+    jest.spyOn(Animated, 'timing').mockImplementation((_, config) => ({
+      start: (done?: () => void) => { if (config.toValue === 0) finish.push(() => done?.()); else done?.(); }, stop: jest.fn(), reset: jest.fn(),
+    }) as never);
+    const onClose = jest.fn();
+    await open({ animateIn: true, onClose, backdropCloses: true });
+    await fireEvent.press(screen.getByTestId('sheet-backdrop'));
+    expect(onClose).not.toHaveBeenCalled();
+    expect(finish).toHaveLength(1);
+    await fireEvent.press(screen.getByTestId('sheet-backdrop')); // a second tap while leaving does nothing
+    expect(finish).toHaveLength(1);
+    await act(() => finish[0]!());
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+  it('other sheets close at once, as before', async () => {
+    const onClose = jest.fn();
+    await open({ onClose, backdropCloses: true });
+    await fireEvent.press(screen.getByTestId('sheet-backdrop'));
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

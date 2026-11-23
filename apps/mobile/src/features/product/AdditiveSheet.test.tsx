@@ -1,8 +1,10 @@
-import { Linking } from 'react-native';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { Animated, Linking } from 'react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import type { Ingredient } from '@okbite/shared';
 import { AdditiveSheet } from './AdditiveSheet';
 import { ro } from '../../copy/ro';
+
+afterEach(() => jest.restoreAllMocks());
 
 const caramel: Ingredient = {
   slug: 'colorant-caramel-e150d', name: 'Caramel cu sulfit de amoniu', group: 'add', role: 'Colorant sintetic',
@@ -47,6 +49,8 @@ it('says the explanation is coming when the knowledge base has none', async () =
 });
 
 it('opens the report sheet and closes', async () => {
+  // The sheet slides away before it reports closed; finish that slide at once.
+  jest.spyOn(Animated, 'timing').mockImplementation(((_: unknown, config: { toValue: number }) => ({ start: (done?: () => void) => done?.(), stop: jest.fn(), reset: jest.fn(), config })) as never);
   const onClose = jest.fn();
   await sheet(caramel, onClose);
   await fireEvent.press(screen.getByRole('button', { name: ro.result.report }));
@@ -56,4 +60,15 @@ it('opens the report sheet and closes', async () => {
   expect(onClose).not.toHaveBeenCalled();
   await fireEvent.press(screen.getByRole('button', { name: ro.app.close }));
   expect(onClose).toHaveBeenCalled();
+});
+
+it('slides away when closed with the close button, and only then reports closed', async () => {
+  let finish: (() => void) | undefined;
+  jest.spyOn(Animated, 'timing').mockImplementation(((_: unknown, config: { toValue: number }) => ({ start: (done?: () => void) => { if (config.toValue === 0) finish = () => done?.(); else done?.(); }, stop: jest.fn(), reset: jest.fn() })) as never);
+  const onClose = jest.fn();
+  await sheet(caramel, onClose);
+  await fireEvent.press(screen.getByRole('button', { name: ro.app.close }));
+  expect(onClose).not.toHaveBeenCalled();
+  await act(() => finish?.());
+  expect(onClose).toHaveBeenCalledTimes(1);
 });

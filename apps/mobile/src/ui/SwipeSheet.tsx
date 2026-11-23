@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type PropsWithChildren } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
 import { Animated, Easing, KeyboardAvoidingView, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '../theme/useTheme';
 import { useSheetDrag } from './useSheetDrag';
@@ -20,7 +20,11 @@ type Props = PropsWithChildren<{
   /** Slide the sheet up and fade the dimmed page in when it opens, instead of appearing at once. */
   animateIn?: boolean;
 }>;
+const SheetClose = createContext<(() => void) | null>(null);
+/** The close function of the sheet around this component: it slides the sheet away first when the sheet slides in. Null outside a sheet. */
+export const useSheetClose = () => useContext(SheetClose);
 const ENTER_FROM = 600;
+const LEAVE_MS = 200;
 const ENTER_MS = 260;
 
 /** The bottom sheet every "tab from below" uses. Swipe down from anywhere on it to close it (no handle bar; when its content scrolls, only while it is at the top).
@@ -43,12 +47,20 @@ export function SwipeSheet({ onClose, testID = 'sheet', label, backdropCloses = 
   useEffect(() => {
     if (animateIn) Animated.timing(enter, { toValue: 1, duration: ENTER_MS, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   }, [animateIn, enter]);
+  const leaving = useRef(false);
+  // Close buttons, the backdrop and the system back gesture all come here; a sheet that slid in also slides away.
+  const requestClose = useCallback(() => {
+    if (!animateIn) { onClose(); return; }
+    if (leaving.current) return;
+    leaving.current = true;
+    Animated.timing(enter, { toValue: 0, duration: LEAVE_MS, easing: Easing.in(Easing.cubic), useNativeDriver: true }).start(() => onClose());
+  }, [animateIn, enter, onClose]);
   const enterY = enter.interpolate({ inputRange: [0, 1], outputRange: [ENTER_FROM, 0] });
   const Frame = avoidKeyboard ? KeyboardAvoidingView : View;
-  return <Modal accessibilityLabel={label} transparent animationType="none" onRequestClose={onClose}>
+  return <SheetClose.Provider value={requestClose}><Modal accessibilityLabel={label} transparent animationType="none" onRequestClose={requestClose}>
     <Frame {...(avoidKeyboard ? { behavior: 'padding' as const } : {})} style={[styles.overlay, animateIn ? null : { backgroundColor: colors.scrim }]}>
       {animateIn && <Animated.View testID={`${testID}-scrim`} pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim, opacity: enter }]} />}
-      {backdropCloses && <Pressable testID={`${testID}-backdrop`} accessible={!!backdropLabel} accessibilityRole={backdropLabel ? 'button' : undefined} accessibilityLabel={backdropLabel} onPress={onClose} style={StyleSheet.absoluteFill} />}
+      {backdropCloses && <Pressable testID={`${testID}-backdrop`} accessible={!!backdropLabel} accessibilityRole={backdropLabel ? 'button' : undefined} accessibilityLabel={backdropLabel} onPress={requestClose} style={StyleSheet.absoluteFill} />}
       <View testID={`${testID}-frame`} pointerEvents="box-none" style={styles.anchor}>
       <Animated.View testID={testID} accessibilityViewIsModal {...pan.panHandlers}
         style={[styles.panel, { backgroundColor: colors.ground, transform: [{ translateY: animateIn ? Animated.add(y, enterY) : y }] }]}>
@@ -60,7 +72,7 @@ export function SwipeSheet({ onClose, testID = 'sheet', label, backdropCloses = 
       </Animated.View>
       </View>
     </Frame>
-  </Modal>;
+  </Modal></SheetClose.Provider>;
 }
 
 const styles = StyleSheet.create({
