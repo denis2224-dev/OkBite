@@ -41,14 +41,17 @@ it('claims a mostly horizontal drag and leaves vertical scrolling alone', async 
   expect(config.onMoveShouldSetPanResponder?.(event, gesture(-3, 0))).toBe(false);
 });
 
-it('reveals a medium red "Șterge" button after a right-to-left swipe', async () => {
+it('keeps the row in place and reveals a medium red "Șterge" button after a right-to-left swipe', async () => {
   await setup();
   await swipe(-90);
   const button = screen.getByRole('button', { name: 'Șterge Iaurt din istoric' });
   expect(screen.getByText('Șterge')).toBeTruthy();
+  const card = Object.assign({}, ...[screen.getByTestId('swipe-delete-card').props.style].flat(3).filter(Boolean));
+  expect(card.backgroundColor).toBe(colors.destructive);
   const style = Object.assign({}, ...[button.props.style].flat(3).filter(Boolean));
-  expect(style.backgroundColor).toBe(colors.destructive);
   expect(style.minHeight ?? style.height).toBeGreaterThanOrEqual(44);
+  expect(style.alignItems).toBe('center');
+  expect(style.justifyContent).toBe('center');
 });
 
 it('stays closed after a short swipe and after a swipe to the right', async () => {
@@ -74,4 +77,12 @@ it('deletes only when the red button is pressed, and swiping back closes it', as
   await swipe(-90);
   await fireEvent.press(screen.getByRole('button', { name: 'Șterge Iaurt din istoric' }));
   expect(onDelete).toHaveBeenCalledTimes(1);
+});
+
+it('does not slide the row itself to the left', async () => {
+  await setup();
+  await swipe(-90);
+  const row = screen.getByText('rând');
+  const transforms = [row.parent, row.parent?.parent].flatMap(node => [node?.props?.style].flat(3).filter(Boolean)).filter((style: { transform?: unknown }) => style.transform);
+  expect(transforms).toEqual([]);
 });
