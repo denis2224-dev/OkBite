@@ -46,3 +46,24 @@ it('sits between the score and the reasons', async () => {
   expect(order.indexOf('product-score')).toBeLessThan(order.indexOf('allergen-summary'));
   expect(order.indexOf('allergen-summary')).toBeLessThan(order.indexOf('reason-tone-'));
 });
+
+it.each([
+  ['a verified product with a blank label', yogurt({ status: 'verified', ingredientsText: '  ', allergens: [], mayContain: [] })],
+  ['an unverified partial record', yogurt({ status: 'unverified', ingredientsText: 'apă', allergens: [], mayContain: [] })],
+] as const)('shows incomplete evidence for %s', async (_, product) => {
+  mockProfile = profile(['Arahide']);
+  await render(<ResultView product={product} score={foundYogurt.score} />);
+  expect(screen.queryByText(ro.result.noProfileAllergens)).toBeNull();
+  expect(screen.queryByText(ro.result.noAllergens)).toBeNull();
+  expect(screen.getByText(ro.result.allergenDataUnknown)).toBeTruthy();
+  expect(screen.getAllByText(ro.result.missingAllergenNote)).toHaveLength(1);
+});
+
+it('shows possible traces separately from declared allergens', async () => {
+  mockProfile = profile([]);
+  const product = yogurt({ allergens: ['Lapte'], mayContain: ['Soia'] });
+  await render(<ResultView product={product} score={foundYogurt.score} />);
+  expect(screen.getByText(ro.result.containsAllergen('lapte'))).toBeTruthy();
+  expect(screen.getByText(`${ro.result.mayContain} ${ro.allergens.Soia}`)).toBeTruthy();
+  expect(screen.getAllByText(ro.result.missingAllergenNote)).toHaveLength(1);
+});
