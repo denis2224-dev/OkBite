@@ -45,7 +45,7 @@ export function AdditiveSheet({ ingredient, productId, onClose }: { ingredient: 
     try { await Linking.openURL(url); } catch { setLinkFailed(true); }
   }
   if (report) return <ReportSheet productId={productId} onClose={() => setReport(false)} />;
-  return <SwipeSheet testID="additive-sheet" label={ingredient.name} onClose={onClose}>
+  return <SwipeSheet testID="additive-sheet" label={ingredient.name} onClose={onClose} animateIn>
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
       <View style={{ flex: 1, gap: 6 }}>
         {!!top && <Body style={{ fontSize: 14, fontFamily: fonts.bold, color: colors.muted }}>{top}</Body>}

@@ -1,4 +1,4 @@
-import { StyleSheet, Text } from 'react-native';
+import { Animated, StyleSheet, Text } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { SwipeSheet } from './SwipeSheet';
 
@@ -51,4 +51,21 @@ it('can name the dimmed page as a close button for screen readers', async () => 
   await open({ onClose, backdropCloses: true, backdropLabel: 'Închide' });
   await fireEvent.press(screen.getByRole('button', { name: 'Închide' }));
   expect(onClose).toHaveBeenCalledTimes(1);
+});
+
+describe('sliding in', () => {
+  afterEach(() => jest.restoreAllMocks());
+  it('slides up and fades its dimmed page in when asked to, instead of popping in', async () => {
+    const timing = jest.spyOn(Animated, 'timing');
+    await open({ animateIn: true });
+    expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ toValue: 1, duration: expect.any(Number) }));
+    expect(screen.getByTestId('sheet-scrim', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByText('Conținut')).toBeTruthy();
+  });
+  it('stays as it was for other sheets: no entrance animation', async () => {
+    const timing = jest.spyOn(Animated, 'timing');
+    await open();
+    expect(timing).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('sheet-scrim', { includeHiddenElements: true })).toBeNull();
+  });
 });
