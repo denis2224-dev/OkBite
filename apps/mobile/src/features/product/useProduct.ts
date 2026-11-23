@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Product, ScoreResult } from '@okbite/shared';
 import { api, ApiError } from '../../lib/api';
 import { saveToHistory, getFromHistory } from '../history/store';
-import { forgetLookup, freshLookup } from './freshLookup';
+import { freshLookup, takeFreshLookup } from './freshLookup';
 
 type State = { id: string; data?: { product: Product; score: ScoreResult }; error?: ApiError; loading: boolean; storageError?: boolean; cached?: boolean };
 export function useProduct(id: string, cachedOnly = false) {
@@ -15,12 +15,12 @@ export function useProduct(id: string, cachedOnly = false) {
   useEffect(() => {
     let active = true;
     async function load() {
-      const fresh = cachedOnly ? undefined : freshLookup(id);
-      if (fresh) {
-        forgetLookup(id);
+      const handoff = cachedOnly ? undefined : takeFreshLookup(id);
+      if (handoff) {
+        const { found, historySave } = handoff;
         let storageError = false;
-        try { await saveToHistory(fresh); } catch { storageError = true; }
-        if (active) setState({ id, data: fresh, loading: false, storageError });
+        try { await (historySave ?? saveToHistory(found)); } catch { storageError = true; }
+        if (active) setState({ id, data: found, loading: false, storageError });
         return;
       }
       if (active) setState({ id, loading: true });

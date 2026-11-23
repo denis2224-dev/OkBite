@@ -6,7 +6,14 @@ import { ToastProvider } from '../../ui/Toast';
 import { ro } from '../../copy/ro';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn() }, useFocusEffect: (effect: () => void) => jest.requireActual<typeof import('react')>('react').useEffect(effect, [effect]) }));
-jest.mock('./store', () => ({ listHistory: jest.fn(), clearHistory: jest.fn(), removeFromHistory: jest.fn(), restoreToHistory: jest.fn() }));
+let mockHistoryListener: () => void;
+jest.mock('./store', () => ({
+  listHistory: jest.fn(),
+  clearHistory: jest.fn(),
+  removeFromHistory: jest.fn(),
+  restoreToHistory: jest.fn(),
+  subscribeHistory: (listener: () => void) => { mockHistoryListener = listener; return jest.fn(); },
+}));
 let mockQueueListener: () => void;
 jest.mock('../offline/queue', () => ({ subscribeQueue: (listener: () => void) => { mockQueueListener = listener; return jest.fn(); } }));
 const entry: HistoryEntry = { ...foundYogurt, savedAt: '2026-11-05T09:00:00.000Z' };
@@ -99,4 +106,12 @@ it('keeps clear failure visible when a queued refresh completes', async () => {
   await act(() => fail(new Error('disk')));
   await screen.findByRole('button', { name: openName(queued.product.name) });
   expect(screen.getByText(ro.history.clearError)).toBeTruthy();
+});
+
+it('refreshes after a scan save that commits after History initially loads', async () => {
+  jest.mocked(listHistory).mockResolvedValueOnce([]).mockResolvedValue([entry]);
+  await render(<HistoryScreen/>);
+  await screen.findByText(ro.history.design.emptyTitle);
+  await act(() => mockHistoryListener());
+  expect(await screen.findByRole('button', { name: openName(entry.product.name) })).toBeTruthy();
 });
