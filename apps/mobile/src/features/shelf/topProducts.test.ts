@@ -1,7 +1,8 @@
+import { TopProductsResponse } from '@okbite/shared';
 import type { Product, ScoreResult } from '@okbite/shared';
 import { previewEntries } from '../../test/fixtures';
 import { productScoreFor } from '../product/productScoreFor';
-import { TopProductsResponse, rankTop } from './topProducts';
+import { rankTop } from './topProducts';
 
 type Entry = { product: Product; score: ScoreResult };
 const [plain, strawberry, greek, , , juice] = previewEntries as Entry[] as [Entry, Entry, Entry, Entry, Entry, Entry];

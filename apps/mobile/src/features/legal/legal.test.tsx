@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
-import AboutPage from '../../../app/(tabs)/about';
+import AboutPage from '../../../app/about';
 import PrivacyPage from '../../../app/(info)/privacy';
 import TermsPage from '../../../app/(info)/terms';
 import MethodPage from '../../../app/(info)/method';
@@ -17,14 +17,14 @@ it.each([
   expect(screen.getByText(/Ultima actualizare/)).toBeTruthy();
   expect(screen.queryByText(/under review|în curs de verificare|înainte de publicare|before publication/i)).toBeNull();
 });
-it('shows the About screen content and score limits', async () => {
+it('shows the About screen content and no score tiers', async () => {
   await render(<AboutPage />);
   expect(screen.getByRole('header', { name: ro.about.title })).toBeTruthy();
-  for (const text of [ro.about.whatBody, ro.about.promiseBody, ro.score.disclaimer]) {
+  for (const text of [ro.about.whatBody, ro.about.promiseBody]) {
     expect(screen.getByText(text)).toBeTruthy();
   }
   for (const tier of ['excellent', 'good', 'fair', 'poor', 'bad'] as const) {
-    expect(screen.getByText(ro.tiers[tier])).toBeTruthy();
+    expect(screen.queryByText(ro.tiers[tier])).toBeNull();
   }
 });
 it('keeps the About entry to the authenticated administration route', async () => {

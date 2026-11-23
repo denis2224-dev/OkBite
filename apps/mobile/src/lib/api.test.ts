@@ -27,6 +27,10 @@ it('rejects a top-products answer that breaks the shape or is for another shelf'
   fetchMock.mockResolvedValueOnce(response({ ...shelf, category: 'suc' }));
   await expect(api.topProducts('iaurt')).rejects.toMatchObject({ code: 'invalid_response' });
 });
+it('rejects a shelf answer above the shared result limit', async () => {
+  fetchMock.mockResolvedValueOnce(response({ ...shelf, products: Array(21).fill(shelf.products[0]) }));
+  await expect(api.topProducts('iaurt')).rejects.toMatchObject({ code: 'invalid_response' });
+});
 it('does not send a top-products request for a malformed shelf slug', async () => {
   await expect(api.topProducts('Iaurt & co')).rejects.toMatchObject({ code: 'bad_request' });
   expect(fetchMock).not.toHaveBeenCalled();
