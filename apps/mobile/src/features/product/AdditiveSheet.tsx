@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Linking, View } from 'react-native';
 import type { Ingredient } from '@okbite/shared';
 import { Body, Button, Caption, Card, Heading, Icon, SwipeSheet } from '../../ui';
+import { useSheetClose } from '../../ui/SwipeSheet';
 import { PressableOpacity } from '../../shared/PressableOpacity';
 import { useTheme } from '../../theme/useTheme';
 import { fonts } from '../../theme/tokens';
@@ -34,6 +35,15 @@ function SourceLink({ label, onPress }: { label: string; onPress: () => void }) 
   </PressableOpacity>;
 }
 
+function CloseButton({ onClose }: { onClose: () => void }) {
+  const { colors } = useTheme();
+  const close = useSheetClose() ?? onClose; // slides the sheet away first
+  return <PressableOpacity accessibilityRole="button" accessibilityLabel={ro.app.close} onPress={close}
+    style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface }}>
+    <Icon name="close" size={18} color={colors.ink} />
+  </PressableOpacity>;
+}
+
 /** Detail sheet for one additive; N12 opens it from the result's additive list. */
 export function AdditiveSheet({ ingredient, productId, onClose }: { ingredient: Ingredient; productId: string; onClose: () => void }) {
   const { colors } = useTheme();
@@ -45,16 +55,13 @@ export function AdditiveSheet({ ingredient, productId, onClose }: { ingredient: 
     try { await Linking.openURL(url); } catch { setLinkFailed(true); }
   }
   if (report) return <ReportSheet productId={productId} onClose={() => setReport(false)} />;
-  return <SwipeSheet testID="additive-sheet" label={ingredient.name} onClose={onClose}>
+  return <SwipeSheet testID="additive-sheet" label={ingredient.name} onClose={onClose} animateIn>
     <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
       <View style={{ flex: 1, gap: 6 }}>
         {!!top && <Body style={{ fontSize: 14, fontFamily: fonts.bold, color: colors.muted }}>{top}</Body>}
         <Heading>{ingredient.name}</Heading>
       </View>
-      <PressableOpacity accessibilityRole="button" accessibilityLabel={ro.app.close} onPress={onClose}
-        style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface }}>
-        <Icon name="close" size={18} color={colors.ink} />
-      </PressableOpacity>
+      <CloseButton onClose={onClose} />
     </View>
     <RiskChip risk={ingredient.risk} />
     <Card>
