@@ -24,7 +24,7 @@ test('insecure camera access explains HTTPS and keeps gallery and manual entry r
   await expect(page.getByText('Camera funcționează doar pe o conexiune securizată HTTPS.', { exact: true })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Introdu codul manual', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Introdu codul', exact: true }).click();
-  await expect(page.getByRole('textbox', { name: 'Introdu codul manual', exact: true })).toHaveAttribute('placeholder', '8 sau 13 cifre');
+  await expect(page.getByRole('textbox', { name: 'Introdu codul manual', exact: true })).toHaveAttribute('placeholder', '8, 12 sau 13 cifre');
   expect(errors).toEqual([]);
 });
 
