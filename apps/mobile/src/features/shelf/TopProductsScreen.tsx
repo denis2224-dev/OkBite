@@ -6,6 +6,7 @@ import { useTheme } from '../../theme/useTheme';
 import { PressableOpacity } from '../../shared/PressableOpacity';
 import { Button, Screen, SearchPill } from '../../ui';
 import { TopProductRow } from './TopProductRow';
+import { FadeIn, LoadingRows } from './SoftLoading';
 import { quickShelves, visibleShelves } from './searchShelves';
 import { useTopProducts } from './useTopProducts';
 import type { ShelfSlug } from './shelves';
@@ -29,15 +30,13 @@ export function TopProductsScreen() {
         </PressableOpacity>;
       })}
     </ScrollView>}
-    {status === 'loading' ? <View accessible accessibilityRole="progressbar" accessibilityLabel={ro.app.loading} style={styles.list}>
-      {[0, 1, 2].map(row => <View key={row} style={[styles.placeholder, { backgroundColor: colors.track }]} />)}
-    </View>
+    {status === 'loading' ? <LoadingRows />
       : status === 'error' ? <View style={styles.message}>
         <Text accessibilityRole="alert" allowFontScaling style={[styles.body, { color: colors.ink }]}>{ro.scan.shelf.error}</Text>
         <Button variant="secondary" onPress={retry}>{ro.errors.retry}</Button>
       </View>
         : picks.length === 0 ? <Text allowFontScaling style={[styles.body, { color: colors.ink }]}>{ro.scan.shelf.empty}</Text>
-          : <View accessibilityRole="list" style={styles.list}>{picks.map((pick, index) => <TopProductRow key={pick.product.id} pick={pick} rank={index + 1} />)}</View>}
+          : <FadeIn key={slug}><View accessibilityRole="list" style={styles.list}>{picks.map((pick, index) => <TopProductRow key={pick.product.id} pick={pick} rank={index + 1} />)}</View></FadeIn>}
   </Screen>;
 }
 
@@ -47,7 +46,6 @@ const styles = StyleSheet.create({
   chip: { minHeight: 44, paddingHorizontal: 16, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   chipText: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 21 },
   list: { gap: 10 },
-  placeholder: { minHeight: 88, borderRadius: 22 },
   message: { gap: 12 },
   body: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 21 },
 });

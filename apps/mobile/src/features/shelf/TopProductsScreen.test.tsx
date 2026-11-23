@@ -7,6 +7,7 @@ import { light } from '../../theme/tokens';
 import { previewEntries } from '../../test/fixtures';
 import { TopProductsScreen } from './TopProductsScreen';
 import { clearTopProductsCache } from './useTopProducts';
+import { BREATH_MS, FADE_IN_MS } from './SoftLoading';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 jest.mock('../../lib/api', () => ({ api: { topProducts: jest.fn() } }));
@@ -117,4 +118,26 @@ it('has no description, caption, bullet or middle dot', async () => {
   await screen.findAllByTestId(/^top-row-/);
   expect(screen.queryByText(ro.score.disclaimer)).toBeNull();
   expect(screen.queryByText(/[•·]/)).toBeNull();
+});
+
+describe('loading looks calm', () => {
+  it('shows soft placeholders that breathe slowly, in the soft chip colour and not the heavy track colour', async () => {
+    topProducts.mockImplementation(() => new Promise(() => {}));
+    await render(<TopProductsScreen />);
+    expect(screen.getByRole('progressbar', { name: ro.app.loading })).toBeTruthy();
+    const rows = screen.getAllByTestId('loading-row');
+    expect(rows).toHaveLength(3);
+    const style = StyleSheet.flatten(rows[0]!.props.style);
+    expect(style.backgroundColor).toBe(light.soft);
+    expect(style.backgroundColor).not.toBe(light.track);
+  });
+  it('breathes over more than a second each way, and fades the loaded list in over a few hundred milliseconds', () => {
+    expect(BREATH_MS).toBeGreaterThanOrEqual(1000);
+    expect(FADE_IN_MS).toBeGreaterThanOrEqual(300);
+  });
+  it('fades the best products in once they arrive', async () => {
+    await render(<TopProductsScreen />);
+    await waitFor(() => expect(screen.getAllByTestId('fade-in').length).toBe(1));
+    expect(screen.queryByTestId('loading-row')).toBeNull();
+  });
 });
