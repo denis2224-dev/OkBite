@@ -257,3 +257,11 @@ it('shows direct water score for partial waters and rejects legacy cached 100/A 
   expect(screen.queryByText('60–100')).toBeNull();
   expect(screen.getByText(ro.result.scoreUnavailable)).toBeTruthy();
 });
+
+it.each([[0], [1], [30]])('shows the "Cele mai bune produse" button with %i products in history, and opens the page', async count => {
+  jest.mocked(listHistory).mockResolvedValue(Array.from({ length: count }, (_, index) => ({ ...entry, product: { ...entry.product, id: `top-link-${index}`, name: `Produs ${index}` } })));
+  await render(<HistoryScreen />);
+  const link = await screen.findByRole('button', { name: ro.topProducts.title });
+  await fireEvent.press(link);
+  expect(router.push).toHaveBeenLastCalledWith('/top-products');
+});
