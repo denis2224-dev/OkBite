@@ -10,14 +10,16 @@ jest.mock('expo-router', () => ({ useLocalSearchParams: () => ({ id: 'test' }), 
 jest.mock('./useProduct', () => ({ useProduct: () => ({ loading: false, data: { product: mockProduct, score: mockScore } }) }));
 
 test('uses the ordered ingredient groups and expands an unknown ingredient', async () => {
+  // "Ingredient necunoscut" is not in the knowledge base (Smântână is, and would now be filled in).
+  const unknown = { slug: null, name: 'Ingredient necunoscut', group: 'fat' as const, role: null, explanation: null, source: null, allergen: null };
   mockProduct = { ...foundYogurt.product, ingredients: [
-    ...previewEntries[2]!.product.ingredients, ...previewEntries[1]!.product.ingredients,
+    ...previewEntries[2]!.product.ingredients.filter(item => item.name !== 'Smântână'), unknown, ...previewEntries[1]!.product.ingredients,
   ] };
   await render(<Ingredients />);
   expect(screen.getAllByRole('header').map(node => node.props.children)).toEqual([
     ro.ingredients.title, ro.ingredients.base, ro.ingredients.fat, ro.ingredients.taste, ro.ingredients.add, ro.ingredients.cult, ro.result.source,
   ]);
-  await fireEvent.press(screen.getByRole('button', { name: 'Smântână' }));
+  await fireEvent.press(screen.getByRole('button', { name: 'Ingredient necunoscut' }));
   expect(screen.getByText(ro.ingredients.explanationSoon)).toBeTruthy();
 });
 test('expands source-backed test content and opens only a web source', async () => {

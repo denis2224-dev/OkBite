@@ -1,4 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import type { Ingredient } from '../contract';
 import { BUILTIN_INGREDIENTS, matchIngredients, resolveOffCategory, resolveProductIngredients } from './index';
 
 describe('shared ingredients and OFF category resolution', () => {
@@ -52,5 +54,48 @@ describe('shared ingredients and OFF category resolution', () => {
       scoreKind: 'beverage',
     });
   });
-});
 
+  it('carries every entry of data/ingredients.json, with its risk and sources, so the app never lags the checked list', () => {
+    const file = JSON.parse(readFileSync(new URL('../../../../data/ingredients.json', import.meta.url), 'utf8')) as Record<string, unknown>[];
+    const bySlug = new Map(BUILTIN_INGREDIENTS.map((entry) => [entry.slug, entry]));
+    for (const { checkedBy: _by, checkedAt: _at, ...entry } of file) {
+      expect(bySlug.get(entry.slug as string), String(entry.slug)).toEqual({ risk: null, riskSource: null, ...entry });
+    }
+    expect(BUILTIN_INGREDIENTS).toHaveLength(file.length);
+  });
+
+  describe('stored ingredients are filled in from the knowledge base', () => {
+    const stored = (over: Partial<Ingredient>): Ingredient => ({ slug: null, name: 'Pectină (E440)', group: 'add', role: 'Gelifiant', explanation: null, source: null, allergen: null, ...over });
+    const resolve = (ingredients: Ingredient[]) => resolveProductIngredients({ ingredients, ingredientsText: '' });
+
+    it('gives a stored additive with nothing but a name its explanation, source, risk and risk source', () => {
+      const [pectin] = resolve([stored({})]);
+      expect(pectin).toMatchObject({
+        slug: 'pectina-e440', name: 'Pectină (E440)', group: 'add', role: 'Gelifiant', risk: 'low',
+        explanation: expect.stringContaining('Fibră solubilă'), source: expect.stringContaining('eur-lex'), riskSource: expect.stringContaining('efsa'),
+      });
+    });
+    it('finds it by the plain name or by its E-number', () => {
+      expect(resolve([stored({ name: 'Pectină' })])[0]?.slug).toBe('pectina-e440');
+      expect(resolve([stored({ name: 'Gelifiant: E440' })])[0]?.slug).toBe('pectina-e440');
+      expect(resolve([stored({ name: 'Carmin (E120)' })])[0]?.slug).toBe('carmin-e120');
+    });
+    it('never overwrites what the backend already sent', () => {
+      const [pectin] = resolve([stored({ explanation: 'Text din backend', source: 'https://example.com/s', risk: 'moderate', riskSource: 'https://example.com/r', role: 'Altceva' })]);
+      expect(pectin).toMatchObject({ explanation: 'Text din backend', source: 'https://example.com/s', risk: 'moderate', riskSource: 'https://example.com/r', role: 'Altceva' });
+    });
+    it('leaves an ingredient the list does not know exactly as it was', () => {
+      const unknown = stored({ name: 'Ingredient necunoscut', role: null });
+      expect(resolve([unknown])).toEqual([unknown]);
+    });
+    it('leaves a plain ingredient like milk without a risk', () => {
+      const [milk] = resolve([stored({ name: 'Lapte normalizat', group: 'base', role: null })]);
+      expect(milk).toMatchObject({ slug: 'lapte-normalizat', explanation: expect.any(String) });
+      expect(milk?.risk ?? null).toBeNull();
+    });
+    it('also gives the risk when the product only has its label text', () => {
+      const [pectin] = resolveProductIngredients({ ingredients: [], ingredientsText: 'lapte, gelifiant: pectină.' }).filter((i) => i.slug === 'pectina-e440');
+      expect(pectin).toMatchObject({ risk: 'low', riskSource: expect.stringContaining('efsa') });
+    });
+  });
+});
