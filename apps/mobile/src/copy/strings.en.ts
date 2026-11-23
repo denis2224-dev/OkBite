@@ -316,7 +316,7 @@ export const redesignEn: RedesignCopy = {
   },
  },
  history: {
-  search:'Search by name or brand', noMatches:'No products found.', remove:(name:string)=>`Delete ${name} from history`,
+  search:'Search by name or brand', noMatches:'No products found.', swipeDelete:'Delete', remove:(name:string)=>`Delete ${name} from history`,
   removed:'Product removed from history.', undo:'Undo deletion', removeError:'Could not remove the product. Try again.',
   scoreUnavailable:'Score unavailable', restoreError:'Could not restore the product. Try undoing the deletion again.',
   noScore:'no score',

@@ -318,7 +318,7 @@ export const redesignRo = {
   },
  },
  history: {
-  search:'Caută după nume sau marcă', noMatches:'Niciun produs găsit.', remove:(name:string)=>`Șterge ${name} din istoric`,
+  search:'Caută după nume sau marcă', noMatches:'Niciun produs găsit.', swipeDelete:'Șterge', remove:(name:string)=>`Șterge ${name} din istoric`,
   removed:'Produs șters din istoric.', undo:'Anulează ștergerea', removeError:'Nu am putut șterge produsul. Încearcă din nou.',
   scoreUnavailable:'Scor indisponibil', restoreError:'Nu am putut restabili produsul. Reîncearcă anularea ștergerii.',
   noScore:'fără scor',

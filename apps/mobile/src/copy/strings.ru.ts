@@ -523,6 +523,7 @@ export const redesignRu: RedesignCopy = {
   },
   history: {
     search: 'Поиск по названию или марке', noMatches: 'Ничего не найдено.',
+    swipeDelete: 'Удалить',
     remove: (name: string) => `Удалить ${name} из истории`, removed: 'Товар удалён из истории.',
     undo: 'Отменить удаление', removeError: 'Не удалось удалить товар. Попробуйте снова.',
     scoreUnavailable: 'Оценка недоступна', restoreError: 'Не удалось восстановить товар. Повторите отмену.',

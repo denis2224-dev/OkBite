@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { HistoryScreen } from './HistoryScreen';
-import { clearHistory, listHistory, removeFromHistory, restoreToHistory, type HistoryEntry } from './store';
+import { listHistory, removeFromHistory, restoreToHistory, type HistoryEntry } from './store';
 import { foundYogurt } from '../../test/fixtures';
 import { ToastProvider } from '../../ui/Toast';
 import { ro } from '../../copy/ro';
@@ -9,7 +9,6 @@ jest.mock('expo-router', () => ({ router: { push: jest.fn() }, useFocusEffect: (
 let mockHistoryListener: () => void;
 jest.mock('./store', () => ({
   listHistory: jest.fn(),
-  clearHistory: jest.fn(),
   removeFromHistory: jest.fn(),
   restoreToHistory: jest.fn(),
   subscribeHistory: (listener: () => void) => { mockHistoryListener = listener; return jest.fn(); },
@@ -91,21 +90,6 @@ it('refreshes queue-saved products when a queue event arrives during deletion', 
   await screen.findByRole('button', { name: openName(queued.product.name) });
   expect(screen.queryByRole('button', { name: openName(entry.product.name) })).toBeNull();
   expect(screen.getByRole('button', { name: openName(second.product.name) })).toBeTruthy();
-});
-
-it('keeps clear failure visible when a queued refresh completes', async () => {
-  const queued = { ...second, product: { ...second.product, id: '00000000-0000-4000-8000-000000000003', name: 'Produs din coadă' } };
-  let fail!: (error: Error) => void;
-  jest.mocked(clearHistory).mockReturnValueOnce(new Promise<void>((_, reject) => { fail = reject; }));
-  jest.mocked(listHistory).mockResolvedValueOnce([entry, second]).mockResolvedValue([entry, queued, second]);
-  await render(<HistoryScreen/>);
-  await screen.findByRole('button', { name: openName(entry.product.name) });
-  await fireEvent.press(screen.getByRole('button', { name: ro.history.clear }));
-  await fireEvent.press(screen.getByRole('button', { name: ro.history.clearConfirm }));
-  await act(() => mockQueueListener());
-  await act(() => fail(new Error('disk')));
-  await screen.findByRole('button', { name: openName(queued.product.name) });
-  expect(screen.getByText(ro.history.clearError)).toBeTruthy();
 });
 
 it('refreshes after a scan save that commits after History initially loads', async () => {
