@@ -93,6 +93,7 @@ const legacyRu = {
     transcribedLabel: 'Ингредиенты',
     explainedWithSource: 'Пояснения',
     missingAllergenNote: 'Всегда проверяйте упаковку: список может быть неполным.',
+    allergenDataUnknown: 'Информация об аллергенах неполная.',
     addNutrition: 'Добавить таблицу ценности',
     nutritionAdded: 'Данные о пищевой ценности добавлены к товару.',
     insufficientData: 'Недостаточно данных', title: 'Разбор товара', allergens: 'Указанные аллергены',
