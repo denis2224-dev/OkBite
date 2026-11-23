@@ -1,16 +1,5 @@
-import { z } from 'zod';
-import { Product, ScoreResult, type Tier } from '@okbite/shared';
+import type { Product, Tier, TopProductsResponse } from '@okbite/shared';
 import { productScoreFor } from '../product/productScoreFor';
-
-/** Expected answer of the `top-products` Edge Function (docs/api/top-products.md). Local until R2 moves it into the shared contract. */
-export const TopProductsResponse = z.object({
-  category: z.string().min(1),
-  products: z.array(z.object({ product: Product, score: ScoreResult })),
-});
-export type TopProductsResponse = z.infer<typeof TopProductsResponse>;
-/** Category slug as in data/categories.json. */
-export const ShelfCategory = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/).max(64);
-export const TOP_PRODUCTS_LIMIT = 20;
 
 export type ShelfPick = { product: Product; score: number; tier: Tier };
 
