@@ -316,10 +316,9 @@ export const redesignEn: RedesignCopy = {
   },
  },
  history: {
-  search:'Search by name or brand', noMatches:'No products found.', swipeDelete:'Delete', remove:(name:string)=>`Delete ${name} from history`,
-  removed:'Product removed from history.', undo:'Undo deletion', removeError:'Could not remove the product. Try again.',
-  scoreUnavailable:'Score unavailable', restoreError:'Could not restore the product. Try undoing the deletion again.',
-  noScore:'no score',
+  search:'Search by name or brand', noMatches:'No products found.', deleteTitle:'Delete this product from history?', swipeDelete:'Delete', remove:(name:string)=>`Delete ${name} from history`,
+  removeError:'Could not remove the product. Try again.',
+  scoreUnavailable:'Score unavailable', noScore:'no score',
   when: { today:(time:string)=>`Today, ${time}`, yesterday:'Yesterday', weekdays:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'] },
   basket: { title:'Your basket', average:(n:number)=>`Average of ${plural(n,'product','products','en')} with a score`,
    count:(n:number, tier:string)=>`${n} ${tier}`, unscored:(n:number)=>`${n} without a score`, best:(name:string)=>`Your best choice: ${name}`,

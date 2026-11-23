@@ -173,12 +173,14 @@ it('keeps a neutral tile where there is no product photo', async () => {
   expect(within(row).queryByTestId('history-photo')).toBeNull();
   expect(within(row).getByTestId('history-photo-tile')).toBeTruthy();
 });
-it('still deletes a row through the screen-reader delete action', async () => {
+it('still deletes a row through the screen-reader delete action, after asking', async () => {
   jest.mocked(removeFromHistory).mockResolvedValue();
   await render(<HistoryScreen />);
   const row = await screen.findByRole('button', { name: new RegExp(ro.history.open(entry.product.name)) });
   expect(row.props.accessibilityActions).toEqual(expect.arrayContaining([{ name: 'delete', label: ro.history.remove(entry.product.name) }]));
   await fireEvent(row, 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
+  expect(removeFromHistory).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByRole('button', { name: ro.history.swipeDelete }));
   await waitFor(() => expect(removeFromHistory).toHaveBeenCalledWith(entry.product.id));
 });
 

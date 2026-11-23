@@ -318,10 +318,9 @@ export const redesignRo = {
   },
  },
  history: {
-  search:'Caută după nume sau marcă', noMatches:'Niciun produs găsit.', swipeDelete:'Șterge', remove:(name:string)=>`Șterge ${name} din istoric`,
-  removed:'Produs șters din istoric.', undo:'Anulează ștergerea', removeError:'Nu am putut șterge produsul. Încearcă din nou.',
-  scoreUnavailable:'Scor indisponibil', restoreError:'Nu am putut restabili produsul. Reîncearcă anularea ștergerii.',
-  noScore:'fără scor',
+  search:'Caută după nume sau marcă', noMatches:'Niciun produs găsit.', deleteTitle:'Ștergi acest produs din istoric?', swipeDelete:'Șterge', remove:(name:string)=>`Șterge ${name} din istoric`,
+  removeError:'Nu am putut șterge produsul. Încearcă din nou.',
+  scoreUnavailable:'Scor indisponibil', noScore:'fără scor',
   when: { today:(time:string)=>`Azi, ${time}`, yesterday:'Ieri', weekdays:['Duminică','Luni','Marți','Miercuri','Joi','Vineri','Sâmbătă'] },
   basket: { title:'Coșul tău', average:(n:number)=>`Media pentru ${plural(n,'produs','produse')} cu scor`,
    count:(n:number, tier:string)=>`${n} ${tier}`, unscored:(n:number)=>`${n} fără scor`, best:(name:string)=>`Cea mai bună alegere a ta: ${name}`,

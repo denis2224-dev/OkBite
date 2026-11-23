@@ -7,7 +7,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { Body, Button, Card } from '../../ui';
 import { ro } from '../../copy/ro';
 import { roDate } from '../product/SourceCard';
-import { listHistory, removeFromHistory, restoreToHistory, subscribeHistory, type HistoryEntry } from './store';
+import { listHistory, removeFromHistory, subscribeHistory, type HistoryEntry } from './store';
 import { subscribeQueue } from '../offline/queue';
 import { TabPageHeader } from '../../shared/TabPageHeader';
 import { useToast } from '../../ui/Toast';
@@ -22,12 +22,13 @@ export function HistoryScreen() {
   const t = useHomeTheme();
   const copy = ro.history.design;
   const toast = useToast();
-  const mutation = useRef(0);
   const styles = useMemo(() => createStyles(t), [t]);
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<'load' | null>(null);
   const [clearing, setClearing] = useState(false);
+  // The product whose "delete this?" question is showing.
+  const [pending, setPending] = useState<string | null>(null);
   const focused = useRef(false);
   const generation = useRef(0);
   const clearPending = useRef(false);
@@ -67,20 +68,12 @@ export function HistoryScreen() {
   async function remove(entry: HistoryEntry) {
     if (clearPending.current) return;
     clearPending.current = true;
-    const revision = ++mutation.current;
     generation.current++;
     setClearing(true);
     setLoading(false);
     try {
       await removeFromHistory(entry.product.id);
       if (focused.current) setEntries(rows => rows.filter(row => row.product.id !== entry.product.id));
-      const undo = () => {
-        if (mutation.current !== revision) return;
-        void restoreToHistory(entry).then(() => { if (focused.current) void load(); }).catch(() => {
-          if (mutation.current === revision) toast(ro.history.restoreError, { label: ro.history.undo, onPress: undo });
-        });
-      };
-      toast(ro.history.removed, { label: ro.history.undo, onPress: undo });
     } catch { toast(ro.history.removeError); }
     finally { finishMutation(); }
   }
@@ -119,11 +112,12 @@ export function HistoryScreen() {
               : value === null || !tier ? ro.result.scoreUnavailable : `${ro.history.score(value)} · ${ro.tiers[tier]}`;
             const label = [ro.history.open(product.name), product.brand, scoreLabel, disclaimer, product.source, `${ro.result.added}: ${roDate(product.addedAt)}`, verification, savedWhen(savedAt)].join('. ');
             const unavailable = range ? ro.result.water.rangeChip(range.min, range.max) : isWater ? ro.result.scoreUnavailable : ro.history.noScore;
-            return <SwipeToDelete key={product.id} label={ro.history.remove(product.name)} text={ro.history.swipeDelete} disabled={clearing} onDelete={() => void remove(entry)}>
+            return <SwipeToDelete key={product.id} label={ro.history.remove(product.name)} text={ro.history.swipeDelete} question={ro.history.deleteTitle} cancelText={ro.app.cancel} disabled={clearing}
+              asking={pending === product.id} onAsk={() => setPending(product.id)} onCancel={() => setPending(null)} onDelete={() => { setPending(null); void remove(entry); }}>
             <HomePressable label={label} disabled={clearing}
               accessibilityActions={[{ name: 'delete', label: ro.history.remove(product.name) }]}
-              onAccessibilityAction={event => { if (event.nativeEvent.actionName === 'delete') void remove(entry); }}
-              onLongPress={() => void remove(entry)} onPress={() => router.push({ pathname: '/product/[id]', params: { id: product.id, cached: '1' } })}
+              onAccessibilityAction={event => { if (event.nativeEvent.actionName === 'delete') setPending(product.id); }}
+              onPress={() => router.push({ pathname: '/product/[id]', params: { id: product.id, cached: '1' } })}
               style={styles.row}>
               <HistoryRow imageUrl={product.imageUrl} score={range ? null : value} tier={range ? null : tier} unavailableText={unavailable} />
             </HomePressable>
