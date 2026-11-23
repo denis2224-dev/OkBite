@@ -7,7 +7,6 @@ import { light } from '../../theme/tokens';
 import { previewEntries } from '../../test/fixtures';
 import { TopProductsScreen } from './TopProductsScreen';
 import { clearTopProductsCache } from './useTopProducts';
-import { topShelves } from './topShelves';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 jest.mock('../../lib/api', () => ({ api: { topProducts: jest.fn() } }));
@@ -17,14 +16,46 @@ const respond = (slug: string, entries = previewEntries.filter(entry => entry.pr
 beforeEach(() => { jest.clearAllMocks(); clearTopProductsCache(); topProducts.mockImplementation(async (slug: string) => respond(slug)); });
 const chip = (slug: string) => screen.getByRole('button', { name: ro.scan.shelf.names[slug as keyof typeof ro.scan.shelf.names] });
 
-it('has the title and one chip per type, the first chosen, with no fruits and vegetables', async () => {
+const search = () => screen.getByLabelText(ro.topProducts.search);
+const quick = ['iaurt', 'biscuiti', 'suc', 'paine', 'lapte'] as const;
+
+it('has the title, a search field and only five type chips, the first chosen, with no fruits and vegetables', async () => {
   await render(<TopProductsScreen />);
   expect(screen.getByRole('header', { name: ro.topProducts.title })).toBeTruthy();
-  for (const shelf of topShelves) expect(chip(shelf.slug)).toBeTruthy();
+  expect(search()).toBeTruthy();
+  for (const slug of quick) expect(chip(slug)).toBeTruthy();
+  expect(screen.getAllByTestId('type-chip')).toHaveLength(5);
   expect(screen.queryByRole('button', { name: ro.scan.shelf.names['fructe-legume'] })).toBeNull();
+  expect(screen.queryByRole('button', { name: ro.scan.shelf.names.cereale })).toBeNull();
   expect(chip('iaurt').props.accessibilityState.selected).toBe(true);
   expect(chip('biscuiti').props.accessibilityState.selected).toBe(false);
   await waitFor(() => expect(topProducts).toHaveBeenCalledWith('iaurt'));
+});
+
+it('searching shows the matching types, ignoring accents and case', async () => {
+  await render(<TopProductsScreen />);
+  await fireEvent.changeText(search(), 'CEREALE');
+  expect(chip('cereale')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: ro.scan.shelf.names.iaurt })).toBeNull();
+  await fireEvent.changeText(search(), 'smantana');
+  expect(chip('unt-si-smantana')).toBeTruthy();
+});
+
+it('choosing a found type shows its top three, clears the search and keeps the type in view', async () => {
+  await render(<TopProductsScreen />);
+  await fireEvent.changeText(search(), 'cereale');
+  await fireEvent.press(chip('cereale'));
+  await waitFor(() => expect(topProducts).toHaveBeenCalledWith('cereale'));
+  expect(search().props.value).toBe('');
+  expect(chip('cereale').props.accessibilityState.selected).toBe(true);
+  expect(screen.getAllByTestId('type-chip')).toHaveLength(5);
+});
+
+it('says so when no type matches, and keeps the last list below', async () => {
+  await render(<TopProductsScreen />);
+  await fireEvent.changeText(search(), 'zzzz');
+  expect(screen.getByText(ro.topProducts.noMatch)).toBeTruthy();
+  expect(screen.queryAllByTestId('type-chip')).toHaveLength(0);
 });
 
 it('lists the three best of the type as ranks 1 to 3, best score first, the first outlined', async () => {
