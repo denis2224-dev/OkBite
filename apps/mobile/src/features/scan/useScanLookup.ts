@@ -5,13 +5,14 @@ import { api } from '../../lib/api';
 import { enqueue } from '../offline/queue';
 import { addProductRoute, identifyCodeRoute, isGuidedAddEnabled } from '../identify/routes';
 import { useScreenActivity } from '../capture/useScreenActivity';
-import { rememberLookup } from '../product/freshLookup';
+import { saveToHistory } from '../history/store';
+import { forgetLookup, rememberLookup } from '../product/freshLookup';
 import { preloadProductPage } from './preloadProductPage';
 
 export type ScanState =
   | { status: 'idle' }
   | { status: 'working' }
-  | { status: 'found'; product: Product; score: ScoreResult }
+  | { status: 'found'; product: Product; score: ScoreResult; storageError?: boolean }
   | { status: 'offline' }
   | { status: 'error'; code?: string };
 
@@ -45,8 +46,13 @@ export function useScanLookup(onCameraAccept?: () => void) {
         enqueuedCode.current = null;
         if (!activity.isCurrent(token)) return;
         if (res.status === 'found') {
-          rememberLookup(res);
-          setState({ status: 'found', product: res.product, score: res.score });
+          const historySave = saveToHistory(res);
+          rememberLookup(res, historySave);
+          const found: ScanState = { ...res };
+          setState(found);
+          void historySave.catch(() => {
+            setState(current => current === found ? { ...found, storageError: true } : current);
+          });
         } else {
           setState(IDLE);
           router.replace(
@@ -107,10 +113,13 @@ export function useScanLookup(onCameraAccept?: () => void) {
 
   const dismiss = useCallback(() => {
     if (busy.current) return;
-    if (state.status === 'found') dismissedCode.current = lastCode.current;
+    if (state.status === 'found') {
+      dismissedCode.current = lastCode.current;
+      forgetLookup(state.product.id);
+    }
     failed.current = false;
     setState(IDLE);
-  }, [state.status]);
+  }, [state]);
 
   return { state, onCameraCode, onManualCode, retry, dismiss };
 }
