@@ -26,17 +26,19 @@ it('SearchPill is a 54 pt raised pill with a labelled input and a decorative fil
 });
 
 describe('selection changes colour only', () => {
-  it('CheckboxChip keeps the same size, box and shadow in both states; no check glyph', async () => {
+  it('CheckboxChip: the pill looks the same selected or not (no green border or fill); only the box fills; no check glyph', async () => {
     const view = await render(<CheckboxChip text="Gluten" selected={false} onPress={jest.fn()} />);
     const off = flat(screen.getByRole('checkbox', { name: 'Gluten' }));
     const offBox = flat(screen.getByTestId('checkbox-box', { includeHiddenElements: true }));
     await view.rerender(<CheckboxChip text="Gluten" selected onPress={jest.fn()} />);
     const chip = screen.getByRole('checkbox', { name: 'Gluten' });
     expect(chip.props.accessibilityState.checked).toBe(true);
-    expect(shape(flat(chip))).toEqual(shape(off));
-    expect(flat(chip).boxShadow).toBe(off.boxShadow);
-    expect(flat(chip)).toMatchObject({ backgroundColor: light.chipSelectedBg, borderColor: light.greenLight, borderWidth: 1.5 });
-    expect(shape(flat(screen.getByTestId('checkbox-box', { includeHiddenElements: true })))).toEqual(shape(offBox));
+    expect(flat(chip)).toEqual(off); // same border, background, size and shadow: nothing on the pill turns green
+    expect(flat(chip)).toMatchObject({ backgroundColor: light.surface, borderColor: light.divider, borderWidth: 1.5 });
+    const box = flat(screen.getByTestId('checkbox-box', { includeHiddenElements: true }));
+    expect(shape(box)).toEqual(shape(offBox));
+    expect(offBox).toMatchObject({ backgroundColor: light.transparent, borderColor: light.checkboxBorder });
+    expect(box).toMatchObject({ backgroundColor: light.primary, borderColor: light.primary }); // the box is what shows the selection
     expect(JSON.stringify(screen.toJSON())).not.toContain('RNSVGPath'); // no check glyph
     expect(flat(screen.getByText('Gluten')).fontFamily).toBe(fonts.medium);
   });

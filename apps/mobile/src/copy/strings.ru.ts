@@ -180,7 +180,7 @@ const legacyRu = {
     retakePhoto: 'Переснять фото', retakePhotos: 'Переснять фото', title: 'Проверьте распознанный текст',
     unclearField: 'Сверьте это значение с упаковкой.', save: 'Сохранить товар', retake: 'Переснять фото',
   },
-  topProducts: { title: 'Лучшие продукты', rank: (n: number) => `Место ${n}` },
+  topProducts: { title: 'Лучшие продукты', rank: (n: number) => `Место ${n}`, search: 'Найти тип продукта', noMatch: 'Тип продукта не найден.' },
   history: {
     design: {
       title: 'История', emptyTitle: 'История пуста', empty: 'Отсканированные товары появятся здесь.',
@@ -523,10 +523,9 @@ export const redesignRu: RedesignCopy = {
   },
   history: {
     search: 'Поиск по названию или марке', noMatches: 'Ничего не найдено.',
-    remove: (name: string) => `Удалить ${name} из истории`, removed: 'Товар удалён из истории.',
-    undo: 'Отменить удаление', removeError: 'Не удалось удалить товар. Попробуйте снова.',
-    scoreUnavailable: 'Оценка недоступна', restoreError: 'Не удалось восстановить товар. Повторите отмену.',
-    noScore: 'без оценки',
+    deleteTitle: 'Удалить этот товар из истории?', swipeDelete: 'Удалить',
+    remove: (name: string) => `Удалить ${name} из истории`, removeError: 'Не удалось удалить товар. Попробуйте снова.',
+    scoreUnavailable: 'Оценка недоступна', noScore: 'без оценки',
     when: { today: (time: string) => `Сегодня, ${time}`, yesterday: 'Вчера', weekdays: ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'] },
     basket: { title: 'Ваша корзина', average: (n: number) => `Среднее для ${pluralRu(n, 'продукта', 'продуктов', 'продуктов')} с оценкой`,
       count: (n: number, tier: string) => `${n} ${tier}`, unscored: (n: number) => `${n} без оценки`, best: (name: string) => `Ваш лучший выбор: ${name}`,

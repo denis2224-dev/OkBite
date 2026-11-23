@@ -4,27 +4,31 @@ import { ro } from '../../copy/ro';
 import { fonts } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 import { PressableOpacity } from '../../shared/PressableOpacity';
-import { Button, Screen } from '../../ui';
+import { Button, Screen, SearchPill } from '../../ui';
 import { TopProductRow } from './TopProductRow';
-import { topShelves } from './topShelves';
+import { quickShelves, visibleShelves } from './searchShelves';
 import { useTopProducts } from './useTopProducts';
 import type { ShelfSlug } from './shelves';
 
-/** "Cele mai bune produse": pick a type, see its three best verified products by OkBite score. */
+/** "Cele mai bune produse": search for a type or pick one of five everyday ones, see its three best verified products by OkBite score. */
 export function TopProductsScreen() {
   const { colors } = useTheme();
-  const [slug, setSlug] = useState<ShelfSlug>(topShelves[0]!.slug);
+  const [slug, setSlug] = useState<ShelfSlug>(quickShelves[0]!.slug);
+  const [query, setQuery] = useState('');
   const { status, picks, retry } = useTopProducts(slug);
+  const shown = visibleShelves(query, slug, ro.scan.shelf.names);
+  function choose(next: ShelfSlug) { setSlug(next); setQuery(''); }
   return <Screen title={ro.topProducts.title}>
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.chips} style={styles.strip}>
-      {topShelves.map(shelf => {
+    <SearchPill testID="type-search" value={query} onChangeText={setQuery} placeholder={ro.topProducts.search} filterIcon={false} />
+    {shown.length === 0 ? <Text accessibilityRole="alert" allowFontScaling style={[styles.body, { color: colors.muted }]}>{ro.topProducts.noMatch}</Text> : <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.chips} style={styles.strip}>
+      {shown.map(shelf => {
         const selected = shelf.slug === slug;
-        return <PressableOpacity key={shelf.slug} accessibilityRole="button" accessibilityLabel={ro.scan.shelf.names[shelf.slug]} accessibilityState={{ selected }}
-          onPress={() => setSlug(shelf.slug)} style={[styles.chip, { backgroundColor: selected ? colors.primary : colors.soft }]}>
+        return <PressableOpacity key={shelf.slug} testID="type-chip" accessibilityRole="button" accessibilityLabel={ro.scan.shelf.names[shelf.slug]} accessibilityState={{ selected }}
+          onPress={() => choose(shelf.slug)} style={[styles.chip, { backgroundColor: selected ? colors.primary : colors.soft }]}>
           <Text allowFontScaling style={[styles.chipText, { color: selected ? colors.onPrimary : colors.ink }]}>{ro.scan.shelf.names[shelf.slug]}</Text>
         </PressableOpacity>;
       })}
-    </ScrollView>
+    </ScrollView>}
     {status === 'loading' ? <View accessible accessibilityRole="progressbar" accessibilityLabel={ro.app.loading} style={styles.list}>
       {[0, 1, 2].map(row => <View key={row} style={[styles.placeholder, { backgroundColor: colors.track }]} />)}
     </View>
