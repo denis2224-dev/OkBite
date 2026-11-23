@@ -1,19 +1,20 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ScreenSafeArea as SafeAreaView } from '../../shared/ScreenSafeArea';
 import { useHomeTheme, type HomeTheme } from '../../theme/home';
 import { HomeIcon, HomePressable } from '../../shared/HomeChrome';
 import { router, useFocusEffect } from 'expo-router';
-import { Body, Button, Card, Heading } from '../../ui';
+import { Body, Button, Card } from '../../ui';
 import { ro } from '../../copy/ro';
 import { roDate } from '../product/SourceCard';
-import { clearHistory, listHistory, removeFromHistory, restoreToHistory, subscribeHistory, type HistoryEntry } from './store';
+import { listHistory, removeFromHistory, subscribeHistory, type HistoryEntry } from './store';
 import { subscribeQueue } from '../offline/queue';
 import { TabPageHeader } from '../../shared/TabPageHeader';
 import { useToast } from '../../ui/Toast';
 import { productScoreFor } from '../product/productScoreFor';
 import { savedWhen } from './when';
 import { HistoryRow } from './HistoryRow';
+import { SwipeToDelete } from './SwipeToDelete';
 import { TopProductsLink } from './TopProductsLink';
 import { displayScore } from '../product/displayScore';
 
@@ -21,13 +22,13 @@ export function HistoryScreen() {
   const t = useHomeTheme();
   const copy = ro.history.design;
   const toast = useToast();
-  const mutation = useRef(0);
   const styles = useMemo(() => createStyles(t), [t]);
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<'load' | 'clear' | null>(null);
-  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState<'load' | null>(null);
   const [clearing, setClearing] = useState(false);
+  // The product whose "delete this?" question is showing.
+  const [pending, setPending] = useState<string | null>(null);
   const focused = useRef(false);
   const generation = useRef(0);
   const clearPending = useRef(false);
@@ -50,7 +51,6 @@ export function HistoryScreen() {
   useFocusEffect(useCallback(() => {
     focused.current = true;
     setClearing(clearPending.current);
-    if (!clearPending.current) setConfirming(false);
     const refresh = () => { void load(); };
     const stopHistory = subscribeHistory(refresh);
     const stopQueue = subscribeQueue(refresh);
@@ -68,20 +68,12 @@ export function HistoryScreen() {
   async function remove(entry: HistoryEntry) {
     if (clearPending.current) return;
     clearPending.current = true;
-    const revision = ++mutation.current;
     generation.current++;
     setClearing(true);
     setLoading(false);
     try {
       await removeFromHistory(entry.product.id);
       if (focused.current) setEntries(rows => rows.filter(row => row.product.id !== entry.product.id));
-      const undo = () => {
-        if (mutation.current !== revision) return;
-        void restoreToHistory(entry).then(() => { if (focused.current) void load(); }).catch(() => {
-          if (mutation.current === revision) toast(ro.history.restoreError, { label: ro.history.undo, onPress: undo });
-        });
-      };
-      toast(ro.history.removed, { label: ro.history.undo, onPress: undo });
     } catch { toast(ro.history.removeError); }
     finally { finishMutation(); }
   }
@@ -92,34 +84,14 @@ export function HistoryScreen() {
     if (refreshPending.current) { refreshPending.current = false; if (focused.current) void load(preserveError); }
   }
 
-  async function confirmClear() {
-    if (clearPending.current) return;
-    let failed = false;
-    clearPending.current = true;
-    mutation.current++;
-    generation.current++;
-    setLoading(false);
-    setClearing(true);
-    setError(null);
-    try {
-      await clearHistory();
-      if (focused.current) { setEntries([]); setConfirming(false); }
-    } catch {
-      failed = true;
-      if (focused.current) setError('clear');
-    } finally {
-      finishMutation(failed);
-    }
-  }
-
   return <SafeAreaView edges={['top','left','right']} style={styles.safe}>
     <View style={styles.frame}>
-      <TabPageHeader title={copy.title} action={entries.length > 0 ? <HomePressable label={ro.history.clear} disabled={clearing} onPress={() => setConfirming(true)} style={styles.clear}><HomeIcon name="trash" size={18} color={t.colors.low}/><Text style={styles.clearText}>{ro.history.clear}</Text></HomePressable> : null} />
+      <TabPageHeader title={copy.title} />
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         <TopProductsLink />
         {loading && <Body accessibilityLiveRegion="polite">{ro.app.loading}</Body>}
-        {error && !confirming && <Card><Body accessibilityRole="alert">{error === 'load' ? ro.history.loadError : ro.history.clearError}</Body>{error === 'load' && <Button variant="secondary" onPress={() => void load()}>{ro.app.retry}</Button>}</Card>}
+        {error && <Card><Body accessibilityRole="alert">{ro.history.loadError}</Body><Button variant="secondary" onPress={() => void load()}>{ro.app.retry}</Button></Card>}
         {!loading && !error && entries.length === 0 && <View style={styles.empty}>
           <View style={styles.emptyIcon}><HomeIcon name="clock" size={30} color={t.colors.primary}/></View>
           <Text accessibilityRole="header" style={styles.emptyTitle}>{copy.emptyTitle}</Text><Text style={styles.emptyText}>{copy.empty}</Text>
@@ -140,35 +112,25 @@ export function HistoryScreen() {
               : value === null || !tier ? ro.result.scoreUnavailable : `${ro.history.score(value)} · ${ro.tiers[tier]}`;
             const label = [ro.history.open(product.name), product.brand, scoreLabel, disclaimer, product.source, `${ro.result.added}: ${roDate(product.addedAt)}`, verification, savedWhen(savedAt)].join('. ');
             const unavailable = range ? ro.result.water.rangeChip(range.min, range.max) : isWater ? ro.result.scoreUnavailable : ro.history.noScore;
-            return <HomePressable key={product.id} label={label} disabled={clearing}
+            return <SwipeToDelete key={product.id} label={ro.history.remove(product.name)} text={ro.history.swipeDelete} question={ro.history.deleteTitle} cancelText={ro.app.cancel} disabled={clearing}
+              asking={pending === product.id} onAsk={() => setPending(product.id)} onCancel={() => setPending(null)} onDelete={() => { setPending(null); void remove(entry); }}>
+            <HomePressable label={label} disabled={clearing}
               accessibilityActions={[{ name: 'delete', label: ro.history.remove(product.name) }]}
-              onAccessibilityAction={event => { if (event.nativeEvent.actionName === 'delete') void remove(entry); }}
-              onLongPress={() => void remove(entry)} onPress={() => router.push({ pathname: '/product/[id]', params: { id: product.id, cached: '1' } })}
+              onAccessibilityAction={event => { if (event.nativeEvent.actionName === 'delete') setPending(product.id); }}
+              onPress={() => router.push({ pathname: '/product/[id]', params: { id: product.id, cached: '1' } })}
               style={styles.row}>
               <HistoryRow imageUrl={product.imageUrl} score={range ? null : value} tier={range ? null : tier} unavailableText={unavailable} />
-            </HomePressable>;
+            </HomePressable>
+            </SwipeToDelete>;
           })}
         </View>}
         <Button variant="ghost" onPress={() => router.push('/offline')}>{ro.offline.queueTitle}</Button>
       </ScrollView>
     </View>
-    <Modal visible={confirming} transparent animationType="none" onRequestClose={() => { if (!clearing) { setConfirming(false); setError(null); } }}>
-      <SafeAreaView edges={['top','bottom','left','right']} style={styles.confirmation}>
-        <ScrollView contentContainerStyle={styles.confirmationContent}>
-          <Card accessibilityLabel={ro.history.clearTitle} accessibilityViewIsModal>
-            <Heading style={{fontSize:20,lineHeight:27}}>{ro.history.clearTitle}</Heading><Body>{ro.history.clearBody}</Body>
-            {error === 'clear' && <Body accessibilityLiveRegion="polite">{ro.history.clearError}</Body>}
-            <Button disabled={clearing} onPress={() => void confirmClear()}>{ro.history.clearConfirm}</Button><Button variant="secondary" disabled={clearing} onPress={() => {setConfirming(false);setError(null);}}>{ro.app.cancel}</Button>
-          </Card>
-        </ScrollView>
-      </SafeAreaView>
-    </Modal>
   </SafeAreaView>;
 }
 const createStyles=(t:HomeTheme)=>StyleSheet.create({
  safe:{flex:1,backgroundColor:t.colors.ground},frame:{flex:1,width:'100%',maxWidth:430,alignSelf:'center'},
- confirmation:{flex:1,backgroundColor:t.colors.scrim},confirmationContent:{flexGrow:1,justifyContent:'center',padding:16,width:'100%',maxWidth:430,alignSelf:'center'},
- clear:{minHeight:44,paddingVertical:4,paddingHorizontal:12,borderRadius:999,backgroundColor:t.colors.lowBg,flexDirection:'row',alignItems:'center',gap:6},clearText:{fontFamily:t.fonts.bold,fontSize:13,lineHeight:18.85,color:t.colors.low,flexShrink:1},
  body:{paddingHorizontal:16,paddingBottom:24,gap:12},
  empty:{paddingVertical:56,paddingHorizontal:16,alignItems:'stretch'},emptyIcon:{width:72,height:72,borderRadius:36,alignSelf:'center',backgroundColor:t.colors.mint,alignItems:'center',justifyContent:'center',marginBottom:14},
  emptyTitle:{fontFamily:t.fonts.heading,fontSize:21,lineHeight:30.45,letterSpacing:-0.21,color:t.colors.ink,textAlign:'center',marginBottom:6},

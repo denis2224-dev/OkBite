@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { emptyWaterProfile } from '@okbite/shared';
 import { HistoryScreen } from './HistoryScreen';
-import { clearHistory, listHistory, removeFromHistory, type HistoryEntry } from './store';
+import { listHistory, removeFromHistory, type HistoryEntry } from './store';
 import { foundYogurt } from '../../test/fixtures';
 import { ro } from '../../copy/ro';
 import { productScoreFor } from '../product/productScoreFor';
@@ -20,7 +20,7 @@ jest.mock('expo-router', () => ({
     }, [effect]);
   },
 }));
-jest.mock('./store', () => ({ listHistory: jest.fn(), subscribeHistory: () => jest.fn(), clearHistory: jest.fn(), removeFromHistory: jest.fn(), restoreToHistory: jest.fn() }));
+jest.mock('./store', () => ({ listHistory: jest.fn(), subscribeHistory: () => jest.fn(), removeFromHistory: jest.fn(), restoreToHistory: jest.fn() }));
 jest.mock('../offline/queue', () => ({ subscribeQueue: () => jest.fn() }));
 const entry: HistoryEntry = { ...foundYogurt, savedAt: '2026-11-05T09:00:00.000Z' };
 function deferred<T>() {
@@ -35,7 +35,6 @@ const openName = (name: string) => new RegExp(ro.history.open(name));
 beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(listHistory).mockResolvedValue([entry]);
-  jest.mocked(clearHistory).mockResolvedValue();
 });
 it.each(['verified', 'unverified'] as const)('keeps the row short and still announces score context and %s status', async (status) => {
   const product = { ...entry.product, status, verifiedAt: status === 'verified' ? '2026-11-06' : null };
@@ -52,17 +51,6 @@ it.each(['verified', 'unverified'] as const)('keeps the row short and still anno
   expect(row.props.accessibilityLabel).toContain(product.source);
   expect(row.props.accessibilityLabel).toContain(verification);
   expect(row.props.accessibilityLabel).toContain(ro.score.disclaimer);
-});
-it('opens a clear confirmation dialog even with a long history', async () => {
-  jest.mocked(listHistory).mockResolvedValue(Array.from({ length: 30 }, (_, index) => ({ ...entry, product: { ...entry.product, id: `record-${index}`, name: `Produs ${index}` } })));
-  await render(<HistoryScreen />);
-  await screen.findByRole('button', { name: openName('Produs 29') });
-  await fireEvent.press(screen.getByRole('button', { name: ro.history.clear }));
-  const dialog = screen.getByLabelText(ro.history.clearTitle);
-  expect(dialog.props.accessibilityViewIsModal).toBe(true);
-  await fireEvent.press(within(dialog).getByRole('button', { name: ro.app.cancel }));
-  expect(screen.queryByLabelText(ro.history.clearTitle)).toBeNull();
-  expect(clearHistory).not.toHaveBeenCalled();
 });
 it('shows no "saved only in this browser" banner above the list', async () => {
   await render(<HistoryScreen />);
@@ -108,22 +96,6 @@ it('announces source dates and marks an unavailable score as fără scor without
   expect(screen.getByText(ro.history.noScore)).toBeTruthy();
   expect(screen.queryByText('0 din 100')).toBeNull();
 });
-it('keeps the list when deletion is canceled or fails, and clears only on confirmed success', async () => {
-  jest.mocked(clearHistory).mockRejectedValueOnce(new Error('disk')).mockResolvedValueOnce();
-  await render(<HistoryScreen />);
-  await waitFor(() => expect(screen.getByRole('button', { name: openName(entry.product.name) })).toBeTruthy());
-  await fireEvent.press(screen.getByRole('button', { name: ro.history.clear }));
-  await fireEvent.press(screen.getByRole('button', { name: ro.app.cancel }));
-  expect(clearHistory).not.toHaveBeenCalled();
-  expect(screen.getByRole('button', { name: openName(entry.product.name) })).toBeTruthy();
-  await fireEvent.press(screen.getByRole('button', { name: ro.history.clear }));
-  await fireEvent.press(screen.getByRole('button', { name: ro.history.clearConfirm }));
-  await waitFor(() => expect(screen.getByText(ro.history.clearError)).toBeTruthy());
-  expect(screen.getByRole('button', { name: openName(entry.product.name) })).toBeTruthy();
-  await fireEvent.press(screen.getByRole('button', { name: ro.history.clearConfirm }));
-  await waitFor(() => expect(screen.getByText(ro.history.design.emptyTitle)).toBeTruthy());
-  expect(screen.queryByRole('button', { name: openName(entry.product.name) })).toBeNull();
-});
 it('refreshes on focus and ignores older reads', async () => {
   const oldRead = deferred<HistoryEntry[]>();
   const newRead = deferred<HistoryEntry[]>();
@@ -146,19 +118,6 @@ it('retains saved rows when a focus refresh fails', async () => {
   await waitFor(() => expect(screen.getByText(ro.history.loadError)).toBeTruthy());
   expect(screen.getByRole('button', { name: openName(entry.product.name) })).toBeTruthy();
 });
-it('does not restore deleted rows when an earlier read finishes after clear', async () => {
-  const pending = deferred<HistoryEntry[]>();
-  await render(<HistoryScreen />);
-  await waitFor(() => expect(screen.getByRole('button', { name: openName(entry.product.name) })).toBeTruthy());
-  jest.mocked(listHistory).mockReturnValueOnce(pending.promise);
-  await refocus();
-  await fireEvent.press(screen.getByRole('button', { name: ro.history.clear }));
-  await fireEvent.press(screen.getByRole('button', { name: ro.history.clearConfirm }));
-  await waitFor(() => expect(screen.getByText(ro.history.design.emptyTitle)).toBeTruthy());
-  await act(() => pending.resolve([entry]));
-  expect(screen.queryByRole('button', { name: openName(entry.product.name) })).toBeNull();
-});
-
 it('withholds a cached score when required nutrition data is missing', async () => {
   jest.mocked(listHistory).mockResolvedValue([{ ...entry, product: { ...entry.product, nutrients: { ...entry.product.nutrients, salt: null } } }]);
   await render(<HistoryScreen />);
@@ -214,12 +173,14 @@ it('keeps a neutral tile where there is no product photo', async () => {
   expect(within(row).queryByTestId('history-photo')).toBeNull();
   expect(within(row).getByTestId('history-photo-tile')).toBeTruthy();
 });
-it('still deletes a row through the screen-reader delete action', async () => {
+it('still deletes a row through the screen-reader delete action, after asking', async () => {
   jest.mocked(removeFromHistory).mockResolvedValue();
   await render(<HistoryScreen />);
   const row = await screen.findByRole('button', { name: new RegExp(ro.history.open(entry.product.name)) });
   expect(row.props.accessibilityActions).toEqual(expect.arrayContaining([{ name: 'delete', label: ro.history.remove(entry.product.name) }]));
   await fireEvent(row, 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
+  expect(removeFromHistory).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByRole('button', { name: ro.history.swipeDelete }));
   await waitFor(() => expect(removeFromHistory).toHaveBeenCalledWith(entry.product.id));
 });
 
@@ -264,4 +225,11 @@ it.each([[0], [1], [30]])('shows the "Cele mai bune produse" button with %i prod
   const link = await screen.findByRole('button', { name: ro.topProducts.title });
   await fireEvent.press(link);
   expect(router.push).toHaveBeenLastCalledWith('/top-products');
+});
+
+it('has no "Șterge istoricul" button in the header, with or without products', async () => {
+  await render(<HistoryScreen />);
+  await screen.findByRole('button', { name: openName(entry.product.name) });
+  expect(screen.queryByRole('button', { name: ro.history.clear })).toBeNull();
+  expect(screen.queryByText(ro.history.clear)).toBeNull();
 });
