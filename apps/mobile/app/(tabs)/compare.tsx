@@ -3,10 +3,11 @@ import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ScreenSafeArea as SafeAreaView } from '../../src/shared/ScreenSafeArea';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { TabPageHeader } from '../../src/shared/TabPageHeader';
-import { Body, Button, Card, Heading } from '../../src/ui';
+import { Body, Button, Caption, Card, Heading } from '../../src/ui';
 import { ro } from '../../src/copy/ro';
 import { listHistory, type HistoryEntry } from '../../src/features/history/store';
 import { ProductPicker } from '../../src/features/compare/ProductPicker';
+import { declaredAllergenText, formatAllergenNames } from '../../src/features/product/allergenLabel';
 import { betterOverall, compareRows, compareWaterRows, placeAdded, togglePick } from '../../src/features/compare/compare';
 import { RecentProducts } from '../../src/features/compare/RecentProducts';
 import { PhotoCard } from '../../src/features/compare/PhotoCard';
@@ -77,8 +78,17 @@ export default function Compare() {
           })}</View>
           <View testID="compare-allergens" style={styles.allergenNote}>
             <Text accessibilityRole="header" style={styles.allergenTitle}>{ro.result.allergens}</Text>
-            <Text style={styles.allergenText}><Text style={styles.bold}>A:</Text> {a.product.allergens.join(', ') || copy.none}</Text>
-            <Text style={styles.allergenText}><Text style={styles.bold}>B:</Text> {b.product.allergens.join(', ') || copy.none}</Text>
+            {products.map(({ entry, label, side }) => {
+              const { product } = entry;
+              const traces = product.mayContain.length > 0
+                ? `${ro.result.mayContain} ${formatAllergenNames(product.mayContain)}`
+                : null;
+              return <View key={side}>
+                <Text style={styles.allergenText}><Text style={styles.bold}>{side.toUpperCase()}:</Text> {declaredAllergenText(product)}</Text>
+                {traces && <Text style={styles.allergenText} accessibilityLabel={`${label}. ${traces}`}>{traces}</Text>}
+              </View>;
+            })}
+            <Caption>{ro.result.missingAllergenNote}</Caption>
           </View>
           <HomeCard accessibilityRole="table" accessibilityLabel={copy.table(a.product.unit)} style={styles.table}>
             <View accessibilityRole="row" style={styles.tableHeader}><Text accessibilityRole="columnheader" style={[styles.label, styles.nutrientColumn]}>{isWaterPair ? ro.result.water.cardTitle : ro.compare.per100(a.product.unit)}</Text><Text accessibilityRole="columnheader" style={[styles.label, styles.valueColumn]}>A</Text><Text accessibilityRole="columnheader" style={[styles.label, styles.valueColumn]}>B</Text></View>
