@@ -8,7 +8,7 @@ import { useTheme } from '../../theme/useTheme';
 import { ro } from '../../copy/ro';
 import { ResultIcon } from './ResultIcon';
 
-/** "Ingredients": the label text as printed, in a pale box; a down chevron opens and closes it (open at first). */
+/** "Ingredients": the label text as printed (no "Ingrediente:" in front, the heading says it), in a pale box; a down chevron opens and closes it (open at first). */
 export function IngredientsLabel({ product }: { product: Product }) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(true);
@@ -24,9 +24,7 @@ export function IngredientsLabel({ product }: { product: Product }) {
       </View>
     </PressableOpacity>
     {open && <View testID="ingredients-text" style={{ marginBottom: 10, padding: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 12, backgroundColor: colors.ground }}>
-      <Text selectable allowFontScaling style={{ fontFamily: fonts.body, ...typeScale.body, color: colors.ink }}>
-        <Text style={{ fontFamily: fonts.bold }}>{ro.result.ingredientsLabel} </Text>{text}
-      </Text>
+      <Text selectable allowFontScaling style={{ fontFamily: fonts.body, ...typeScale.body, color: colors.ink }}>{text}</Text>
     </View>}
   </Card>;
 }

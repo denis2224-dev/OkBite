@@ -6,10 +6,10 @@ import { fonts } from '../../theme/tokens';
 import { tierTone } from '../../theme/tierTones';
 import { useTheme } from '../../theme/useTheme';
 
-type Props = { imageUrl: string | null; score: number | null; tier: Tier | null; unavailableText?: string };
+type Props = { imageUrl: string | null; name: string; score: number | null; tier: Tier | null; unavailableText?: string };
 
-/** What a History row shows: the product photo on the left, then the rating with the verdict under it. Nothing else. */
-export function HistoryRow({ imageUrl, score, tier, unavailableText }: Props) {
+/** What a History row shows: the product photo on the left, then the rating with the product name under it. Nothing else. */
+export function HistoryRow({ imageUrl, name, score, tier, unavailableText }: Props) {
   const { colors } = useTheme();
   // A photo that fails to load falls back to the neutral tile instead of leaving a hole.
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
@@ -22,11 +22,9 @@ export function HistoryRow({ imageUrl, score, tier, unavailableText }: Props) {
       : <View testID="history-photo-tile" style={[styles.photo, { backgroundColor: colors.mint }]} />}
     <View style={styles.text}>
       {score !== null && tier && tone
-        ? <>
-          <Text style={[styles.score, { color: tone.fg }]}>{score}</Text>
-          <Text style={[styles.verdict, { color: tone.fg }]}>{ro.tiers[tier]}</Text>
-        </>
-        : <Text style={[styles.verdict, { color: colors.muted }]}>{unavailableText ?? ro.history.noScore}</Text>}
+        ? <Text style={[styles.score, { color: tone.fg }]}>{score}</Text>
+        : <Text style={[styles.unavailable, { color: colors.muted }]}>{unavailableText ?? ro.history.noScore}</Text>}
+      <Text numberOfLines={2} style={[styles.name, { color: colors.ink }]}>{name}</Text>
     </View>
   </View>;
 }
@@ -36,5 +34,6 @@ const styles = StyleSheet.create({
   photo: { width: 68, height: 68, borderRadius: 14 },
   text: { flex: 1, minWidth: 0, gap: 4 },
   score: { fontFamily: fonts.headingExtra, fontSize: 24, lineHeight: 26 },
-  verdict: { fontFamily: fonts.bold, fontSize: 12, lineHeight: 16 },
+  unavailable: { fontFamily: fonts.bold, fontSize: 12, lineHeight: 16 },
+  name: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18 },
 });

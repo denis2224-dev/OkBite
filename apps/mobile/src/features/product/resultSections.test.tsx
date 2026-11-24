@@ -109,11 +109,12 @@ describe('WhatsInside', () => {
 
 describe('IngredientsLabel', () => {
   const product = { ...foundYogurt.product, ingredientsText: 'lapte, zahăr, arome.' };
-  it('shows the label text as one block of running text after a bold "Ingredients:"', async () => {
+  it('shows the label text as one block of running text, with no "Ingrediente:" in front of it; the heading stays', async () => {
     await render(<IngredientsLabel product={product} />);
     const box = screen.getByTestId('ingredients-text');
-    expect(within(box).getByText(ro.result.ingredientsLabel, { exact: false })).toBeTruthy();
-    expect(within(box).getByText('lapte, zahăr, arome.', { exact: false })).toBeTruthy();
+    expect(within(box).getByText('lapte, zahăr, arome.')).toBeTruthy(); // the text starts the box
+    expect(within(box).queryByText(/Ingrediente:|Ingredients:|Состав:/, { exact: false })).toBeNull();
+    expect(screen.getByText(ro.result.ingredientsTitle)).toBeTruthy();
     expect(JSON.stringify(screen.toJSON())).not.toMatch(/[•·]/);
   });
   it('opens and closes with a chevron button and announces the expanded state', async () => {

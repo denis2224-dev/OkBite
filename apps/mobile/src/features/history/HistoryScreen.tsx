@@ -98,7 +98,7 @@ export function HistoryScreen() {
           <Button onPress={() => router.push('/scan')}>{copy.scan}</Button>
         </View>}
         {visible.length > 0 && <View testID="history-list" accessibilityRole="list" accessibilityLabel={ro.history.title} style={styles.list}>
-          {/* One white card per product: photo, rating, verdict. Name, source, dates and status are read aloud. */}
+          {/* One white card per product: photo, rating, name. Brand, source, dates and status are read aloud. */}
           {visible.map(entry => {
             const { product, score: storedScore, savedAt } = entry;
             const { score: value, tier } = productScoreFor(product, storedScore);
@@ -119,7 +119,7 @@ export function HistoryScreen() {
               onAccessibilityAction={event => { if (event.nativeEvent.actionName === 'delete') setPending(product.id); }}
               onPress={() => router.push({ pathname: '/product/[id]', params: { id: product.id, cached: '1' } })}
               style={styles.row}>
-              <HistoryRow imageUrl={product.imageUrl} score={range ? null : value} tier={range ? null : tier} unavailableText={unavailable} />
+              <HistoryRow imageUrl={product.imageUrl} name={product.name} score={range ? null : value} tier={range ? null : tier} unavailableText={unavailable} />
             </HomePressable>
             </SwipeToDelete>;
           })}

@@ -146,7 +146,7 @@ it('has no basket summary card, with or without products', async () => {
   expect(screen.queryByRole('header', { name: ro.history.basket.title })).toBeNull();
 });
 
-it('draws each row as photo on the left, with the rating and the verdict under it, and nothing else', async () => {
+it('draws each row as photo on the left, with the rating and the product name under it, and nothing else', async () => {
   const now = new Date();
   const withPhoto = { ...entry, savedAt: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 5).toISOString(), product: { ...entry.product, imageUrl: 'https://example.com/product.jpg' } };
   jest.mocked(listHistory).mockResolvedValue([withPhoto]);
@@ -155,17 +155,24 @@ it('draws each row as photo on the left, with the rating and the verdict under i
   const { score, tier } = productScoreFor(withPhoto.product, withPhoto.score);
   expect(within(row).getByTestId('history-photo').props.source).toEqual({ uri: 'https://example.com/product.jpg' });
   const rating = within(row).getByText(String(score), { includeHiddenElements: true });
-  const verdict = within(row).getByText(ro.tiers[tier!], { includeHiddenElements: true });
+  const name = within(row).getByText(entry.product.name, { includeHiddenElements: true });
   expect(rating).toBeTruthy();
-  expect(verdict).toBeTruthy();
-  // No name, brand, source or time on the row, and no marker before the verdict.
-  expect(screen.queryByText(entry.product.name)).toBeNull();
+  expect(name).toBeTruthy();
+  // The product name takes the place of the tier word ("Excelent"); no brand, source or time, and no marker.
+  expect(within(row).queryByText(ro.tiers[tier!], { includeHiddenElements: true })).toBeNull();
   expect(screen.queryByText('Azi, 08:05')).toBeNull();
   expect(screen.queryByText(entry.product.source)).toBeNull();
   expect(screen.queryByText(entry.product.brand, { exact: false })).toBeNull();
   expect(screen.queryByText('·', { exact: false })).toBeNull();
   expect(screen.queryByTestId('history-list')).toBeTruthy();
   expect(screen.queryByRole('button', { name: ro.history.remove(entry.product.name) })).toBeNull();
+});
+it('still names the product when it has no score, with fără scor above the name', async () => {
+  jest.mocked(listHistory).mockResolvedValue([{ ...entry, score: { ...entry.score, score: null, grade: 'unavailable' } }]);
+  await render(<HistoryScreen />);
+  const row = await screen.findByRole('button', { name: openName(entry.product.name) });
+  expect(within(row).getByText(ro.history.noScore, { includeHiddenElements: true })).toBeTruthy();
+  expect(within(row).getByText(entry.product.name, { includeHiddenElements: true })).toBeTruthy();
 });
 it('keeps a neutral tile where there is no product photo', async () => {
   await render(<HistoryScreen />);
