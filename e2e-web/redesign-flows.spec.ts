@@ -136,7 +136,7 @@ test.describe('returning user', () => {
     expect(lookups).toBe(1);
   });
 
-  test('e · history lists saved products as photo, rating and verdict, with no search', async ({ page }) => {
+  test('e · history lists saved products as photo, rating and name, with no search', async ({ page }) => {
     for (const entry of [yogurt, gluten]) {
       await stub(page, entry);
       await page.goto(`/product/${entry.product.id}`);
@@ -151,8 +151,8 @@ test.describe('returning user', () => {
     await expect(open(yogurt.product.name)).toBeVisible();
     await expect(open(gluten.product.name)).toBeVisible();
     await expect(page.getByRole('textbox', { name: ro.history.search, exact: true })).toHaveCount(0);
-    // Rows show the score and verdict only: the product name is read aloud, not drawn.
-    await expect(page.getByText(yogurt.product.name, { exact: true })).toHaveCount(0);
+    // Rows show the score and the product name, not the verdict word.
+    await expect(open(yogurt.product.name).getByText(yogurt.product.name, { exact: true })).toBeVisible();
   });
 
   test('f · history clear and onboarding reset persist', async ({ page }) => {
