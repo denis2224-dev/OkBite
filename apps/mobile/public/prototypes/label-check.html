@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Verificarea etichetei · OkBite</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ground: #f7f4ec;
+      --surface: #fff;
+      --ink: #1c2420;
+      --muted: #56615a;
+      --border: #d3ddd2;
+      --primary: #173a2a;
+      --accent: #c8e07a;
+      --mint: #e3eedf;
+      --amber: #fff5d9;
+      --amber-line: #e8d29a;
+      --amber-ink: #5a3d00;
+      --danger: #8e3417;
+      --shadow: #173a2a14;
+      --body: Manrope, system-ui, sans-serif;
+      --heading: "Bricolage Grotesque", var(--body);
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--ground); color: var(--ink); font: 1rem/1.55 var(--body); }
+    h1, h2, h3, p { margin: 0; }
+    h1, h2, h3 { font-family: var(--heading); color: var(--primary); line-height: 1.15; overflow-wrap: break-word; }
+    h1 { margin-top: 1.5rem; font-size: clamp(2.2rem, 5.5vw, 4.2rem); letter-spacing: -.05em; }
+    h2 { font-size: 1.65rem; letter-spacing: -.035em; }
+    h3 { font-size: 1.05rem; }
+    .layout {
+      width: min(100%, 69rem);
+      margin: auto;
+      padding: clamp(1rem, 5vw, 4rem);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 29rem);
+      align-items: start;
+      gap: clamp(1.5rem, 6vw, 5.5rem);
+    }
+    .brief { min-width: 0; padding-top: clamp(0rem, 3vw, 2rem); }
+    .brand { display: flex; align-items: center; gap: .65rem; color: var(--primary); font: 800 1.35rem var(--heading); }
+    .mark { width: 2.2rem; height: 2.2rem; display: grid; place-items: center; border-radius: .7rem; background: var(--primary); color: var(--accent); }
+    .mark::before {
+      content: ""; width: .95rem; height: .95rem; border: 2px solid currentColor;
+      border-radius: .2rem; background: repeating-linear-gradient(90deg, transparent 0 2px, currentColor 2px 3px);
+    }
+    .intro { margin-top: 1rem; color: var(--muted); max-width: 33ch; }
+    details { margin-top: 1.5rem; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    summary { padding: .75rem .2rem; cursor: pointer; font-weight: 700; color: var(--primary); }
+    .guide { padding: 0 .2rem 1rem; display: grid; gap: .75rem; font-size: .92rem; }
+    .guide p { color: var(--muted); }
+    .guide strong { color: var(--ink); }
+    .guide a { color: var(--primary); text-underline-offset: .2em; }
+    .settings { display: grid; gap: .35rem; }
+    select {
+      width: 100%; min-height: 2.75rem; padding: .5rem 1rem; background: var(--surface);
+      color: var(--ink); border: 1px solid var(--border); border-radius: .7rem; font: inherit;
+    }
+    .demo {
+      min-width: 0; display: grid; grid-template-rows: auto 1fr;
+      min-height: 33rem; border: 1px solid var(--border); background: var(--surface);
+      border-radius: 1.5rem; overflow: clip; box-shadow: 0 1.3rem 3rem var(--shadow);
+    }
+    .toolbar {
+      min-width: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: .25rem .6rem; padding: .45rem 1.25rem; background: var(--primary); color: var(--surface);
+    }
+    .toolbar p { color: var(--accent); font-weight: 700; font-size: .9rem; }
+    .toolbar button { width: auto; color: var(--surface); background: transparent; border: 0; padding: .5rem .25rem; text-decoration: underline; text-underline-offset: .23em; }
+    .toolbar button:hover { color: var(--accent); }
+    .toolbar button:focus-visible { outline-color: var(--accent); }
+    .screen { padding: clamp(1rem, 4vw, 1.65rem); display: grid; align-content: start; gap: 1rem; }
+    .secondary, small { color: var(--muted); }
+    .source, .callout { border: 1px solid var(--border); padding: .9rem 1rem; border-radius: .85rem; }
+    .source p, .callout p { margin: .3rem 0 0; }
+    .source h3 { font-size: .93rem; }
+    .source p { font-size: .94rem; }
+    .pack { background: var(--ground); border-style: dashed; }
+    .callout { background: var(--mint); }
+    .caution { border-color: var(--amber-line); background: var(--amber); color: var(--amber-ink); }
+    .caution h3 { color: inherit; }
+    .actions { display: grid; gap: .6rem; }
+    button {
+      border: 1px solid transparent; border-radius: .8rem; min-height: 2.75rem;
+      width: 100%; padding: .65rem .85rem; cursor: pointer; font: 700 .96rem/1.35 var(--body);
+      color: var(--surface); background: var(--primary);
+    }
+    button:hover { filter: brightness(1.12); }
+    button:active { filter: brightness(.93); }
+    button.alt { background: var(--surface); color: var(--primary); border-color: var(--border); }
+    button.alt:hover { background: var(--mint); }
+    :focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+    .error { color: var(--danger); font-weight: 700; }
+    @media (max-width: 48rem) {
+      .layout { grid-template-columns: minmax(0, 32rem); justify-content: center; }
+      .brief { display: contents; }
+      .intro { margin-top: .55rem; }
+      h1 { margin-top: .85rem; }
+      details { grid-row: 3; margin-top: 0; }
+      .demo { min-height: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main class="layout">
+    <div class="brief">
+      <header>
+        <div class="brand"><span class="mark" aria-hidden="true"></span>OkBite</div>
+        <h1>Verificarea etichetei</h1>
+        <p class="intro">Ai ales să eviți laptele. Folosește rezultatul scanării ca să decizi ce faci cu produsul de la raft.</p>
+      </header>
+      <details>
+        <summary>Scenarii și ghid pentru moderator</summary>
+        <div class="guide">
+          <div class="settings">
+            <label for="scenario">Eticheta de pe ambalaj</label>
+            <select id="scenario">
+              <option value="different">Diferă de eticheta salvată</option>
+              <option value="same">Corespunde etichetei salvate</option>
+              <option value="unclear">Este parțial ilizibilă</option>
+            </select>
+          </div>
+          <p><strong>Riscul.</strong> Un rezultat verificat poate fi confundat cu o confirmare pentru ambalajul din mână. Aplicația are deja raportare prin text. Aici testăm compararea etichetelor și avertismentul după o neconcordanță.</p>
+          <p><strong>Test propus.</strong> Dă sarcina de mai sus unui grup de cinci cumpărători, cu ghidul închis. Observă prima acțiune și timpul până la decizie. După scenariul principal, întreabă pe ce etichetă s-au bazat și ce se întâmplă după raportare. Încearcă apoi cazul ilizibil.</p>
+          <p><strong>Criteriu.</strong> Cel puțin patru din cinci aleg eticheta de pe ambalaj în 30 de secunde, fără ajutor. Niciun participant nu interpretează raportarea sau o etichetă ilizibilă drept confirmare. Dacă pragul nu e atins, revizuim mesajul de pe rezultat și repetăm testul.</p>
+          <p>Testarea cu participanți este planificată. Mostrele sunt ilustrative, iar raportarea este simulată.</p>
+          <a href="https://www.oreilly.com/library/view/software-requirements/9780735679658/ch15.html">Software Requirements, cap. 15, p. 301</a>
+        </div>
+      </details>
+    </div>
+
+    <div class="demo">
+      <header class="toolbar">
+        <p>Simulare de scanare</p>
+        <button type="button" id="reset">Reia simularea</button>
+      </header>
+      <noscript><p class="screen">Activează JavaScript pentru a parcurge simularea.</p></noscript>
+
+      <section class="screen" id="result" aria-labelledby="result-title">
+        <div>
+          <h2 id="result-title" tabindex="-1">Biscuiți cu ovăz</h2>
+          <p class="secondary">Produs demonstrativ</p>
+        </div>
+        <div class="source">
+          <h3>Eticheta salvată în OkBite</h3>
+          <p>Laptele nu apare în lista de ingrediente salvată.</p>
+          <small>Verificată la 4 noiembrie 2026</small>
+        </div>
+        <div class="callout caution">
+          <h3 id="result-alert">Verifică ambalajul pe care îl ai</h3>
+          <p id="result-message">Informațiile salvate provin din eticheta verificată anterior.</p>
+        </div>
+        <button type="button" data-go="compare">Compară etichetele</button>
+      </section>
+
+      <section class="screen" id="compare" aria-labelledby="compare-title" hidden>
+        <h2 id="compare-title" tabindex="-1">Compară etichetele</h2>
+        <div class="source">
+          <h3>Eticheta salvată în OkBite</h3>
+          <p>Ingrediente: fulgi de ovăz, făină de grâu, ulei de floarea-soarelui.</p>
+          <small>Verificată la 4 noiembrie 2026</small>
+        </div>
+        <div class="source pack">
+          <h3>Eticheta de pe ambalaj</h3>
+          <p id="pack-label">Ingrediente: fulgi de ovăz, făină de grâu, ulei de floarea-soarelui, <strong>LAPTE praf</strong>.</p>
+          <small>Mostră ilustrativă</small>
+        </div>
+        <div class="actions">
+          <button type="button" data-go="outcome">Vezi rezultatul comparării</button>
+          <button type="button" class="alt" data-go="result">Înapoi la produs</button>
+        </div>
+      </section>
+
+      <section class="screen" id="outcome" aria-labelledby="outcome-title" hidden>
+        <h2 id="outcome-title" tabindex="-1"></h2>
+        <div class="callout" id="outcome-callout">
+          <h3 id="outcome-summary"></h3>
+          <p id="outcome-message"></p>
+        </div>
+        <div class="actions">
+          <button type="button" id="open-report" data-go="report">Raportează diferența</button>
+          <button type="button" class="alt" data-go="compare">Înapoi la etichete</button>
+          <button type="button" class="alt" data-go="result">Înapoi la produs</button>
+        </div>
+      </section>
+
+      <section class="screen" id="report" aria-labelledby="report-title" hidden>
+        <h2 id="report-title" tabindex="-1">Raportează diferența</h2>
+        <p>Adaugă mostra ambalajului pentru ca echipa să poată compara listele de ingrediente.</p>
+        <div class="source pack" id="attachment" role="status" hidden>
+          <h3>Mostră atașată</h3>
+          <p>Eticheta ambalajului menționează <strong>LAPTE praf</strong>.</p>
+        </div>
+        <p class="error" id="report-error" role="alert" hidden>Adaugă mostra ambalajului înainte de a trimite raportul.</p>
+        <div class="actions">
+          <button type="button" class="alt" id="attach">Atașează mostra</button>
+          <button type="button" id="send">Trimite raportul simulat</button>
+          <button type="button" class="alt" data-go="outcome">Înapoi la rezultat</button>
+        </div>
+      </section>
+
+      <section class="screen" id="pending" aria-labelledby="pending-title" hidden>
+        <h2 id="pending-title" tabindex="-1">Raport în așteptare</h2>
+        <div class="callout caution">
+          <h3>Diferența trebuie verificată</h3>
+          <p>Eticheta salvată rămâne în baza OkBite până la verificarea raportului. Folosește eticheta de pe ambalaj.</p>
+        </div>
+        <p class="secondary">Raport demonstrativ, vizibil în această simulare.</p>
+        <button type="button" data-go="result">Înapoi la produs</button>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const byId = (id) => document.getElementById(id);
+    const baseLabel = "Ingrediente: fulgi de ovăz, făină de grâu, ulei de floarea-soarelui";
+    const scenarios = {
+      different: {
+        label: baseLabel + ", ",
+        highlight: "LAPTE praf",
+        title: "Etichetele diferă",
+        summary: "Ambalajul menționează lapte praf",
+        message: "Pentru acest ambalaj, folosește lista de ingrediente tipărită pe produs."
+      },
+      same: {
+        label: baseLabel,
+        title: "Etichetele corespund",
+        summary: "Aceeași listă de ingrediente în ambele mostre",
+        message: "Verifică pe ambalaj și mențiunea despre posibile urme înainte de a decide."
+      },
+      unclear: {
+        label: "Ingrediente: fulgi de ovăz, făină de grâu, [text ilizibil]",
+        title: "Eticheta nu se poate verifica",
+        summary: "O parte din ingrediente este ilizibilă",
+        message: "Caută un ambalaj cu etichetă lizibilă înainte de a lua o decizie."
+      }
+    };
+    const scenarioSelect = byId("scenario");
+    const screens = document.querySelectorAll(".screen[id]");
+    let attached = false;
+    let reported = false;
+
+    function show(screen) {
+      for (const section of screens) section.hidden = section.id !== screen;
+      const heading = byId(screen + "-title");
+      heading.focus({ preventScroll: true });
+      heading.scrollIntoView({ block: "nearest" });
+    }
+
+    function reset() {
+      const scenario = scenarios[scenarioSelect.value];
+      const label = byId("pack-label");
+      label.textContent = scenario.label;
+      if (scenario.highlight) {
+        const highlight = document.createElement("strong");
+        highlight.textContent = scenario.highlight;
+        label.append(highlight);
+      }
+      label.append(".");
+      byId("outcome-title").textContent = scenario.title;
+      byId("outcome-summary").textContent = scenario.summary;
+      byId("outcome-message").textContent = scenario.message;
+      byId("outcome-callout").classList.toggle("caution", scenarioSelect.value !== "same");
+      byId("open-report").hidden = scenarioSelect.value !== "different";
+      byId("open-report").textContent = "Raportează diferența";
+      byId("result-alert").textContent = "Verifică ambalajul pe care îl ai";
+      byId("result-message").textContent = "Informațiile salvate provin din eticheta verificată anterior.";
+      byId("attachment").hidden = true;
+      byId("attach").hidden = false;
+      byId("report-error").hidden = true;
+      attached = false;
+      reported = false;
+    }
+
+    for (const button of document.querySelectorAll("[data-go]")) {
+      button.addEventListener("click", () => {
+        const destination = button.dataset.go;
+        show(destination === "report" && reported ? "pending" : destination);
+      });
+    }
+    byId("reset").addEventListener("click", () => { reset(); show("result"); });
+    scenarioSelect.addEventListener("change", () => { reset(); show("result"); });
+    byId("attach").addEventListener("click", () => {
+      attached = true;
+      byId("report-error").hidden = true;
+      byId("attachment").hidden = false;
+      byId("attach").hidden = true;
+      byId("send").focus();
+    });
+    byId("send").addEventListener("click", () => {
+      if (!attached) {
+        byId("report-error").hidden = false;
+        byId("attach").focus();
+        return;
+      }
+      reported = true;
+      byId("result-alert").textContent = "Diferență de etichetă raportată";
+      byId("result-message").textContent = "Raportul așteaptă verificarea. Folosește eticheta de pe ambalaj.";
+      byId("open-report").textContent = "Vezi raportul";
+      show("pending");
+    });
+    reset();
+  </script>
+</body>
+</html>
